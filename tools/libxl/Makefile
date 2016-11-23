@@ -90,7 +90,7 @@ acpi:
 
 LIBXL_OBJS-$(CONFIG_X86) += libxl_cpuid.o libxl_x86.o libxl_psr.o libxl_x86_acpi.o
 LIBXL_OBJS-$(CONFIG_ARM) += libxl_nocpuid.o libxl_arm.o libxl_libfdt_compat.o
-ifeq ($(CONFIG_ARM_64),y)
+ifeq ($(CONFIG_ACPI),y)
 DSDT_FILES-y = dsdt_anycpu_arm.c
 LIBXL_OBJS-y += libxl_arm_acpi.o $(patsubst %.c,%.o,$(DSDT_FILES-y))
 dsdt_anycpu_arm.c:
