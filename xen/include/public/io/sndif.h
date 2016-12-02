@@ -368,31 +368,31 @@
 /* Sample format field values */
 #define XENSND_SAMPLE_FORMAT_MAX_LEN    24
 
-#define XENSND_PCM_FORMAT_S8_STR                 "s8"
-#define XENSND_PCM_FORMAT_U8_STR                 "u8"
-#define XENSND_PCM_FORMAT_S16_LE_STR             "s16_le"
-#define XENSND_PCM_FORMAT_S16_BE_STR             "s16_be"
-#define XENSND_PCM_FORMAT_U16_LE_STR             "u16_le"
-#define XENSND_PCM_FORMAT_U16_BE_STR             "u16_be"
-#define XENSND_PCM_FORMAT_S24_LE_STR             "s24_le"
-#define XENSND_PCM_FORMAT_S24_BE_STR             "s24_be"
-#define XENSND_PCM_FORMAT_U24_LE_STR             "u24_le"
-#define XENSND_PCM_FORMAT_U24_BE_STR             "u24_be"
-#define XENSND_PCM_FORMAT_S32_LE_STR             "s32_le"
-#define XENSND_PCM_FORMAT_S32_BE_STR             "s32_be"
-#define XENSND_PCM_FORMAT_U32_LE_STR             "u32_le"
-#define XENSND_PCM_FORMAT_U32_BE_STR             "u32_be"
-#define XENSND_PCM_FORMAT_F32_LE_STR             "float_le"
-#define XENSND_PCM_FORMAT_F32_BE_STR             "float_be"
-#define XENSND_PCM_FORMAT_F64_LE_STR             "float64_le"
-#define XENSND_PCM_FORMAT_F64_BE_STR             "float64_be"
+#define XENSND_PCM_FORMAT_S8_STR        "s8"
+#define XENSND_PCM_FORMAT_U8_STR        "u8"
+#define XENSND_PCM_FORMAT_S16_LE_STR    "s16_le"
+#define XENSND_PCM_FORMAT_S16_BE_STR    "s16_be"
+#define XENSND_PCM_FORMAT_U16_LE_STR    "u16_le"
+#define XENSND_PCM_FORMAT_U16_BE_STR    "u16_be"
+#define XENSND_PCM_FORMAT_S24_LE_STR    "s24_le"
+#define XENSND_PCM_FORMAT_S24_BE_STR    "s24_be"
+#define XENSND_PCM_FORMAT_U24_LE_STR    "u24_le"
+#define XENSND_PCM_FORMAT_U24_BE_STR    "u24_be"
+#define XENSND_PCM_FORMAT_S32_LE_STR    "s32_le"
+#define XENSND_PCM_FORMAT_S32_BE_STR    "s32_be"
+#define XENSND_PCM_FORMAT_U32_LE_STR    "u32_le"
+#define XENSND_PCM_FORMAT_U32_BE_STR    "u32_be"
+#define XENSND_PCM_FORMAT_F32_LE_STR    "float_le"
+#define XENSND_PCM_FORMAT_F32_BE_STR    "float_be"
+#define XENSND_PCM_FORMAT_F64_LE_STR    "float64_le"
+#define XENSND_PCM_FORMAT_F64_BE_STR    "float64_be"
 #define XENSND_PCM_FORMAT_IEC958_SUBFRAME_LE_STR "iec958_subframe_le"
 #define XENSND_PCM_FORMAT_IEC958_SUBFRAME_BE_STR "iec958_subframe_be"
-#define XENSND_PCM_FORMAT_MU_LAW_STR             "mu_law"
-#define XENSND_PCM_FORMAT_A_LAW_STR              "a_law"
-#define XENSND_PCM_FORMAT_IMA_ADPCM_STR          "ima_adpcm"
-#define XENSND_PCM_FORMAT_MPEG_STR               "mpeg"
-#define XENSND_PCM_FORMAT_GSM_STR                "gsm"
+#define XENSND_PCM_FORMAT_MU_LAW_STR    "mu_law"
+#define XENSND_PCM_FORMAT_A_LAW_STR     "a_law"
+#define XENSND_PCM_FORMAT_IMA_ADPCM_STR "ima_adpcm"
+#define XENSND_PCM_FORMAT_MPEG_STR      "mpeg"
+#define XENSND_PCM_FORMAT_GSM_STR       "gsm"
 
 /*
  * STATUS RETURN CODES.
@@ -405,19 +405,28 @@
 #define XENSND_RSP_OKAY                 0
 
 /*
+ * Assumptions:
+ *   o usage of grant reference 0 as invalid grant reference:
+ *     grant reference 0 is valid, but never exposed to a PV driver,
+ *     because of the fact it is already in use/reserved by the PV console.
+ *   o all references in this document to page sizes must be treated
+ *     as pages of size XEN_PAGE_SIZE unless  otherwise noted.
+ *
  * Description of the protocol between frontend and backend driver.
  *
- * The two halves of a Para-virtual sound driver communicates with
+ * The two halves of a Para-virtual sound driver communicate with
  * each other using a shared page and an event channel.
  * Shared page contains a ring with request/response packets.
  *
- * All reserved and padding fields in the structures below must be 0.
+ * All reserved fields in the structures below must be 0.
  *
  * All request packets have the same length (32 octets)
  * All request packets have common header:
  *          0                 1                  2                3        octet
  * +-----------------+-----------------+-----------------+-----------------+
  * |                 id                |    operation    |     stream_idx  |
+ * +-----------------+-----------------+-----------------+-----------------+
+ * |                                reserved                               |
  * +-----------------+-----------------+-----------------+-----------------+
  *   id - uint16_t, private guest value, echoed in response
  *   operation - uint8_t, operation code
@@ -430,7 +439,7 @@
  * +-----------------+-----------------+-----------------+-----------------+
  * |                 id                | XENSND_OP_OPEN  |     stream_idx  |
  * +-----------------+-----------------+-----------------+-----------------+
- * |                                padding                                |
+ * |                                reserved                               |
  * +-----------------+-----------------+-----------------+-----------------+
  * |                                pcm_rate                               |
  * +-----------------+-----------------+-----------------+-----------------+
@@ -439,6 +448,8 @@
  * |                               buffer_sz                               |
  * +-----------------+-----------------+-----------------+-----------------+
  * |                         gref_directory_start                          |
+ * +-----------------+-----------------+-----------------+-----------------+
+ * |                               reserved                                |
  * +-----------------+-----------------+-----------------+-----------------+
  * |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/|
  * +-----------------+-----------------+-----------------+-----------------+
@@ -490,7 +501,8 @@ struct xensnd_open_req {
  *
  * Number of grant_ref_t entries in the whole page directory is not
  * passed, but instead can be calculated as:
- *   num_grefs_total = DIV_ROUND_UP(XENSND_OP_OPEN.buffer_sz, PAGE_SIZE);
+ *   num_grefs_total = (XENSND_OP_OPEN.buffer_sz + XEN_PAGE_SIZE - 1) /
+ *       XEN_PAGE_SIZE
  */
 
 struct xensnd_page_directory {
@@ -504,8 +516,6 @@ struct xensnd_page_directory {
  * +-----------------+-----------------+-----------------+-----------------+
  * |                 id                | XENSND_OP_CLOSE |     stream_idx  |
  * +-----------------+-----------------+-----------------+-----------------+
- * |                                padding                                |
- * +-----------------+-----------------+-----------------+-----------------+
  * |                               reserved                                |
  * +-----------------+-----------------+-----------------+-----------------+
  * |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/|
@@ -514,18 +524,13 @@ struct xensnd_page_directory {
  * +-----------------+-----------------+-----------------+-----------------+
  */
 
-struct xensnd_close_req {
-    /* place holder, remove if changing the structure */
-    uint8_t placeholder;
-};
-
 /*
  * Request read/write - used for read (for capture) or write (for playback):
  *          0                 1                  2                3        octet
  * +-----------------+-----------------+-----------------+-----------------+
  * |                 id                |    operation    |     stream_idx  |
  * +-----------------+-----------------+-----------------+-----------------+
- * |                                padding                                |
+ * |                               reserved                                |
  * +-----------------+-----------------+-----------------+-----------------+
  * |                                offset                                 |
  * +-----------------+-----------------+-----------------+-----------------+
@@ -555,8 +560,6 @@ struct xensnd_rw_req {
  * +-----------------+-----------------+-----------------+-----------------+
  * |                 id                |    operation    |     stream_idx  |
  * +-----------------+-----------------+-----------------+-----------------+
- * |                                padding                                |
- * +-----------------+-----------------+-----------------+-----------------+
  * |                               reserved                                |
  * +-----------------+-----------------+-----------------+-----------------+
  * |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/|
@@ -579,7 +582,7 @@ struct xensnd_rw_req {
  * +-----------------+-----------------+-----------------+-----------------+
  * +/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/|
  * +-----------------+-----------------+-----------------+-----------------+
- *                  channel[XENSND_OP_OPEN.pcm_channels - 1]               |
+ * |                channel[XENSND_OP_OPEN.pcm_channels - 1]               |
  * +-----------------+-----------------+-----------------+-----------------+
  *
  * channel[i] - sint32_t, volume of i-th channel
@@ -587,23 +590,11 @@ struct xensnd_rw_req {
  * while 0 being 0 dB.
  */
 
-struct xensnd_get_vol_req {
-    /* place holder, remove if changing the structure */
-    uint8_t placeholder;
-};
-
-struct xensnd_set_vol_req {
-    /* place holder, remove if changing the structure */
-    uint8_t placeholder;
-};
-
 /*
  * Request mute/unmute - mute/unmute stream:
  *          0                 1                  2                3        octet
  * +-----------------+-----------------+-----------------+-----------------+
  * |                 id                |    operation    |     stream_idx  |
- * +-----------------+-----------------+-----------------+-----------------+
- * |                                padding                                |
  * +-----------------+-----------------+-----------------+-----------------+
  * |                               reserved                                |
  * +-----------------+-----------------+-----------------+-----------------+
@@ -616,31 +607,21 @@ struct xensnd_set_vol_req {
  * Buffer passed with XENSND_OP_OPEN is used to exchange mute/unmute
  * values:
  *
- *          0                 1                  2                3        octet
- * +-----------------+-----------------+-----------------+-----------------+
- * |   channel[0]    |   channel[1]    |   channel[2]    |   channel[3]    |
- * +-----------------+-----------------+-----------------+-----------------+
+ *                                     0                                   octet
+ * +-----------------------------------------------------------------------+
+ * |                               channel[0]                              |
+ * +-----------------------------------------------------------------------+
  * +/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/|
- * +-----------------+-----------------+-----------------+-----------------+
- * |   channel[i]    |   channel[i+1]  |   channel[i+2]  |   channel[i+3]  |
- * +-----------------+-----------------+-----------------+-----------------+
+ * +-----------------------------------------------------------------------+
+ * |                               channel[i]                              |
+ * +-----------------------------------------------------------------------+
  * +/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/|
+ * +-----------------------------------------------------------------------+
+ * |                channel[XENSND_OP_OPEN.pcm_channels - 1]               |
  * +-----------------+-----------------+-----------------+-----------------+
  *
  * channel[i] - uint8_t, non-zero if i-th channel needs to be muted/unmuted
- * Number of channels passed is equal to XENSND_OP_OPEN request pcm_channels
- * field
  */
-
-struct xensnd_mute_req {
-    /* place holder, remove if changing the structure */
-    uint8_t placeholder;
-};
-
-struct xensnd_unmute_req {
-    /* place holder, remove if changing the structure */
-    uint8_t placeholder;
-};
 
 /*
  * All response packets have the same length (32 octets)
@@ -650,20 +631,19 @@ struct xensnd_unmute_req {
  * +-----------------+-----------------+-----------------+-----------------+
  * |                 id                |    operation    |     stream_idx  |
  * +-----------------+-----------------+-----------------+-----------------+
- * |                                padding                                |
- * +-----------------+-----------------+-----------------+-----------------+
  * |      status     |                      reserved                       |
  * +-----------------+-----------------+-----------------+-----------------+
- * |                              reserved                                 |
+ * |                               reserved                                |
  * +-----------------+-----------------+-----------------+-----------------+
  * |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/|
  * +-----------------+-----------------+-----------------+-----------------+
  * |                               reserved                                |
  * +-----------------+-----------------+-----------------+-----------------+
- *   id - uint16_t, copied from the request
- *   stream_idx - uint8_t, copied from request
- *   operation - uint8_t, XENSND_OP_XXX - copied from request
- *   status - int8_t, response status (XENSND_RSP_???)
+ *
+ * id - uint16_t, copied from the request
+ * stream_idx - uint8_t, copied from request
+ * operation - uint8_t, XENSND_OP_* - copied from request
+ * status - int8_t, response status (XENSND_RSP_*)
  */
 
 struct xensnd_req {
@@ -673,14 +653,8 @@ struct xensnd_req {
     uint32_t reserved;
     union {
         struct xensnd_open_req open;
-        struct xensnd_close_req close;
-        struct xensnd_rw_req write;
-        struct xensnd_rw_req read;
-        struct xensnd_get_vol_req get_vol;
-        struct xensnd_set_vol_req set_vol;
-        struct xensnd_mute_req mute;
-        struct xensnd_unmute_req unmute;
-        uint8_t padding[24];
+        struct xensnd_rw_req rw;
+        uint8_t reserved[24];
     } op;
 };
 
@@ -689,7 +663,7 @@ struct xensnd_resp {
     uint8_t operation;
     uint8_t stream_idx;
     int8_t status;
-    uint8_t padding[26];
+    uint8_t reserved[27];
 };
 
 DEFINE_RING_TYPES(xen_sndif, struct xensnd_req, struct xensnd_resp);
