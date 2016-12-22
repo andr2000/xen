@@ -1,0 +1,22 @@
+From 21ca756a4291b07c23d4f55f8e82240d995f96a6 Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <Oleksandr_Andrushchenko@epam.com>
+Date: Thu, 22 Dec 2016 10:07:23 +0200
+Subject: [Xen-devel] [PATCH v1] displif: add ABI for para-virtual display
+
+This protocol aims to provide a unified protocol which fits more
+sophisticated use-cases than a framebuffer device can handle. At the
+moment basic functionality is supported with the intention to extend:
+ o multiple dynamically allocated/destroyed framebuffers
+ o buffers of arbitrary sizes
+ o better configuration options including multiple display support
+
+Oleksandr Andrushchenko (1):
+  displif: add ABI for para-virtual display
+
+ xen/include/public/io/displif.h | 730 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 730 insertions(+)
+ create mode 100644 xen/include/public/io/displif.h
+
+-- 
+2.7.4
+
