@@ -1,0 +1,28 @@
+From 0c92922267ba0c5e7d3b14b496b02a2612aabc71 Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <Oleksandr_Andrushchenko@epam.com>
+Date: Tue, 3 Jan 2017 17:24:26 +0200
+Subject: [RFC] kbdif: add multi-touch support
+
+Hi, all!
+
+I am working on adding multi-touch support to the existing
+kbdif protocol and would like to request for comments on the
+below patch.
+The aim is to provide multi-touch support to unprivileged
+domains which may employ multiple virtual displays.
+Thus, the protocol should handle multiple virtual touch input
+devices withing the same domain, so those can be mapped to
+different virtual displays.
+
+Thank you in advance,
+Oleksandr
+
+Oleksandr Andrushchenko (1):
+  kbdif: add multi-touch support
+
+ xen/include/public/io/kbdif.h | 64 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 64 insertions(+)
+
+-- 
+2.7.4
+
