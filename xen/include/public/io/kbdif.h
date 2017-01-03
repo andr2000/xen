@@ -45,6 +45,19 @@
  */
 #define XENKBD_TYPE_POS     4
 
+/*
+ * Multi-touch event
+ * Capable backend sets feature-multi-touch in xenstore.
+ * Frontend requests feature by setting request-multi-touch in xenstore.
+ * Frontend supports up to XENKBD_MT_NUM_DEV virtual multi-touch input devices,
+ * configured by the backend in xenstore under mt-%d folder, %d being
+ * a sequential number of the virtual input device:
+ *   o num-contacts - number of simultaneous touches supported
+ *   o width - width of the touch area in pixels
+ *   o height - height of the touch area in pixels
+ */
+#define XENKBD_TYPE_MTOUCH  5
+
 struct xenkbd_motion
 {
     uint8_t type;        /* XENKBD_TYPE_MOTION */
@@ -68,6 +81,56 @@ struct xenkbd_position
     int32_t rel_z;       /* relative Z motion (wheel) */
 };
 
+/* number of simultaneously supported multi-touch virtual input devices */
+#define XENKBD_MT_NUM_DEV   4
+
+/* Sent when a new touch is made: touch is assigned a unique contact
+ * ID, sent with this and consequent events related to this touch.
+ * Contact ID will be reused after XENKBD_MT_EV_UP event.
+ */
+#define XENKBD_MT_EV_DOWN   0
+/* Touch point has been released */
+#define XENKBD_MT_EV_UP     1
+/* Touch point has changed its coordinate(s) */
+#define XENKBD_MT_EV_MOTION 2
+/* Input synchronization event: shows end of a set of events
+ * which logically belong together.
+ */
+#define XENKBD_MT_EV_SYN    3
+/* Touch point has changed its shape. Shape is approximated by an ellipse
+ * through the major and minor axis lengths: major is the longer diameter
+ * of the ellipse and minor is the shorter one. Center of the ellipse is
+ * reported via XENKBD_MT_EV_DOWN/XENKBD_MT_EV_MOTION events.
+ */
+#define XENKBD_MT_EV_SHAPE  4
+/* Touch point's shape has changed its orientation: calculated as a clockwise
+ * angle between the major axis of the ellipse and positive Y axis in degrees,
+ * [-180; +180].
+ */
+#define XENKBD_MT_EV_ORIENT 5
+
+struct xenkbd_mtouch {
+    uint8_t type;             /* XENKBD_TYPE_MTOUCH */
+    uint8_t dev_idx;          /* index of the multi-touch device */
+    uint8_t event_type;       /* XENKBD_MT_EV_??? */
+    uint8_t reserved;         /* reserved for the future use */
+    int32_t contact_id;       /* contact ID, [0; num-contacts - 1] */
+    union {
+        /* XENKBD_MT_EV_DOWN/XENKBD_MT_EV_MOTION */
+        struct {
+            int32_t abs_x;    /* absolute X position, pixels */
+            int32_t abs_y;    /* absolute Y position, pixels */
+        } pos;
+        /* XENKBD_MT_EV_SHAPE */
+        struct {
+            uint32_t major;   /* length of the major axis, pixels */
+            uint32_t minor;   /* length of the minor axis, pixels */
+        } shape;
+        /* XENKBD_MT_EV_ORIENT */
+        uint16_t orientation; /* clockwise angle of the major axis */
+    } u;
+};
+
 #define XENKBD_IN_EVENT_SIZE 40
 
 union xenkbd_in_event
@@ -76,6 +139,7 @@ union xenkbd_in_event
     struct xenkbd_motion motion;
     struct xenkbd_key key;
     struct xenkbd_position pos;
+    struct xenkbd_mtouch mtouch;
     char pad[XENKBD_IN_EVENT_SIZE];
 };
 
