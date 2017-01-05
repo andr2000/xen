@@ -55,9 +55,9 @@
  * Backend publishes frontend configuration:
  *   o num-contacts - number of simultaneous touches supported
  *   o width - width of the touch area in pixels, in
- *       [INT_LEAST32_MIN; INT32_MAX] range
+ *       [0; UINT32_MAX] range
  *   o height - height of the touch area in pixels, in
- *       [INT_LEAST32_MIN; INT32_MAX] range
+ *       [0; UINT32_MAX] range
  * Frontend publishes:
  *   o page-ref - unique reference of this connection
  *   o page-gref - granted reference of the event ring shared page
@@ -136,8 +136,8 @@ struct xenkbd_mtouch {
     union {
         /* XENKBD_MT_EV_DOWN/XENKBD_MT_EV_MOTION */
         struct {
-            int32_t abs_x;    /* absolute X position, pixels */
-            int32_t abs_y;    /* absolute Y position, pixels */
+            uint32_t abs_x;   /* absolute X position, pixels */
+            uint32_t abs_y;   /* absolute Y position, pixels */
         } pos;
         /* XENKBD_MT_EV_SHAPE */
         struct {
