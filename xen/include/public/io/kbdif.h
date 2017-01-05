@@ -54,8 +54,10 @@
  * a sequential number of the virtual input device:
  * Backend configures:
  *   o num-contacts - number of simultaneous touches supported
- *   o width - width of the touch area in pixels, 32-bit signed integer
- *   o height - height of the touch area in pixels, 32-bit signed integer
+ *   o width - width of the touch area in pixels, in
+ *       [INT_LEAST32_MIN; INT32_MAX] range
+ *   o height - height of the touch area in pixels, in
+ *       [INT_LEAST32_MIN; INT32_MAX] range
  * Frontend publishes:
  *   o page-ref - unique reference of this connection
  *   o page-gref - granted reference of the event ring shared page
