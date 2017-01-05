@@ -52,7 +52,7 @@
  * Multi-touch input devices use dedicated event rings and are
  * configured via xenstore properties under mt-%d folder(s), %d being
  * a sequential number of the virtual input device:
- * Backend configures:
+ * Backend publishes frontend configuration:
  *   o num-contacts - number of simultaneous touches supported
  *   o width - width of the touch area in pixels, in
  *       [INT_LEAST32_MIN; INT32_MAX] range
@@ -62,6 +62,14 @@
  *   o page-ref - unique reference of this connection
  *   o page-gref - granted reference of the event ring shared page
  *   o event-channel - allocated event channel's port
+ *
+ * Example frontend's configuration:
+ * /local/domain/10/device/vkbd/0/mt-0/num-contacts = "5"
+ * /local/domain/10/device/vkbd/0/mt-0/width = "3200"
+ * /local/domain/10/device/vkbd/0/mt-0/height = "3200"
+ * /local/domain/10/device/vkbd/0/mt-1/num-contacts = "10"
+ * /local/domain/10/device/vkbd/0/mt-1/width = "6400"
+ * /local/domain/10/device/vkbd/0/mt-1/height = "6400"
  */
 #define XENKBD_TYPE_MTOUCH  5
 
