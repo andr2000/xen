@@ -1,0 +1,23 @@
+From 3404d00eacc24a41684964d20b2c119a5ebd5ea6 Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <Oleksandr_Andrushchenko@epam.com>
+Date: Fri, 6 Jan 2017 11:29:27 +0200
+Subject: [PATCH 0/2] xen/kbdif: add multi-touch support
+
+Hi, all!
+
+This series updates existing kbdif protocol documentation
+and adds multi-touch support
+
+Thank you,
+Oleksandr Andrushchenko
+
+Oleksandr Andrushchenko (2):
+  xen/kbdif: update protocol documentation
+  xen/kbdif: add multi-touch support
+
+ xen/include/public/io/kbdif.h | 477 +++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 450 insertions(+), 27 deletions(-)
+
+-- 
+2.7.4
+
