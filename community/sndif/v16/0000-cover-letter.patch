@@ -1,0 +1,24 @@
+From 7af1f5160173d2282284a8f3099cea43252e2e12 Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Fri, 27 Jan 2017 14:59:41 +0200
+Subject: [PATCH v16] sndif: add ABI for para-virtual sound
+
+Hi, all!
+
+Please find the next version of the ABI for the PV sound
+after addressing review comments.
+
+Thank you,
+Oleksandr Andrushchenko
+Oleksandr Grytsov
+
+Oleksandr Andrushchenko (1):
+  xen/sndif: Add sound-device ABI
+
+ xen/include/public/io/sndif.h | 725 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 725 insertions(+)
+ create mode 100644 xen/include/public/io/sndif.h
+
+-- 
+2.7.4
+

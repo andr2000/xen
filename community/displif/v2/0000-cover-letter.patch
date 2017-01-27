@@ -1,0 +1,35 @@
+From 6ed1666227572de94211cc9aacc4bbd55953d287 Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Fri, 27 Jan 2017 15:04:11 +0200
+Subject: [PATCH v2] displif: add ABI for para-virtual display
+
+This is the ABI for the two halves of a para-virtualized
+display driver.
+    
+This protocol aims to provide a unified protocol which fits more
+sophisticated use-cases than a framebuffer device can handle. At the
+moment basic functionality is supported with the intention to extend:
+  o multiple dynamically allocated/destroyed framebuffers
+  o buffers of arbitrary sizes
+  o better configuration options including multiple display support
+    
+Note: existing fbif can be used together with displif running at the
+same time, e.g. on Linux one provides framebuffer and another DRM/KMS
+    
+Future extensions to the existing protocol may include:
+  o allow display/connector cloning
+  o allow allocating objects other than display buffers
+  o add planes/overlays support
+  o support scaling
+  o support rotation
+
+Oleksandr Andrushchenko (1):
+  displif: add ABI for para-virtual display
+
+ xen/include/public/io/displif.h | 745 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 745 insertions(+)
+ create mode 100644 xen/include/public/io/displif.h
+
+-- 
+2.7.4
+
