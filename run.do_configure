@@ -1,0 +1,42 @@
+#!/bin/bash
+
+SYSROOT_ENV=${SYSROOT_ENV:-$1}
+
+if [ -z "$SYSROOT_ENV" ]; then
+	echo "Neither SYSROOT_ENV set nor suppplied as the parameter"
+	exit 1
+fi
+if [ ! -f ${SYSROOT_ENV} ]; then
+	echo "File ${SYSROOT_ENV} is not found!"
+	exit 1
+fi
+source $SYSROOT_ENV
+
+unset LDFLAGS
+
+#./configure --enable-xsmpolicy does not set XSM_ENABLE must be done manually
+if [ "1" = "1" ]; then
+	echo "XSM_ENABLE := y" > .config
+	echo "CONFIG_HAS_SCIF := y" >> .config
+	echo "CONFIG_EARLY_PRINTK := salvator" >> .config
+	echo "CONFIG_QEMU_XEN := n" >> .config
+	echo "CONFIG_DEBUG := y" >> .config
+fi
+
+export XEN_OS="Linux"
+export XEN_COMPILE_ARCH="x86_64"
+export XEN_TARGET_ARCH="arm64"
+
+if [ "1" = "0" ]; then
+	#fixup AS/CC/CCP/etc variable within StdGNU.mk
+	for i in LD CC CPP CXX; do
+		sed -i "s/^\($i\s\s*\).*=/\1?=/" config/StdGNU.mk
+	done
+	#fixup environment passing in some makefiles
+	sed -i 's#\(\w*\)=\(\$.\w*.\)#\1="\2"#' tools/firmware/Makefile
+
+	#libsystemd-daemon -> libsystemd for newer systemd versions
+	sed -i 's#libsystemd-daemon#libsystemd#' tools/configure
+fi
+
+./configure ${CONFIGURE_FLAGS} --prefix=/usr --exec_prefix=/usr --bindir=/usr/bin --sbindir=/usr/sbin --libexecdir=/usr/lib --datadir=/usr/share --sysconfdir=/etc --sharedstatedir=/com --localstatedir=/var --libdir=/usr/lib --includedir=/usr/include --oldincludedir=/usr/include --infodir=/usr/share/info --mandir=/usr/share/man --disable-silent-rules --disable-dependency-tracking --exec-prefix=/usr --prefix=/usr --with-systemd=/lib/systemd/system --with-systemd-modules-load=/lib/systemd/modules-load.d --disable-stubdom --disable-ioemu-stubdom --disable-pv-grub --disable-xenstore-stubdom --disable-rombios --disable-ocamltools --with-initddir=/etc/init.d --with-sysconfig-leaf-dir=default --with-system-qemu=/usr/bin/qemu-system-i386 --disable-qemu-traditional --enable-nls --disable-seabios --disable-sdl --enable-systemd --enable-xsmpolicy --disable-docs --with-sysroot=${SDKTARGETSYSROOT}

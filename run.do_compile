@@ -1,0 +1,33 @@
+#!/bin/bash
+
+SYSROOT_ENV=${SYSROOT_ENV:-$1}
+
+if [ -z "$SYSROOT_ENV" ]; then
+	echo "Neither SYSROOT_ENV set nor suppplied as the parameter"
+	exit 1
+fi
+if [ ! -f ${SYSROOT_ENV} ]; then
+	echo "File ${SYSROOT_ENV} is not found!"
+	exit 1
+fi
+source $SYSROOT_ENV
+
+unset LDFLAGS
+
+export XEN_OS="Linux"
+export XEN_COMPILE_ARCH="x86_64"
+export XEN_TARGET_ARCH="arm64"
+export XEN_CONFIG_EXPERT=y
+export CONFIG_HAS_SCIF=y
+export CONFIG_EARLY_PRINTK=salvator
+export CONFIG_QEMU_XEN=n
+
+export DEPLOYDIR="${PWD}/dist/install/"
+export ROOTFSDIR="/tftpboot/dom0-rootfs/"
+export DESTDIR=${DEPLOYDIR}
+
+make debug=n install
+if [ -f ${DEPLOYDIR}/boot/xen ]; then
+	mkimage -A arm64 -C none -T kernel -a 0x78080000 -e 0x78080000 -n "XEN" -d ${DEPLOYDIR}/boot/xen ${DEPLOYDIR}/boot/xen-uImage
+fi
+sudo -E bash -c "cp -rfv ${DEPLOYDIR}/* ${ROOTFSDIR}"
