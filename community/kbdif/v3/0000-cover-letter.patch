@@ -1,0 +1,35 @@
+From 2182c3d38487ca781b9a00df87187be0b32e97f5 Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Wed, 8 Feb 2017 09:33:14 +0200
+Subject: [PATCH v3 0/2] xen/kbdif: add multi-touch support
+
+Hi, all!
+
+This series updates existing kbdif protocol documentation
+and adds multi-touch support
+
+Thank you,
+Oleksandr Andrushchenko
+
+---
+Changes since v2:
+ * changed names of Xen store entries from
+   mt-xxx to multi-touch-xxx
+
+Changes since v1:
+ * removed mtouch folder
+ * changed mtouch xenstore parameters' names
+ * single multi-touch device per driver, if more needed
+   multiple instances of the driver should be configured
+   via xenstore entries
+
+Oleksandr Andrushchenko (2):
+  xen/kbdif: update protocol documentation
+  xen/kbdif: add multi-touch support
+
+ xen/include/public/io/kbdif.h | 458 +++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 431 insertions(+), 27 deletions(-)
+
+-- 
+2.7.4
+
