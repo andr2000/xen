@@ -169,6 +169,7 @@ static int __init process_memory_node(const void *fdt, int node,
         mem->bank[mem->nr_banks].start = start;
         mem->bank[mem->nr_banks].size = size;
         mem->nr_banks++;
+        break;
     }
 
     if ( i < banks )
