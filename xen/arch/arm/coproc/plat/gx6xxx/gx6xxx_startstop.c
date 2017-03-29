@@ -340,59 +340,36 @@ static int gx6xxx_poll_reg32(struct coproc_device *coproc, uint32_t offset,
 {
     uint32_t val;
     int retry = GX6XXX_POLL_TO_NUM_US;
-#ifdef GX6XXX_DEBUG
-    bool old_debug = gx6xxx_debug;
 
-    gx6xxx_debug = false;
-#endif
     do
     {
         /* read current register value and mask only those bits requested */
         val = gx6xxx_read32(coproc, offset) & mask;
         if ( val == expected )
-        {
-#ifdef GX6XXX_DEBUG
-            gx6xxx_debug = old_debug;
-#endif
             return 0;
-        }
         cpu_relax();
         udelay(1);
     } while (retry--);
-#ifdef GX6XXX_DEBUG
-    printk("%s expected %08x got %08x ))))))))))))))))))))))))))))))))))))))))\n",
-                    __FUNCTION__, expected, val);
-    gx6xxx_debug = old_debug;
-#endif
+    COPROC_VERBOSE(NULL, "%s expected %08x got %08x ))))))))))))))))))))))))))))))))))))))))\n",
+                   __FUNCTION__, expected, val);
     return -ETIMEDOUT;
 }
 
-static int gx6xxx_poll_val32(volatile uint32_t *val, uint32_t expected,
+static int gx6xxx_poll_val32(struct coproc_device *coproc,
+                             volatile uint32_t *val, uint32_t expected,
                              uint32_t mask)
 {
     int retry = GX6XXX_POLL_TO_NUM_US;
-#ifdef GX6XXX_DEBUG
-    bool old_debug = gx6xxx_debug;
 
-    gx6xxx_debug = false;
-#endif
     do
     {
         if ( (*val & mask) == expected )
-        {
-#ifdef GX6XXX_DEBUG
-            gx6xxx_debug = old_debug;
-#endif
             return 0;
-        }
         cpu_relax();
         udelay(1);
     } while (retry--);
-#ifdef GX6XXX_DEBUG
-    printk("%s expected %08x got %08x ))))))))))))))))))))))))))))))))))))))))\n",
-                    __FUNCTION__, expected, *val);
-    gx6xxx_debug = old_debug;
-#endif
+    COPROC_VERBOSE(NULL, "%s expected %08x got %08x ))))))))))))))))))))))))))))))))))))))))\n",
+                   __FUNCTION__, expected, *val);
     return -ETIMEDOUT;
 }
 
@@ -401,30 +378,18 @@ static int gx6xxx_poll_reg64(struct coproc_device *coproc, uint32_t offset,
 {
     uint64_t val;
     int retry = GX6XXX_POLL_TO_NUM_US;
-#ifdef GX6XXX_DEBUG
-    bool old_debug = gx6xxx_debug;
 
-    gx6xxx_debug = false;
-#endif
     do
     {
         /* read current register value and mask only those bits requested */
         val = gx6xxx_read64(coproc, offset) & mask;
         if ( val == expected )
-        {
-#ifdef GX6XXX_DEBUG
-            gx6xxx_debug = old_debug;
-#endif
             return 0;
-        }
         cpu_relax();
         udelay(1);
     } while (retry--);
-#ifdef GX6XXX_DEBUG
-    gx6xxx_debug = old_debug;
-    printk("%s expected %016lx got %016lx ))))))))))))))))))))))))))))))))))))))))\n",
-                    __FUNCTION__, expected, val);
-#endif
+    COPROC_VERBOSE(NULL, "%s expected %016lx got %016lx ))))))))))))))))))))))))))))))))))))))))\n",
+                   __FUNCTION__, expected, val);
     return -ETIMEDOUT;
 }
 
@@ -454,8 +419,8 @@ static int gx6xxx_read_via_slave_port32(struct coproc_device *coproc,
 
     /* Wait for Slave Port to be Ready */
     ret = gx6xxx_poll_reg32(coproc, RGX_CR_META_SP_MSLVCTRL1,
-                          RGX_CR_META_SP_MSLVCTRL1_READY_EN|RGX_CR_META_SP_MSLVCTRL1_GBLPORT_IDLE_EN,
-                          RGX_CR_META_SP_MSLVCTRL1_READY_EN|RGX_CR_META_SP_MSLVCTRL1_GBLPORT_IDLE_EN);
+                            RGX_CR_META_SP_MSLVCTRL1_READY_EN|RGX_CR_META_SP_MSLVCTRL1_GBLPORT_IDLE_EN,
+                            RGX_CR_META_SP_MSLVCTRL1_READY_EN|RGX_CR_META_SP_MSLVCTRL1_GBLPORT_IDLE_EN);
     if ( ret < 0 )
         return ret;
 
@@ -464,8 +429,8 @@ static int gx6xxx_read_via_slave_port32(struct coproc_device *coproc,
 
     /* Wait for Slave Port to be Ready */
     ret = gx6xxx_poll_reg32(coproc, RGX_CR_META_SP_MSLVCTRL1,
-                          RGX_CR_META_SP_MSLVCTRL1_READY_EN|RGX_CR_META_SP_MSLVCTRL1_GBLPORT_IDLE_EN,
-                          RGX_CR_META_SP_MSLVCTRL1_READY_EN|RGX_CR_META_SP_MSLVCTRL1_GBLPORT_IDLE_EN);
+                            RGX_CR_META_SP_MSLVCTRL1_READY_EN|RGX_CR_META_SP_MSLVCTRL1_GBLPORT_IDLE_EN,
+                            RGX_CR_META_SP_MSLVCTRL1_READY_EN|RGX_CR_META_SP_MSLVCTRL1_GBLPORT_IDLE_EN);
     if ( ret < 0 )
         return ret;
 
@@ -486,12 +451,11 @@ static inline int gx6xxx_wait_fw_started(struct vcoproc_instance *vcoproc,
 
     while (retry--)
     {
-        dev_dbg_gx6xx(vcoproc->coproc->dev, "vinfo->fw_init->bFirmwareStarted %d\n",
-                      vinfo->fw_init->bFirmwareStarted);
-        ret = gx6xxx_poll_val32((volatile IMG_BOOL *)&vinfo->fw_init->bFirmwareStarted,
+        ret = gx6xxx_poll_val32(vcoproc->coproc,
+                                (volatile IMG_BOOL *)&vinfo->fw_init->bFirmwareStarted,
                                 expected, 0xFFFFFFFF);
-        dev_dbg_gx6xx(vcoproc->coproc->dev, "vinfo->fw_init->bFirmwareStarted %d\n",
-                      vinfo->fw_init->bFirmwareStarted);
+        COPROC_VERBOSE(NULL, "vinfo->fw_init->bFirmwareStarted %d\n",
+                       vinfo->fw_init->bFirmwareStarted);
         if ( !ret )
             break;
     }
@@ -502,21 +466,13 @@ static s_time_t gx6xxx_save_reg_ctx(struct vcoproc_instance *vcoproc)
 {
     struct vgx6xxx_info *vinfo = (struct vgx6xxx_info *)vcoproc->priv;
     int i;
-#ifdef GX6XXX_DEBUG
-    bool old_gx6xxx_debug;
 
-    old_gx6xxx_debug = gx6xxx_debug;
-    gx6xxx_debug = false;
-#endif
     for (i = 0; i < vinfo->reg_ctx.count; i++)
     {
         vinfo->reg_ctx.regs[i].val = gx6xxx_read64(vcoproc->coproc,
                                                    gx6xxx_ctx_reg_offsets[i]);
         gx6xxx_write64(vcoproc->coproc, gx6xxx_ctx_reg_offsets[i], 0);
     }
-#ifdef GX6XXX_DEBUG
-    gx6xxx_debug = old_gx6xxx_debug;
-#endif
     return 0;
 }
 
@@ -524,22 +480,12 @@ static void gx6xxx_restore_reg_ctx(struct vcoproc_instance *vcoproc,
                                    struct vgx6xxx_info *vinfo)
 {
     int i;
-#ifdef GX6XXX_DEBUG
-    bool old_gx6xxx_debug;
 
-    old_gx6xxx_debug = gx6xxx_debug;
-    gx6xxx_debug = false;
-#endif
-    dev_dbg_gx6xx(vcoproc->coproc->dev, "restoring %d registers\n",
-                  vinfo->reg_ctx.count);
     for (i = 0; i < vinfo->reg_ctx.count; i++)
         gx6xxx_write64(vcoproc->coproc, gx6xxx_ctx_reg_offsets[i],
                        vinfo->reg_ctx.regs[i].val);
-    dev_dbg_gx6xx(vcoproc->coproc->dev, "restored %d registers\n",
-                  vinfo->reg_ctx.count);
-#ifdef GX6XXX_DEBUG
-    gx6xxx_debug = old_gx6xxx_debug;
-#endif
+    COPROC_VERBOSE(NULL, "restored %d registers\n",
+                   vinfo->reg_ctx.count);
     /* force all clocks on */
     gx6xxx_write64(vcoproc->coproc, RGX_CR_CLK_CTRL, RGX_CR_CLK_CTRL_ALL_ON);
 }
@@ -588,7 +534,8 @@ static s_time_t gx6xxx_wait_psync(struct vcoproc_instance *vcoproc)
     /* wait for GPU to finish current workload */
     do
     {
-        ret = gx6xxx_poll_val32(vinfo->fw_power_sync, 0x1, 0xFFFFFFFF);
+        ret = gx6xxx_poll_val32(vcoproc->coproc, vinfo->fw_power_sync,
+                                0x1, 0xFFFFFFFF);
         if ( ret < 0 )
             continue;
     } while (retry--);
@@ -614,8 +561,8 @@ static s_time_t gx6xxx_force_idle(struct vcoproc_instance *vcoproc)
                                   &info->state_kccb_read_ofs);
     if ( unlikely(ret < 0) )
     {
-        dev_err(vcoproc->coproc->dev,
-                "failed to send forced idle command to FW\n");
+        COPROC_ERROR(vcoproc->coproc->dev,
+                     "failed to send forced idle command to FW\n");
         return ret;
     }
     return 0;
@@ -652,8 +599,8 @@ static s_time_t gx6xxx_request_power_off(struct vcoproc_instance *vcoproc)
                                   &info->state_kccb_read_ofs);
     if ( unlikely(ret < 0) )
     {
-        dev_err(vcoproc->coproc->dev,
-                "failed to send power off command to FW\n");
+        COPROC_ERROR(vcoproc->coproc->dev,
+                     "failed to send power off command to FW\n");
         return ret;
     }
     return 0;
@@ -675,9 +622,9 @@ static s_time_t gx6xxx_wait_for_interrupts(struct vcoproc_instance *vcoproc)
     }
     if (!to_us)
     {
-        dev_dbg_gx6xx(vcoproc->coproc->dev, "TIMEDOUT, IRQs: FW %d vs Xen %d\n",
-                      vinfo->fw_trace_buf->aui32InterruptCount[0],
-                      atomic_read(&vinfo->irq_count));
+        COPROC_DEBUG(NULL, "TIMEDOUT, IRQs: FW %d vs Xen %d\n",
+                     vinfo->fw_trace_buf->aui32InterruptCount[0],
+                     atomic_read(&vinfo->irq_count));
         return GX6XXX_WAIT_TIME_US;
     }
     return 0;
@@ -799,7 +746,7 @@ static s_time_t gx6xxx_wait_all_idle(struct vcoproc_instance *vcoproc)
     if ( unlikely(ret < 0) )
         return GX6XXX_WAIT_TIME_US;
 
-    if ( (val & 0xFFFFFFFFU) == 0x0 )
+    if ( (val & 0xFFFFFFFFU) == 0 )
     {
         /* Wait for Sidekick/Jones to signal IDLE including
          * the Garten Wrapper if there is no debugger attached
@@ -830,80 +777,80 @@ struct gx6xxx_ctx_switch_state gx6xxx_ctx_gpu_stop_states[] =
     {
         .handler = gx6xxx_force_idle,
         .run_condition = gx6xxx_run_if_not_idle_or_off,
-        .name = "gx6xxx_force_idle",
+        .name = "force_idle",
     },
     {
         .handler = gx6xxx_wait_kccb,
         .run_condition = gx6xxx_run_if_not_idle_or_off,
-        .name = "gx6xxx_force_idle gx6xxx_wait_kccb",
+        .name = "\twait_kccb",
     },
     {
         .handler = gx6xxx_wait_psync,
         .run_condition = gx6xxx_run_if_not_idle_or_off,
-        .name = "gx6xxx_force_idle gx6xxx_wait_psync",
+        .name = "\twait_psync",
     },
     {
         .handler = gx6xxx_force_idle_check,
         .run_condition = gx6xxx_run_if_not_idle_or_off,
-        .name = "gx6xxx_force_idle gx6xxx_force_idle_check",
+        .name = "\tforce_idle_check",
     },
     /* REQUEST POWER OFF */
     {
         .handler = gx6xxx_request_power_off,
         .run_condition = gx6xxx_run_if_not_off,
-        .name = "gx6xxx_request_power_off",
+        .name = "request_power_off",
     },
     {
         .handler = gx6xxx_wait_kccb,
         .run_condition = gx6xxx_run_if_not_off,
-        .name = "gx6xxx_request_power_off gx6xxx_wait_kccb",
+        .name = "\tgx6xxx_wait_kccb",
     },
     {
         .handler = gx6xxx_wait_psync,
         .run_condition = gx6xxx_run_if_not_off,
-        .name = "gx6xxx_request_power_off gx6xxx_wait_psync",
+        .name = "\tgx6xxx_wait_psync",
     },
     /* WAIT FOR LAST CHANCE INTERRUPTS */
     {
         .handler = gx6xxx_wait_for_interrupts,
         .run_condition = gx6xxx_run_always,
-        .name = "gx6xxx_wait_for_interrupts",
+        .name = "wait_for_interrupts",
     },
     /* FIXME: SAVE REGISTERS NOW */
     {
         .handler = gx6xxx_save_reg_ctx,
         .run_condition = gx6xxx_run_always,
-        .name = "gx6xxx_save_reg_ctx",
+        .name = "save_reg_ctx",
     },
     /* WAIT FOR SLC AND SIDEKICK */
     {
         .handler = gx6xxx_wait_for_slc_idle,
         .run_condition = gx6xxx_run_always,
-        .name = "gx6xxx_wait_for_slc_idle",
+        .name = "wait_for_slc_idle",
     },
     /* DE-ASSOCIATE ALL THREADS */
     {
         .handler = gx6xxx_deassoc_threads,
         .run_condition = gx6xxx_run_always,
-        .name = "gx6xxx_deassoc_threads",
+        .name = "deassoc_threads",
     },
     /* DISABLE ALL THREADS */
     {
         .handler = gx6xxx_disable_threads,
         .run_condition = gx6xxx_run_always,
-        .name = "gx6xxx_disable_threads",
+        .name = "disable_threads",
     },
     /* WAIT FOR ALL IDLE */
     {
         .handler = gx6xxx_wait_all_idle,
         .run_condition = gx6xxx_run_always,
-        .name = "gx6xxx_wait_all_idle",
+        .name = "wait_all_idle",
     },
     /* WAIT FOR FW STOPPED */
     {
         .handler = gx6xxx_wait_fw_stopped,
         .run_condition = gx6xxx_run_always,
-        .name = "gx6xxx_wait_fw_stopped",
+        .name = "wait_fw_stopped",
     },
     {
         NULL
@@ -973,10 +920,11 @@ int gx6xxx_ctx_gpu_start(struct vcoproc_instance *vcoproc,
     ret = gx6xxx_wait_fw_started(vcoproc, vinfo, IMG_TRUE);
     if ( ret < 0 )
     {
-        dev_err(coproc->dev, "Firmware has not yet started\n");
+        COPROC_ERROR(coproc->dev, "Firmware has not yet started\n");
         /* TODO: context switch to cannot handle wait_time as context
          * switch from does. this needs to be addressed
          */
+        BUG();
 #if 0
         return ret;
 #endif
@@ -1026,17 +974,15 @@ int gx6xxx_ctx_gpu_stop(struct vcoproc_instance *vcoproc,
     /* XXX: we CANNOT receive interrupts at this time - scheduler has
      * disabled the interrupts
      */
-    dev_dbg_gx6xx(vcoproc->coproc->dev, "%s sPowerState is %s\n",
-                  __FUNCTION__,
+    COPROC_DEBUG(NULL, "%s sPowerState is %s\n", __FUNCTION__,
                   power_state_to_str(vinfo->fw_trace_buf->ePowState));
-    dev_dbg_gx6xx(vcoproc->coproc->dev, "%s FW reports %d vs Xen %d IRQs\n",
-                  __FUNCTION__,
-                  vinfo->fw_trace_buf->aui32InterruptCount[0],
+    COPROC_DEBUG(NULL, "%s FW reports %d vs Xen %d IRQs\n", __FUNCTION__,
+                 vinfo->fw_trace_buf->aui32InterruptCount[0],
            atomic_read(&vinfo->irq_count));
     while ( info->state_curr->handler )
     {
-        dev_dbg_gx6xx(vcoproc->coproc->dev, "%s state %s\n", __FUNCTION__,
-                      info->state_curr->name);
+        COPROC_VERBOSE(NULL, "%s state %s\n", __FUNCTION__,
+                       info->state_curr->name);
 #ifdef GX6XXX_DEBUG_PERF
         dbg_time_start = NOW();
 #endif
@@ -1062,12 +1008,13 @@ int gx6xxx_ctx_gpu_stop(struct vcoproc_instance *vcoproc,
             }
             if ( wait_time < 0 )
             {
-                dev_dbg_gx6xx(vcoproc->coproc->dev, "%s wait_time %ld\n",
-                              __FUNCTION__, wait_time);
+                COPROC_VERBOSE(NULL, "%s wait_time %ld\n",
+                               __FUNCTION__, wait_time);
                 /* step failed */
                 if ( wait_time == -EAGAIN )
                 {
-
+                    COPROC_DEBUG(NULL, "%s wait_time %ld step failed\n",
+                                 __FUNCTION__, wait_time);
                 }
                 break;
             }
@@ -1079,9 +1026,7 @@ int gx6xxx_ctx_gpu_stop(struct vcoproc_instance *vcoproc,
         info->state_curr++;
     }
     if ( unlikely(!info->state_curr) )
-        dev_dbg_gx6xx(vcoproc->coproc->dev,
-                      "%s GPU stopped =====================================\n",
-                      __FUNCTION__);
+        COPROC_DEBUG(NULL, "%s GPU stopped\n", __FUNCTION__);
     return 0;
 }
 
@@ -1091,15 +1036,15 @@ int gx6xxx_ctx_init(struct vcoproc_instance *vcoproc,
     int ret;
 
     vinfo->reg_ctx.count = ARRAY_SIZE(gx6xxx_ctx_reg_offsets);
-    dev_dbg_gx6xx(vcoproc->coproc->dev,
-                  "allocating register context for %d registers\n",
-                  vinfo->reg_ctx.count);
+    COPROC_DEBUG(vcoproc->coproc->dev,
+                 "allocating register context for %d registers\n",
+                 vinfo->reg_ctx.count);
     vinfo->reg_ctx.regs = (union reg64_t *)xzalloc_array(struct vgx6xxx_ctx,
                     vinfo->reg_ctx.count);
     if ( !vinfo->reg_ctx.regs )
     {
-        dev_err(vcoproc->coproc->dev,
-                "failed to allocate vcoproc register context buffer\n");
+        COPROC_ERROR(vcoproc->coproc->dev,
+                     "failed to allocate vcoproc register context buffer\n");
         ret = -ENOMEM;
         goto fail;
     }

@@ -40,8 +40,6 @@ struct vgx6xxx_info;
 #endif
 
 #ifdef GX6XXX_DEBUG
-extern bool gx6xxx_debug;
-
 void gx6xxx_print_reg(const char *prefix, uint32_t reg, uint32_t val);
 #else
 #define gx6xxx_print_reg(a, b, c) {}
@@ -76,8 +74,10 @@ static inline uint64_t gx6xxx_read64(struct coproc_device *coproc,
 #ifdef GX6XXX_DEBUG
     uint64_t val = readq((char *)coproc->mmios[0].base + offset);
 
-    gx6xxx_print_reg(__FUNCTION__, REG_LO32(offset), val & 0xffffffff);
-    gx6xxx_print_reg(__FUNCTION__, REG_HI32(offset), val >> 32);
+    gx6xxx_print_reg(__FUNCTION__, REG_LO32(offset),
+                     val & 0xffffffff);
+    gx6xxx_print_reg(__FUNCTION__, REG_HI32(offset),
+                     val >> 32);
     return val;
 #else
     return readq((char *)coproc->mmios[0].base + offset);
@@ -87,8 +87,10 @@ static inline uint64_t gx6xxx_read64(struct coproc_device *coproc,
 static inline void gx6xxx_write64(struct coproc_device *coproc,
                                   uint32_t offset, uint64_t val)
 {
-    gx6xxx_print_reg(__FUNCTION__, REG_LO32(offset), val & 0xffffffff);
-    gx6xxx_print_reg(__FUNCTION__, REG_HI32(offset), val >> 32);
+    gx6xxx_print_reg(__FUNCTION__, REG_LO32(offset),
+                     val & 0xffffffff);
+    gx6xxx_print_reg(__FUNCTION__, REG_HI32(offset),
+                     val >> 32);
     writeq(val, (char *)coproc->mmios[0].base + offset);
 }
 

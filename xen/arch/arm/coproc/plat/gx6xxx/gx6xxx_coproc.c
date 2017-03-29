@@ -54,9 +54,9 @@ static inline void vgx6xxx_set_state(struct vcoproc_instance *vcoproc,
 {
     struct vgx6xxx_info *vinfo = (struct vgx6xxx_info *)vcoproc->priv;
 
-    dev_dbg_gx6xx(vcoproc->coproc->dev,
-                  "Domain %d going from %s to %s\n", vcoproc->domain->domain_id,
-                  vgx6xxx_state_to_str(vinfo->state), vgx6xxx_state_to_str(state));
+    COPROC_DEBUG(NULL, "Domain %d going from %s to %s\n",
+                 vcoproc->domain->domain_id, vgx6xxx_state_to_str(vinfo->state),
+                 vgx6xxx_state_to_str(state));
     vinfo->state = state;
 }
 
@@ -81,12 +81,13 @@ static bool gx6xxx_check_start_condition(struct vcoproc_instance *vcoproc,
             ret = gx6xxx_fw_init(vcoproc, vinfo);
             if ( ret < 0 )
             {
-                dev_err(vcoproc->coproc->dev, "Failed to initialize GPU FW for domain %d: %d\n",
-                        vcoproc->domain->domain_id, ret);
+                COPROC_ERROR(vcoproc->coproc->dev,
+                             "Failed to initialize GPU FW for domain %d: %d\n",
+                             vcoproc->domain->domain_id, ret);
                 BUG();
             }
-            dev_notice(vcoproc->coproc->dev, "Domain %d start condition met\n",
-                       vcoproc->domain->domain_id);
+            COPROC_NOTE(vcoproc->coproc->dev, "Domain %d start condition met\n",
+                        vcoproc->domain->domain_id);
             start = true;
         }
     }
@@ -111,11 +112,13 @@ static bool gx6xxx_on_reg_write(uint32_t offset, uint32_t val,
         gx6xxx_store32(offset, &vinfo->reg_val_cr_soft_reset.as.hi, val);
         break;
     case REG_LO32(RGX_CR_MTS_GARTEN_WRAPPER_CONFIG):
-        gx6xxx_store32(offset, &vinfo->reg_val_cr_mts_garten_wrapper_config.as.lo,
+        gx6xxx_store32(offset,
+                       &vinfo->reg_val_cr_mts_garten_wrapper_config.as.lo,
                        val);
         break;
     case REG_HI32(RGX_CR_MTS_GARTEN_WRAPPER_CONFIG):
-        gx6xxx_store32(offset, &vinfo->reg_val_cr_mts_garten_wrapper_config.as.hi,
+        gx6xxx_store32(offset,
+                       &vinfo->reg_val_cr_mts_garten_wrapper_config.as.hi,
                        val);
         break;
     case REG_LO32(RGX_CR_BIF_CAT_BASE0):
@@ -125,35 +128,36 @@ static bool gx6xxx_on_reg_write(uint32_t offset, uint32_t val,
         gx6xxx_store32(offset, &vinfo->reg_val_cr_bif_cat_base0.as.hi, val);
         break;
     case REG_LO32(RGX_CR_SLC_CTRL_MISC):
-        gx6xxx_store32(offset, &vinfo->reg_val_cr_slc_ctrl_misc.as.lo,
-                       val);
+        gx6xxx_store32(offset, &vinfo->reg_val_cr_slc_ctrl_misc.as.lo, val);
         break;
     case REG_LO32(RGX_CR_AXI_ACE_LITE_CONFIGURATION):
-        gx6xxx_store32(offset, &vinfo->reg_val_cr_axi_ace_lite_configuration.as.lo,
+        gx6xxx_store32(offset,
+                       &vinfo->reg_val_cr_axi_ace_lite_configuration.as.lo,
                        val);
         break;
     case REG_HI32(RGX_CR_AXI_ACE_LITE_CONFIGURATION):
-        gx6xxx_store32(offset, &vinfo->reg_val_cr_axi_ace_lite_configuration.as.hi,
+        gx6xxx_store32(offset,
+                       &vinfo->reg_val_cr_axi_ace_lite_configuration.as.hi,
                        val);
         break;
     case REG_LO32(RGX_CR_META_SP_MSLVCTRL1):
-        printk("HANDLE me!!!! LO RGX_CR_META_SP_MSLVCTRL1\n");
+        COPROC_ERROR(NULL, "HANDLE me!!!! LO RGX_CR_META_SP_MSLVCTRL1\n");
         WARN();
         break;
     case REG_LO32(RGX_CR_META_SP_MSLVCTRL2):
-        printk("HANDLE me!!!! RGX_CR_META_SP_MSLVCTRL2?????\n");
+        COPROC_ERROR(NULL, "HANDLE me!!!! RGX_CR_META_SP_MSLVCTRL2?????\n");
         WARN();
         break;
     case 0xA28:
-        printk("HANDLE me!!!! 0xA28?????\n");
+        COPROC_ERROR(NULL, "HANDLE me!!!! 0xA28?????\n");
         WARN();
         break;
     case 0x0A30:
-        printk("HANDLE me!!!! 0x0A30?????\n");
+        COPROC_ERROR(NULL, "HANDLE me!!!! 0x0A30?????\n");
         WARN();
         break;
     case 0x0A38:
-        printk("HANDLE me!!!! 0x0A38?????\n");
+        COPROC_ERROR(NULL, "HANDLE me!!!! 0x0A38?????\n");
         WARN();
         break;
     default:
@@ -273,8 +277,8 @@ static int gx6xxx_mmio_write(struct vcpu *v, mmio_info_t *info,
         }
         if ( unlikely(!gx6xxx_on_reg_write(ctx.offset, r, ctx.vcoproc)))
         {
-            dev_err(ctx.coproc->dev, "Unexpected write at %08x val %08x\n",
-                    ctx.offset, (uint32_t)r);
+            COPROC_ERROR(ctx.coproc->dev, "Unexpected write at %08x val %08x\n",
+                         ctx.offset, (uint32_t)r);
             BUG();
         }
     }
@@ -285,8 +289,8 @@ static int gx6xxx_mmio_write(struct vcpu *v, mmio_info_t *info,
          */
         if ( unlikely(!gx6xxx_on_reg_write(ctx.offset, r, ctx.vcoproc)))
         {
-            dev_err(ctx.coproc->dev, "Unexpected write at %08x val %08x\n",
-                    ctx.offset, (uint32_t)r);
+            COPROC_ERROR(ctx.coproc->dev, "Unexpected write at %08x val %08x\n",
+                         ctx.offset, (uint32_t)r);
             BUG();
         }
         if ( unlikely(gx6xxx_check_start_condition(ctx.vcoproc, vinfo)) )
@@ -312,8 +316,8 @@ static void gx6xxx_irq_handler(int irq, void *dev,
     uint32_t irq_status;
 
     spin_lock(&coproc->vcoprocs_lock);
-    dev_dbg_gx6xx(coproc->dev, "> %s dom %d\n",
-                  __FUNCTION__, info->curr->domain->domain_id);
+    COPROC_DEBUG(NULL, "%s dom %d\n", __FUNCTION__,
+                 info->curr->domain->domain_id);
 
 #if 1
     irq_status = readl(info->reg_vaddr_irq_status);
@@ -335,20 +339,18 @@ static void gx6xxx_irq_handler(int irq, void *dev,
         if ( likely(vinfo->state != VGX6XXX_STATE_WAITING) )
             vgic_vcpu_inject_spi(vcoproc->domain, irq);
         else
-            dev_err(vcoproc->coproc->dev, "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++ Not delivering IRQ in state %s\n",
-                   vgx6xxx_state_to_str(vinfo->state));
+            COPROC_ERROR(vcoproc->coproc->dev, "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++ Not delivering IRQ in state %s\n",
+                         vgx6xxx_state_to_str(vinfo->state));
 
-        dev_dbg_gx6xx(coproc->dev, "FW reports IRQ count %d we have %d\n",
-                      vinfo->fw_trace_buf->aui32InterruptCount[0],
-                      atomic_read(&vinfo->irq_count));
+        COPROC_VERBOSE(NULL, "FW reports IRQ count %d we have %d\n",
+                       vinfo->fw_trace_buf->aui32InterruptCount[0],
+                       atomic_read(&vinfo->irq_count));
     }
     /* from RGX kernel driver (rgxinit.c):
      * we are handling any unhandled interrupts here so align the host
      * count with the FW count
      */
     atomic_set(&vinfo->irq_count, vinfo->fw_trace_buf->aui32InterruptCount[0]);
-    dev_dbg_gx6xx(coproc->dev, "< %s dom %d\n",
-                  __FUNCTION__, info->curr->domain->domain_id);
     spin_unlock(&coproc->vcoprocs_lock);
 }
 
@@ -364,8 +366,7 @@ static s_time_t gx6xxx_ctx_switch_from(struct vcoproc_instance *curr)
     s_time_t wait_time;
     unsigned long flags;
 
-    dev_dbg_gx6xx(curr->coproc->dev, "%s dom %d\n",
-                  __FUNCTION__, curr->domain->domain_id);
+    COPROC_DEBUG(NULL, "%s dom %d\n", __FUNCTION__, curr->domain->domain_id);
 #if GX6XXX_DEBUG_TEST_KERN_DRV
     if ( curr->domain->domain_id )
         return 0;
@@ -401,8 +402,7 @@ static int gx6xxx_ctx_switch_to(struct vcoproc_instance *next)
     struct vgx6xxx_info *vinfo = (struct vgx6xxx_info *)next->priv;
     unsigned long flags;
 
-    dev_dbg_gx6xx(next->coproc->dev, "%s dom %d\n",
-                  __FUNCTION__, next->domain->domain_id);
+    COPROC_DEBUG(NULL, "%s dom %d\n", __FUNCTION__, next->domain->domain_id);
 #if GX6XXX_DEBUG_TEST_KERN_DRV
     if ( next->domain->domain_id )
         return 0;
@@ -416,8 +416,8 @@ static int gx6xxx_ctx_switch_to(struct vcoproc_instance *next)
         /* flush scheduled work */
         if ( likely(vinfo->reg_cr_mts_schedule_lo_wait_cnt) )
         {
-            dev_dbg_gx6xx(next->coproc->dev, "have %d scheduled tasks\n",
-                          vinfo->reg_cr_mts_schedule_lo_wait_cnt);
+            COPROC_DEBUG(NULL, "have %d scheduled tasks\n",
+                         vinfo->reg_cr_mts_schedule_lo_wait_cnt);
             do
             {
                 gx6xxx_write32(next->coproc, RGX_CR_MTS_SCHEDULE,
@@ -449,8 +449,8 @@ static int gx6xxx_vcoproc_init(struct vcoproc_instance *vcoproc)
     vcoproc->priv = xzalloc(struct vgx6xxx_info);
     if ( !vcoproc->priv )
     {
-        dev_err(vcoproc->coproc->dev,
-                "failed to allocate vcoproc private data\n");
+        COPROC_ERROR(vcoproc->coproc->dev,
+                     "failed to allocate vcoproc private data\n");
         return -ENOMEM;
     }
     vinfo = (struct vgx6xxx_info *)vcoproc->priv;
@@ -505,14 +505,14 @@ static int gx6xxx_dt_probe(struct dt_device_node *np)
     if ( (coproc->num_irqs != GX6XXX_NUM_IRQ) ||
          (coproc->num_mmios != GX6XXX_NUM_MMIO) )
     {
-        dev_err(dev, "wrong number of IRQs/MMIOs\n");
+        COPROC_ERROR(dev, "wrong number of IRQs/MMIOs\n");
         ret = -EINVAL;
         goto out_release_coproc;
     }
     coproc->priv = xzalloc(struct gx6xxx_info);
     if ( !coproc->priv )
     {
-        dev_err(dev, "failed to allocate coproc private data\n");
+        COPROC_ERROR(dev, "failed to allocate coproc private data\n");
         ret = -ENOMEM;
         goto out_release_priv;
     }
@@ -525,14 +525,14 @@ static int gx6xxx_dt_probe(struct dt_device_node *np)
                       gx6xxx_irq_handler, "GPU GX6xxx irq", coproc);
     if ( ret )
     {
-        dev_err(dev, "failed to request irq (%u)\n", coproc->irqs[0]);
+        COPROC_ERROR(dev, "failed to request irq (%u)\n", coproc->irqs[0]);
         goto out_release_priv;
     }
 
     ret = coproc_register(coproc);
     if ( ret )
     {
-        dev_err(dev, "failed to register coproc (%d)\n", ret);
+        COPROC_ERROR(dev, "failed to register coproc (%d)\n", ret);
         goto out_release_irqs;
     }
 
