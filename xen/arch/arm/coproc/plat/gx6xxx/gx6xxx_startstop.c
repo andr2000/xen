@@ -1025,7 +1025,7 @@ int gx6xxx_ctx_gpu_stop(struct vcoproc_instance *vcoproc,
         /* ready for the next step */
         info->state_curr++;
     }
-    if ( unlikely(!info->state_curr) )
+    if ( unlikely(!info->state_curr->handler) )
         COPROC_DEBUG(NULL, "%s GPU stopped\n", __FUNCTION__);
     return 0;
 }
