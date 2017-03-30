@@ -951,12 +951,6 @@ static void gx6xxx_ctx_dbg_update(struct gx6xxx_ctx_switch_state *state,
         state->time_min = delta;
     if ( state->time_max < delta )
         state->time_max = delta;
-
-    printk("------------------------- %s -------------------------\n",
-           __FUNCTION__);
-    printk("num_retries %d\n", state->num_retries);
-    printk("time_min %ld\n", state->time_min);
-    printk("time_max %ld\n", state->time_max);
 }
 #endif
 

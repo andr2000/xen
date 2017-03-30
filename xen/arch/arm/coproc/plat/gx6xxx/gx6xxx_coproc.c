@@ -32,6 +32,9 @@
 #define GX6XXX_NUM_IRQ          1
 #define GX6XXX_NUM_MMIO         1
 
+/* number of switches to collect switch time stats from */
+#define GX6XXX_SW_STATS_NUM     1000
+
 static const char *vgx6xxx_state_to_str(enum vgx6xxx_state state)
 {
     switch ( state )
@@ -381,14 +384,27 @@ static s_time_t gx6xxx_ctx_switch_from(struct vcoproc_instance *curr)
          */
         vgx6xxx_set_state(curr, VGX6XXX_STATE_IN_TRANSIT);
         info->state_curr = gx6xxx_ctx_gpu_stop_states;
+        vinfo->tm_start_sw_from = NOW();
     }
     /* try stopping the GPU */
     wait_time = gx6xxx_ctx_gpu_stop(curr, vinfo);
     if ( wait_time > 0 )
         goto out;
     if ( wait_time == 0 )
+    {
         /* we are lucky */
         vgx6xxx_set_state(curr, VGX6XXX_STATE_WAITING);
+        vinfo->tm_cnt_sw_from++;
+        vinfo->tm_start_sw_from_acc += NOW() - vinfo->tm_start_sw_from;
+        if ( vinfo->tm_cnt_sw_from >= GX6XXX_SW_STATS_NUM)
+        {
+            COPROC_NOTE(NULL, "%d from %lu ns\n",
+                         curr->domain->domain_id,
+                         vinfo->tm_start_sw_from_acc / vinfo->tm_cnt_sw_from);
+            vinfo->tm_cnt_sw_from = 0;
+            vinfo->tm_start_sw_from_acc = 0;
+        }
+    }
     BUG_ON(wait_time < 0);
 out:
     spin_unlock_irqrestore(&coproc->vcoprocs_lock, flags);
@@ -412,6 +428,7 @@ static int gx6xxx_ctx_switch_to(struct vcoproc_instance *next)
     if ( vinfo->state == VGX6XXX_STATE_WAITING )
     {
         vgx6xxx_set_state(next, VGX6XXX_STATE_RUNNING);
+        vinfo->tm_start_sw_to = NOW();
         gx6xxx_ctx_gpu_start(next, vinfo);
         /* flush scheduled work */
         if ( likely(vinfo->reg_cr_mts_schedule_lo_wait_cnt) )
@@ -424,6 +441,22 @@ static int gx6xxx_ctx_switch_to(struct vcoproc_instance *next)
                                RGX_CR_MTS_SCHEDULE_TASK_COUNTED);
             }
             while (--vinfo->reg_cr_mts_schedule_lo_wait_cnt);
+        }
+        vinfo->tm_cnt_sw_to++;
+        vinfo->tm_start_sw_to_acc += NOW() - vinfo->tm_start_sw_to;
+        if ( vinfo->tm_cnt_sw_to >= GX6XXX_SW_STATS_NUM)
+        {
+            s_time_t delta;
+
+            delta = vinfo->tm_start_sw_to_acc / vinfo->tm_cnt_sw_to;
+            COPROC_NOTE(NULL, "%d to %lu ns\n",
+                         next->domain->domain_id, delta);
+            if ( delta > MILLISECS(5) )
+                if (coproc_debug < COPROC_DBG_LAST)
+                    coproc_debug++;
+
+            vinfo->tm_cnt_sw_to = 0;
+            vinfo->tm_start_sw_to_acc = 0;
         }
     }
     else if ( vinfo->state == VGX6XXX_STATE_INITIALIZING )

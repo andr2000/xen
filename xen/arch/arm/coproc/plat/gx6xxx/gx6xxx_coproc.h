@@ -72,6 +72,13 @@ struct vgx6xxx_info
      */
     atomic_t irq_count;
 
+    s_time_t tm_start_sw_to;
+    s_time_t tm_start_sw_to_acc;
+    int tm_cnt_sw_to;
+    s_time_t tm_start_sw_from;
+    s_time_t tm_start_sw_from_acc;
+    int tm_cnt_sw_from;
+
     /* FIXME: the below are frequently used, so they are mapped on
      * vcoproc init and unmapped on deinit
      */
