@@ -894,38 +894,54 @@ static const char *power_state_to_str(RGXFWIF_POW_STATE state)
 
 static s_time_t gx6xxx_slc_flush_inval(struct vcoproc_instance *vcoproc)
 {
-//    struct vgx6xxx_info *vinfo = (struct vgx6xxx_info *)vcoproc->priv;
-    struct coproc_device *coproc = vcoproc->coproc;
-//    struct gx6xxx_info *info = (struct gx6xxx_info *)vcoproc->coproc->priv;
+    struct vgx6xxx_info *vinfo = (struct vgx6xxx_info *)vcoproc->priv;
+    struct gx6xxx_info *info = (struct gx6xxx_info *)vcoproc->coproc->priv;
+    RGXFWIF_KCCB_CMD flush_cmd;
     int ret;
 
-    gx6xxx_write64(coproc, RGX_CR_SLC_CTRL_FLUSH_INVAL, RGX_CR_SLC_CTRL_FLUSH_INVAL_MASKFULL);
-    ret = gx6xxx_poll_reg32(coproc, RGX_CR_SLC_STATUS0,
-                            0, RGX_CR_SLC_STATUS0_FLUSH_INVAL_PENDING_EN);
-    return ret;
+    flush_cmd.eDM = RGXFWIF_DM_GP;
+    flush_cmd.eCmdType = RGXFWIF_KCCB_CMD_SLCFLUSHINVAL;
+    flush_cmd.uCmdData.sSLCFlushInvalData.bDMContext = IMG_FALSE;
+    /* FIXME: the below don't care if no context provided which is the case */
+    flush_cmd.uCmdData.sSLCFlushInvalData.bInval = IMG_TRUE;
+    flush_cmd.uCmdData.sSLCFlushInvalData.eDM = 0;
+    flush_cmd.uCmdData.sSLCFlushInvalData.psContext.ui32Addr = 0;
+
+    vinfo->fw_power_sync[0] = 0;
+    ret = gx6xxx_fw_send_kccb_cmd(vcoproc, vinfo, &flush_cmd, 1,
+                                  &info->state_kccb_read_ofs);
+    if ( unlikely(ret < 0) )
+    {
+        COPROC_ERROR(vcoproc->coproc->dev,
+                     "failed to send SLC flush/invalidate command to FW\n");
+        return ret;
+    }
+    return 0;
 }
 
 static s_time_t gx6xxx_mmu_flush_inval(struct vcoproc_instance *vcoproc)
 {
-#if 0
     struct vgx6xxx_info *vinfo = (struct vgx6xxx_info *)vcoproc->priv;
     struct gx6xxx_info *info = (struct gx6xxx_info *)vcoproc->coproc->priv;
-#endif
-
-    struct coproc_device *coproc = vcoproc->coproc;
+    RGXFWIF_KCCB_CMD flush_cmd;
     int ret;
 
-    gx6xxx_write64(coproc, RGX_CR_SLC_CTRL_FLUSH_INVAL,
-                   RGX_CR_SLC_CTRL_FLUSH_INVAL_DM_MMU_EN);
-    ret = gx6xxx_poll_reg32(coproc, RGX_CR_SLC_STATUS0,
-                            0, RGX_CR_SLC_STATUS0_FLUSH_INVAL_PENDING_EN);
+    flush_cmd.eDM = RGXFWIF_DM_GP;
+    flush_cmd.eCmdType = RGXFWIF_KCCB_CMD_MMUCACHE;
+    flush_cmd.uCmdData.sMMUCacheData.ui32Flags = RGXFWIF_MMUCACHEDATA_FLAGS_CTX_ALL;
+    flush_cmd.uCmdData.sMMUCacheData.ui32Flags = 0xfffffff;
+    flush_cmd.uCmdData.sMMUCacheData.psMemoryContext.ui32Addr = 0;
 
-    gx6xxx_write64(coproc, RGX_CR_BIF_CTRL_INVAL, RGX_CR_BIF_CTRL_INVAL_MASKFULL);
-    ret = gx6xxx_poll_reg32(coproc, RGX_CR_BIF_CTRL_INVAL, 0, RGX_CR_BIF_CTRL_INVAL_MASKFULL);
-
-    //rgxfw_crwrite(RGX_CR_BIFPM_CTRL_INVAL, RGX_CR_BIFPM_CTRL_INVAL_TLB0_EN);
-    //bPollSucceed = rgxfw_try_crpoll_unset(RGX_CR_BIFPM_CTRL_INVAL, RGX_CR_BIFPM_CTRL_INVAL_TLB0_EN);
-    return ret;
+    vinfo->fw_power_sync[0] = 0;
+    ret = gx6xxx_fw_send_kccb_cmd(vcoproc, vinfo, &flush_cmd, 1,
+                                  &info->state_kccb_read_ofs);
+    if ( unlikely(ret < 0) )
+    {
+        COPROC_ERROR(vcoproc->coproc->dev,
+                     "failed to send MMU flush/invalidate command to FW\n");
+        return ret;
+    }
+    return 0;
 }
 
 int gx6xxx_ctx_gpu_start(struct vcoproc_instance *vcoproc,
@@ -981,7 +997,11 @@ int gx6xxx_ctx_gpu_start(struct vcoproc_instance *vcoproc,
 #endif
     }
     gx6xxx_slc_flush_inval(vcoproc);
+    gx6xxx_wait_kccb(vcoproc);
+    gx6xxx_wait_psync(vcoproc);
     gx6xxx_mmu_flush_inval(vcoproc);
+    gx6xxx_wait_kccb(vcoproc);
+    gx6xxx_wait_psync(vcoproc);
     return 0;
 }
 
