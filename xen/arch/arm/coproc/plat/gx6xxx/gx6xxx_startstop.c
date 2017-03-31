@@ -877,6 +877,58 @@ static const char *power_state_to_str(RGXFWIF_POW_STATE state)
 
 #define RGX_CR_SOFT_RESET_ALL   (RGX_CR_SOFT_RESET_MASKFULL)
 
+static s_time_t gx6xxx_slc_flush_inval(struct vcoproc_instance *vcoproc)
+{
+    struct vgx6xxx_info *vinfo = (struct vgx6xxx_info *)vcoproc->priv;
+    struct gx6xxx_info *info = (struct gx6xxx_info *)vcoproc->coproc->priv;
+    RGXFWIF_KCCB_CMD flush_cmd;
+    int ret;
+
+    flush_cmd.eDM = RGXFWIF_DM_GP;
+    flush_cmd.eCmdType = RGXFWIF_KCCB_CMD_SLCFLUSHINVAL;
+    flush_cmd.uCmdData.sSLCFlushInvalData.bDMContext = IMG_FALSE;
+    /* FIXME: the below don't care if no context provided which is the case */
+    flush_cmd.uCmdData.sSLCFlushInvalData.bInval = IMG_TRUE;
+    flush_cmd.uCmdData.sSLCFlushInvalData.eDM = 0;
+    flush_cmd.uCmdData.sSLCFlushInvalData.psContext.ui32Addr = 0;
+
+    vinfo->fw_power_sync[0] = 0;
+    ret = gx6xxx_fw_send_kccb_cmd(vcoproc, vinfo, &flush_cmd, 1,
+                                  &info->state_kccb_read_ofs);
+    if ( unlikely(ret < 0) )
+    {
+        COPROC_ERROR(vcoproc->coproc->dev,
+                     "failed to send SLC flush/invalidate command to FW\n");
+        return ret;
+    }
+    return 0;
+}
+
+static s_time_t gx6xxx_mmu_flush_inval(struct vcoproc_instance *vcoproc)
+{
+    struct vgx6xxx_info *vinfo = (struct vgx6xxx_info *)vcoproc->priv;
+    struct gx6xxx_info *info = (struct gx6xxx_info *)vcoproc->coproc->priv;
+    RGXFWIF_KCCB_CMD flush_cmd;
+    int ret;
+
+    flush_cmd.eDM = RGXFWIF_DM_GP;
+    flush_cmd.eCmdType = RGXFWIF_KCCB_CMD_MMUCACHE;
+    flush_cmd.uCmdData.sMMUCacheData.ui32Flags = RGXFWIF_MMUCACHEDATA_FLAGS_CTX_ALL;
+    flush_cmd.uCmdData.sMMUCacheData.ui32Flags = 0xfffffff;
+    flush_cmd.uCmdData.sMMUCacheData.psMemoryContext.ui32Addr = 0;
+
+    vinfo->fw_power_sync[0] = 0;
+    ret = gx6xxx_fw_send_kccb_cmd(vcoproc, vinfo, &flush_cmd, 1,
+                                  &info->state_kccb_read_ofs);
+    if ( unlikely(ret < 0) )
+    {
+        COPROC_ERROR(vcoproc->coproc->dev,
+                     "failed to send MMU flush/invalidate command to FW\n");
+        return ret;
+    }
+    return 0;
+}
+
 int gx6xxx_ctx_gpu_start(struct vcoproc_instance *vcoproc,
                          struct vgx6xxx_info *vinfo)
 {
@@ -929,6 +981,12 @@ int gx6xxx_ctx_gpu_start(struct vcoproc_instance *vcoproc,
         return ret;
 #endif
     }
+    gx6xxx_slc_flush_inval(vcoproc);
+    gx6xxx_wait_kccb(vcoproc);
+    gx6xxx_wait_psync(vcoproc);
+    gx6xxx_mmu_flush_inval(vcoproc);
+    gx6xxx_wait_kccb(vcoproc);
+    gx6xxx_wait_psync(vcoproc);
     return 0;
 }
 
@@ -992,11 +1050,9 @@ int gx6xxx_ctx_gpu_stop(struct vcoproc_instance *vcoproc,
             wait_time = info->state_curr->handler(vcoproc);
             if ( wait_time > 0 )
             {
-#ifdef GX6XXX_DEBUG
                 info->state_curr->num_retries++;
 #if GX6XXX_DEBUG_PERF
                 gx6xxx_ctx_dbg_update(info->state_curr, dbg_time_start, NOW());
-#endif
 #endif
                 return wait_time;
             }

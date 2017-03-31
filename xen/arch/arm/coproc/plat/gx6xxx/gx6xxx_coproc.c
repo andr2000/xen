@@ -35,6 +35,12 @@
 /* number of switches to collect switch time stats from */
 #define GX6XXX_SW_STATS_NUM     1000
 
+/*
+ * maximum time allowed for context switch
+ * if above this time needed consider FW/GPU dead
+ */
+#define GX6XXX_SW_DEADLINE_NS   MILLISECS(40)
+
 static const char *vgx6xxx_state_to_str(enum vgx6xxx_state state)
 {
     switch ( state )
@@ -379,7 +385,8 @@ static s_time_t gx6xxx_ctx_switch_from(struct vcoproc_instance *curr)
     {
         struct gx6xxx_info *info = (struct gx6xxx_info *)coproc->priv;
 
-        /* FIXME: be pessimistic and go into "in transit" state now,
+        /*
+         * FIXME: be pessimistic and go into "in transit" state now,
          * so from now on all read/write operations do not reach HW
          */
         vgx6xxx_set_state(curr, VGX6XXX_STATE_IN_TRANSIT);
@@ -407,6 +414,25 @@ static s_time_t gx6xxx_ctx_switch_from(struct vcoproc_instance *curr)
     }
     BUG_ON(wait_time < 0);
 out:
+    if ( unlikely( wait_time &&
+                   ((NOW() - vinfo->tm_start_sw_from) >= GX6XXX_SW_DEADLINE_NS)) )
+    {
+        struct gx6xxx_ctx_switch_state *state = gx6xxx_ctx_gpu_stop_states;
+
+        COPROC_ERROR(coproc->dev, "Failed to switch context in %lu, forcing\n",
+                     NOW() - vinfo->tm_start_sw_from);
+        wait_time = 0;
+        vgx6xxx_set_state(curr, VGX6XXX_STATE_WAITING);
+        coproc_debug = COPROC_DBG_VERB;
+
+        while ( state->handler )
+        {
+            COPROC_VERBOSE(NULL, "%s num_retries %d\n",
+                           state->name, state->num_retries);
+            state++;
+        }
+
+    }
     spin_unlock_irqrestore(&coproc->vcoprocs_lock, flags);
     return wait_time;
 
