@@ -160,6 +160,8 @@ struct gx6xxx_info
      * expected ui32ReadOffset to poll for
      */
     uint32_t state_kccb_read_ofs;
+    /* set if there was a KCCB command requiring power sync check */
+    bool state_psync_pending;
 };
 
 #endif /* __ARCH_ARM_COPROC_PLAT_GX6XXX_GX6XXX_COPROC_H__ */
