@@ -104,11 +104,9 @@ void gx6xxx_fw_dump_kccb(struct vcoproc_instance *vcoproc,
 #endif
 int gx6xxx_fw_send_kccb_cmd(struct vcoproc_instance *vcoproc,
                             struct vgx6xxx_info *vinfo,
-                            RGXFWIF_KCCB_CMD *cmd, int nr,
-                            uint32_t *expected_offset);
+                            RGXFWIF_KCCB_CMD *cmd, int nr);
 int gx6xxx_fw_wait_kccb_cmd(struct vcoproc_instance *vcoproc,
-                            struct vgx6xxx_info *vinfo,
-                            uint32_t expected_offset);
+                            struct vgx6xxx_info *vinfo);
 
 #endif /* __ARCH_ARM_COPROC_PLAT_GX6XXX_GX6XXX_FW_H__ */
 

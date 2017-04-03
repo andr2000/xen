@@ -514,28 +514,27 @@ static inline bool gx6xxx_run_always(struct vcoproc_instance *vcoproc)
 
 static inline bool gx6xxx_run_if_kccb_pending(struct vcoproc_instance *vcoproc)
 {
-    struct gx6xxx_info *info = (struct gx6xxx_info *)vcoproc->coproc->priv;
+    struct vgx6xxx_info *vinfo = (struct vgx6xxx_info *)vcoproc->priv;
 
-    return info->state_kccb_read_ofs != ~0;
+    return vinfo->state_kccb_read_ofs != ~0;
 }
 
 static inline bool gx6xxx_run_if_psync_pending(struct vcoproc_instance *vcoproc)
 {
-    struct gx6xxx_info *info = (struct gx6xxx_info *)vcoproc->coproc->priv;
+    struct vgx6xxx_info *vinfo = (struct vgx6xxx_info *)vcoproc->priv;
 
-    return info->state_psync_pending;
+    return vinfo->state_psync_pending;
 }
 
 static s_time_t gx6xxx_wait_kccb(struct vcoproc_instance *vcoproc)
 {
     struct vgx6xxx_info *vinfo = (struct vgx6xxx_info *)vcoproc->priv;
-    struct gx6xxx_info *info = (struct gx6xxx_info *)vcoproc->coproc->priv;
     int ret;
 
-    ret = gx6xxx_fw_wait_kccb_cmd(vcoproc, vinfo, info->state_kccb_read_ofs);
+    ret = gx6xxx_fw_wait_kccb_cmd(vcoproc, vinfo);
     if ( unlikely(ret < 0) )
         return GX6XXX_WAIT_TIME_US;
-    info->state_kccb_read_ofs = ~0;
+    vinfo->state_kccb_read_ofs = ~0;
     return 0;
 }
 
@@ -560,7 +559,6 @@ static s_time_t gx6xxx_wait_psync(struct vcoproc_instance *vcoproc)
 static s_time_t gx6xxx_force_idle(struct vcoproc_instance *vcoproc)
 {
     struct vgx6xxx_info *vinfo = (struct vgx6xxx_info *)vcoproc->priv;
-    struct gx6xxx_info *info = (struct gx6xxx_info *)vcoproc->coproc->priv;
     RGXFWIF_KCCB_CMD pow_cmd;
     int ret;
 
@@ -570,9 +568,8 @@ static s_time_t gx6xxx_force_idle(struct vcoproc_instance *vcoproc)
     pow_cmd.uCmdData.sPowData.uPoweReqData.bCancelForcedIdle = IMG_FALSE;
 
     vinfo->fw_power_sync[0] = 0;
-    info->state_psync_pending = true;
-    ret = gx6xxx_fw_send_kccb_cmd(vcoproc, vinfo, &pow_cmd, 1,
-                                  &info->state_kccb_read_ofs);
+    vinfo->state_psync_pending = true;
+    ret = gx6xxx_fw_send_kccb_cmd(vcoproc, vinfo, &pow_cmd, 1);
     if ( unlikely(ret < 0) )
     {
         COPROC_ERROR(vcoproc->coproc->dev,
@@ -594,7 +591,6 @@ static s_time_t gx6xxx_force_idle_check(struct vcoproc_instance *vcoproc)
 static s_time_t gx6xxx_request_power_off(struct vcoproc_instance *vcoproc)
 {
     struct vgx6xxx_info *vinfo = (struct vgx6xxx_info *)vcoproc->priv;
-    struct gx6xxx_info *info = (struct gx6xxx_info *)vcoproc->coproc->priv;
     RGXFWIF_KCCB_CMD pow_cmd[RGXFWIF_DM_MAX];
     int i, ret;
 
@@ -608,10 +604,8 @@ static s_time_t gx6xxx_request_power_off(struct vcoproc_instance *vcoproc)
     }
     /* prepare to sync with the FW and send out requests */
     vinfo->fw_power_sync[0] = 0;
-    info->state_psync_pending = true;
-    ret = gx6xxx_fw_send_kccb_cmd(vcoproc, vinfo,
-                                  pow_cmd, ARRAY_SIZE(pow_cmd),
-                                  &info->state_kccb_read_ofs);
+    vinfo->state_psync_pending = true;
+    ret = gx6xxx_fw_send_kccb_cmd(vcoproc, vinfo, pow_cmd, ARRAY_SIZE(pow_cmd));
     if ( unlikely(ret < 0) )
     {
         COPROC_ERROR(vcoproc->coproc->dev,
@@ -797,12 +791,12 @@ struct gx6xxx_ctx_switch_state gx6xxx_ctx_gpu_stop_states[] =
     {
         .handler = gx6xxx_wait_kccb,
         .run_condition = gx6xxx_run_if_kccb_pending,
-        .name = "\twait_kccb",
+        .name = "\tidle wait_kccb",
     },
     {
         .handler = gx6xxx_wait_psync,
         .run_condition = gx6xxx_run_if_psync_pending,
-        .name = "\twait_psync",
+        .name = "\tidle wait_psync",
     },
     {
         .handler = gx6xxx_force_idle_check,
@@ -818,12 +812,12 @@ struct gx6xxx_ctx_switch_state gx6xxx_ctx_gpu_stop_states[] =
     {
         .handler = gx6xxx_wait_kccb,
         .run_condition = gx6xxx_run_if_kccb_pending,
-        .name = "\twait_kccb",
+        .name = "\tpoff wait_kccb",
     },
     {
         .handler = gx6xxx_wait_psync,
         .run_condition = gx6xxx_run_if_psync_pending,
-        .name = "\twait_psync",
+        .name = "\tpoff wait_psync",
     },
     /* WAIT FOR LAST CHANCE INTERRUPTS */
     {
@@ -895,7 +889,6 @@ static const char *power_state_to_str(RGXFWIF_POW_STATE state)
 static s_time_t gx6xxx_slc_flush_inval(struct vcoproc_instance *vcoproc)
 {
     struct vgx6xxx_info *vinfo = (struct vgx6xxx_info *)vcoproc->priv;
-    struct gx6xxx_info *info = (struct gx6xxx_info *)vcoproc->coproc->priv;
     RGXFWIF_KCCB_CMD flush_cmd;
     int ret;
 
@@ -908,8 +901,7 @@ static s_time_t gx6xxx_slc_flush_inval(struct vcoproc_instance *vcoproc)
     flush_cmd.uCmdData.sSLCFlushInvalData.psContext.ui32Addr = 0;
 
     vinfo->fw_power_sync[0] = 0;
-    ret = gx6xxx_fw_send_kccb_cmd(vcoproc, vinfo, &flush_cmd, 1,
-                                  &info->state_kccb_read_ofs);
+    ret = gx6xxx_fw_send_kccb_cmd(vcoproc, vinfo, &flush_cmd, 1);
     if ( unlikely(ret < 0) )
     {
         COPROC_ERROR(vcoproc->coproc->dev,
@@ -922,7 +914,6 @@ static s_time_t gx6xxx_slc_flush_inval(struct vcoproc_instance *vcoproc)
 static s_time_t gx6xxx_mmu_flush_inval(struct vcoproc_instance *vcoproc)
 {
     struct vgx6xxx_info *vinfo = (struct vgx6xxx_info *)vcoproc->priv;
-    struct gx6xxx_info *info = (struct gx6xxx_info *)vcoproc->coproc->priv;
     RGXFWIF_KCCB_CMD flush_cmd;
     int ret;
 
@@ -933,8 +924,7 @@ static s_time_t gx6xxx_mmu_flush_inval(struct vcoproc_instance *vcoproc)
     flush_cmd.uCmdData.sMMUCacheData.psMemoryContext.ui32Addr = 0;
 
     vinfo->fw_power_sync[0] = 0;
-    ret = gx6xxx_fw_send_kccb_cmd(vcoproc, vinfo, &flush_cmd, 1,
-                                  &info->state_kccb_read_ofs);
+    ret = gx6xxx_fw_send_kccb_cmd(vcoproc, vinfo, &flush_cmd, 1);
     if ( unlikely(ret < 0) )
     {
         COPROC_ERROR(vcoproc->coproc->dev,
@@ -949,6 +939,9 @@ int gx6xxx_ctx_gpu_start(struct vcoproc_instance *vcoproc,
 {
     struct coproc_device *coproc = vcoproc->coproc;
     int ret;
+
+    vinfo->state_kccb_read_ofs = ~0;
+    vinfo->state_psync_pending = false;
 
     gx6xxx_restore_reg_ctx(vcoproc, vinfo);
 
@@ -998,10 +991,23 @@ int gx6xxx_ctx_gpu_start(struct vcoproc_instance *vcoproc,
     }
     gx6xxx_slc_flush_inval(vcoproc);
     gx6xxx_wait_kccb(vcoproc);
-    gx6xxx_wait_psync(vcoproc);
+//    gx6xxx_wait_psync(vcoproc);
     gx6xxx_mmu_flush_inval(vcoproc);
     gx6xxx_wait_kccb(vcoproc);
-    gx6xxx_wait_psync(vcoproc);
+//    gx6xxx_wait_psync(vcoproc);
+    /* flush scheduled work */
+    if ( likely(vinfo->reg_cr_mts_schedule_lo_wait_cnt) )
+    {
+        COPROC_ERROR(NULL, "dom %d has %d scheduled tasks\n",
+                     vcoproc->domain->domain_id,
+                     vinfo->reg_cr_mts_schedule_lo_wait_cnt);
+        do
+        {
+            gx6xxx_write32(coproc, RGX_CR_MTS_SCHEDULE,
+                           RGX_CR_MTS_SCHEDULE_TASK_COUNTED);
+        }
+        while (--vinfo->reg_cr_mts_schedule_lo_wait_cnt);
+    }
     return 0;
 }
 
@@ -1063,7 +1069,9 @@ int gx6xxx_ctx_gpu_stop(struct vcoproc_instance *vcoproc,
         if ( likely(info->state_curr->run_condition(vcoproc)) )
         {
             wait_time = info->state_curr->handler(vcoproc);
-            if ( wait_time > 0 )
+            if ( wait_time == 0)
+                info->state_curr->num_retries = 0;
+            else if ( wait_time > 0 )
             {
                 info->state_curr->num_retries++;
 #if GX6XXX_DEBUG_PERF
@@ -1071,7 +1079,7 @@ int gx6xxx_ctx_gpu_stop(struct vcoproc_instance *vcoproc,
 #endif
                 return wait_time;
             }
-            if ( wait_time < 0 )
+            else
             {
                 COPROC_VERBOSE(NULL, "%s wait_time %ld\n",
                                __FUNCTION__, wait_time);

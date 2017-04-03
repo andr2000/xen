@@ -72,6 +72,14 @@ struct vgx6xxx_info
      */
     atomic_t irq_count;
 
+    /* expected KCCB read offset: while injecting commands into KCCB
+     * we need to wait for those to be executed. this counter will hold
+     * expected ui32ReadOffset to poll for
+     */
+    uint32_t state_kccb_read_ofs;
+    /* set if there was a KCCB command requiring power sync check */
+    bool state_psync_pending;
+
     s_time_t tm_start_sw_to;
     s_time_t tm_start_sw_to_acc;
     int tm_cnt_sw_to;
@@ -155,13 +163,6 @@ struct gx6xxx_info
 
     /* this is the current state of the state machine during context switch */
     struct gx6xxx_ctx_switch_state *state_curr;
-    /* expected KCCB read offset: while injecting commands into KCCB
-     * we need to wait for those to be executed. this counter will hold
-     * expected ui32ReadOffset to poll for
-     */
-    uint32_t state_kccb_read_ofs;
-    /* set if there was a KCCB command requiring power sync check */
-    bool state_psync_pending;
 };
 
 #endif /* __ARCH_ARM_COPROC_PLAT_GX6XXX_GX6XXX_COPROC_H__ */

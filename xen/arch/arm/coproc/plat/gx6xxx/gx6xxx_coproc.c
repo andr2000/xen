@@ -151,6 +151,7 @@ static bool gx6xxx_on_reg_write(uint32_t offset, uint32_t val,
         break;
     case REG_LO32(RGX_CR_META_SP_MSLVCTRL1):
         COPROC_ERROR(NULL, "HANDLE me!!!! LO RGX_CR_META_SP_MSLVCTRL1\n");
+        coproc_debug = COPROC_DBG_VERB;
         WARN();
         break;
     case REG_LO32(RGX_CR_META_SP_MSLVCTRL2):
@@ -268,6 +269,9 @@ static int gx6xxx_mmio_write(struct vcpu *v, mmio_info_t *info,
     }
     if ( vinfo->state == VGX6XXX_STATE_RUNNING )
     {
+        if ( likely(ctx.offset == RGX_CR_MTS_SCHEDULE) )
+            COPROC_ERROR(NULL, "dom %d VGX6XXX_STATE_RUNNING RGX_CR_MTS_SCHEDULE_TASK_COUNTED\n",
+                         ctx.vcoproc->domain->domain_id);
 #ifdef GX6XXX_DEBUG
         if ( likely(ctx.offset == RGX_CR_MTS_SCHEDULE) )
             gx6xxx_fw_dump_kccb(ctx.vcoproc, vinfo);
@@ -282,6 +286,8 @@ static int gx6xxx_mmio_write(struct vcpu *v, mmio_info_t *info,
         {
             BUG_ON(r != RGX_CR_MTS_SCHEDULE_TASK_COUNTED);
             vinfo->reg_cr_mts_schedule_lo_wait_cnt++;
+            COPROC_ERROR(NULL, "dom %d VGX6XXX_STATE_IN_TRANSIT RGX_CR_MTS_SCHEDULE_TASK_COUNTED\n",
+                         ctx.vcoproc->domain->domain_id);
             goto out;
         }
         if ( unlikely(!gx6xxx_on_reg_write(ctx.offset, r, ctx.vcoproc)))
@@ -414,6 +420,7 @@ static s_time_t gx6xxx_ctx_switch_from(struct vcoproc_instance *curr)
     }
     BUG_ON(wait_time < 0);
 out:
+#if 0
     if ( unlikely( wait_time &&
                    ((NOW() - vinfo->tm_start_sw_from) >= GX6XXX_SW_DEADLINE_NS)) )
     {
@@ -433,6 +440,7 @@ out:
         }
 
     }
+#endif
     spin_unlock_irqrestore(&coproc->vcoprocs_lock, flags);
     return wait_time;
 
@@ -456,18 +464,6 @@ static int gx6xxx_ctx_switch_to(struct vcoproc_instance *next)
         vgx6xxx_set_state(next, VGX6XXX_STATE_RUNNING);
         vinfo->tm_start_sw_to = NOW();
         gx6xxx_ctx_gpu_start(next, vinfo);
-        /* flush scheduled work */
-        if ( likely(vinfo->reg_cr_mts_schedule_lo_wait_cnt) )
-        {
-            COPROC_DEBUG(NULL, "have %d scheduled tasks\n",
-                         vinfo->reg_cr_mts_schedule_lo_wait_cnt);
-            do
-            {
-                gx6xxx_write32(next->coproc, RGX_CR_MTS_SCHEDULE,
-                               RGX_CR_MTS_SCHEDULE_TASK_COUNTED);
-            }
-            while (--vinfo->reg_cr_mts_schedule_lo_wait_cnt);
-        }
         vinfo->tm_cnt_sw_to++;
         vinfo->tm_start_sw_to_acc += NOW() - vinfo->tm_start_sw_to;
         if ( vinfo->tm_cnt_sw_to >= GX6XXX_SW_STATS_NUM)

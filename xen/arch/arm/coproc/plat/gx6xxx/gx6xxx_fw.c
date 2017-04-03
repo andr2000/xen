@@ -661,19 +661,18 @@ void gx6xxx_fw_dump_kccb(struct vcoproc_instance *vcoproc,
  */
 int gx6xxx_fw_send_kccb_cmd(struct vcoproc_instance *vcoproc,
                             struct vgx6xxx_info *vinfo,
-                            RGXFWIF_KCCB_CMD *cmd, int nr,
-                            uint32_t *expected_offset)
+                            RGXFWIF_KCCB_CMD *cmd, int nr)
 {
     uint32_t first_cmd_offset, cmd_offset;
     RGXFWIF_KCCB_CMD *kccb = (RGXFWIF_KCCB_CMD *)vinfo->fw_kernel_ccb;
     int i;
 
-    *expected_offset = vinfo->fw_kernel_ccb_ctl->ui32ReadOffset;
-    cmd_offset = (*expected_offset - nr) &
+    vinfo->state_kccb_read_ofs = vinfo->fw_kernel_ccb_ctl->ui32ReadOffset;
+    cmd_offset = (vinfo->state_kccb_read_ofs - nr) &
                  vinfo->fw_kernel_ccb_ctl->ui32WrapMask;
     first_cmd_offset = cmd_offset;
-    COPROC_VERBOSE(NULL, "writing %d command(s) at offset %d\n",
-                   nr, cmd_offset);
+    COPROC_VERBOSE(NULL, "writing %d command(s) at offset %d ui32WriteOffset %d\n",
+                   nr, cmd_offset, vinfo->fw_kernel_ccb_ctl->ui32WriteOffset);
     for (i = 0; i < nr; i++)
     {
         kccb[cmd_offset] = cmd[i];
@@ -687,19 +686,21 @@ int gx6xxx_fw_send_kccb_cmd(struct vcoproc_instance *vcoproc,
 }
 
 int gx6xxx_fw_wait_kccb_cmd(struct vcoproc_instance *vcoproc,
-                            struct vgx6xxx_info *vinfo,
-                            uint32_t expected_offset)
+                            struct vgx6xxx_info *vinfo)
 {
     int to_us = GX6XXX_WAIT_FW_TO_NUM_US;
 
-    while ( (vinfo->fw_kernel_ccb_ctl->ui32ReadOffset != expected_offset) &&
+    while ( (vinfo->fw_kernel_ccb_ctl->ui32ReadOffset !=
+                    vinfo->state_kccb_read_ofs) &&
              to_us-- )
     {
         cpu_relax();
         udelay(1);
     };
-    COPROC_DEBUG(NULL, "ui32KCCBCmdsExecuted %d\n",
-                 vinfo->fw_trace_buf->ui32KCCBCmdsExecuted);
-    return vinfo->fw_kernel_ccb_ctl->ui32ReadOffset == expected_offset ?
+    COPROC_DEBUG(NULL, "ui32KCCBCmdsExecuted %d ui32ReadOffset %d expected_offset %d WriteOffset %d\n",
+                 vinfo->fw_trace_buf->ui32KCCBCmdsExecuted,
+                 vinfo->fw_kernel_ccb_ctl->ui32ReadOffset, vinfo->state_kccb_read_ofs,
+                 vinfo->fw_kernel_ccb_ctl->ui32WriteOffset);
+    return vinfo->fw_kernel_ccb_ctl->ui32ReadOffset == vinfo->state_kccb_read_ofs ?
                                                        0 : -ETIMEDOUT;
 }
