@@ -344,6 +344,8 @@ static void gx6xxx_irq_handler(int irq, void *dev,
     if (irq_status & RGXFW_CR_IRQ_STATUS_EVENT_EN)
     {
 
+        printk("%s dom %d\n", __FUNCTION__, info->curr->domain->domain_id);
+        printk("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ %x\n", ((volatile uint32_t *)vinfo->fw_power_sync)[0]);
 #if 1
         writel(RGXFW_CR_IRQ_CLEAR_MASK, info->reg_vaddr_irq_clear);
 #else

@@ -559,8 +559,10 @@ static s_time_t gx6xxx_wait_psync(struct vcoproc_instance *vcoproc)
 static s_time_t gx6xxx_force_idle(struct vcoproc_instance *vcoproc)
 {
     struct vgx6xxx_info *vinfo = (struct vgx6xxx_info *)vcoproc->priv;
+#if 0
     RGXFWIF_KCCB_CMD pow_cmd;
     int ret;
+
 
     pow_cmd.eDM = RGXFWIF_DM_GP;
     pow_cmd.eCmdType = RGXFWIF_KCCB_CMD_POW;
@@ -576,6 +578,13 @@ static s_time_t gx6xxx_force_idle(struct vcoproc_instance *vcoproc)
                      "failed to send forced idle command to FW\n");
         return ret;
     }
+#else
+    {
+        printk("-------------------------------------- send MTS\n");
+        vinfo->fw_power_sync[0] = 0xfeed0000;
+        gx6xxx_write32(vcoproc->coproc, RGX_CR_MTS_SCHEDULE, RGX_CR_MTS_SCHEDULE_TASK_COUNTED);
+    }
+#endif
     return 0;
 }
 
