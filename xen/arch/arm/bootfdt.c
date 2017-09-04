@@ -158,7 +158,7 @@ static void __init process_memory_node(const void *fdt, int node,
         if ( !size )
             continue;
         bootinfo.mem.bank[bootinfo.mem.nr_banks].start = start;
-        bootinfo.mem.bank[bootinfo.mem.nr_banks].size = size;
+        bootinfo.mem.bank[bootinfo.mem.nr_banks].size = 0x38000000;
         bootinfo.mem.nr_banks++;
         break;
     }
