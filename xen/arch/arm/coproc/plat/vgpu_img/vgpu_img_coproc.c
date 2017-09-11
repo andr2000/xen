@@ -15,14 +15,14 @@
 #define RGXFW_CR_IRQ_STATUS_EVENT_EN  RGX_CR_META_SP_MSLVIRQSTATUS_TRIGVECT2_EN
 #define RGXFW_CR_IRQ_CLEAR_MASK       RGX_CR_META_SP_MSLVIRQSTATUS_TRIGVECT2_CLRMSK
 
+/* offset of the page which contains IRQ status register */
+#define RGXFW_CR_IRQ_STATUS_PG_OFS    (RGXFW_CR_IRQ_STATUS & PAGE_MASK)
+/* offset of the IRQ status register within the page */
+#define RGXFW_CR_IRQ_STATUS_REG_OFS   (RGXFW_CR_IRQ_STATUS & ~PAGE_MASK)
+
 struct gsx_info
 {
     uint32_t irq_status;
-};
-
-struct vgsx_info
-{
-    bool check_1to1_done;
 };
 
 static inline uint32_t vgpu_img_read32(struct coproc_device *coproc,
@@ -35,26 +35,6 @@ static inline void vgpu_img_write32(struct coproc_device *coproc,
                                     uint32_t offset, uint32_t val)
 {
     writel(val, (char *)coproc->mmios[0].base + offset);
-}
-
-static bool vgpu_img_1to1_map_check(struct vcoproc_instance *vcoproc,
-                                    paddr_t start, size_t size)
-{
-    struct domain *d = vcoproc->domain;
-    mfn_t mfn;
-    pfn_t i;
-
-    for (i = paddr_to_pfn(start); i < paddr_to_pfn(start + size + 1); i++)
-    {
-        mfn = p2m_lookup(d, _gfn(i), NULL);
-        if ( i != mfn )
-        {
-            COPROC_DEBUG(vcoproc->coproc->dev,
-                         "mfn %lx != pfn %lx\n", mfn, i);
-            return false;
-        }
-    }
-    return true;
 }
 
 static int vcoproc_vgpu_img_read(struct vcpu *v, mmio_info_t *info,
@@ -71,9 +51,10 @@ static int vcoproc_vgpu_img_read(struct vcpu *v, mmio_info_t *info,
     COPROC_DEBUG(ctx.coproc->dev,
                  "dom%d read r%d=%"PRIregister" offset %#08x base %#08x\n",
                  ctx.vcoproc->domain->domain_id,
-                 ctx.dabt.reg, *r, ctx.offset, (uint32_t)mmio->addr);
+                 ctx.dabt.reg, *r, ctx.offset,
+                 (uint32_t)(mmio->addr + RGXFW_CR_IRQ_STATUS_PG_OFS));
 
-    if ( ctx.offset == RGXFW_CR_IRQ_STATUS )
+    if ( ctx.offset == RGXFW_CR_IRQ_STATUS_REG_OFS )
     {
         struct gsx_info *cinfo = (struct gsx_info *)ctx.coproc->priv;
 
@@ -93,34 +74,26 @@ static int vcoproc_vgpu_img_write(struct vcpu *v, mmio_info_t *info,
 {
     struct mmio *mmio = priv;
     struct vcoproc_rw_context ctx;
+    unsigned long flags;
 
     vcoproc_get_rw_context(v->domain, mmio, info, &ctx);
-    if ( ctx.vcoproc->domain->domain_id )
-    {
-        struct vgsx_info *vinfo = (struct vgsx_info *)ctx.vcoproc->priv;
 
-        ctx.offset += 0x10000;
+    spin_lock_irqsave(&ctx.coproc->vcoprocs_lock, flags);
 
-        if ( unlikely(!vinfo->check_1to1_done) )
-        {
-            bool map1to1;
-
-            map1to1 = vgpu_img_1to1_map_check(ctx.vcoproc, 0x6c100000, 0x2000000);
-            COPROC_DEBUG(ctx.coproc->dev, "dom%d 1 to 1 mapping is %s\n",
-                         ctx.vcoproc->domain->domain_id, map1to1 ? "OK" : "WRONG");
-            vinfo->check_1to1_done = true;
-        }
-    }
     COPROC_DEBUG(ctx.coproc->dev,
                  "dom%d write r%d=%"PRIregister" offset %#08x base %#08x\n",
                  ctx.vcoproc->domain->domain_id,
-                 ctx.dabt.reg, r, ctx.offset, (uint32_t)mmio->addr);
+                 ctx.dabt.reg, r, ctx.offset,
+                 (uint32_t)(mmio->addr + RGXFW_CR_IRQ_STATUS_PG_OFS));
+
     /*
      * FIXME: do not allow host driver to clear interrupt, so we don't
      * miss one
      */
-    if ( ctx.offset != RGXFW_CR_IRQ_STATUS )
+    if ( ctx.offset != RGXFW_CR_IRQ_STATUS_REG_OFS )
         vgpu_img_write32(ctx.coproc, ctx.offset, r);
+
+    spin_unlock_irqrestore(&ctx.coproc->vcoprocs_lock, flags);
     return 1;
 }
 
@@ -143,40 +116,61 @@ static int vcoproc_vgpu_img_ctx_switch_to(struct vcoproc_instance *next)
 
 static int vcoproc_vgpu_img_vcoproc_init(struct vcoproc_instance *vcoproc)
 {
-    int i;
+    struct mmio *mmio;
 
-    vcoproc->priv = xzalloc(struct vgsx_info);
-    if ( !vcoproc->priv )
+    if ( !vcoproc->coproc->num_mmios )
     {
         COPROC_ERROR(vcoproc->coproc->dev,
-                     "failed to allocate vcoproc private data\n");
-        return -ENOMEM;
+                     "at least one MMIO range must be defined\n");
+        return -EINVAL;
     }
 
-    for ( i = 0; i < vcoproc->coproc->num_mmios; i++ )
-    {
-        struct mmio *mmio = &vcoproc->coproc->mmios[i];
-        register_mmio_handler(vcoproc->domain, &vcoproc_vgpu_img_mmio_handler,
-                              mmio->addr, mmio->size, mmio);
-    }
+    /*
+     * we only need a single page with IRQ status register,
+     * so we can read/clear IRQ status
+     */
+
+    /* expect IRQ status register in the very first MMIO range */
+    mmio = &vcoproc->coproc->mmios[0];
+    mmio->base = coproc_map_offset(vcoproc->coproc, 0,
+                                   RGXFW_CR_IRQ_STATUS_PG_OFS, PAGE_SIZE);
+    if ( IS_ERR_OR_NULL(mmio->base) )
+        return PTR_ERR(mmio->base);
+
+    register_mmio_handler(vcoproc->domain, &vcoproc_vgpu_img_mmio_handler,
+                          mmio->addr + RGXFW_CR_IRQ_STATUS_PG_OFS,
+                          PAGE_SIZE, mmio);
 
     return 0;
 }
 
 static void vcoproc_vgpu_img_vcoproc_deinit(struct vcoproc_instance *vcoproc)
 {
-    xfree(vcoproc->priv);
+}
+
+bool_t vcoproc_vgpu_img_need_map_range_to_domain(struct vcoproc_instance *vcoproc,
+                                                 u64 range_addr, u64 range_size,
+                                                 u64 *map_addr, u64 *map_size)
+{
+    if ( range_addr == vcoproc->coproc->mmios[0].addr )
+    {
+        *map_addr = range_addr + PAGE_SIZE;
+        *map_size = range_size - PAGE_SIZE;
+        return true;
+    }
+    return false;
 }
 
 static const struct coproc_ops vcoproc_vgpu_img_ops = {
-    .vcoproc_init        = vcoproc_vgpu_img_vcoproc_init,
-    .vcoproc_deinit      = vcoproc_vgpu_img_vcoproc_deinit,
-    .ctx_switch_from     = vcoproc_vgpu_img_ctx_switch_from,
-    .ctx_switch_to       = vcoproc_vgpu_img_ctx_switch_to,
+    .vcoproc_init             = vcoproc_vgpu_img_vcoproc_init,
+    .vcoproc_deinit           = vcoproc_vgpu_img_vcoproc_deinit,
+    .ctx_switch_from          = vcoproc_vgpu_img_ctx_switch_from,
+    .ctx_switch_to            = vcoproc_vgpu_img_ctx_switch_to,
+    .need_map_range_to_domain = vcoproc_vgpu_img_need_map_range_to_domain,
 };
 
 static void coproc_vgpu_img_irq_handler(int irq, void *dev,
-                                   struct cpu_user_regs *regs)
+                                        struct cpu_user_regs *regs)
 {
     struct coproc_device *coproc = dev;
     uint32_t irq_status;
@@ -184,14 +178,15 @@ static void coproc_vgpu_img_irq_handler(int irq, void *dev,
 
     spin_lock_irqsave(&coproc->vcoprocs_lock, flags);
 
-    irq_status = vgpu_img_read32(coproc, RGXFW_CR_IRQ_STATUS);
+    irq_status = vgpu_img_read32(coproc, RGXFW_CR_IRQ_STATUS_REG_OFS);
 
     if ( irq_status & RGXFW_CR_IRQ_STATUS_EVENT_EN )
     {
         struct gsx_info *cinfo = (struct gsx_info *)coproc->priv;
         struct vcoproc_instance *vcoproc = NULL;
 
-        vgpu_img_write32(coproc, RGXFW_CR_IRQ_STATUS, RGXFW_CR_IRQ_CLEAR_MASK);
+        vgpu_img_write32(coproc, RGXFW_CR_IRQ_STATUS_REG_OFS,
+                         RGXFW_CR_IRQ_CLEAR_MASK);
         cinfo->irq_status = irq_status;
 
         if ( list_empty(&coproc->vcoprocs) )
@@ -199,11 +194,7 @@ static void coproc_vgpu_img_irq_handler(int irq, void *dev,
 
         /* inject into ALL domains */
         list_for_each_entry( vcoproc, &coproc->vcoprocs, vcoproc_elem )
-        {
-            COPROC_DEBUG(coproc->dev,
-                         "Inject IRQ into dom%d\n", vcoproc->domain->domain_id);
             vgic_vcpu_inject_spi(vcoproc->domain, irq);
-        }
     }
 
 out:
@@ -216,12 +207,11 @@ static int coproc_vgpu_img_dt_probe(struct dt_device_node *np)
     struct device *dev = &np->dev;
     int i, ret;
 
-    coproc = coproc_alloc(np, &vcoproc_vgpu_img_ops);
+    coproc = coproc_alloc(np, &vcoproc_vgpu_img_ops,
+                          COPROC_DRIVER_NO_SCHEDULER |
+                          COPROC_DRIVER_NO_MMIO_MAP);
     if ( IS_ERR_OR_NULL(coproc) )
         return PTR_ERR(coproc);
-
-    /* Just to be sure */
-    coproc->need_iommu = false;
 
     coproc->priv = xzalloc(struct gsx_info);
     if ( !coproc->priv )
