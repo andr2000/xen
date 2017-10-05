@@ -804,9 +804,10 @@ static int copy_node_by_path(libxl__gc *gc, const char *path,
  *  - /passthrough node
  *  - /aliases node
  */
-static int copy_partial_fdt(libxl__gc *gc, void *fdt, void *pfdt)
+static int copy_partial_fdt(libxl__gc *gc, void *fdt, void *pfdt,
+                            const libxl_domain_build_info *info)
 {
-    int r;
+    int i, r;
 
     r = copy_node_by_path(gc, "/passthrough", fdt, pfdt);
     if (r < 0) {
@@ -818,6 +819,16 @@ static int copy_partial_fdt(libxl__gc *gc, void *fdt, void *pfdt)
     if (r < 0 && r != -FDT_ERR_NOTFOUND) {
         LOG(ERROR, "Can't copy the node \"/aliases\" from the partial FDT");
         return r;
+    }
+
+    for (i = 0; i < libxl_string_list_length(&info->dt_passthrough_nodes);
+         i++) {
+        r = copy_node_by_path(gc, info->dt_passthrough_nodes[i], fdt, pfdt);
+        if (r < 0 && r != -FDT_ERR_NOTFOUND) {
+            LOG(ERROR, "Can't copy the node \"%s\" from the partial FDT",
+                info->dt_passthrough_nodes[i]);
+            return r;
+        }
     }
 
     return 0;
@@ -857,7 +868,8 @@ static int check_partial_fdt(libxl__gc *gc, void *fdt, size_t size)
     return ERROR_FAIL;
 }
 
-static int copy_partial_fdt(libxl__gc *gc, void *fdt, void *pfdt)
+static int copy_partial_fdt(libxl__gc *gc, void *fdt, void *pfdt,
+                            const libxl_domain_build_info *info)
 {
     /*
      * We should never be here when the partial device tree is not
@@ -989,7 +1001,7 @@ next_resize:
         FDT( make_hypervisor_node(gc, fdt, vers) );
 
         if (pfdt) {
-            FDT( copy_partial_fdt(gc, fdt, pfdt) );
+            FDT( copy_partial_fdt(gc, fdt, pfdt, info) );
             FDT( copy_coprocs_nodes(gc, fdt, pfdt, info) );
         }
 
