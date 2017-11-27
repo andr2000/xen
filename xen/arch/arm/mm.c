@@ -1275,7 +1275,7 @@ long arch_memory_op(int op, XEN_GUEST_HANDLE_PARAM(void) arg)
     {
         struct xen_p2m_lookup req;
         struct domain *d;
-        int i;
+        int i, ret;
 
         if ( copy_from_guest(&req, arg, 1) )
             return -EFAULT;
@@ -1299,11 +1299,23 @@ long arch_memory_op(int op, XEN_GUEST_HANDLE_PARAM(void) arg)
 
             ma = pfn_to_paddr(p2m_lookup(d, paddr_to_pfn(pa), NULL));
 
+#if RETURN_IPA_EQU_PA
+            if ( unlikely(copy_to_guest_offset(req.ma, i, &pa, 1)) )
+#else
             if ( unlikely(copy_to_guest_offset(req.ma, i, &ma, 1)) )
+#endif
             {
                 rcu_unlock_domain(d);
                 return -EFAULT;
             }
+
+#if RETURN_IPA_EQU_PA
+            ret = iommu_map_pages(hardware_domain, paddr_to_pfn(pa), paddr_to_pfn(ma),
+                                0, IOMMUF_gsx_check | IOMMUF_readable | IOMMUF_writable);
+#else
+            ret = iommu_map_pages(hardware_domain, paddr_to_pfn(ma), paddr_to_pfn(ma),
+                                0, IOMMUF_gsx_check | IOMMUF_readable | IOMMUF_writable);
+#endif
         }
         rcu_unlock_domain(d);
         return 0;

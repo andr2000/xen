@@ -77,6 +77,8 @@ void iommu_teardown(struct domain *d);
 #define IOMMUF_readable  (1u<<_IOMMUF_readable)
 #define _IOMMUF_writable 1
 #define IOMMUF_writable  (1u<<_IOMMUF_writable)
+#define _IOMMUF_gsx_check 2
+#define IOMMUF_gsx_check  (1u<<_IOMMUF_gsx_check)
 int __must_check iommu_map_pages(struct domain *d, unsigned long gfn,
                                  unsigned long mfn, unsigned int order,
                                  unsigned int flags);

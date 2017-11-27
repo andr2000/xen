@@ -808,7 +808,7 @@ static int ipmmu_domain_init_context(struct ipmmu_vmsa_domain *domain)
 	 */
 	domain->cfg.quirks = IO_PGTABLE_QUIRK_ARM_NS;
 	domain->cfg.pgsize_bitmap = SZ_1G | SZ_2M | SZ_4K,
-	domain->cfg.ias = domain->root->features->imctr_va64 ? 38 : 32;
+	domain->cfg.ias = domain->root->features->imctr_va64 ? 39 : 32;
 	domain->cfg.oas = 40;
 	domain->cfg.tlb = &ipmmu_gather_ops;
 #if 0 /* Xen: Not needed */
@@ -2569,21 +2569,43 @@ static int __must_check ipmmu_vmsa_map_pages(struct domain *d,
 {
 	struct ipmmu_vmsa_xen_domain *xen_domain = dom_iommu(d)->arch.priv;
 	size_t size = PAGE_SIZE * (1UL << order);
-	int ret, prot = 0;
+	int ret = 0, prot = 0;
 
-	if (!xen_domain || !xen_domain->base_context)
-		return -EINVAL;
+	if ( d->domain_id != 0 ) {
+		if (!xen_domain || !xen_domain->base_context)
+			return -EINVAL;
 
-	if (flags & IOMMUF_writable)
-		prot |= IOMMU_WRITE;
-	if (flags & IOMMUF_readable)
-		prot |= IOMMU_READ;
+		if (flags & IOMMUF_writable)
+			prot |= IOMMU_WRITE;
+		if (flags & IOMMUF_readable)
+			prot |= IOMMU_READ;
 
-	spin_lock(&xen_domain->lock);
-	ret = ipmmu_map(xen_domain->base_context, pfn_to_paddr(gfn),
-			pfn_to_paddr(mfn), size, prot);
-	spin_unlock(&xen_domain->lock);
+		spin_lock(&xen_domain->lock);
+		ret = ipmmu_map(xen_domain->base_context, pfn_to_paddr(gfn),
+				pfn_to_paddr(mfn), size, prot);
+		spin_unlock(&xen_domain->lock);
+	} else {
+		if (flags & IOMMUF_gsx_check) {
+			if (!xen_domain || !xen_domain->base_context)
+				return -EINVAL;
 
+			if (flags & IOMMUF_writable)
+				prot |= IOMMU_WRITE;
+			if (flags & IOMMUF_readable)
+				prot |= IOMMU_READ;
+
+#if 0
+			 printk(XENLOG_ERR
+			                   "d%d: IOMMU mapping gfn %#lx to mfn %#lx order %u\n",
+			                   d->domain_id, gfn, mfn, order);
+#endif
+
+			spin_lock(&xen_domain->lock);
+			ret = ipmmu_map(xen_domain->base_context, pfn_to_paddr(gfn),
+					pfn_to_paddr(mfn), size, prot);
+			spin_unlock(&xen_domain->lock);
+		}
+	}
 	return ret;
 }
 
@@ -2591,23 +2613,40 @@ static int __must_check ipmmu_vmsa_unmap_pages(struct domain *d,
 		unsigned long gfn, unsigned int order)
 {
 	struct ipmmu_vmsa_xen_domain *xen_domain = dom_iommu(d)->arch.priv;
-	size_t ret, size = PAGE_SIZE * (1UL << order);
+	size_t ret = 0, size = PAGE_SIZE * (1UL << order);
 
-	if (!xen_domain || !xen_domain->base_context)
-		return -EINVAL;
+	if ( d->domain_id != 0 ) {
+		if (!xen_domain || !xen_domain->base_context)
+			return -EINVAL;
 
-	spin_lock(&xen_domain->lock);
-	ret = ipmmu_unmap(xen_domain->base_context, pfn_to_paddr(gfn), size);
-	spin_unlock(&xen_domain->lock);
+		spin_lock(&xen_domain->lock);
+		ret = ipmmu_unmap(xen_domain->base_context, pfn_to_paddr(gfn), size);
+		spin_unlock(&xen_domain->lock);
 
-	/*
-	 * We don't check how many bytes were actually unmapped. Otherwise we
-	 * should have raised an error every time we hit an area that isn't mapped.
-	 * And the p2m's attempt to unmap the same page twice can lead to crash or
-	 * panic. We think it is better to have corresponding warns inside
-	 * page table allocator for complaining about that rather than
-	 * breaking the whole system.
-	 */
+		/*
+		 * We don't check how many bytes were actually unmapped. Otherwise we
+		 * should have raised an error every time we hit an area that isn't mapped.
+		 * And the p2m's attempt to unmap the same page twice can lead to crash or
+		 * panic. We think it is better to have corresponding warns inside
+		 * page table allocator for complaining about that rather than
+		 * breaking the whole system.
+		 */
+	} else {
+#if 0
+		/*if (flags & IOMMUF_gsx_check)*/ {
+			if (!xen_domain || !xen_domain->base_context)
+				return -EINVAL;
+
+			 printk(XENLOG_ERR
+			                   "d%d: IOMMU unmapping gfn %#lx order %u\n",
+			                   d->domain_id, gfn, order);
+
+			spin_lock(&xen_domain->lock);
+			ret = ipmmu_unmap(xen_domain->base_context, pfn_to_paddr(gfn), size);
+			spin_unlock(&xen_domain->lock);
+		}
+#endif
+	}
 	return IS_ERR_VALUE(ret) ? ret : 0;
 }
 
