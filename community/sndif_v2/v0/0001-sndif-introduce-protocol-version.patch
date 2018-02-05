@@ -1,0 +1,35 @@
+From 9e1973879cd6b40807a76aee3528cbcbccc36665 Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Thu, 2 Nov 2017 08:35:24 +0200
+Subject: [Xen-devel][PATCH 1/2] sndif: introduce protocol version
+
+Protocol version was referenced in the protocol description,
+but missed its definition. Fix this by adding a constant
+for current protocol version.
+
+Signed-off-by: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+---
+ xen/include/public/io/sndif.h | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/xen/include/public/io/sndif.h b/xen/include/public/io/sndif.h
+index c5c1978406b3..b0e6ac35e131 100644
+--- a/xen/include/public/io/sndif.h
++++ b/xen/include/public/io/sndif.h
+@@ -38,6 +38,13 @@
+ 
+ /*
+  ******************************************************************************
++ *                           Protocol version
++ ******************************************************************************
++ */
++#define XENSND_PROTOCOL_VERSION         "1"
++
++/*
++ ******************************************************************************
+  *                  Feature and Parameter Negotiation
+  ******************************************************************************
+  *
+-- 
+2.7.4
+

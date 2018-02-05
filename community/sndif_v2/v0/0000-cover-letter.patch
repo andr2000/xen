@@ -1,0 +1,85 @@
+From 93b1fb1a46dd24bcd877285fb7bcdef981eb5538 Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Mon, 5 Feb 2018 09:59:01 +0200
+Subject: [Xen-devel][PATCH 0/2] sndif: add explicit back and front synchronization
+
+Hi, all!
+
+Foreword
+========
+
+This change is aimed to add support for explicit back and front
+synchronization during playback and capture in response to comments
+raised during upstream attempt of the para-virtualized sound frontend
+driver for Xen [1], [2] and gather opinions from the relevant communities
+(ALSA, Xen) on the change.
+
+The relevant backend is implemented as a user-space application [3]
+and uses accompanying helper library [4].
+
+Both frontend driver and backend were tested on real HW running Xen hypervisor
+(Renesas R-Car ARM based H3/M3 boards, x86) to make sure the proposed
+solution does work.
+
+Rationale
+=========
+
+During the first attempt to upstream the Linux front driver [5] number
+of comments and concerns were raised, one of the biggest flaws in the
+design were questioned by both Clemens Ladisch [6] and
+Takashi Sakamoto [7]: the absence of synchronization between frontend
+and backend during capture/playback. Two options were discussed:
+
+“In design of ALSA PCM core, drivers are expected to synchronize to
+actual hardwares for semi-realtime data transmission. The
+synchronization is done by two points:
+1) Interrupts to respond events from actual hardwares.
+2) Positions of actual data transmission in any serial sound interfaces
+    of actual hardwares.
+“
+
+and finally a change to the existing protocol was suggested:
+
+“In 'include/xen/interface/io/sndif.h', there's no functionalities I
+described the above:
+1. notifications from DomU to Dom0 about the size of period for
+    interrupts from actual hardwares. Or no way from Dom0 to DomU about
+    the configured size of the period.
+2. notifications of the interrupts from actual hardwares to DomU.”
+
+This is implemented as a change to the sndif protocol and allows removing
+period emulation:
+1. Introduced a new event channel from back to front
+2. New event with number of bytes played/captured (XENSND_EVT_CUR_POS,
+   to be used for sending snd_pcm_period_elapsed at frontend (in Linux
+   implementation). Sent in bytes, not frames to make the protocol
+   generic and consistent)
+3. New request for playback/capture control (XENSND_OP_TRIGGER) with
+   start/pause/stop/resume sub-ops
+4. Playback/capture buffer size is set on the backend side via
+   XENSND_FIELD_BUFFER_SIZE XenStore entry
+
+Waiting for your valuable comments,
+
+Thank you,
+Oleksandr
+
+[1] https://github.com/andr2000/linux/commits/snd_upstream_v1
+[2] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/xen/interface/io/sndif.h
+[3] https://github.com/xen-troops/snd_be
+[4] https://github.com/xen-troops/libxenbe
+[5] https://lkml.org/lkml/2017/8/7/363
+[6] http://mailman.alsa-project.org/pipermail/alsa-devel/2017-August/123617.html
+[7] http://mailman.alsa-project.org/pipermail/alsa-devel/2017-August/123744.html
+
+
+Oleksandr Andrushchenko (2):
+  sndif: introduce protocol version
+  sndif: add explicit back and front synchronization
+
+ xen/include/public/io/sndif.h | 173 +++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 170 insertions(+), 3 deletions(-)
+
+-- 
+2.7.4
+
