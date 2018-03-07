@@ -465,11 +465,18 @@
 #define XENSND_OP_MUTE                  6
 #define XENSND_OP_UNMUTE                7
 #define XENSND_OP_TRIGGER               8
+#define XENSND_OP_HW_PARAM_QUERY        9
 
 #define XENSND_OP_TRIGGER_START         0
 #define XENSND_OP_TRIGGER_PAUSE         1
 #define XENSND_OP_TRIGGER_STOP          2
 #define XENSND_OP_TRIGGER_RESUME        3
+
+#define XENSND_OP_HW_PARAM_FORMAT       0
+#define XENSND_OP_HW_PARAM_RATE         1
+#define XENSND_OP_HW_PARAM_BUFFER       2
+#define XENSND_OP_HW_PARAM_PERIOD       3
+#define XENSND_OP_HW_PARAM_CHANNELS     4
 
 /*
  ******************************************************************************
@@ -828,28 +835,127 @@ struct xensnd_trigger_req {
 };
 
 /*
+ * Request stream configuration parameter range: request interval or
+ *   bit mask of the supported values for the parameter given.
+ *
+ *   Sound device configuration for a particular stream is a limited subset
+ *   of the multidimensional configuration available on XenStore, for instance,
+ *   once frame rate has been selected there is a limited supported range
+ *   for sample rates becomes available (which might be the same set configured
+ *   on XenStore or less). For example, selecting 96kHz sample rate may limit
+ *   number of channels available for such configuration from 4 to 2 etc.
+ *   Thus, each call to XENSND_OP_HW_PARAM_QUERY will reduce configuration
+ *   space making it possible to iteratively get the final stream configuration,
+ *   used in XENSND_OP_OPEN request.
+ *
+ *   See response format for this request.
+ *
+ *         0                1                 2               3        octet
+ * +----------------+----------------+----------------+----------------+
+ * |               id                | _HW_PARAM_QUERY|    reserved    | 4
+ * +----------------+----------------+----------------+----------------+
+ * |                             reserved                              | 8
+ * +----------------+----------------+----------------+----------------+
+ * |     param      |                     reserved                     | 12
+ * +----------------+----------------+----------------+----------------+
+ * |                      min or mask low 32-bit                       | 16
+ * +----------------+----------------+----------------+----------------+
+ * |                      max or mask high 32-bit                      | 20
+ * +----------------+----------------+----------------+----------------+
+ * |                             reserved                              | 24
+ * +----------------+----------------+----------------+----------------+
+ * |                             reserved                              | 28
+ * +----------------+----------------+----------------+----------------+
+ * |                             reserved                              | 32
+ * +----------------+----------------+----------------+----------------+
+ *
+ * param - uint8_t, XENSND_OP_HW_PARAM_XXX value
+ *
+ * The following parameters' payload treated as interval:
+ *   XENSND_OP_HW_PARAM_RATE
+ *   XENSND_OP_HW_PARAM_BUFFER
+ *   XENSND_OP_HW_PARAM_PERIOD
+ *   XENSND_OP_HW_PARAM_CHANNELS
+ *
+ * For interval parameters the payload of the request:
+ *   min - uint32_t, minimum value of the parameter
+ *   max - uint32_t, maximum value of the parameter
+ *
+ * For the following parameters their min and max values are expressed in
+ * frames:
+ *   XENSND_OP_HW_PARAM_BUFFER
+ *   XENSND_OP_HW_PARAM_PERIOD
+ * where frame is defined as a product of the number of channels by the
+ * number of octets per one sample.
+ *
+ * The following parameters' payload treated as a bit mask:
+ *   XENSND_OP_HW_PARAM_FORMAT
+ *
+ * For mask parameters the payload of the request:
+ *   mask - uint64_t, bit mask representing values of the parameter
+ */
+
+struct xensnd_query_hw_param_req {
+    uint8_t param;
+    uint8_t reserved[3];
+    union {
+        struct {
+            uint32_t min;
+            uint32_t max;
+        } interval;
+        uint64_t mask;
+    } val;
+};
+
+/*
  *---------------------------------- Responses --------------------------------
  *
  * All response packets have the same length (32 octets)
  *
- * Response for all requests:
+ * All response packets have common header:
  *         0                1                 2               3        octet
  * +----------------+----------------+----------------+----------------+
  * |               id                |    operation   |    reserved    | 4
  * +----------------+----------------+----------------+----------------+
  * |                              status                               | 8
  * +----------------+----------------+----------------+----------------+
- * |                             reserved                              | 12
+ *
+ * id - uint16_t, copied from the request
+ * operation - uint8_t, XENSND_OP_* - copied from request
+ * status - int32_t, response status, zero on success and -XEN_EXX on failure
+ *
+ *
+ * HW parameter query response - response for XENSND_OP_HW_PARAM_QUERY:
+ *         0                1                 2               3        octet
+ * +----------------+----------------+----------------+----------------+
+ * |               id                |    operation   |    reserved    | 4
+ * +----------------+----------------+----------------+----------------+
+ * |                              status                               | 8
+ * +----------------+----------------+----------------+----------------+
+ * |                      min or mask low 32-bit                       | 12
+ * +----------------+----------------+----------------+----------------+
+ * |                      max or mask high 32-bit                      | 16
+ * +----------------+----------------+----------------+----------------+
+ * |                             reserved                              | 20
  * +----------------+----------------+----------------+----------------+
  * |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/|
  * +----------------+----------------+----------------+----------------+
  * |                             reserved                              | 32
  * +----------------+----------------+----------------+----------------+
  *
- * id - uint16_t, copied from the request
- * operation - uint8_t, XENSND_OP_* - copied from request
- * status - int32_t, response status, zero on success and -XEN_EXX on failure
- *
+ * The payload meaning is the same as in the corresponing HW parameter
+ * request: see XENSND_OP_HW_PARAM_QUERY for details.
+ */
+
+union xensnd_query_hw_param_resp {
+    struct {
+        uint32_t min;
+        uint32_t max;
+    } interval;
+    uint64_t mask;
+};
+
+/*
  *----------------------------------- Events ----------------------------------
  *
  * Events are sent via a shared page allocated by the front and propagated by
@@ -902,6 +1008,7 @@ struct xensnd_req {
         struct xensnd_open_req open;
         struct xensnd_rw_req rw;
         struct xensnd_trigger_req trigger;
+        struct xensnd_query_hw_param_req hw_param;
         uint8_t reserved[24];
     } op;
 };
@@ -911,7 +1018,10 @@ struct xensnd_resp {
     uint8_t operation;
     uint8_t reserved;
     int32_t status;
-    uint8_t reserved1[24];
+    union {
+        union xensnd_query_hw_param_resp hw_param;
+        uint8_t reserved1[24];
+    } resp;
 };
 
 struct xensnd_evt {
