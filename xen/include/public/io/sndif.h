@@ -250,6 +250,11 @@
  *
  *      The maximum size in octets of the buffer to allocate per stream.
  *
+ * buffer-size-min
+ *      Values:         <uint32_t>
+ *
+ *      The minimum size in octets of the buffer to allocate per stream.
+ *
  *----------------------- Virtual sound card settings -------------------------
  * short-name
  *      Values:         <char[32]>
@@ -465,11 +470,19 @@
 #define XENSND_OP_MUTE                  6
 #define XENSND_OP_UNMUTE                7
 #define XENSND_OP_TRIGGER               8
+#define XENSND_OP_HW_PARAM_SET          9
+#define XENSND_OP_HW_PARAM_QUERY        10
 
 #define XENSND_OP_TRIGGER_START         0
 #define XENSND_OP_TRIGGER_PAUSE         1
 #define XENSND_OP_TRIGGER_STOP          2
 #define XENSND_OP_TRIGGER_RESUME        3
+
+#define XENSND_OP_HW_PARAM_FORMAT       0
+#define XENSND_OP_HW_PARAM_RATE         1
+#define XENSND_OP_HW_PARAM_BUFFER       2
+#define XENSND_OP_HW_PARAM_PERIOD       3
+#define XENSND_OP_HW_PARAM_CHANNELS     4
 
 /*
  ******************************************************************************
@@ -503,6 +516,7 @@
 #define XENSND_FIELD_SAMPLE_RATES       "sample-rates"
 #define XENSND_FIELD_SAMPLE_FORMATS     "sample-formats"
 #define XENSND_FIELD_BUFFER_SIZE        "buffer-size"
+#define XENSND_FIELD_BUFFER_SIZE_MIN    "buffer-size-min"
 
 /* Stream type field values. */
 #define XENSND_STREAM_TYPE_PLAYBACK     "p"
@@ -828,28 +842,122 @@ struct xensnd_trigger_req {
 };
 
 /*
+ * Request stream configuration parameter selection:
+ *   Sound device configuration for a particular stream is a limited subset
+ *   of the multidimensional configuration available on XenStore, e.g.
+ *   once the frame rate has been selected there is a limited supported range
+ *   for sample rates becomes available (which might be the same set configured
+ *   on XenStore or less). For example, selecting 96kHz sample rate may limit
+ *   number of channels available for such configuration from 4 to 2 etc.
+ *   Thus, each call to XENSND_OP_SET_HW_PARAM will reduce configuration space
+ *   making it possible to iteratively get the final stream configuration,
+ *   used in XENSND_OP_OPEN request.
+ *
+ *         0                1                 2               3        octet
+ * +----------------+----------------+----------------+----------------+
+ * |               id                |_OP_SET_HW_PARAM|    reserved    | 4
+ * +----------------+----------------+----------------+----------------+
+ * |                             reserved                              | 8
+ * +----------------+----------------+----------------+----------------+
+ * |                               value                               | 12
+ * +----------------+----------------+----------------+----------------+
+ * |      type      |                     reserved                     | 16
+ * +----------------+----------------+----------------+----------------+
+ * |                             reserved                              | 20
+ * +----------------+----------------+----------------+----------------+
+ * |                             reserved                              | 24
+ * +----------------+----------------+----------------+----------------+
+ * |                             reserved                              | 28
+ * +----------------+----------------+----------------+----------------+
+ * |                             reserved                              | 32
+ * +----------------+----------------+----------------+----------------+
+ *
+ * value - uint32_t, requested value of the parameter
+ * type - uint8_t, XENSND_OP_HW_PARAM_XXX value
+ */
+
+struct xensnd_set_hw_param_req {
+    uint32_t value;
+    uint8_t type;
+};
+
+/*
+ * Request stream configuration parameter interval: request interval of
+ *   supported values for the parameter given. See response format for this
+ *   request.
+ *
+ *         0                1                 2               3        octet
+ * +----------------+----------------+----------------+----------------+
+ * |               id                | _HW_PARAM_QUERY|    reserved    | 4
+ * +----------------+----------------+----------------+----------------+
+ * |                             reserved                              | 8
+ * +----------------+----------------+----------------+----------------+
+ * |      type      |                     reserved                     | 16
+ * +----------------+----------------+----------------+----------------+
+ * |                             reserved                              | 16
+ * +----------------+----------------+----------------+----------------+
+ * |                             reserved                              | 20
+ * +----------------+----------------+----------------+----------------+
+ * |                             reserved                              | 24
+ * +----------------+----------------+----------------+----------------+
+ * |                             reserved                              | 28
+ * +----------------+----------------+----------------+----------------+
+ * |                             reserved                              | 32
+ * +----------------+----------------+----------------+----------------+
+ *
+ * type - uint8_t, XENSND_OP_HW_PARAM_XXX value
+ */
+
+struct xensnd_query_hw_param_req {
+    uint8_t type;
+};
+
+/*
  *---------------------------------- Responses --------------------------------
  *
  * All response packets have the same length (32 octets)
  *
- * Response for all requests:
+ * All response packets have common header:
  *         0                1                 2               3        octet
  * +----------------+----------------+----------------+----------------+
  * |               id                |    operation   |    reserved    | 4
  * +----------------+----------------+----------------+----------------+
  * |                              status                               | 8
  * +----------------+----------------+----------------+----------------+
- * |                             reserved                              | 12
+ *
+ * id - uint16_t, copied from the request
+ * operation - uint8_t, XENSND_OP_* - copied from request
+ * status - int32_t, response status, zero on success and -XEN_EXX on failure
+ *
+ *
+ * HW parameter query response - response for XENSND_OP_HW_PARAM_QUERY:
+ *         0                1                 2               3        octet
+ * +----------------+----------------+----------------+----------------+
+ * |               id                |    operation   |    reserved    | 4
+ * +----------------+----------------+----------------+----------------+
+ * |                              status                               | 8
+ * +----------------+----------------+----------------+----------------+
+ * |                                min                                | 12
+ * +----------------+----------------+----------------+----------------+
+ * |                                max                                | 16
+ * +----------------+----------------+----------------+----------------+
+ * |                             reserved                              | 20
  * +----------------+----------------+----------------+----------------+
  * |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/|
  * +----------------+----------------+----------------+----------------+
  * |                             reserved                              | 32
  * +----------------+----------------+----------------+----------------+
  *
- * id - uint16_t, copied from the request
- * operation - uint8_t, XENSND_OP_* - copied from request
- * status - int32_t, response status, zero on success and -XEN_EXX on failure
- *
+ * min - uint32_t, minimum value of the parameter that can be used
+ * max - uint32_t, maximum value of the parameter that can be used
+ */
+
+struct xensnd_query_hw_param_resp {
+    uint32_t min;
+    uint32_t max;
+};
+
+/*
  *----------------------------------- Events ----------------------------------
  *
  * Events are sent via a shared page allocated by the front and propagated by
@@ -902,6 +1010,8 @@ struct xensnd_req {
         struct xensnd_open_req open;
         struct xensnd_rw_req rw;
         struct xensnd_trigger_req trigger;
+        struct xensnd_set_hw_param_req set_hw_param;
+        struct xensnd_query_hw_param_req query_hw_param;
         uint8_t reserved[24];
     } op;
 };
@@ -911,7 +1021,10 @@ struct xensnd_resp {
     uint8_t operation;
     uint8_t reserved;
     int32_t status;
-    uint8_t reserved1[24];
+    union {
+        struct xensnd_query_hw_param_resp hw_param;
+        uint8_t reserved1[24];
+    } resp;
 };
 
 struct xensnd_evt {
