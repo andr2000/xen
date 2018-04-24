@@ -1,0 +1,52 @@
+From 509ddbf4821c2de44e5350a79ac6d4915265b6ea Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Wed, 14 Mar 2018 17:50:11 +0200
+Subject: [Xen-devel][PATCH v2 0/3] sndif: add explicit back and front synchronization
+
+Hello, all!
+
+In order to provide explicit synchronization between backend and
+frontend the following changes are introduced in the protocol:
+ - bump protocol version to 2
+ - add new ring buffer for sending asynchronous events from
+   backend to frontend to report number of bytes played by the
+   frontend (XENSND_EVT_CUR_POS)
+ - introduce trigger events for playback control: start/stop/pause/resume
+ - add "req-" prefix to event-channel and ring-ref to unify naming
+   of the Xen event channels for requests and events
+
+
+Changes since v1:
+
+1. Changed protocol version definition from string to integer,
+so it can easily be used in comparisons.
+Konrad, I have removed your r-b tag for the reason of this change.
+
+2. In order to provide explicit stream parameter negotiation between
+backend and frontend the following changes are introduced in the protocol:
+add XENSND_OP_HW_PARAM_QUERY request to read/update
+configuration space for the parameter given: request passes
+desired parameter interval (mask) and the response to this request
+returns min/max interval (mask) for the parameter to be used.
+
+Parameters supported by this request/response:
+ - format mask
+ - sample rate interval
+ - number of channels interval
+ - buffer size, interval, frames
+ - period size, interval, frames
+
+Thank you,
+Oleksandr Andrushchenko
+
+Oleksandr Andrushchenko (3):
+  sndif: Introduce protocol version
+  sndif: Add explicit back and front synchronization
+  sndif: Add explicit back and front parameter negotiation
+
+ xen/include/public/io/sndif.h | 295 ++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 286 insertions(+), 9 deletions(-)
+
+-- 
+2.7.4
+

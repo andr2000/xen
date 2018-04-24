@@ -1,0 +1,39 @@
+From de082f8909060956748ce9063ac185deac1b1775 Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Fri, 16 Mar 2018 11:55:00 +0200
+Subject: [Xen-devel][PATCH v3 2/5] sndif: Fix missed "reserved" fields in
+ comments
+
+Some of the request descriptions have "reserved" fields
+missed: fix this by adding corresponidng entries.
+
+Signed-off-by: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+---
+ xen/include/public/io/sndif.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/xen/include/public/io/sndif.h b/xen/include/public/io/sndif.h
+index 667e610fda2b..916be1d3a13f 100644
+--- a/xen/include/public/io/sndif.h
++++ b/xen/include/public/io/sndif.h
+@@ -680,6 +680,8 @@ struct xensnd_rw_req {
+  * +----------------+----------------+----------------+----------------+
+  * |                              length                               | 16
+  * +----------------+----------------+----------------+----------------+
++ * |                             reserved                              | 20
++ * +----------------+----------------+----------------+----------------+
+  * |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/|
+  * +----------------+----------------+----------------+----------------+
+  * |                             reserved                              | 32
+@@ -720,6 +722,8 @@ struct xensnd_rw_req {
+  * +----------------+----------------+----------------+----------------+
+  * |                              length                               | 16
+  * +----------------+----------------+----------------+----------------+
++ * |                             reserved                              | 20
++ * +----------------+----------------+----------------+----------------+
+  * |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/|
+  * +----------------+----------------+----------------+----------------+
+  * |                             reserved                              | 32
+-- 
+2.7.4
+
