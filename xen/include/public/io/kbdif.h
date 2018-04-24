@@ -132,6 +132,29 @@
  *      OBSOLETE, not recommended for use.
  *      PFN of the shared page.
  *
+ *--------------------------- Frontend Options -------------------------------
+ *
+ * For the below options if corresponding XenStore entry omitted,
+ * then the value must be treated as set to 0.
+ *
+ * opt-no-pointer
+ *      Values:         <uint>
+ *
+ *      If no virtual pointer device to be exposed by the frontend then
+ *      this must be set to 1.
+ *
+ * opt-no-keyboard
+ *      Values:         <uint>
+ *
+ *      If no virtual keyboard device to be exposed by the frontend then
+ *      this must be set to 1.
+ *
+ * opt-no-multi-touch
+ *      Values:         <uint>
+ *
+ *      If no virtual multi-touch device to be exposed by the frontend then
+ *      this must be set to 1.
+ *
  *----------------------- Multi-touch Device Parameters -----------------------
  *
  * multi-touch-num-contacts
@@ -181,6 +204,9 @@
 #define XENKBD_FIELD_FEAT_MTOUCH       "feature-multi-touch"
 #define XENKBD_FIELD_REQ_ABS_POINTER   "request-abs-pointer"
 #define XENKBD_FIELD_REQ_MTOUCH        "request-multi-touch"
+#define XENKBD_FIELD_OPT_NO_PTR        "opt-no-pointer"
+#define XENKBD_FIELD_OPT_NO_KBD        "opt-no-keyboard"
+#define XENKBD_FIELD_OPT_NO_MTOUCH     "opt-no-multi-touch"
 #define XENKBD_FIELD_RING_GREF         "page-gref"
 #define XENKBD_FIELD_EVT_CHANNEL       "event-channel"
 #define XENKBD_FIELD_WIDTH             "width"
