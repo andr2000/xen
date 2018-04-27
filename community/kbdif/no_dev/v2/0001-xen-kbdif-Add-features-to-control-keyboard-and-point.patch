@@ -1,0 +1,65 @@
+From 0524533eb586af4f98397c6786212c661c47e067 Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Fri, 27 Apr 2018 09:39:58 +0300
+Subject: [Xen-devel][PATCH v2] xen/kbdif: Add features to control keyboard and
+ pointer
+
+It is now not fully possible to control if and which virtual devices
+are created by the frontend, e.g. keyboard and pointer devices
+are always created and multi-touch device is created if the
+backend advertises multi-touch support. In some cases this
+behavior is not desirable and better control over the frontend's
+configuration is required.
+
+Add new XenStore feature fields, so it is possible to individually
+control set of exposed virtual devices for each guest OS:
+ - set feature-keyboard to 0 if no keyboard device needs to be created
+ - set feature-pointer to 0 if no pointer device needs to be created
+
+Keep old behavior by default.
+
+Signed-off-by: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+---
+ xen/include/public/io/kbdif.h | 19 ++++++++++++++++++-
+ 1 file changed, 18 insertions(+), 1 deletion(-)
+
+diff --git a/xen/include/public/io/kbdif.h b/xen/include/public/io/kbdif.h
+index 3ce54e9a44c1..ac92e466fd9c 100644
+--- a/xen/include/public/io/kbdif.h
++++ b/xen/include/public/io/kbdif.h
+@@ -49,7 +49,22 @@
+  *
+  * Capable backend advertises supported features by publishing
+  * corresponding entries in XenStore and puts 1 as the value of the entry.
+- * If a feature is not supported then 0 must be set or feature entry omitted.
++ * If not otherwise noted if a feature is not supported then 0 must be set
++ * or feature entry omitted.
++ *
++ * feature-keyboard
++ *      Values:         <uint>
++ *
++ *      If no virtual keyboard device to be exposed by the frontend then
++ *      this must be set to 0. If feature entry omitted or not set its
++ *      value defaults to 1.
++ *
++ * feature-pointer
++ *      Values:         <uint>
++ *
++ *      If no virtual pointer device to be exposed by the frontend then
++ *      this must be set to 0. If feature entry omitted or not set its
++ *      value defaults to 1.
+  *
+  * feature-abs-pointer
+  *      Values:         <uint>
+@@ -177,6 +192,8 @@
+ 
+ #define XENKBD_DRIVER_NAME             "vkbd"
+ 
++#define XENKBD_FIELD_FEAT_KEYBOARD     "feature-keyboard"
++#define XENKBD_FIELD_FEAT_POINTER      "feature-pointer"
+ #define XENKBD_FIELD_FEAT_ABS_POINTER  "feature-abs-pointer"
+ #define XENKBD_FIELD_FEAT_MTOUCH       "feature-multi-touch"
+ #define XENKBD_FIELD_REQ_ABS_POINTER   "request-abs-pointer"
+-- 
+2.17.0
+
