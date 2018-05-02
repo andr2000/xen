@@ -1,0 +1,34 @@
+From 46368e6c82d907a56977a87e24b9923948d57cfd Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Wed, 2 May 2018 17:22:48 +0300
+Subject: [Xen-devel][PATCH v4 1/2] xen/kbdif: Add string constants for raw
+ pointer
+
+Add missing string constants for {feature|request}-raw-pointer
+to align with the rest of the interface file.
+
+Fixes 7868654ff7fe ("kbdif: Define "feature-raw-pointer" and "request-raw-pointer")
+
+Signed-off-by: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+---
+ xen/include/public/io/kbdif.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/xen/include/public/io/kbdif.h b/xen/include/public/io/kbdif.h
+index 3ce54e9a44c1..daf4bc2063c9 100644
+--- a/xen/include/public/io/kbdif.h
++++ b/xen/include/public/io/kbdif.h
+@@ -178,8 +178,10 @@
+ #define XENKBD_DRIVER_NAME             "vkbd"
+ 
+ #define XENKBD_FIELD_FEAT_ABS_POINTER  "feature-abs-pointer"
++#define XENKBD_FIELD_FEAT_RAW_POINTER  "feature-raw-pointer"
+ #define XENKBD_FIELD_FEAT_MTOUCH       "feature-multi-touch"
+ #define XENKBD_FIELD_REQ_ABS_POINTER   "request-abs-pointer"
++#define XENKBD_FIELD_REQ_RAW_POINTER   "request-raw-pointer"
+ #define XENKBD_FIELD_REQ_MTOUCH        "request-multi-touch"
+ #define XENKBD_FIELD_RING_GREF         "page-gref"
+ #define XENKBD_FIELD_EVT_CHANNEL       "event-channel"
+-- 
+2.17.0
+
