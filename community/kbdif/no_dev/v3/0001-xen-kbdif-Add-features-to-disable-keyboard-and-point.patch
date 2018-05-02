@@ -1,0 +1,62 @@
+From 0142c482e52b626c85fb41c94f43118fb1c9dce9 Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Wed, 2 May 2018 09:57:02 +0300
+Subject: [Xen-devel][PATCH v3] xen/kbdif: Add features to disable keyboard and
+ pointer
+
+It is now not fully possible to control if and which virtual devices
+are created by the frontend, e.g. keyboard and pointer devices
+are always created and multi-touch device is created if the
+backend advertises multi-touch support. In some cases this
+behavior is not desirable and better control over the frontend's
+configuration is required.
+
+Add new XenStore feature fields, so it is possible to individually
+control set of exposed virtual devices for each guest OS:
+ - set feature-disable-keyboard to 1 if no keyboard device needs
+   to be created
+ - set feature-disable-pointer to 1 if no pointer device needs
+   to be created
+
+Keep old behavior by default.
+
+Signed-off-by: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+---
+ xen/include/public/io/kbdif.h | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/xen/include/public/io/kbdif.h b/xen/include/public/io/kbdif.h
+index 3ce54e9a44c1..9a0648bdced9 100644
+--- a/xen/include/public/io/kbdif.h
++++ b/xen/include/public/io/kbdif.h
+@@ -51,6 +51,18 @@
+  * corresponding entries in XenStore and puts 1 as the value of the entry.
+  * If a feature is not supported then 0 must be set or feature entry omitted.
+  *
++ * feature-disable-keyboard
++ *      Values:         <uint>
++ *
++ *      If there is no need to expose a virtual keyboard device by the
++ *      frontend then this must be set to 1.
++ *
++ * feature-disable-pointer
++ *      Values:         <uint>
++ *
++ *      If there is no need to expose a virtual pointer device by the
++ *      frontend then this must be set to 1.
++ *
+  * feature-abs-pointer
+  *      Values:         <uint>
+  *
+@@ -177,6 +189,8 @@
+ 
+ #define XENKBD_DRIVER_NAME             "vkbd"
+ 
++#define XENKBD_FIELD_FEAT_DSBL_KEYBRD  "feature-disable-keyboard"
++#define XENKBD_FIELD_FEAT_DSBL_POINTER "feature-disable-pointer"
+ #define XENKBD_FIELD_FEAT_ABS_POINTER  "feature-abs-pointer"
+ #define XENKBD_FIELD_FEAT_MTOUCH       "feature-multi-touch"
+ #define XENKBD_FIELD_REQ_ABS_POINTER   "request-abs-pointer"
+-- 
+2.17.0
+
