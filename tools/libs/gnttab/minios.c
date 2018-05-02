@@ -112,6 +112,33 @@ int osdep_gnttab_grant_copy(xengnttab_handle *xgt,
 {
     return -1;
 }
+
+int osdep_gnttab_dmabuf_from_refs(xengnttab_handle *xgt,
+                                  uint32_t domid,
+                                  uint32_t flags,
+                                  uint32_t count,
+                                  uint32_t *refs,
+                                  uint32_t *fd,
+                                  uint32_t *wait_handle)
+{
+    return -1;
+}
+
+int osdep_gnttab_dmabuf_to_refs(xengnttab_handle *xgt,
+                                uint32_t domid,
+                                uint32_t fd,
+                                uint32_t count,
+                                uint32_t *refs)
+{
+    return -1;
+}
+
+int osdep_gnttab_dmabuf_wait_released(xengnttab_handle *xgt,
+                                      uint32_t wait_handle,
+                                      uint32_t wait_to_ms)
+{
+    return -1;
+}
 /*
  * Local variables:
  * mode: C

@@ -44,6 +44,24 @@ void *osdep_gntshr_share_pages(xengntshr_handle *xgs,
 int osdep_gntshr_unshare(xengntshr_handle *xgs,
                          void *start_address, uint32_t count);
 
+int osdep_gnttab_dmabuf_from_refs(xengnttab_handle *xgt,
+                                  uint32_t domid,
+                                  uint32_t flags,
+                                  uint32_t count,
+                                  uint32_t *refs,
+                                  uint32_t *fd,
+                                  uint32_t *wait_handle);
+
+int osdep_gnttab_dmabuf_to_refs(xengnttab_handle *xgt,
+                                uint32_t domid,
+                                uint32_t fd,
+                                uint32_t count,
+                                uint32_t *refs);
+
+int osdep_gnttab_dmabuf_wait_released(xengnttab_handle *xgt,
+                                      uint32_t wait_handle,
+                                      uint32_t wait_to_ms);
+
 #endif
 
 /*

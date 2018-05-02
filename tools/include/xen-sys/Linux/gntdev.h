@@ -168,4 +168,69 @@ struct ioctl_gntdev_grant_copy {
     struct ioctl_gntdev_grant_copy_segment *segments;
 };
 
+/*
+ * Creates a dma-buf from grant references @refs of count @count provided
+ * by the foreign domain @domid with flags @flags.
+ *
+ * Returns dma-buf's file descriptor @fd and dma-buf release wait handle
+ * @wait_handle.
+ */
+
+/*
+ * Request dma-buf backing storage to be allocated as suitable for
+ * DMA opeartions.
+ */
+#define GNTDEV_DMABUF_FLAG_DMA	(1 << 1)
+
+#define IOCTL_GNTDEV_DMABUF_FROM_REFS \
+	_IOC(_IOC_NONE, 'G', 9, sizeof(struct ioctl_gntdev_dmabuf_from_refs))
+struct ioctl_gntdev_dmabuf_from_refs {
+	/* IN parameters */
+	/* The domain ID of the @refs provided. */
+	uint32_t domid;
+	/* Options. */
+	uint32_t flags;
+	/* Number of grant references in @refs array. */
+	uint32_t count;
+	/* Reserved field: must be all zeros. */
+	uint32_t reserved;
+	/* OUT parameters */
+	/* File descriptor of the dma-buf. */
+	uint32_t fd;
+	/* Release wait handle of the dma-buf. */
+	uint32_t wait_handle;
+	/* Variable IN parameter. */
+	/* Array of grant references of size @count. */
+	struct ioctl_gntdev_grant_ref refs[1];
+};
+
+#define IOCTL_GNTDEV_DMABUF_TO_REFS \
+	_IOC(_IOC_NONE, 'G', 10, sizeof(struct ioctl_gntdev_dmabuf_to_refs))
+struct ioctl_gntdev_dmabuf_to_refs {
+	/* IN parameters */
+	/* The ID of the domain for which grant references @refs are to
+	 * be shared. */
+	uint32_t domid;
+	/* File descriptor of the dma-buf. */
+	uint32_t fd;
+	/* Number of grant references in @refs array. */
+	uint32_t count;
+	/* Reserved field: must be all zeros. */
+	uint32_t reserved;
+	/* OUT parameters */
+	/* Array of grant references of size @count. */
+	struct ioctl_gntdev_grant_ref refs[1];
+};
+
+/*
+ * This will block until the dma-buf with the wait handle provided be released.
+ */
+#define IOCTL_GNTDEV_DMABUF_WAIT_RELEASED \
+	_IOC(_IOC_NONE, 'G', 11, sizeof(struct ioctl_gntdev_dmabuf_wait_released))
+struct ioctl_gntdev_dmabuf_wait_released {
+	/* IN parameters */
+	uint32_t wait_handle;
+	uint32_t wait_to_ms;
+};
+
 #endif /* __LINUX_PUBLIC_GNTDEV_H__ */

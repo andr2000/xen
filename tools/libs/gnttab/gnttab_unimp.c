@@ -84,6 +84,33 @@ int xengnttab_grant_copy(xengnttab_handle *xgt,
 {
     abort();
 }
+
+int xengnttab_dmabuf_from_refs(xengnttab_handle *xgt,
+                               uint32_t domid,
+                               uint32_t flags,
+                               uint32_t count,
+                               uint32_t *refs,
+                               uint32_t *fd,
+                               uint32_t *wait_handle)
+{
+    abort();
+}
+
+int xengnttab_dmabuf_to_refs(xengnttab_handle *xgt,
+                             uint32_t domid,
+                             uint32_t fd,
+                             uint32_t count,
+                             uint32_t *refs)
+{
+    abort();
+}
+
+int xengnttab_dmabuf_wait_released(xengnttab_handle *xgt,
+                                   uint32_t wait_handle,
+                                   uint32_t wait_to_ms)
+{
+    abort();
+}
 /*
  * Local variables:
  * mode: C
