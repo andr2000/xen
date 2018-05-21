@@ -82,6 +82,17 @@
  *      for pointer devices should set this to 1. Raw (unscaled) values have
  *      a range of [0, 0x7fff].
  *
+ *----------------------------  Device Parameters ----------------------------
+ *
+ * id
+ *      Values:         <string>
+ *
+ *      Unique input device identifier. Optional.
+ *      If frontend is configured to expose multiple input device instances
+ *      then backend may use this value to uniquely identify that input
+ *      device within the frontend. This is useful for use-cases where
+ *      multiple input devices need to be matched to multiple display devices.
+ *
  *------------------------- Pointer Device Parameters ------------------------
  *
  * width
