@@ -1,0 +1,48 @@
+From ebc61d678423c6765e464619e2e1c0d7fb5befde Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Mon, 21 May 2018 14:17:54 +0300
+Subject: [PATCH 2/3] xen/kbdif: Add unique input device identifier
+
+If frontend is configured to expose multiple input device instances
+then backend may require a way to uniquely identify concrete input
+device within the frontend. This is useful for use-cases where
+virtual input device needs to be matched to physical input device.
+Add XenBus "unique-id" node parameter, so this sort of use-cases can
+be implemented.
+
+Signed-off-by: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+---
+ xen/include/public/io/kbdif.h | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/xen/include/public/io/kbdif.h b/xen/include/public/io/kbdif.h
+index a68da0f1a37f..45e4ff5b0a05 100644
+--- a/xen/include/public/io/kbdif.h
++++ b/xen/include/public/io/kbdif.h
+@@ -82,6 +82,15 @@
+  *      for pointer devices should set this to 1. Raw (unscaled) values have
+  *      a range of [0, 0x7fff].
+  *
++ *-----------------------  Device Instance Parameters ------------------------
++ *
++ * unique-id
++ *      Values:         <uint32_t>
++ *
++ *      After device instance initialization it is assigned a unique ID
++ *      (within the front driver), so every instance of the frontend can be
++ *      identified by the backend by this ID.
++ *
+  *------------------------- Pointer Device Parameters ------------------------
+  *
+  * width
+@@ -204,6 +213,7 @@
+ #define XENKBD_FIELD_MT_WIDTH          "multi-touch-width"
+ #define XENKBD_FIELD_MT_HEIGHT         "multi-touch-height"
+ #define XENKBD_FIELD_MT_NUM_CONTACTS   "multi-touch-num-contacts"
++#define XENKBD_FIELD_UNIQUE_ID         "unique-id"
+ 
+ /* OBSOLETE, not recommended for use */
+ #define XENKBD_FIELD_RING_REF          "page-ref"
+-- 
+2.17.0
+
