@@ -1,0 +1,44 @@
+From abad786cdcf0aded7d49905bb5a2c9c3c3ea7a29 Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Fri, 8 Jun 2018 08:52:35 +0300
+Subject: [Xen-devel][PATCH v2 0/4] Unique-id and fixes to some protocols
+
+Hi, all!
+
+This series fixes inconsistency in section used while defining kbdif
+XenBus entries and adds string "unique-id" XenBus entry missing in
+displif and kbdif. It also changes sndif's "unique-id" field from
+integer to string to be aligned with displif/kbdif.
+
+Konrad, I added your r-b tags to *all* the patches, so please
+let me know if I have to drop those (if this is not what you meant
+on the mailing-list).
+
+Juergen, could you please release ack the rest of the patches as these
+are needed to add sound configuration to libxl/xl and extend input
+to support multi-touch. These are the changes to header files which are
+not involved in Xen build, so it seems to be safe.
+This will also unblock ptorocol synchronization with Linux, so I can
+push an extension to xen-kbdfront driver (disable feature).
+
+Thank you,
+Oleksandr Andrushchenko
+
+Changes since v1:
+ - Changed type of "unique-id" from uint32_t to string (Konrad)
+ - Added r-b's
+
+Oleksandr Andrushchenko (4):
+  xen/kbdif: Move multi-touch device parameters to backend nodes
+  xen/kbdif: Add unique input device identifier
+  xen/displif: Add unique display connector identifier
+  xen/sndif: Change stream's unique-id to string
+
+ xen/include/public/io/displif.h |  8 ++++++
+ xen/include/public/io/kbdif.h   | 48 ++++++++++++++++++++-------------
+ xen/include/public/io/sndif.h   | 10 +++----
+ 3 files changed, 41 insertions(+), 25 deletions(-)
+
+-- 
+2.17.1
+

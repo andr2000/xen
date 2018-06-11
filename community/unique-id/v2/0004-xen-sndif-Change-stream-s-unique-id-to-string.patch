@@ -1,0 +1,43 @@
+From abad786cdcf0aded7d49905bb5a2c9c3c3ea7a29 Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Fri, 8 Jun 2018 08:41:43 +0300
+Subject: [Xen-devel][PATCH v2 4/4] xen/sndif: Change stream's unique-id to
+ string
+
+Display and input protocols define "unique-id" XenBus field as string
+which is much more flexible in defining unique identifiers comparing
+to integer used by sound protocol. For example, this allows to provide
+UUIDs as unique ID's. Align sound protocol with display and input
+and redefine "unique-id" field as string.
+
+Signed-off-by: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Reviewed-by: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>
+---
+ xen/include/public/io/sndif.h | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
+
+diff --git a/xen/include/public/io/sndif.h b/xen/include/public/io/sndif.h
+index 417d3ebc7981..402033cf4946 100644
+--- a/xen/include/public/io/sndif.h
++++ b/xen/include/public/io/sndif.h
+@@ -278,13 +278,11 @@
+  *      defined under the same device.
+  *
+  * unique-id
+- *      Values:         <uint32_t>
++ *      Values:         <string>
+  *
+- *      After stream initialization it is assigned a unique ID (within the front
+- *      driver), so every stream of the frontend can be identified by the
+- *      backend by this ID. This is not equal to stream-idx as the later is
+- *      zero based within the device, but this index is contigous within the
+- *      driver.
++ *      After stream initialization it is assigned a unique ID, so every
++ *      stream of the frontend can be identified by the backend by this ID.
++ *      This can be UUID or such.
+  *
+  *-------------------- Stream Request Transport Parameters --------------------
+  *
+-- 
+2.17.1
+

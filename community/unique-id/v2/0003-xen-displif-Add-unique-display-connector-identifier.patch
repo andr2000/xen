@@ -1,0 +1,48 @@
+From cfdd29e49a42334468198664d00bdca9fa6c8d26 Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Tue, 22 May 2018 11:33:33 +0300
+Subject: [Xen-devel][PATCH v2 3/4] xen/displif: Add unique display connector
+ identifier
+
+If frontend is configured to expose multiple connectors then backend may
+require a way to uniquely identify concrete virtual connector within the
+frontend. This is useful for use-cases where connector needs to be
+matched to physical display connector.
+Add XenBus "unique-id" node parameter, so this sort of use-cases can
+be implemented.
+
+Signed-off-by: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Reviewed-by: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>
+---
+ xen/include/public/io/displif.h | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/xen/include/public/io/displif.h b/xen/include/public/io/displif.h
+index 8a94f1f9b9d0..cc5de9cb1f35 100644
+--- a/xen/include/public/io/displif.h
++++ b/xen/include/public/io/displif.h
+@@ -189,6 +189,13 @@
+  *
+  *----------------------------- Connector settings ----------------------------
+  *
++ * unique-id
++ *      Values:         <string>
++ *
++ *      After device instance initialization each connector is assigned a
++ *      unique ID, so it can be identified by the backend by this ID.
++ *      This can be UUID or such.
++ *
+  * resolution
+  *      Values:         <width, uint32_t>x<height, uint32_t>
+  *
+@@ -368,6 +375,7 @@
+ #define XENDISPL_FIELD_EVT_CHANNEL    "evt-event-channel"
+ #define XENDISPL_FIELD_RESOLUTION     "resolution"
+ #define XENDISPL_FIELD_BE_ALLOC       "be-alloc"
++#define XENDISPL_FIELD_UNIQUE_ID      "unique-id"
+ 
+ /*
+  ******************************************************************************
+-- 
+2.17.1
+

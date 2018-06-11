@@ -1,0 +1,81 @@
+From 3f5dcbe26cc840fc1a80f96dc3a2f02019b7e178 Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Mon, 21 May 2018 10:44:46 +0300
+Subject: [Xen-devel][PATCH v2 1/4] xen/kbdif: Move multi-touch device
+ parameters to backend nodes
+
+In current kbdif protocol definition multi-touch device parameters
+are described as a part of frontend's XenBus configuration nodes while
+they belong to backend's configuration. Fix this by moving
+the parameters to the proper section.
+
+Fixes: b7a3ce49d528 ("xen/kbdif: add multi-touch support")
+
+Signed-off-by: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Reported-by: Oleksandr Grytsov <oleksandr_grytsov@epam.com>
+Reviewed-by: Oleksandr Grytsov <oleksandr_grytsov@epam.com>
+Reviewed-by: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>
+Release-acked-by: Juergen Gross <jgross@suse.com>
+---
+ xen/include/public/io/kbdif.h | 38 +++++++++++++++++------------------
+ 1 file changed, 19 insertions(+), 19 deletions(-)
+
+diff --git a/xen/include/public/io/kbdif.h b/xen/include/public/io/kbdif.h
+index 23d1f70d5210..a68da0f1a37f 100644
+--- a/xen/include/public/io/kbdif.h
++++ b/xen/include/public/io/kbdif.h
+@@ -96,6 +96,25 @@
+  *      Maximum Y coordinate (height) to be used by the frontend
+  *      while reporting input events, pixels, [0; UINT32_MAX].
+  *
++ *----------------------- Multi-touch Device Parameters ----------------------
++ *
++ * multi-touch-num-contacts
++ *      Values:         <uint>
++ *
++ *      Number of simultaneous touches reported.
++ *
++ * multi-touch-width
++ *      Values:         <uint>
++ *
++ *      Width of the touch area to be used by the frontend
++ *      while reporting input events, pixels, [0; UINT32_MAX].
++ *
++ * multi-touch-height
++ *      Values:         <uint>
++ *
++ *      Height of the touch area to be used by the frontend
++ *      while reporting input events, pixels, [0; UINT32_MAX].
++ *
+  *****************************************************************************
+  *                            Frontend XenBus Nodes
+  *****************************************************************************
+@@ -143,25 +162,6 @@
+  *
+  *      OBSOLETE, not recommended for use.
+  *      PFN of the shared page.
+- *
+- *----------------------- Multi-touch Device Parameters -----------------------
+- *
+- * multi-touch-num-contacts
+- *      Values:         <uint>
+- *
+- *      Number of simultaneous touches reported.
+- *
+- * multi-touch-width
+- *      Values:         <uint>
+- *
+- *      Width of the touch area to be used by the frontend
+- *      while reporting input events, pixels, [0; UINT32_MAX].
+- *
+- * multi-touch-height
+- *      Values:         <uint>
+- *
+- *      Height of the touch area to be used by the frontend
+- *      while reporting input events, pixels, [0; UINT32_MAX].
+  */
+ 
+ /*
+-- 
+2.17.1
+
