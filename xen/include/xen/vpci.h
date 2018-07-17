@@ -120,7 +120,6 @@ struct vpci {
          * is mapped into guest p2m) if there's a ROM BAR on the device.
          */
         bool rom_enabled      : 1;
-        /* FIXME: currently there's no support for SR-IOV. */
     } header;
 
 #ifdef CONFIG_HAS_PCI_MSI
@@ -169,6 +168,11 @@ struct vpci {
             struct vpci_arch_msix_entry arch;
         } entries[];
     } *msix;
+
+    struct vpci_sriov {
+        uint16_t num_vfs;
+        struct pci_dev *vf[];
+    } *sriov;
 #endif /* CONFIG_HAS_PCI_MSI */
 #endif
 };
@@ -268,6 +272,9 @@ static inline unsigned int vmsix_entry_nr(const struct vpci_msix *msix,
     return entry - msix->entries;
 }
 #endif /* CONFIG_HAS_PCI_MSI */
+
+/* Map/unmap the BARs of a vPCI device. */
+int vpci_modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only);
 #endif /* __XEN__ */
 
 #else /* !CONFIG_HAS_VPCI */
