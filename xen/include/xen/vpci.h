@@ -254,6 +254,8 @@ static inline int vpci_deassign_device(struct domain *d, struct pci_dev *dev)
     return 0;
 };
 
+static inline void vpci_remove_device(struct pci_dev *pdev) { }
+
 static inline void vpci_dump_msi(void) { }
 
 static inline uint32_t vpci_read(pci_sbdf_t sbdf, unsigned int reg,
