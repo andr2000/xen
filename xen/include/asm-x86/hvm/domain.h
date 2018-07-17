@@ -141,6 +141,7 @@ struct hvm_domain {
 
     /* List of MSI-X tables. */
     struct list_head msix_tables;
+    rwlock_t msix_lock;
 
     /* List of permanently write-mapped pages. */
     struct {
