@@ -23,7 +23,7 @@ static struct vpci vpci;
 
 const static struct domain d;
 
-const struct pci_dev test_pdev = {
+struct pci_dev test_pdev = {
     .vpci = &vpci,
 };
 
@@ -158,7 +158,6 @@ main(int argc, char **argv)
     int rc;
 
     INIT_LIST_HEAD(&vpci.handlers);
-    spin_lock_init(&vpci.lock);
 
     VPCI_ADD_REG(vpci_read32, vpci_write32, 0, 4, r0);
     VPCI_READ_CHECK(0, 4, r0);
