@@ -37,7 +37,7 @@ void vpci_remove_device(struct pci_dev *pdev);
 /* Remove all handlers for the device given. */
 void vpci_remove_device_registers(struct pci_dev *pdev);
 
-/* Add/remove a register handler. */
+/* Add/remove a register handler. Must be called holding the vpci_lock. */
 int __must_check vpci_add_register(struct vpci *vpci,
                                    vpci_read_t *read_handler,
                                    vpci_write_t *write_handler,
@@ -70,7 +70,6 @@ int vpci_bar_remove_handlers(const struct domain *d, struct pci_dev *pdev);
 struct vpci {
     /* List of vPCI handlers for a device. */
     struct list_head handlers;
-    spinlock_t lock;
 
 #ifdef __XEN__
     /* Hide the rest of the vpci struct from the user-space test harness. */

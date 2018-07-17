@@ -131,6 +131,7 @@ struct pci_dev {
     u64 vf_rlen[6];
 
     /* Data for vPCI. */
+    spinlock_t vpci_lock;
     struct vpci *vpci;
 };
 
