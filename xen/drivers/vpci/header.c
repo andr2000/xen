@@ -774,7 +774,7 @@ static int init_bars(struct pci_dev *pdev)
 
     return (cmd & PCI_COMMAND_MEMORY) ? modify_bars(pdev, cmd, false) : 0;
 }
-REGISTER_VPCI_INIT(init_bars, VPCI_PRIORITY_MIDDLE);
+REGISTER_VPCI_INIT(init_bars, NULL, VPCI_PRIORITY_MIDDLE);
 
 int vpci_bar_add_handlers(const struct domain *d, struct pci_dev *pdev)
 {
