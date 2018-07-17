@@ -76,7 +76,6 @@ static void vpci_remove_device_locked(struct pci_dev *pdev)
 
     vpci_remove_device_registers_locked(pdev);
 #ifdef CONFIG_HAS_PCI_MSI
-    xfree(pdev->vpci->msix);
     xfree(pdev->vpci->msi);
 #endif
     xfree(pdev->vpci);

@@ -454,14 +454,6 @@ static int init_msix(struct pci_dev *pdev)
     if ( !msix )
         return -ENOMEM;
 
-    rc = vpci_add_register(pdev->vpci, control_read, control_write,
-                           msix_control_reg(msix_offset), 2, msix);
-    if ( rc )
-    {
-        xfree(msix);
-        return rc;
-    }
-
     msix->max_entries = max_entries;
     msix->pdev = pdev;
 
@@ -484,9 +476,57 @@ static int init_msix(struct pci_dev *pdev)
     list_add(&msix->next, &d->arch.hvm.msix_tables);
     write_unlock(&d->arch.hvm.msix_lock);
 
+    rc = vpci_add_register(pdev->vpci, control_read, control_write,
+                           msix_control_reg(msix_offset), 2, msix);
+    if ( rc )
+        /* The teardown function will free the msix struct. */
+        return rc;
+
     return 0;
 }
-REGISTER_VPCI_INIT(init_msix, NULL, VPCI_PRIORITY_HIGH);
+
+static void teardown_msix(struct pci_dev *pdev)
+{
+    struct vpci_msix *msix = pdev->vpci->msix;
+    unsigned int i, pos;
+    uint16_t control;
+
+    if ( !msix )
+        return;
+
+    write_lock(&pdev->domain->arch.hvm_domain.msix_lock);
+    list_del(&pdev->vpci->msix->next);
+    write_unlock(&pdev->domain->arch.hvm_domain.msix_lock);
+
+    if ( !msix->enabled )
+        goto out;
+
+    /* Disable MSIX. */
+    pos = pci_find_cap_offset(pdev->seg, pdev->bus, PCI_SLOT(pdev->devfn),
+                              PCI_FUNC(pdev->devfn), PCI_CAP_ID_MSIX);
+    ASSERT(pos);
+    control = pci_conf_read16(pdev->seg, pdev->bus, PCI_SLOT(pdev->devfn),
+                              PCI_FUNC(pdev->devfn), msix_control_reg(pos));
+    pci_conf_write16(pdev->seg, pdev->bus, PCI_SLOT(pdev->devfn),
+                     PCI_FUNC(pdev->devfn), msix_control_reg(pos),
+                     (control & ~PCI_MSIX_FLAGS_ENABLE));
+
+    for ( i = 0; i < msix->max_entries; i++ )
+    {
+        int rc = vpci_msix_arch_disable_entry(&msix->entries[i], pdev);
+
+        if ( rc && rc != -ENOENT )
+            gprintk(XENLOG_WARNING,
+                    "%04x:%02x:%02x.%u: unable to disable MSIX entry %u: %d\n",
+                    pdev->seg, pdev->bus, PCI_SLOT(pdev->devfn),
+                    PCI_FUNC(pdev->devfn), i, rc);
+    }
+
+out:
+    xfree(msix);
+    pdev->vpci->msix = NULL;
+}
+REGISTER_VPCI_INIT(init_msix, teardown_msix, VPCI_PRIORITY_HIGH);
 
 /*
  * Local variables:
