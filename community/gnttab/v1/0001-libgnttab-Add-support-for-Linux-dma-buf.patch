@@ -1,0 +1,537 @@
+From b71b47246191fee74f70bdfd6166747ded38f4b7 Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Wed, 2 May 2018 12:48:58 +0300
+Subject: [Xen-devel][PATCH] libgnttab: Add support for Linux dma-buf
+
+Add support for Linux grant device driver extension which allows
+converting existing dma-buf's into an array of grant references
+and vise versa. This is only implemented for Linux as other OSes
+have no Linux dma-buf support.
+
+Bump gnttab library minor version to 3.
+
+Signed-off-by: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+---
+ tools/include/xen-sys/Linux/gntdev.h  | 106 ++++++++++++++++++++++++
+ tools/libs/gnttab/Makefile            |   2 +-
+ tools/libs/gnttab/gnttab_core.c       |  26 ++++++
+ tools/libs/gnttab/gnttab_unimp.c      |  26 ++++++
+ tools/libs/gnttab/include/xengnttab.h |  61 ++++++++++++++
+ tools/libs/gnttab/libxengnttab.map    |   8 ++
+ tools/libs/gnttab/linux.c             | 113 ++++++++++++++++++++++++++
+ tools/libs/gnttab/minios.c            |  26 ++++++
+ tools/libs/gnttab/private.h           |  13 +++
+ 9 files changed, 380 insertions(+), 1 deletion(-)
+
+diff --git a/tools/include/xen-sys/Linux/gntdev.h b/tools/include/xen-sys/Linux/gntdev.h
+index 0ca07c92b21c..d16076044c71 100644
+--- a/tools/include/xen-sys/Linux/gntdev.h
++++ b/tools/include/xen-sys/Linux/gntdev.h
+@@ -4,6 +4,7 @@
+  * Interface to /dev/xen/gntdev.
+  * 
+  * Copyright (c) 2007, D G Murray
++ * Copyright (c) 2018, Oleksandr Andrushchenko, EPAM Systems Inc.
+  * 
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License version 2
+@@ -168,4 +169,109 @@ struct ioctl_gntdev_grant_copy {
+     struct ioctl_gntdev_grant_copy_segment *segments;
+ };
+ 
++/*
++ * Flags to be used while requesting memory mapping's backing storage
++ * to be allocated with DMA API.
++ */
++
++/*
++ * The buffer is backed with memory allocated with dma_alloc_wc.
++ */
++#define GNTDEV_DMA_FLAG_WC		(1 << 0)
++
++/*
++ * The buffer is backed with memory allocated with dma_alloc_coherent.
++ */
++#define GNTDEV_DMA_FLAG_COHERENT	(1 << 1)
++
++/*
++ * Create a dma-buf [1] from grant references @refs of count @count provided
++ * by the foreign domain @domid with flags @flags.
++ *
++ * By default dma-buf is backed by system memory pages, but by providing
++ * one of the GNTDEV_DMA_FLAG_XXX flags it can also be created as
++ * a DMA write-combine or coherent buffer, e.g. allocated with dma_alloc_wc/
++ * dma_alloc_coherent.
++ *
++ * Returns 0 if dma-buf was successfully created and the corresponding
++ * dma-buf's file descriptor is returned in @fd.
++ *
++ * [1] https://elixir.bootlin.com/linux/latest/source/Documentation/driver-api/dma-buf.rst
++ */
++
++#define IOCTL_GNTDEV_DMABUF_EXP_FROM_REFS \
++    _IOC(_IOC_NONE, 'G', 9, \
++         sizeof(struct ioctl_gntdev_dmabuf_exp_from_refs))
++struct ioctl_gntdev_dmabuf_exp_from_refs {
++    /* IN parameters. */
++    /* Specific options for this dma-buf: see GNTDEV_DMABUF_FLAG_XXX. */
++    uint32_t flags;
++    /* Number of grant references in @refs array. */
++    uint32_t count;
++    /* OUT parameters. */
++    /* File descriptor of the dma-buf. */
++    uint32_t fd;
++    /* The domain ID of the grant references to be mapped. */
++    uint32_t domid;
++    /* Variable IN parameter. */
++    /* Array of grant references of size @count. */
++    uint32_t refs[1];
++};
++
++/*
++ * This will block until the dma-buf with the file descriptor @fd is
++ * released. This is only valid for buffers created with
++ * IOCTL_GNTDEV_DMABUF_EXP_FROM_REFS.
++ *
++ * If withing @wait_to_ms milliseconds the buffer is not released
++ * then -ETIMEDOUT error is returned.
++ * If the buffer with file descriptor @fd does not exist or has already
++ * been released, then -ENOENT is returned. For valid file descriptors
++ * this must not be treated as error.
++ */
++#define IOCTL_GNTDEV_DMABUF_EXP_WAIT_RELEASED \
++    _IOC(_IOC_NONE, 'G', 10, \
++         sizeof(struct ioctl_gntdev_dmabuf_exp_wait_released))
++struct ioctl_gntdev_dmabuf_exp_wait_released {
++    /* IN parameters */
++    uint32_t fd;
++    uint32_t wait_to_ms;
++};
++
++/*
++ * Import a dma-buf with file descriptor @fd and export granted references
++ * to the pages of that dma-buf into array @refs of size @count.
++ */
++#define IOCTL_GNTDEV_DMABUF_IMP_TO_REFS \
++    _IOC(_IOC_NONE, 'G', 11, \
++         sizeof(struct ioctl_gntdev_dmabuf_imp_to_refs))
++struct ioctl_gntdev_dmabuf_imp_to_refs {
++    /* IN parameters. */
++    /* File descriptor of the dma-buf. */
++    uint32_t fd;
++    /* Number of grant references in @refs array. */
++    uint32_t count;
++    /* The domain ID for which references to be granted. */
++    uint32_t domid;
++    /* Reserved - must be zero. */
++    uint32_t reserved;
++    /* OUT parameters. */
++    /* Array of grant references of size @count. */
++    uint32_t refs[1];
++};
++
++/*
++ * This will close all references to an imported buffer, so it can be
++ * released by the owner. This is only valid for buffers created with
++ * IOCTL_GNTDEV_DMABUF_IMP_TO_REFS.
++ */
++#define IOCTL_GNTDEV_DMABUF_IMP_RELEASE \
++    _IOC(_IOC_NONE, 'G', 12, \
++         sizeof(struct ioctl_gntdev_dmabuf_imp_release))
++struct ioctl_gntdev_dmabuf_imp_release {
++    /* IN parameters */
++    uint32_t fd;
++    uint32_t reserved;
++};
++
+ #endif /* __LINUX_PUBLIC_GNTDEV_H__ */
+diff --git a/tools/libs/gnttab/Makefile b/tools/libs/gnttab/Makefile
+index 6c2e7e36a2c3..0befbd18f1af 100644
+--- a/tools/libs/gnttab/Makefile
++++ b/tools/libs/gnttab/Makefile
+@@ -2,7 +2,7 @@ XEN_ROOT = $(CURDIR)/../../..
+ include $(XEN_ROOT)/tools/Rules.mk
+ 
+ MAJOR    = 1
+-MINOR    = 2
++MINOR    = 3
+ SHLIB_LDFLAGS += -Wl,--version-script=libxengnttab.map
+ 
+ CFLAGS   += -Werror -Wmissing-prototypes
+diff --git a/tools/libs/gnttab/gnttab_core.c b/tools/libs/gnttab/gnttab_core.c
+index bd075f818aa6..92e7228a2671 100644
+--- a/tools/libs/gnttab/gnttab_core.c
++++ b/tools/libs/gnttab/gnttab_core.c
+@@ -1,6 +1,7 @@
+ /******************************************************************************
+  *
+  * Copyright (c) 2007-2008, D G Murray <Derek.Murray@cl.cam.ac.uk>
++ * Copyright (c) 2018, Oleksandr Andrushchenko, EPAM Systems Inc.
+  *
+  * This library is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU Lesser General Public
+@@ -134,6 +135,31 @@ int xengnttab_grant_copy(xengnttab_handle *xgt,
+ {
+     return osdep_gnttab_grant_copy(xgt, count, segs);
+ }
++
++int xengnttab_dmabuf_exp_from_refs(xengnttab_handle *xgt, uint32_t domid,
++                                   uint32_t flags, uint32_t count,
++                                   const uint32_t *refs, uint32_t *fd)
++{
++    return osdep_gnttab_dmabuf_exp_from_refs(xgt, domid, flags, count,
++                                             refs, fd);
++}
++
++int xengnttab_dmabuf_exp_wait_released(xengnttab_handle *xgt, uint32_t fd,
++                                       uint32_t wait_to_ms)
++{
++    return osdep_gnttab_dmabuf_exp_wait_released(xgt, fd, wait_to_ms);
++}
++
++int xengnttab_dmabuf_imp_to_refs(xengnttab_handle *xgt, uint32_t domid,
++                                 uint32_t fd, uint32_t count, uint32_t *refs)
++{
++    return osdep_gnttab_dmabuf_imp_to_refs(xgt, domid, fd, count, refs);
++}
++
++int xengnttab_dmabuf_imp_release(xengnttab_handle *xgt, uint32_t fd)
++{
++    return osdep_gnttab_dmabuf_imp_release(xgt, fd);
++}
+ /*
+  * Local variables:
+  * mode: C
+diff --git a/tools/libs/gnttab/gnttab_unimp.c b/tools/libs/gnttab/gnttab_unimp.c
+index 26e4ee129d03..dee1afd2647f 100644
+--- a/tools/libs/gnttab/gnttab_unimp.c
++++ b/tools/libs/gnttab/gnttab_unimp.c
+@@ -1,6 +1,7 @@
+ /******************************************************************************
+  *
+  * Copyright (c) 2007-2008, D G Murray <Derek.Murray@cl.cam.ac.uk>
++ * Copyright (c) 2018, Oleksandr Andrushchenko, EPAM Systems Inc.
+  *
+  * This library is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU Lesser General Public
+@@ -84,6 +85,31 @@ int xengnttab_grant_copy(xengnttab_handle *xgt,
+ {
+     abort();
+ }
++
++int xengnttab_dmabuf_exp_from_refs(xengnttab_handle *xgt, uint32_t domid,
++                                   uint32_t flags, uint32_t count,
++                                   const uint32_t *refs, uint32_t *fd)
++{
++    abort();
++}
++
++int xengnttab_dmabuf_exp_wait_released(xengnttab_handle *xgt, uint32_t fd,
++                                       uint32_t wait_to_ms)
++{
++    abort();
++}
++
++int xengnttab_dmabuf_imp_to_refs(xengnttab_handle *xgt, uint32_t domid,
++                                 uint32_t fd, uint32_t count, uint32_t *refs)
++{
++    abort();
++}
++
++int xengnttab_dmabuf_imp_release(xengnttab_handle *xgt, uint32_t fd)
++{
++    abort();
++}
++
+ /*
+  * Local variables:
+  * mode: C
+diff --git a/tools/libs/gnttab/include/xengnttab.h b/tools/libs/gnttab/include/xengnttab.h
+index 91d4cd5bdd88..111fc88caeb3 100644
+--- a/tools/libs/gnttab/include/xengnttab.h
++++ b/tools/libs/gnttab/include/xengnttab.h
+@@ -18,6 +18,7 @@
+  * A library for low-level access to the Xen control interfaces.
+  *
+  * Copyright (c) 2007-2008, D G Murray <Derek.Murray@cl.cam.ac.uk>
++ * Copyright (c) 2018, Oleksandr Andrushchenko, EPAM Systems Inc.
+  */
+ #ifndef XENGNTTAB_H
+ #define XENGNTTAB_H
+@@ -295,6 +296,66 @@ int xengnttab_grant_copy(xengnttab_handle *xgt,
+                          uint32_t count,
+                          xengnttab_grant_copy_segment_t *segs);
+ 
++/*
++ * Flags to be used while requesting memory mapping's backing storage
++ * to be allocated with DMA API.
++ */
++
++/*
++ * The buffer is backed with memory allocated with dma_alloc_wc.
++ */
++#define GNTDEV_DMA_FLAG_WC		(1 << 0)
++
++/*
++ * The buffer is backed with memory allocated with dma_alloc_coherent.
++ */
++#define GNTDEV_DMA_FLAG_COHERENT	(1 << 1)
++
++/**
++ * Create a dma-buf [1] from grant references @refs of count @count provided
++ * by the foreign domain @domid with flags @flags.
++ *
++ * By default dma-buf is backed by system memory pages, but by providing
++ * one of the GNTDEV_DMA_FLAG_XXX flags it can also be created as
++ * a DMA write-combine or coherent buffer.
++ *
++ * Returns 0 if dma-buf was successfully created and the corresponding
++ * dma-buf's file descriptor is returned in @fd.
++ *
++ * [1] https://elixir.bootlin.com/linux/latest/source/Documentation/driver-api/dma-buf.rst
++ */
++int xengnttab_dmabuf_exp_from_refs(xengnttab_handle *xgt, uint32_t domid,
++                                   uint32_t flags, uint32_t count,
++                                   const uint32_t *refs, uint32_t *fd);
++
++/*
++ * This will block until the dma-buf with the file descriptor @fd is
++ * released. This is only valid for buffers created with
++ * IOCTL_GNTDEV_DMABUF_EXP_FROM_REFS.
++ *
++ * If withing @wait_to_ms milliseconds the buffer is not released
++ * then -ETIMEDOUT error is returned.
++ * If the buffer with file descriptor @fd does not exist or has already
++ * been released, then -ENOENT is returned. For valid file descriptors
++ * this must not be treated as error.
++ */
++int xengnttab_dmabuf_exp_wait_released(xengnttab_handle *xgt, uint32_t fd,
++                                       uint32_t wait_to_ms);
++
++/*
++ * Import a dma-buf with file descriptor @fd and export granted references
++ * to the pages of that dma-buf into array @refs of size @count.
++ */
++int xengnttab_dmabuf_imp_to_refs(xengnttab_handle *xgt, uint32_t domid,
++                                 uint32_t fd, uint32_t count, uint32_t *refs);
++
++/*
++ * This will close all references to an imported buffer, so it can be
++ * released by the owner. This is only valid for buffers created with
++ * IOCTL_GNTDEV_DMABUF_IMP_TO_REFS.
++ */
++int xengnttab_dmabuf_imp_release(xengnttab_handle *xgt, uint32_t fd);
++
+ /*
+  * Grant Sharing Interface (allocating and granting pages to others)
+  */
+diff --git a/tools/libs/gnttab/libxengnttab.map b/tools/libs/gnttab/libxengnttab.map
+index d5da388a0d8d..9de2183810a9 100644
+--- a/tools/libs/gnttab/libxengnttab.map
++++ b/tools/libs/gnttab/libxengnttab.map
+@@ -32,3 +32,11 @@ VERS_1.2 {
+ 		xengnttab_fd;
+ 		xengntshr_fd;
+ } VERS_1.1;
++
++VERS_1.3 {
++	global:
++		xengnttab_dmabuf_exp_from_refs;
++		xengnttab_dmabuf_exp_wait_released;
++		xengnttab_dmabuf_imp_to_refs;
++		xengnttab_dmabuf_imp_release;
++} VERS_1.2;
+diff --git a/tools/libs/gnttab/linux.c b/tools/libs/gnttab/linux.c
+index 8347ddd3d9cf..9765146f7eb6 100644
+--- a/tools/libs/gnttab/linux.c
++++ b/tools/libs/gnttab/linux.c
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (c) 2007-2008, D G Murray <Derek.Murray@cl.cam.ac.uk>
++ * Copyright (c) 2018, Oleksandr Andrushchenko, EPAM Systems Inc.
+  *
+  * This library is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU Lesser General Public
+@@ -309,6 +310,118 @@ int osdep_gnttab_grant_copy(xengnttab_handle *xgt,
+     return rc;
+ }
+ 
++int osdep_gnttab_dmabuf_exp_from_refs(xengnttab_handle *xgt, uint32_t domid,
++                                      uint32_t flags, uint32_t count,
++                                      const uint32_t *refs,
++                                      uint32_t *dmabuf_fd)
++{
++    struct ioctl_gntdev_dmabuf_exp_from_refs *from_refs;
++    int rc = 0;
++
++    if ( !count )
++    {
++        errno = EINVAL;
++        return -1;
++    }
++
++    from_refs = malloc(sizeof(*from_refs) +
++                       (count - 1) * sizeof(from_refs->refs[0]));
++    if ( !from_refs )
++    {
++        errno = ENOMEM;
++        return -1;
++    }
++
++    from_refs->flags = flags;
++    from_refs->count = count;
++    from_refs->domid = domid;
++
++    memcpy(from_refs->refs, refs, count * sizeof(from_refs->refs[0]));
++
++    if ( (rc = ioctl(xgt->fd, IOCTL_GNTDEV_DMABUF_EXP_FROM_REFS, from_refs)) )
++    {
++        GTERROR(xgt->logger, "ioctl DMABUF_EXP_FROM_REFS failed");
++        goto out;
++    }
++
++    *dmabuf_fd = from_refs->fd;
++
++out:
++    free(from_refs);
++    return rc;
++}
++
++int osdep_gnttab_dmabuf_exp_wait_released(xengnttab_handle *xgt,
++                                          uint32_t fd, uint32_t wait_to_ms)
++{
++    struct ioctl_gntdev_dmabuf_exp_wait_released wait;
++    int rc;
++
++    wait.fd = fd;
++    wait.wait_to_ms = wait_to_ms;
++
++    if ( (rc = ioctl(xgt->fd, IOCTL_GNTDEV_DMABUF_EXP_WAIT_RELEASED, &wait)) ) {
++        if ( errno == ENOENT ) {
++            /* The buffer may have already been released. */
++            errno = 0;
++            rc = 0;
++        } else
++            GTERROR(xgt->logger, "ioctl DMABUF_EXP_WAIT_RELEASED failed");
++    }
++
++    return rc;
++}
++
++int osdep_gnttab_dmabuf_imp_to_refs(xengnttab_handle *xgt, uint32_t domid,
++                                    uint32_t fd, uint32_t count, uint32_t *refs)
++{
++    struct ioctl_gntdev_dmabuf_imp_to_refs *to_refs;
++    int rc = 0;
++
++    if ( !count )
++    {
++        errno = EINVAL;
++        return -1;
++    }
++
++    to_refs = malloc(sizeof(*to_refs) +
++                     (count - 1) * sizeof(to_refs->refs[0]));
++    if ( !to_refs )
++    {
++        errno = ENOMEM;
++        return -1;
++    }
++
++    to_refs->fd = fd;
++    to_refs->count = count;
++    to_refs->domid = domid;
++
++    if ( (rc = ioctl(xgt->fd, IOCTL_GNTDEV_DMABUF_IMP_TO_REFS, to_refs)) )
++    {
++        GTERROR(xgt->logger, "ioctl DMABUF_IMP_TO_REFS failed");
++        goto out;
++    }
++
++    memcpy(refs, to_refs->refs, count * sizeof(*refs));
++
++out:
++    free(to_refs);
++    return rc;
++}
++
++int osdep_gnttab_dmabuf_imp_release(xengnttab_handle *xgt, uint32_t fd)
++{
++    struct ioctl_gntdev_dmabuf_imp_release release;
++    int rc;
++
++    release.fd = fd;
++
++    if ( (rc = ioctl(xgt->fd, IOCTL_GNTDEV_DMABUF_IMP_RELEASE, &release)) )
++        GTERROR(xgt->logger, "ioctl DMABUF_IMP_RELEASE failed");
++
++    return rc;
++}
++
+ int osdep_gntshr_open(xengntshr_handle *xgs)
+ {
+     int fd = open(DEVXEN "gntalloc", O_RDWR);
+diff --git a/tools/libs/gnttab/minios.c b/tools/libs/gnttab/minios.c
+index 0951bc9bac5b..f78caadd3043 100644
+--- a/tools/libs/gnttab/minios.c
++++ b/tools/libs/gnttab/minios.c
+@@ -112,6 +112,32 @@ int osdep_gnttab_grant_copy(xengnttab_handle *xgt,
+ {
+     return -1;
+ }
++
++int osdep_gnttab_dmabuf_exp_from_refs(xengnttab_handle *xgt, uint32_t domid,
++                                      uint32_t flags, uint32_t count,
++                                      const uint32_t *refs, uint32_t *fd)
++{
++    return -1;
++}
++
++int osdep_gnttab_dmabuf_exp_wait_released(xengnttab_handle *xgt,
++                                          uint32_t fd, uint32_t wait_to_ms)
++{
++    return -1;
++}
++
++int osdep_gnttab_dmabuf_imp_to_refs(xengnttab_handle *xgt, uint32_t domid,
++                                    uint32_t fd, uint32_t count,
++                                    uint32_t *refs)
++{
++    return -1;
++}
++
++int osdep_gnttab_dmabuf_imp_release(xengnttab_handle *xgt, uint32_t fd)
++{
++    return -1;
++}
++
+ /*
+  * Local variables:
+  * mode: C
+diff --git a/tools/libs/gnttab/private.h b/tools/libs/gnttab/private.h
+index ed8df40def0d..c5e23639b141 100644
+--- a/tools/libs/gnttab/private.h
++++ b/tools/libs/gnttab/private.h
+@@ -35,6 +35,19 @@ int osdep_gnttab_grant_copy(xengnttab_handle *xgt,
+                             uint32_t count,
+                             xengnttab_grant_copy_segment_t *segs);
+ 
++int osdep_gnttab_dmabuf_exp_from_refs(xengnttab_handle *xgt, uint32_t domid,
++                                      uint32_t flags, uint32_t count,
++                                      const uint32_t *refs, uint32_t *fd);
++
++int osdep_gnttab_dmabuf_exp_wait_released(xengnttab_handle *xgt,
++                                          uint32_t fd, uint32_t wait_to_ms);
++
++int osdep_gnttab_dmabuf_imp_to_refs(xengnttab_handle *xgt, uint32_t domid,
++                                    uint32_t fd, uint32_t count,
++                                    uint32_t *refs);
++
++int osdep_gnttab_dmabuf_imp_release(xengnttab_handle *xgt, uint32_t fd);
++
+ int osdep_gntshr_open(xengntshr_handle *xgs);
+ int osdep_gntshr_close(xengntshr_handle *xgs);
+ 
+-- 
+2.18.0
+

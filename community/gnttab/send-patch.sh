@@ -1,0 +1,1 @@
+git send-email --to xen-devel@lists.xenproject.org --cc=andr2000@gmail.com --to ian.jackson@eu.citrix.com --to wei.liu2@citrix.com --to boris.ostrovsky@oracle.com --to jgross@suse.com community/gnttab/v1
