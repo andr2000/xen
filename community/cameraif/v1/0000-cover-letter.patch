@@ -1,0 +1,53 @@
+From 31b1b99417e4e25d726bf8c09a56a9df8e46f5ba Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Tue, 31 Jul 2018 12:23:50 +0300
+Subject: [Xen-devel][PATCH 0/1] cameraif: Add ABI for para-virtualized
+camera devices
+
+Hello!
+
+At the moment Xen [1] already supports some virtual multimedia
+features [2] such as virtual display, sound. It supports keyboards,
+pointers and multi-touch devices all allowing Xen to be used in
+automotive appliances, In-Vehicle Infotainment (IVI) systems
+and many more.
+
+This work adds a new Xen para-virtualized protocol for a virtual
+camera device which extends multimedia capabilities of Xen even
+farther: video conferencing, IVI, high definition maps etc.
+
+The initial goal is to support most needed functionality with the
+final idea to make it possible to extend the protocol if need be:
+
+1. Provide means for base virtual device configuration:
+ - pixel formats
+ - resolutions
+ - frame rates
+2. Support basic camera controls:
+ - contrast
+ - brightness
+ - hue
+ - saturation
+3. Support streaming control
+4. Support zero-copying use-cases
+
+I hope that Xen and V4L and other communities could give their
+valuable feedback on this work, so I can update the protocol
+to better fit any additional requirements I might have missed.
+
+Thank you,
+Oleksandr Andrushchenko
+
+[1] https://www.xenproject.org/
+[2] https://xenbits.xen.org/gitweb/?p=xen.git;a=tree;f=xen/include/public/io
+
+Oleksandr Andrushchenko (1):
+  cameraif: add ABI for para-virtual camera
+
+ xen/include/public/io/cameraif.h | 981 +++++++++++++++++++++++++++++++
+ 1 file changed, 981 insertions(+)
+ create mode 100644 xen/include/public/io/cameraif.h
+
+-- 
+2.18.0
+
