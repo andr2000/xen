@@ -606,6 +606,8 @@ struct xencamera_config {
  *  - frontend may send multiple XENCAMERA_OP_BUF_REQUEST requests before
  *    sending XENCAMERA_OP_STREAM_START request to update or tune the
  *    configuration.
+ *  - passing zero num_bufs in this request is not an error and can be used
+ *    to query buffer's format
  */
 struct xencamera_buf_request {
     uint8_t num_bufs;
