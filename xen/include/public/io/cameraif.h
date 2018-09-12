@@ -180,7 +180,9 @@
  *      corresponding FOURCC string label. The next level of
  *      the directory under <formats> represents supported resolutions.
  *      If format represents a big-endian FOURCC code, then "-BE"
- *      suffix must be added, case insensitive.
+ *      suffix must be added.
+ *      If FOURCC string label has spaces then those are only allowed to
+ *      be at the end of the label and must be trimmed.
  *
  * resolution
  *      Values:         <width, uint32_t>x<height, uint32_t>
@@ -337,16 +339,17 @@
  */
 #define XENCAMERA_OP_CONFIG_SET        0x00
 #define XENCAMERA_OP_CONFIG_GET        0x01
-#define XENCAMERA_OP_BUF_REQUEST       0x02
-#define XENCAMERA_OP_BUF_CREATE        0x03
-#define XENCAMERA_OP_BUF_DESTROY       0x04
-#define XENCAMERA_OP_BUF_QUEUE         0x05
-#define XENCAMERA_OP_BUF_DEQUEUE       0x06
-#define XENCAMERA_OP_CTRL_ENUM         0x07
-#define XENCAMERA_OP_CTRL_SET          0x08
-#define XENCAMERA_OP_CTRL_GET          0x09
-#define XENCAMERA_OP_STREAM_START      0x0a
-#define XENCAMERA_OP_STREAM_STOP       0x0b
+#define XENCAMERA_OP_BUF_GET_LAYOUT    0x02
+#define XENCAMERA_OP_BUF_REQUEST       0x03
+#define XENCAMERA_OP_BUF_CREATE        0x04
+#define XENCAMERA_OP_BUF_DESTROY       0x05
+#define XENCAMERA_OP_BUF_QUEUE         0x06
+#define XENCAMERA_OP_BUF_DEQUEUE       0x07
+#define XENCAMERA_OP_CTRL_ENUM         0x08
+#define XENCAMERA_OP_CTRL_SET          0x09
+#define XENCAMERA_OP_CTRL_GET          0x0a
+#define XENCAMERA_OP_STREAM_START      0x0b
+#define XENCAMERA_OP_STREAM_STOP       0x0c
 
 #define XENCAMERA_CTRL_BRIGHTNESS      0
 #define XENCAMERA_CTRL_CONTRAST        1
@@ -398,8 +401,7 @@
  ******************************************************************************
  */
 #define XENCAMERA_EVT_FRAME_AVAIL      0x00
-#define XENCAMERA_EVT_CONFIG_CHANGE    0x01
-#define XENCAMERA_EVT_CTRL_CHANGE      0x02
+#define XENCAMERA_EVT_CTRL_CHANGE      0x01
 
 /* Resolution has changed. */
 #define XENCAMERA_EVT_CFG_FLG_RESOL    (1 << 0)
@@ -432,7 +434,7 @@
 #define XENCAMERA_CTRL_SATURATION_STR  "saturation"
 #define XENCAMERA_CTRL_HUE_STR         "hue"
 
-#define XENCAMERA_FOURCC_BIGENDIAN_STR "-be"
+#define XENCAMERA_FOURCC_BIGENDIAN_STR "-BE"
 
 /* Maximum number of buffer planes supported. */
 #define XENCAMERA_MAX_PLANE            4
@@ -614,16 +616,31 @@ struct xencamera_config {
  *  - frontend may send multiple XENCAMERA_OP_BUF_REQUEST requests before
  *    sending XENCAMERA_OP_STREAM_START request to update or tune the
  *    configuration.
- *  - passing zero num_bufs in this request is not an error and is used
- *    to query buffer's format
  *  - after this request camera configuration cannot be changed, unless
  *    streaming is stopped and buffers destroyed
+ *  - passing zero num_bufs in this request (after streaming has stopped
+ *    and all buffers destroyed) unblocks camera configuration changes
  */
 struct xencamera_buf_request {
     uint8_t num_bufs;
 };
 
 /*
+ * Request camera buffer's layout:
+ *         0                1                 2               3        octet
+ * +----------------+----------------+----------------+----------------+
+ * |               id                | _BUF_GET_LAYOUT|   reserved     | 4
+ * +----------------+----------------+----------------+----------------+
+ * |                             reserved                              | 8
+ * +----------------+----------------+----------------+----------------+
+ * |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/|
+ * +----------------+----------------+----------------+----------------+
+ * |                             reserved                              | 64
+ * +----------------+----------------+----------------+----------------+
+ *
+ * See response format for this request.
+ *
+ *
  * Request camera buffer creation:
  *         0                1                 2               3        octet
  * +----------------+----------------+----------------+----------------+
@@ -937,15 +954,15 @@ struct xencamera_get_ctrl_req {
  * XENCAMERA_OP_CONFIG_SET request.
  *
  *
- * Request buffer response - response for XENCAMERA_OP_BUF_REQUEST
+ * Request buffer response - response for XENCAMERA_OP_BUF_GET_LAYOUT
  * request:
  *         0                1                 2               3        octet
  * +----------------+----------------+----------------+----------------+
- * |               id                |_OP_BUF_REQUEST |    reserved    | 4
+ * |               id                |_BUF_GET_LAYOUT |    reserved    | 4
  * +----------------+----------------+----------------+----------------+
  * |                               status                              | 8
  * +----------------+----------------+----------------+----------------+
- * |   num_buffers  |   num_planes   |            reserved             | 12
+ * |   num_planes   |                     reserved                     | 12
  * +----------------+----------------+----------------+----------------+
  * |                                size                               | 16
  * +----------------+----------------+----------------+----------------+
@@ -974,7 +991,6 @@ struct xencamera_get_ctrl_req {
  * |                          plane_stride[3]                          | 64
  * +----------------+----------------+----------------+----------------+
  *
- * num_buffers - uint8_t, number of buffers to be used.
  * num_planes - uint8_t, number of planes of the buffer.
  * size - uint32_t, overall size of the buffer including sizes of the
  *   individual planes and padding if applicable.
@@ -985,10 +1001,9 @@ struct xencamera_get_ctrl_req {
  * plane_stride - array of uint32_t, size in octets occupied by the
  *   corresponding single image line including padding if applicable.
  */
-struct xencamera_buf_request_resp {
-    uint8_t num_buffers;
+struct xencamera_buf_get_layout_resp {
     uint8_t num_planes;
-    uint8_t reserved[2];
+    uint8_t reserved[3];
     uint32_t size;
     uint32_t plane_offset[XENCAMERA_MAX_PLANE];
     uint32_t plane_size[XENCAMERA_MAX_PLANE];
@@ -996,6 +1011,26 @@ struct xencamera_buf_request_resp {
 };
 
 /*
+ * Request buffer response - response for XENCAMERA_OP_BUF_REQUEST
+ * request:
+ *         0                1                 2               3        octet
+ * +----------------+----------------+----------------+----------------+
+ * |               id                |_OP_BUF_REQUEST |    reserved    | 4
+ * +----------------+----------------+----------------+----------------+
+ * |                               status                              | 8
+ * +----------------+----------------+----------------+----------------+
+ * |   num_buffers  |                     reserved                     | 12
+ * +----------------+----------------+----------------+----------------+
+ * |                             reserved                              | 16
+ * +----------------+----------------+----------------+----------------+
+ * |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/|
+ * +----------------+----------------+----------------+----------------+
+ * |                             reserved                              | 64
+ * +----------------+----------------+----------------+----------------+
+ *
+ * num_buffers - uint8_t, number of buffers to be used.
+ *
+ *
  * Control enumerate response - response for XENCAMERA_OP_CTRL_ENUM:
  *         0                1                 2               3        octet
  * +----------------+----------------+----------------+----------------+
@@ -1138,30 +1173,6 @@ struct xencamera_frame_avail_evt {
 };
 
 /*
- * Configuration change - event from back to front when current
- * configuration has changed:
- *         0                1                 2               3        octet
- * +----------------+----------------+----------------+----------------+
- * |               id                | _CONFIG_CHANGE |   reserved     | 4
- * +----------------+----------------+----------------+----------------+
- * |                             reserved                              | 8
- * +----------------+----------------+----------------+----------------+
- * |                               flags                               | 12
- * +----------------+----------------+----------------+----------------+
- * |                             reserved                              | 16
- * +----------------+----------------+----------------+----------------+
- * |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/|
- * +----------------+----------------+----------------+----------------+
- * |                             reserved                              | 64
- * +----------------+----------------+----------------+----------------+
- *
- * flags - uint32_t, set of the XENCAMERA_EVT_CFG_FLG_XXX flags.
- */
-struct xencamera_cfg_change_evt {
-    uint32_t flags;
-};
-
-/*
  * Control change event- event from back to front when camera control
  * has changed:
  *         0                1                 2               3        octet
@@ -1190,11 +1201,10 @@ struct xencamera_cfg_change_evt {
  *
  * Notes:
  *  - this event is not sent for write-only controls
- *  - this event is also sent to the originator of the control change
+ *  - this event is not sent to the originator of the control change
  *  - this event is not sent when frontend first connects, e.g. initial
  *    control state must be explicitly queried
  */
-
 
 struct xencamera_req {
     uint16_t id;
@@ -1218,7 +1228,8 @@ struct xencamera_resp {
     int32_t status;
     union {
         struct xencamera_config config;
-        struct xencamera_buf_request_resp buf_request;
+        struct xencamera_buf_get_layout_resp buf_layout;
+        struct xencamera_buf_request buf_request;
         struct xencamera_ctrl_enum_resp ctrl_enum;
         struct xencamera_ctrl_value ctrl_value;
         uint8_t reserved1[56];
@@ -1231,7 +1242,6 @@ struct xencamera_evt {
     uint8_t reserved[5];
     union {
         struct xencamera_frame_avail_evt frame_avail;
-        struct xencamera_cfg_change_evt cfg_change;
         struct xencamera_ctrl_value ctrl_value;
         uint8_t reserved[56];
     } evt;
