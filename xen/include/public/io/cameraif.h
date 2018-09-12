@@ -173,12 +173,14 @@
  *      ordering requirement.
  *
  * formats
- *      Values:         <format, char[4]>
+ *      Values:         <format, char[7]>
  *
  *      Formats are organized as a set of directories one per each
  *      supported pixel format. The name of the directory is the
  *      corresponding FOURCC string label. The next level of
  *      the directory under <formats> represents supported resolutions.
+ *      If format represents a big-endian FOURCC code, then "-BE"
+ *      suffix must be added, case insensitive.
  *
  * resolution
  *      Values:         <width, uint32_t>x<height, uint32_t>
@@ -365,26 +367,26 @@
 #define XENCAMERA_COLORSPACE_SMPTE170M 0
 #define XENCAMERA_COLORSPACE_REC709    1
 #define XENCAMERA_COLORSPACE_SRGB      2
-#define XENCAMERA_COLORSPACE_ADOBERGB  3
+#define XENCAMERA_COLORSPACE_OPRGB     3
 #define XENCAMERA_COLORSPACE_BT2020    4
 #define XENCAMERA_COLORSPACE_DCI_P3    5
-#define XENCAMERA_COLORSPACE_RAW       6
 
 /* Color space transfer function. */
 #define XENCAMERA_XFER_FUNC_709        0
 #define XENCAMERA_XFER_FUNC_SRGB       1
-#define XENCAMERA_XFER_FUNC_ADOBERGB   2
+#define XENCAMERA_XFER_FUNC_OPRGB      2
 #define XENCAMERA_XFER_FUNC_NONE       3
 #define XENCAMERA_XFER_FUNC_DCI_P3     4
 #define XENCAMERA_XFER_FUNC_SMPTE2084  5
 
 /* Color space Y’CbCr encoding. */
-#define XENCAMERA_YCBCR_ENC_601              0
-#define XENCAMERA_YCBCR_ENC_709              1
-#define XENCAMERA_YCBCR_ENC_XV601            2
-#define XENCAMERA_YCBCR_ENC_XV709            3
-#define XENCAMERA_YCBCR_ENC_BT2020           4
-#define XENCAMERA_YCBCR_ENC_BT2020_CONST_LUM 5
+#define XENCAMERA_YCBCR_ENC_IGNORE           0
+#define XENCAMERA_YCBCR_ENC_601              1
+#define XENCAMERA_YCBCR_ENC_709              2
+#define XENCAMERA_YCBCR_ENC_XV601            3
+#define XENCAMERA_YCBCR_ENC_XV709            4
+#define XENCAMERA_YCBCR_ENC_BT2020           5
+#define XENCAMERA_YCBCR_ENC_BT2020_CONST_LUM 6
 
 /* Quantization range. */
 #define XENCAMERA_QUANTIZATION_FULL_RANGE    0
@@ -430,6 +432,8 @@
 #define XENCAMERA_CTRL_SATURATION_STR  "saturation"
 #define XENCAMERA_CTRL_HUE_STR         "hue"
 
+#define XENCAMERA_FOURCC_BIGENDIAN_STR "-be"
+
 /* Maximum number of buffer planes supported. */
 #define XENCAMERA_MAX_PLANE            4
 
@@ -449,6 +453,9 @@
  *   because of the fact it is already in use/reserved by the PV console.
  * - all references in this document to page sizes must be treated
  *   as pages of size XEN_PAGE_SIZE unless otherwise noted.
+ * - all FOURCC mappings used for configuration and messaging are
+ *   Linux V4L2 ones: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/uapi/linux/videodev2.h
+ *
  *
  ******************************************************************************
  *       Description of the protocol between frontend and backend driver
@@ -531,7 +538,8 @@
  * xfer_func - uint32_t, this supplements colorspace parameter,
  *   one of the XENCAMERA_XFER_FUNC_XXX.
  * ycbcr_enc - uint32_t, this supplements colorspace parameter,
- *   one of the XENCAMERA_YCBCR_ENC_XXX.
+ *   one of the XENCAMERA_YCBCR_ENC_XXX. Please note, that ycbcr_enc is only
+ *   valid for YCbCr pixelformats and should be ignored otherwise.
  * quantization - uint32_t, this supplements colorspace parameter,
  *   one of the XENCAMERA_QUANTIZATION_XXX.
  * displ_asp_ratio_numer - uint32_t, numerator of the display aspect ratio.
@@ -606,8 +614,10 @@ struct xencamera_config {
  *  - frontend may send multiple XENCAMERA_OP_BUF_REQUEST requests before
  *    sending XENCAMERA_OP_STREAM_START request to update or tune the
  *    configuration.
- *  - passing zero num_bufs in this request is not an error and can be used
+ *  - passing zero num_bufs in this request is not an error and is used
  *    to query buffer's format
+ *  - after this request camera configuration cannot be changed, unless
+ *    streaming is stopped and buffers destroyed
  */
 struct xencamera_buf_request {
     uint8_t num_bufs;
@@ -955,13 +965,13 @@ struct xencamera_get_ctrl_req {
  * +----------------+----------------+----------------+----------------+
  * |                           plane_size[3]                           | 48
  * +----------------+----------------+----------------+----------------+
- * |         plane_stride[0]         |         plane_stride[1]         | 52
+ * |                          plane_stride[0]                          | 52
  * +----------------+----------------+----------------+----------------+
- * |         plane_stride[2]         |         plane_stride[3]         | 56
+ * |                          plane_stride[1]                          | 56
  * +----------------+----------------+----------------+----------------+
- * |                             reserved                              | 60
+ * |                          plane_stride[2]                          | 60
  * +----------------+----------------+----------------+----------------+
- * |                             reserved                              | 64
+ * |                          plane_stride[3]                          | 64
  * +----------------+----------------+----------------+----------------+
  *
  * num_buffers - uint8_t, number of buffers to be used.
@@ -982,7 +992,7 @@ struct xencamera_buf_request_resp {
     uint32_t size;
     uint32_t plane_offset[XENCAMERA_MAX_PLANE];
     uint32_t plane_size[XENCAMERA_MAX_PLANE];
-    uint16_t plane_stride[XENCAMERA_MAX_PLANE];
+    uint32_t plane_stride[XENCAMERA_MAX_PLANE];
 };
 
 /*
@@ -993,9 +1003,9 @@ struct xencamera_buf_request_resp {
  * +----------------+----------------+----------------+----------------+
  * |                               status                              | 8
  * +----------------+----------------+----------------+----------------+
- * |     index      |      type      |              flags              | 12
+ * |     index      |      type      |            reserved             | 12
  * +----------------+----------------+----------------+----------------+
- * |                             reserved                              | 16
+ * |                               flags                               | 16
  * +----------------+----------------+----------------+----------------+
  * |                          min low 32-bits                          | 20
  * +----------------+----------------+----------------+----------------+
@@ -1022,7 +1032,7 @@ struct xencamera_buf_request_resp {
  *
  * index - uint8_t, index of the camera control in response.
  * type - uint8_t, type of the control, one of the XENCAMERA_CTRL_XXX.
- * flags - uint16_t, flags of the control, one of the XENCAMERA_CTRL_FLG_XXX.
+ * flags - uint32_t, flags of the control, one of the XENCAMERA_CTRL_FLG_XXX.
  * min - int64_t, minimum value of the control.
  * max - int64_t, maximum value of the control.
  * step - int64_t, minimum size in which control value can be changed.
@@ -1031,8 +1041,8 @@ struct xencamera_buf_request_resp {
 struct xencamera_ctrl_enum_resp {
     uint8_t index;
     uint8_t type;
-    uint16_t flags;
-    uint8_t reserved[4];
+    uint8_t reserved[2];
+    uint32_t flags;
     int64_t min;
     int64_t max;
     int64_t step;
@@ -1115,7 +1125,9 @@ struct xencamera_ctrl_enum_resp {
  * index - uint8_t, index of the buffer that contains new captured frame.
  * used_sz - uint32_t, number of octets this frame has. This can be less
  * than the XENCAMERA_OP_BUF_REQUEST.size (response) for compressed formats.
- * seq_num - uint64_t, sequential number of the frame.
+ * seq_num - uint64_t, sequential number of the frame. Must be
+ *   monotonically increasing. If skips are detected in seq_num then that
+ *   means that the frames in-between were dropped.
  */
 struct xencamera_frame_avail_evt {
     uint8_t index;
@@ -1175,6 +1187,12 @@ struct xencamera_cfg_change_evt {
  *
  * type - uint8_t, type of the control, one of the XENCAMERA_CTRL_XXX.
  * value - int64_t, new value of the control.
+ *
+ * Notes:
+ *  - this event is not sent for write-only controls
+ *  - this event is also sent to the originator of the control change
+ *  - this event is not sent when frontend first connects, e.g. initial
+ *    control state must be explicitly queried
  */
 
 
