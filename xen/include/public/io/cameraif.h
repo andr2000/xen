@@ -179,8 +179,9 @@
  *      supported pixel format. The name of the directory is the
  *      corresponding FOURCC string label. The next level of
  *      the directory under <formats> represents supported resolutions.
- *      If format represents a big-endian FOURCC code, then "-BE"
- *      suffix must be added.
+ *      If the format represents a big-endian variant of a little
+ *      endian format, then the "-BE" suffix must be added. E.g. 'AR15' vs
+ *      'AR15-BE'.
  *      If FOURCC string label has spaces then those are only allowed to
  *      be at the end of the label and must be trimmed.
  *
@@ -457,6 +458,13 @@
  *   as pages of size XEN_PAGE_SIZE unless otherwise noted.
  * - all FOURCC mappings used for configuration and messaging are
  *   Linux V4L2 ones: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/uapi/linux/videodev2.h
+ *   with the following exceptions:
+ *     - characters are allowed in [0x20; 0x7f] range
+ *     - when used for XenStore configuration entries the following
+ *       are not allowed:
+ *       - '/', '\', ' ' (space), '<', '>', ':', '"', '|', '?', '*'
+ *       - if trailing spaces are part of the FOURCC code then those must be
+ *         trimmed
  *
  *
  ******************************************************************************
