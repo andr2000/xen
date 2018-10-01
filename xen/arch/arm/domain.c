@@ -35,6 +35,7 @@
 #include <asm/vfp.h>
 #include <asm/vgic.h>
 #include <asm/vtimer.h>
+#include <asm/coord_suspend.h>
 
 #include "vuart.h"
 
@@ -673,6 +674,9 @@ int arch_domain_create(struct domain *d,
         rc = -EOPNOTSUPP;
         goto fail;
     }
+
+    if ( (rc = coord_suspend_init(d)) != 0 )
+        goto fail;
 
     if ( (rc = domain_vgic_register(d, &count)) != 0 )
         goto fail;
