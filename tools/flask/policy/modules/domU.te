@@ -31,3 +31,7 @@ use_device_noiommu(domU_t, irq_t)
 use_device_noiommu(domU_t, iomem_t)
 use_device_noiommu(domU_t, device_t)
 use_device_noiommu(domU_t, ioport_t)
+
+allow domU_t domxen_t:mmu { memorymap map_read map_write };
+
+allow domU_t xen_t:xen { tbufcontrol physinfo };
