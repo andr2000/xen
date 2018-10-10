@@ -37,6 +37,8 @@
 
 #include "vuart.h"
 
+#include <xen/trace.h>
+
 DEFINE_PER_CPU(struct vcpu *, curr_vcpu);
 
 static void do_idle(void)
@@ -297,9 +299,13 @@ static void update_runstate_area(struct vcpu *v)
 
 static void schedule_tail(struct vcpu *prev)
 {
+
+    TRACE_0DV(TRC_AIRQ_5);
     ctxt_switch_from(prev);
 
     ctxt_switch_to(current);
+
+    TRACE_0DV(TRC_AIRQ_6);
 
     local_irq_enable();
 
