@@ -37,6 +37,8 @@
 #include <asm/vgic.h>
 #include <asm/acpi.h>
 
+#include <xen/trace.h>
+
 static void gic_restore_pending_irqs(struct vcpu *v);
 
 static DEFINE_PER_CPU(uint64_t, lr_mask);
@@ -68,6 +70,24 @@ unsigned int gic_number_lines(void)
 {
     return gic_hw_ops->info->nr_lines;
 }
+
+void trace_gsx_irq(void);
+
+void trace_gsx_irq(void)
+{
+    struct gic_lr lr_val;
+    int i;
+
+    for ( i = 0; i < gic_hw_ops->info->nr_lrs; i++ )
+    {
+       gic_hw_ops->read_lr(i, &lr_val);
+       if (lr_val.virq == 151) {
+	       TRACE_0DV(TRC_XT_IRQ_END);
+	       break;
+       }
+   }
+}
+
 
 void gic_save_state(struct vcpu *v)
 {
@@ -776,6 +796,9 @@ void gic_interrupt(struct cpu_user_regs *regs, int is_fiq)
 
         if ( likely(irq >= 16 && irq < 1020) )
         {
+            if (irq == 151)
+                TRACE_0DV(TRC_XT_IRQ_START);
+
             local_irq_enable();
             do_IRQ(regs, irq, is_fiq);
             local_irq_disable();

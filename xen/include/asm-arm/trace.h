@@ -3,21 +3,17 @@
 
 /* Trace events for ARM IRQs */
 
-#define TRC_AIRQ                    (TRC_HW_IRQ + 0x800)
-#define TRC_AIRQ_1                  (TRC_AIRQ + 0x1)
-#define TRC_AIRQ_2                  (TRC_AIRQ + 0x2)
-#define TRC_AIRQ_3                  (TRC_AIRQ + 0x3)
-#define TRC_AIRQ_4                  (TRC_AIRQ + 0x4)
-#define TRC_AIRQ_5                  (TRC_AIRQ + 0x5)
-#define TRC_AIRQ_6                  (TRC_AIRQ + 0x6)
-#define TRC_AIRQ_SPB                (TRC_AIRQ + 0x7)
-#define TRC_AIRQ_SPA                (TRC_AIRQ + 0x8)
-#define TRC_AIRQ_SPBU               (TRC_AIRQ + 0x9)
-#define TRC_AIRQ_SPU                (TRC_AIRQ + 0xA)
+#define TRC_XT                         (TRC_HW_IRQ + 0x800)
+#define TRC_XT_IRQ_START               (TRC_XT + 0x1)
+#define TRC_XT_IRQ_END                 (TRC_XT + 0x2)
+#define TRC_XT_IRQ_CTXT_SW_START       (TRC_XT + 0x3)
+#define TRC_XT_IRQ_CTXT_SW_END         (TRC_XT + 0x4)
+#define TRC_XT_VIRT_TMR_SAVE_START     (TRC_XT + 0x5)
+#define TRC_XT_VIRT_TMR_SAVE_END       (TRC_XT + 0x6)
+#define TRC_XT_VIRT_TMR_RESTORE_START  (TRC_XT + 0x7)
+#define TRC_XT_VIRT_TMR_RESTORE_END    (TRC_XT + 0x8)
 
 #define DVCPUID(v) ((uint32_t)(((v)->domain->domain_id << 16) + (v)->vcpu_id))
-
-
 
 #endif /* __ASM_TRACE_H__ */
 /*

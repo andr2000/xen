@@ -299,13 +299,11 @@ static void update_runstate_area(struct vcpu *v)
 
 static void schedule_tail(struct vcpu *prev)
 {
-
-    TRACE_0DV(TRC_AIRQ_5);
+    TRACE_0DV(TRC_XT_IRQ_CTXT_SW_START);
     ctxt_switch_from(prev);
 
     ctxt_switch_to(current);
-
-    TRACE_0DV(TRC_AIRQ_6);
+    TRACE_0DV(TRC_XT_IRQ_CTXT_SW_END);
 
     local_irq_enable();
 

@@ -141,7 +141,7 @@ void vcpu_timer_destroy(struct vcpu *v)
 
 int virt_timer_save(struct vcpu *v)
 {
-    TRACE_0DV(TRC_AIRQ_1);
+    TRACE_0DV(TRC_XT_VIRT_TMR_SAVE_START);
     ASSERT(!is_idle_vcpu(v));
 
     v->arch.virt_timer.ctl = READ_SYSREG32(CNTV_CTL_EL0);
@@ -153,13 +153,13 @@ int virt_timer_save(struct vcpu *v)
         set_timer(&v->arch.virt_timer.timer, ticks_to_ns(v->arch.virt_timer.cval +
                   v->domain->arch.virt_timer_base.offset - boot_count));
     }
-    TRACE_0DV(TRC_AIRQ_2);
+    TRACE_0DV(TRC_XT_VIRT_TMR_SAVE_END);
     return 0;
 }
 
 int virt_timer_restore(struct vcpu *v)
 {
-    TRACE_0DV(TRC_AIRQ_3);
+    TRACE_0DV(TRC_XT_VIRT_TMR_RESTORE_START);
     ASSERT(!is_idle_vcpu(v));
 
     stop_timer(&v->arch.virt_timer.timer);
@@ -169,7 +169,7 @@ int virt_timer_restore(struct vcpu *v)
     WRITE_SYSREG64(v->domain->arch.virt_timer_base.offset, CNTVOFF_EL2);
     WRITE_SYSREG64(v->arch.virt_timer.cval, CNTV_CVAL_EL0);
     WRITE_SYSREG32(v->arch.virt_timer.ctl, CNTV_CTL_EL0);
-    TRACE_0DV(TRC_AIRQ_4);
+    TRACE_0DV(TRC_XT_VIRT_TMR_RESTORE_END);
     return 0;
 }
 

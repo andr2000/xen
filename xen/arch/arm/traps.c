@@ -54,6 +54,8 @@
 
 #include "decode.h"
 
+#include <xen/trace.h>
+
 /* The base of the stack must always be double-word aligned, which means
  * that both the kernel half of struct cpu_user_regs (which is pushed in
  * entry.S) and struct cpu_info (which lives at the bottom of a Xen
@@ -2293,6 +2295,8 @@ void do_trap_fiq(struct cpu_user_regs *regs)
     gic_interrupt(regs, 1);
 }
 
+void trace_gsx_irq(void);
+
 void leave_hypervisor_tail(void)
 {
     while (1)
@@ -2300,6 +2304,8 @@ void leave_hypervisor_tail(void)
         local_irq_disable();
         if (!softirq_pending(smp_processor_id())) {
             gic_inject();
+	    if (current->vcpu_id == 0 && current->domain->domain_id == 1)
+                trace_gsx_irq();
 
             /*
              * If the SErrors handle option is "DIVERSE", we have to prevent
