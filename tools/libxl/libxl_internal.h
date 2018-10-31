@@ -3646,6 +3646,7 @@ extern const struct libxl_device_type libxl__vdispl_devtype;
 extern const struct libxl_device_type libxl__p9_devtype;
 extern const struct libxl_device_type libxl__vgsx_devtype;
 extern const struct libxl_device_type libxl__vsnd_devtype;
+extern const struct libxl_device_type libxl__vcamera_devtype;
 
 extern const struct libxl_device_type *device_type_tbl[];
 
