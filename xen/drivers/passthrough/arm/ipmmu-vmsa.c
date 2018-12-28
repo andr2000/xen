@@ -2524,6 +2524,36 @@ static int ipmmu_vmsa_assign_dev(struct domain *d, u8 devfn,
 out:
 	spin_unlock(&xen_domain->lock);
 
+	if (d->domain_id == 1)
+	{
+		int ret;
+		unsigned int order = 12; // 0x1000000
+		static bool set_fake_addr;
+
+		if (!set_fake_addr) {
+			set_fake_addr = true;
+			ret = iommu_map_pages(d, 0, 0, order, IOMMUF_readable);
+			if ( ret )
+				printk("Failed to set fake addr translation gfn: 0x00 mfn: 0x00 page_order: %d\n", order);
+			else
+				printk("Set fake addr translation gfn: 0x00 mfn: 0x00 page_order: %d\n", order);
+
+			{
+				p2m_type_t t;
+				gfn_t gfn1 = 0;
+				gfn_t gfn2 = 0x1000000 >> PAGE_SHIFT;
+				order = 0; // 0x1000
+
+				for ( ; gfn_x(gfn1) < gfn_x(gfn2); gfn1 = gfn_next_boundary(gfn1, order) )
+				{
+					mfn_t mfn1 = p2m_get_entry(&d->arch.p2m, gfn1, &t, NULL, &order);
+
+					printk("Reading back: gfn: 0x%lx mfn: 0x%lx page order: %d\n", gfn1, mfn1, order);
+				}
+			}
+		}
+	}
+
 	return ret;
 }
 
@@ -2723,8 +2753,8 @@ static int __must_check ipmmu_vmsa_map_pages(struct domain *d,
 	 * This is only valid when the domain is directed mapped. Hence this
 	 * function should only be used by gnttab code with gfn == mfn.
 	 */
-	BUG_ON(!is_domain_direct_mapped(d));
-	BUG_ON(mfn != gfn);
+	//BUG_ON(!is_domain_direct_mapped(d));
+	//BUG_ON(mfn != gfn);
 
 	/* We only support readable and writable flags */
 	if (!(flags & (IOMMUF_readable | IOMMUF_writable)))
