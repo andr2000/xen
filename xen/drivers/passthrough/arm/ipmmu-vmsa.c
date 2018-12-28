@@ -1056,6 +1056,36 @@ static void ipmmu_domain_destroy_context(struct ipmmu_vmsa_domain *domain)
  * Fault Handling
  */
 
+static void ipmmu_fixup(struct domain *d)
+{
+	int ret;
+	unsigned int order = 12; // 0x1000000
+	static bool set_fake_addr;
+
+	if (!set_fake_addr) {
+		set_fake_addr = true;
+		ret = iommu_map_pages(d, 0, 0, order, IOMMUF_readable);
+		if ( ret )
+			printk("Failed to set fake addr translation gfn: 0x00 mfn: 0x00 page_order: %d\n", order);
+		else
+			printk("Set fake addr translation gfn: 0x00 mfn: 0x00 page_order: %d\n", order);
+
+		/*{
+			p2m_type_t t;
+			gfn_t gfn1 = 0;
+			gfn_t gfn2 = 0x1000000 >> PAGE_SHIFT;
+			order = 0; // 0x1000
+
+			for ( ; gfn_x(gfn1) < gfn_x(gfn2); gfn1 = gfn_next_boundary(gfn1, order) )
+			{
+				mfn_t mfn1 = p2m_get_entry(&d->arch.p2m, gfn1, &t, NULL, &order);
+
+				printk("Reading back: gfn: 0x%lx mfn: 0x%lx page order: %d\n", gfn1, mfn1, order);
+			}
+		}*/
+	}
+}
+
 /* Xen: Show domain_id in every printk */
 static irqreturn_t ipmmu_domain_irq(struct ipmmu_vmsa_domain *domain)
 {
@@ -1102,6 +1132,11 @@ static irqreturn_t ipmmu_domain_irq(struct ipmmu_vmsa_domain *domain)
 	dev_err_ratelimited(mmu->dev,
 			"d%d: Unhandled fault: status 0x%08x iova 0x%"PRIx64"\n",
 			domain->d->domain_id, status, iova);
+
+	if (domain->d->domain_id == 1) {
+		ipmmu_fixup(domain->d);
+		ipmmu_tlb_invalidate(domain);
+	}
 
 	return IRQ_HANDLED;
 }
@@ -2524,7 +2559,7 @@ static int ipmmu_vmsa_assign_dev(struct domain *d, u8 devfn,
 out:
 	spin_unlock(&xen_domain->lock);
 
-	if (d->domain_id == 1)
+	/*if (d->domain_id == 1)
 	{
 		int ret;
 		unsigned int order = 12; // 0x1000000
@@ -2552,7 +2587,7 @@ out:
 				}
 			}
 		}
-	}
+	}*/
 
 	return ret;
 }
