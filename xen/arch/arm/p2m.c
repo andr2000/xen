@@ -1782,8 +1782,13 @@ void p2m_flush_vm(struct vcpu *v)
     /*
      * Invalidate the p2m to track which page was modified by the guest
      * between call of p2m_flush_vm().
+     *
+     * This is only turned when IOMMU is not used or the page-table are
+     * not shared because bit[0] (e.g valid bit) unset will result
+     * IOMMU fault that could be not fixed-up.
      */
-    p2m_invalidate_root(p2m);
+    if ( !iommu_use_hap_pt(v->domain) )
+        p2m_invalidate_root(p2m);
 
     v->arch.need_flush_to_ram = false;
 }
