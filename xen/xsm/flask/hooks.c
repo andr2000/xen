@@ -339,6 +339,8 @@ static char *flask_show_security_evtchn(struct domain *d, const struct evtchn *c
         if (irq && get_irq_sid(irq, &sid, NULL))
             return NULL;
         break;
+    default:
+        break;
     }
     if ( !sid )
         return NULL;
@@ -1246,6 +1248,8 @@ static int flask_hvm_altp2mhvm_op(struct domain *d, uint64_t mode, uint32_t op)
         if ( d == current->domain )
             return -EPERM;
         break;
+    default:
+        return -EPERM;
     };
 
     return current_has_perm(d, SECCLASS_HVM, HVM__ALTP2MHVM_OP);

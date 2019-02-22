@@ -590,6 +590,8 @@ void avc_audit(u32 ssid, u32 tsid, u16 tclass, u32 requested,
     case AVC_AUDIT_DATA_DTDEV:
         avc_printk(&buf, "dtdevice=%s ", a->dtdev);
         break;
+    default:
+        break;
     }
 
     avc_dump_query(&buf, ssid, tsid, tclass);
