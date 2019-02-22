@@ -640,6 +640,8 @@ static unsigned int nr_grant_entries(struct grant_table *gt)
                      GNTTAB_NR_RESERVED_ENTRIES);
         return f2e(nr_grant_frames(gt), 2);
 #undef f2e
+    default:
+        break;
     }
 
     return 0;
@@ -2992,7 +2994,9 @@ gnttab_set_version(XEN_GUEST_HANDLE_PARAM(gnttab_set_version_t) uop)
     case 2:
         for ( i = 0; i < GNTTAB_NR_RESERVED_ENTRIES; i++ )
         {
-            switch ( shared_entry_v2(gt, i).hdr.flags & GTF_type_mask )
+            unsigned int flags = shared_entry_v2(gt, i).hdr.flags;
+
+            switch ( flags & GTF_type_mask )
             {
             case GTF_permit_access:
                  if ( !(shared_entry_v2(gt, i).full_page.frame >> 32) )
@@ -3003,8 +3007,16 @@ gnttab_set_version(XEN_GUEST_HANDLE_PARAM(gnttab_set_version_t) uop)
                          "tried to change grant table version to 1 with non-representable entries\n");
                 res = -ERANGE;
                 goto out_unlock;
+            default:
+                gdprintk(XENLOG_ERR,
+                         "bad flags %#x in grant %#x when switching version\n",
+                         flags, i);
+                res = -EINVAL;
+                goto out_unlock;
             }
         }
+        break;
+    default:
         break;
     }
 
@@ -3038,6 +3050,8 @@ gnttab_set_version(XEN_GUEST_HANDLE_PARAM(gnttab_set_version_t) uop)
             }
         }
         break;
+    default:
+        break;
     }
 
     if ( op.version < 2 && gt->gt_version == 2 &&
@@ -3068,6 +3082,8 @@ gnttab_set_version(XEN_GUEST_HANDLE_PARAM(gnttab_set_version_t) uop)
                 shared_entry_v2(gt, i).full_page.frame =
                     reserved_entries[i].frame;
             }
+            break;
+        default:
             break;
         }
     }

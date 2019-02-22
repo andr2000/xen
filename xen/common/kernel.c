@@ -267,6 +267,9 @@ int parse_bool(const char *s, const char *e)
         if ( !strncmp("disable", s, 7) )
             return 0;
         break;
+
+    default:
+        break;
     }
 
     return -1;
@@ -565,6 +568,9 @@ DO(xen_version)(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
 
         return sz;
     }
+
+    default:
+        break;
     }
 
     return -ENOSYS;

@@ -568,6 +568,8 @@ static unsigned int dt_bus_pci_get_flags(const __be32 *addr)
     case 0x03: /* 64 bits */
         flags |= IORESOURCE_MEM;
         break;
+    default:
+        break;
     }
     if (w & 0x40000000)
         flags |= IORESOURCE_PREFETCH;

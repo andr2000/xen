@@ -105,6 +105,8 @@ static bool virq_is_global(unsigned int virq)
 
     case VIRQ_ARCH_0 ... VIRQ_ARCH_7:
         return arch_virq_is_global(virq);
+    default:
+        break;
     }
 
     ASSERT(virq < NR_VIRQS);
@@ -1418,6 +1420,9 @@ static void domain_dump_evtchn_info(struct domain *d)
             break;
         case ECS_VIRQ:
             printk(" v=%d", chn->u.virq);
+            break;
+        default:
+            printk(" unknown state: %u", chn->state);
             break;
         }
 

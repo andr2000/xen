@@ -689,6 +689,9 @@ a653sched_adjust_global(const struct scheduler *ops,
         if ( copy_to_guest(sc->u.sched_arinc653.schedule, &local_sched, 1) )
             rc = -EFAULT;
         break;
+
+    default:
+        break;
     }
 
     return rc;
