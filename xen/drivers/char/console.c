@@ -202,6 +202,7 @@ static char *loglvl_str(int lvl)
     case 2: return "Errors and warnings";
     case 3: return "Errors, warnings and info";
     case 4: return "All";
+    default: break;
     }
     return "???";
 }
@@ -708,6 +709,8 @@ static int printk_prefix_check(char *p, char **pp)
         case '0' ... '3':
             loglvl = p[1] - '0';
             break;
+        default:
+            break;
         }
         p += 3;
     }
@@ -732,6 +735,8 @@ static int parse_console_timestamps(const char *s)
     case 1:
         opt_con_timestamp_mode = TSM_DATE;
         return 0;
+    default:
+        break;
     }
     if ( *s == '\0' || /* Compat for old booleanparam() */
          !strcmp(s, "date") )
