@@ -361,11 +361,13 @@ static char *print_domain(char *str, char *end, const struct domain *d)
     case DOMID_XEN:  name = "[XEN]";  break;
     case DOMID_COW:  name = "[COW]";  break;
     case DOMID_IDLE: name = "[IDLE]"; break;
+    default:
         /*
          * In principle, we could ASSERT_UNREACHABLE() in the default case.
          * However, this path is used to print out crash information, which
          * risks recursing infinitely and not printing any useful information.
          */
+        break;
     }
 
     if ( str < end )
@@ -455,6 +457,8 @@ static char *pointer(char *str, char *end, const char **fmt_ptr,
             ++*fmt_ptr;
             sep = 0;
             break;
+        default:
+            break;
         }
 
         for ( i = 0; ; )
@@ -519,6 +523,9 @@ static char *pointer(char *str, char *end, const char **fmt_ptr,
     case 'v': /* d<domain-id>v<vcpu-id> from a struct vcpu */
         ++*fmt_ptr;
         return print_vcpu(str, end, arg);
+
+    default:
+        break;
     }
 
     if ( field_width == -1 )
@@ -594,6 +601,7 @@ int vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
         case ' ': flags |= SPACE; goto repeat;
         case '#': flags |= SPECIAL; goto repeat;
         case '0': flags |= ZEROPAD; goto repeat;
+        default : break;
         }
 
         /* get field width */

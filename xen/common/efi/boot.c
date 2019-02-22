@@ -582,6 +582,8 @@ static CHAR16 *__init point_tail(CHAR16 *fn)
         case L'_':
             tail = fn;
             break;
+        default:
+            break;
         }
 }
 /*

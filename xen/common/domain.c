@@ -740,6 +740,8 @@ int domain_kill(struct domain *d)
         send_global_virq(VIRQ_DOM_EXC);
         /* fallthrough */
     case DOMDYING_dead:
+        /* fallthrough */
+    default:
         break;
     }
 
@@ -1554,6 +1556,8 @@ long vm_assist(struct domain *p, unsigned int cmd, unsigned int type,
     case VMASST_CMD_disable:
         clear_bit(type, &p->vm_assist);
         return 0;
+    default:
+        break;
     }
 
     return -ENOSYS;

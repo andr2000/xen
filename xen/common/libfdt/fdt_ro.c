@@ -120,6 +120,9 @@ static int _nextprop(const void *fdt, int offset)
 
 		case FDT_PROP:
 			return offset;
+
+		default:
+			break;
 		}
 		offset = nextoffset;
 	} while (tag == FDT_NOP);

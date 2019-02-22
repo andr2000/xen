@@ -1455,6 +1455,9 @@ rt_dom_cntl(
             /* notify upper caller how many vcpus have been processed. */
             op->u.v.nr_vcpus = index;
         break;
+    default:
+        rc = -EINVAL;
+        break;
     }
 
     return rc;

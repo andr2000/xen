@@ -3037,6 +3037,9 @@ static int csched2_sys_cntl(const struct scheduler *ops,
     case XEN_SYSCTL_SCHEDOP_getinfo:
         params->ratelimit_us = prv->ratelimit_us;
         break;
+
+    default:
+        return -EINVAL;
     }
 
     return 0;

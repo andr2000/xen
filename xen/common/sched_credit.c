@@ -1291,6 +1291,9 @@ csched_sys_cntl(const struct scheduler *ops,
         params->vcpu_migr_delay_us = prv->vcpu_migr_delay / MICROSECS(1);
         rc = 0;
         break;
+
+    default:
+        break;
     }
     out:
     return rc;
