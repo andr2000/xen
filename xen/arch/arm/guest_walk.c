@@ -101,6 +101,8 @@ static bool guest_walk_sd(const struct vcpu *v,
 
     switch ( pte.walk.dt )
     {
+    default:
+        /* Fall through. */
     case L1DESC_INVALID:
         return false;
 

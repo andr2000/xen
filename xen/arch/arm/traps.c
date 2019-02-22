@@ -1306,6 +1306,10 @@ int do_bug_frame(const struct cpu_user_regs *regs, vaddr_t pc)
         show_execution_state(regs);
         panic("Assertion '%s' failed at %s%s:%d\n",
               predicate, prefix, filename, lineno);
+        break;
+
+    default:
+        break;
     }
 
     return -EINVAL;
@@ -1972,6 +1976,8 @@ static void do_trap_stage2_abort_guest(struct cpu_user_regs *regs,
                 advance_pc(regs, hsr);
                 return;
             case IO_UNHANDLED:
+                /* Fall through. */
+            default:
                 /* IO unhandled, try another way to handle it. */
                 break;
             }

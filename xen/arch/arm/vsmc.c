@@ -109,6 +109,8 @@ static bool handle_arch(struct cpu_user_regs *regs)
         case ARM_SMCCC_ARCH_WORKAROUND_2_FID:
             switch ( get_ssbd_state() )
             {
+            default:
+                /* Fall through. */
             case ARM_SSBD_UNKNOWN:
             case ARM_SSBD_FORCE_DISABLE:
                 break;
@@ -122,6 +124,8 @@ static bool handle_arch(struct cpu_user_regs *regs)
                 ret = ARM_SMCCC_NOT_REQUIRED;
                 break;
             }
+            break;
+        default:
             break;
         }
 
@@ -152,6 +156,9 @@ static bool handle_arch(struct cpu_user_regs *regs)
 
         return true;
     }
+
+    default:
+        break;
     }
 
     return false;
@@ -275,6 +282,8 @@ static bool vsmccc_handle_call(struct cpu_user_regs *regs)
             break;
         case ARM_SMCCC_OWNER_SIP:
             handled = platform_smc(regs);
+            break;
+        default:
             break;
         }
     }
