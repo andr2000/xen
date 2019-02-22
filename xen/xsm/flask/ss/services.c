@@ -1018,6 +1018,11 @@ static int security_compute_sid(u32 ssid,
             /* Use the related object owner. */
             newcontext.user = tcontext->user;
         break;
+        default:
+            printk(KERN_ERR "security_compute_sid:  unrecognized AVTAB %d\n",
+                   specified);
+            rc = -EINVAL;
+            goto out_unlock;
     }
 
     /* Set the role and type to default values. */
