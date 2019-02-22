@@ -919,6 +919,8 @@ arm_64_lpae_alloc_pgtable_s1(struct io_pgtable_cfg *cfg, void *cookie)
 	case SZ_64K:
 		reg |= ARM_LPAE_TCR_TG0_64K;
 		break;
+	default:
+		goto out_free_data;
 	}
 
 	switch (cfg->oas) {

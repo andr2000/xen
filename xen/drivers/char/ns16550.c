@@ -995,6 +995,8 @@ static int __init parse_parity_char(int c)
         return UART_PARITY_MARK;
     case 's': 
         return UART_PARITY_SPACE;
+    default:
+        break;
     }
     return 0;
 }

@@ -1056,6 +1056,9 @@ static void arm_smmu_init_context_bank(struct arm_smmu_domain *smmu_domain)
 		case 48:
 			reg = (TTBCR2_ADDR_48 << TTBCR2_SEP_SHIFT);
 			break;
+		default:
+			BUG();
+			break;
 		}
 
 		switch (smmu->s1_output_size) {
@@ -1077,6 +1080,9 @@ static void arm_smmu_init_context_bank(struct arm_smmu_domain *smmu_domain)
 			break;
 		case 48:
 			reg |= (TTBCR2_ADDR_48 << TTBCR2_PASIZE_SHIFT);
+			break;
+		default:
+			BUG();
 			break;
 		}
 
@@ -1130,6 +1136,9 @@ static void arm_smmu_init_context_bank(struct arm_smmu_domain *smmu_domain)
 				break;
 			case 48:
 				reg |= (TTBCR2_ADDR_48 << TTBCR_PASIZE_SHIFT);
+				break;
+			default:
+				BUG();
 				break;
 			}
 		} else {
