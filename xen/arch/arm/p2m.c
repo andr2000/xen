@@ -540,6 +540,10 @@ static void p2m_set_permission(lpae_t *e, p2m_type_t t, p2m_access_t a)
     case p2m_max_real_type:
         BUG();
         break;
+
+    default:
+        BUG();
+        break;
     }
 
     /* Then restrict with access permissions */
@@ -573,6 +577,9 @@ static void p2m_set_permission(lpae_t *e, p2m_type_t t, p2m_access_t a)
     case p2m_access_n2rwx:
         e->p2m.read = e->p2m.write = 0;
         e->p2m.xn = 1;
+        break;
+    default:
+        BUG();
         break;
     }
 }

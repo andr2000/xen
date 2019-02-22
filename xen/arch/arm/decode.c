@@ -112,6 +112,9 @@ static int decode_thumb(register_t pc, struct hsr_dabt *dabt)
         case 3: /* Signed byte */
             update_dabt(dabt, reg, 0, true);
             break;
+        default:
+            ASSERT_UNREACHABLE();
+            goto bad_thumb;
         }
 
         break;

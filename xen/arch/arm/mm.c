@@ -1112,6 +1112,9 @@ static void set_pte_flags_on_range(const char *p, unsigned long l, enum mg mg)
             pte.pt.xn = 0;
             pte.pt.ro = 1;
             break;
+        default:
+            pte.pt.valid = 0;
+            break;
         }
         write_pte(xen_xenmap + i, pte);
     }

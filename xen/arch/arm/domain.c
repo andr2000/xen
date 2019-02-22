@@ -439,6 +439,11 @@ unsigned long hypercall_create_continuation(
                 case 3: regs->x3 = arg; break;
                 case 4: regs->x4 = arg; break;
                 case 5: regs->x5 = arg; break;
+                /*
+                 * arm_abi Hypercall Calling Convention:
+                 * A hypercall can take up to 5 arguments.
+                 */
+                default: BUG(); break;
                 }
             }
 
@@ -462,6 +467,11 @@ unsigned long hypercall_create_continuation(
                 case 3: regs->r3 = arg; break;
                 case 4: regs->r4 = arg; break;
                 case 5: regs->r5 = arg; break;
+                /*
+                 * arm_abi Hypercall Calling Convention:
+                 * A hypercall can take up to 5 arguments.
+                 */
+                default: BUG(); break;
                 }
             }
 
