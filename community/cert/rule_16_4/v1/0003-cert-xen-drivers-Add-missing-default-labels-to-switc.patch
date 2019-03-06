@@ -1,0 +1,101 @@
+From 1b0983748aa0df8fd6bd0f69a6d22d6f5e452101 Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Fri, 22 Feb 2019 09:24:04 +0200
+Subject: [Xen-devel][RFC PATCH 3/4] cert:xen/drivers: Add missing default
+ labels to switch statements
+
+It is required by MISRA [1] that every switch statement has a default
+label as a measure of defensive programming technique.
+
+The changes in this patch are to match MISRA C:2012: Rule 16.4
+requirements.
+
+[1] https://www.misra.org.uk/
+
+Signed-off-by: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+---
+ xen/drivers/char/console.c         | 5 +++++
+ xen/drivers/char/ns16550.c         | 2 ++
+ xen/drivers/passthrough/arm/smmu.c | 9 +++++++++
+ 3 files changed, 16 insertions(+)
+
+diff --git a/xen/drivers/char/console.c b/xen/drivers/char/console.c
+index 4315588f0597..e499ead90ca9 100644
+--- a/xen/drivers/char/console.c
++++ b/xen/drivers/char/console.c
+@@ -202,6 +202,7 @@ static char *loglvl_str(int lvl)
+     case 2: return "Errors and warnings";
+     case 3: return "Errors, warnings and info";
+     case 4: return "All";
++    default: break;
+     }
+     return "???";
+ }
+@@ -708,6 +709,8 @@ static int printk_prefix_check(char *p, char **pp)
+         case '0' ... '3':
+             loglvl = p[1] - '0';
+             break;
++        default:
++            break;
+         }
+         p += 3;
+     }
+@@ -732,6 +735,8 @@ static int parse_console_timestamps(const char *s)
+     case 1:
+         opt_con_timestamp_mode = TSM_DATE;
+         return 0;
++    default:
++        break;
+     }
+     if ( *s == '\0' || /* Compat for old booleanparam() */
+          !strcmp(s, "date") )
+diff --git a/xen/drivers/char/ns16550.c b/xen/drivers/char/ns16550.c
+index 189e121b7e4d..d0903a9d47db 100644
+--- a/xen/drivers/char/ns16550.c
++++ b/xen/drivers/char/ns16550.c
+@@ -995,6 +995,8 @@ static int __init parse_parity_char(int c)
+         return UART_PARITY_MARK;
+     case 's': 
+         return UART_PARITY_SPACE;
++    default:
++        break;
+     }
+     return 0;
+ }
+diff --git a/xen/drivers/passthrough/arm/smmu.c b/xen/drivers/passthrough/arm/smmu.c
+index f151b9f5b5ee..cb35a7ce55ca 100644
+--- a/xen/drivers/passthrough/arm/smmu.c
++++ b/xen/drivers/passthrough/arm/smmu.c
+@@ -1056,6 +1056,9 @@ static void arm_smmu_init_context_bank(struct arm_smmu_domain *smmu_domain)
+ 		case 48:
+ 			reg = (TTBCR2_ADDR_48 << TTBCR2_SEP_SHIFT);
+ 			break;
++		default:
++			BUG();
++			break;
+ 		}
+ 
+ 		switch (smmu->s1_output_size) {
+@@ -1078,6 +1081,9 @@ static void arm_smmu_init_context_bank(struct arm_smmu_domain *smmu_domain)
+ 		case 48:
+ 			reg |= (TTBCR2_ADDR_48 << TTBCR2_PASIZE_SHIFT);
+ 			break;
++		default:
++			BUG();
++			break;
+ 		}
+ 
+ 		if (stage1)
+@@ -1131,6 +1137,9 @@ static void arm_smmu_init_context_bank(struct arm_smmu_domain *smmu_domain)
+ 			case 48:
+ 				reg |= (TTBCR2_ADDR_48 << TTBCR_PASIZE_SHIFT);
+ 				break;
++			default:
++				BUG();
++				break;
+ 			}
+ 		} else {
+ 			reg |= (64 - smmu->s1_input_size) << TTBCR_T0SZ_SHIFT;
+-- 
+2.20.1
+

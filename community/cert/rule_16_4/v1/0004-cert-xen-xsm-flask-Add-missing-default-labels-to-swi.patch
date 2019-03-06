@@ -1,0 +1,75 @@
+From c571fc5bf3df5b3bbe386d5528aff6b48ba65120 Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Fri, 22 Feb 2019 09:24:24 +0200
+Subject: [Xen-devel][RFC PATCH 4/4] cert:xen/xsm/flask: Add missing default
+ labels to switch statements
+
+It is required by MISRA [1] that every switch statement has a default
+label as a measure of defensive programming technique.
+
+The changes in this patch are to match MISRA C:2012: Rule 16.4
+requirements.
+
+[1] https://www.misra.org.uk/
+
+Signed-off-by: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+---
+ xen/xsm/flask/avc.c         | 2 ++
+ xen/xsm/flask/hooks.c       | 4 ++++
+ xen/xsm/flask/ss/services.c | 5 +++++
+ 3 files changed, 11 insertions(+)
+
+diff --git a/xen/xsm/flask/avc.c b/xen/xsm/flask/avc.c
+index 640c708659b0..06ac404b0ad6 100644
+--- a/xen/xsm/flask/avc.c
++++ b/xen/xsm/flask/avc.c
+@@ -590,6 +590,8 @@ void avc_audit(u32 ssid, u32 tsid, u16 tclass, u32 requested,
+     case AVC_AUDIT_DATA_DTDEV:
+         avc_printk(&buf, "dtdevice=%s ", a->dtdev);
+         break;
++    default:
++        break;
+     }
+ 
+     avc_dump_query(&buf, ssid, tsid, tclass);
+diff --git a/xen/xsm/flask/hooks.c b/xen/xsm/flask/hooks.c
+index 3d00c747f6b7..f29c4a4ffd05 100644
+--- a/xen/xsm/flask/hooks.c
++++ b/xen/xsm/flask/hooks.c
+@@ -339,6 +339,8 @@ static char *flask_show_security_evtchn(struct domain *d, const struct evtchn *c
+         if (irq && get_irq_sid(irq, &sid, NULL))
+             return NULL;
+         break;
++    default:
++        break;
+     }
+     if ( !sid )
+         return NULL;
+@@ -1246,6 +1248,8 @@ static int flask_hvm_altp2mhvm_op(struct domain *d, uint64_t mode, uint32_t op)
+         if ( d == current->domain )
+             return -EPERM;
+         break;
++    default:
++        return -EPERM;
+     };
+ 
+     return current_has_perm(d, SECCLASS_HVM, HVM__ALTP2MHVM_OP);
+diff --git a/xen/xsm/flask/ss/services.c b/xen/xsm/flask/ss/services.c
+index b59928ea8a98..30dab4c35308 100644
+--- a/xen/xsm/flask/ss/services.c
++++ b/xen/xsm/flask/ss/services.c
+@@ -1018,6 +1018,11 @@ static int security_compute_sid(u32 ssid,
+             /* Use the related object owner. */
+             newcontext.user = tcontext->user;
+         break;
++        default:
++            printk(KERN_ERR "security_compute_sid:  unrecognized AVTAB %d\n",
++                   specified);
++            rc = -EINVAL;
++            goto out_unlock;
+     }
+ 
+     /* Set the role and type to default values. */
+-- 
+2.20.1
+

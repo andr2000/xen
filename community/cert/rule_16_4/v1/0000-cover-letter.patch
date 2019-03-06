@@ -1,0 +1,57 @@
+From c571fc5bf3df5b3bbe386d5528aff6b48ba65120 Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Fri, 22 Feb 2019 11:11:55 +0200
+Subject: [Xen-devel][RFC PATCH 0/4] Add missing default labels to switch statements
+
+Hello, everybody!
+
+We at EPAM Systems would like to present first series of patches targeting Xen
+on ARM Functional Safety certification (ISO61508 based): implementation of
+MISRA [1] C:2012 Rule 16.4 which requires that every switch statement has a
+default label as a measure of defensive programming technique.
+
+Current patch series is against the source code used by Xen hypervisor on ARM
+only and does not include Xen tools and x86 implementation. Although the target
+is limited to ARM it does touch the code common to other architectures as well.
+
+[1] https://www.misra.org.uk/
+
+Oleksandr Andrushchenko (4):
+  cert:arch/arm: Add missing default labels to switch statements
+  cert:xen/common: Add missing default labels to switch statements
+  cert:xen/drivers: Add missing default labels to switch statements
+  cert:xen/xsm/flask: Add missing default labels to switch statements
+
+ xen/arch/arm/decode.c              |  3 +++
+ xen/arch/arm/domain.c              | 10 ++++++++++
+ xen/arch/arm/guest_walk.c          |  2 ++
+ xen/arch/arm/mm.c                  |  3 +++
+ xen/arch/arm/p2m.c                 |  7 +++++++
+ xen/arch/arm/traps.c               |  6 ++++++
+ xen/arch/arm/vsmc.c                |  9 +++++++++
+ xen/common/device_tree.c           |  2 ++
+ xen/common/domain.c                |  4 ++++
+ xen/common/efi/boot.c              |  2 ++
+ xen/common/event_channel.c         |  5 +++++
+ xen/common/grant_table.c           | 18 +++++++++++++++++-
+ xen/common/kernel.c                |  6 ++++++
+ xen/common/libelf/libelf-dominfo.c |  3 +++
+ xen/common/libfdt/fdt.c            |  2 ++
+ xen/common/libfdt/fdt_ro.c         |  3 +++
+ xen/common/sched_arinc653.c        |  3 +++
+ xen/common/sched_credit.c          |  3 +++
+ xen/common/sched_credit2.c         |  3 +++
+ xen/common/sched_rt.c              |  3 +++
+ xen/common/trace.c                 |  2 ++
+ xen/common/vsprintf.c              |  8 ++++++++
+ xen/drivers/char/console.c         |  5 +++++
+ xen/drivers/char/ns16550.c         |  2 ++
+ xen/drivers/passthrough/arm/smmu.c |  9 +++++++++
+ xen/xsm/flask/avc.c                |  2 ++
+ xen/xsm/flask/hooks.c              |  4 ++++
+ xen/xsm/flask/ss/services.c        |  5 +++++
+ 28 files changed, 133 insertions(+), 1 deletion(-)
+
+-- 
+2.20.1
+

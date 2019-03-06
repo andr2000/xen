@@ -1,0 +1,346 @@
+From e4314dcfd279cdfceff59dd070796ffad55abfda Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Fri, 22 Feb 2019 09:23:39 +0200
+Subject: [Xen-devel][RFC PATCH 2/4] cert:xen/common: Add missing default
+ labels to switch statements
+
+It is required by MISRA [1] that every switch statement has a default
+label as a measure of defensive programming technique.
+
+The changes in this patch are to match MISRA C:2012: Rule 16.4
+requirements.
+
+[1] https://www.misra.org.uk/
+
+Signed-off-by: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+---
+ xen/common/device_tree.c           |  2 ++
+ xen/common/domain.c                |  4 ++++
+ xen/common/efi/boot.c              |  2 ++
+ xen/common/event_channel.c         |  5 +++++
+ xen/common/grant_table.c           | 18 +++++++++++++++++-
+ xen/common/kernel.c                |  6 ++++++
+ xen/common/libelf/libelf-dominfo.c |  3 +++
+ xen/common/libfdt/fdt.c            |  2 ++
+ xen/common/libfdt/fdt_ro.c         |  3 +++
+ xen/common/sched_arinc653.c        |  3 +++
+ xen/common/sched_credit.c          |  3 +++
+ xen/common/sched_credit2.c         |  3 +++
+ xen/common/sched_rt.c              |  3 +++
+ xen/common/trace.c                 |  2 ++
+ xen/common/vsprintf.c              |  8 ++++++++
+ 15 files changed, 66 insertions(+), 1 deletion(-)
+
+diff --git a/xen/common/device_tree.c b/xen/common/device_tree.c
+index 8fc401d91cf0..342a62933ed6 100644
+--- a/xen/common/device_tree.c
++++ b/xen/common/device_tree.c
+@@ -568,6 +568,8 @@ static unsigned int dt_bus_pci_get_flags(const __be32 *addr)
+     case 0x03: /* 64 bits */
+         flags |= IORESOURCE_MEM;
+         break;
++    default:
++        break;
+     }
+     if (w & 0x40000000)
+         flags |= IORESOURCE_PREFETCH;
+diff --git a/xen/common/domain.c b/xen/common/domain.c
+index 32bca8dbf2df..9b253b167643 100644
+--- a/xen/common/domain.c
++++ b/xen/common/domain.c
+@@ -747,6 +747,8 @@ int domain_kill(struct domain *d)
+         send_global_virq(VIRQ_DOM_EXC);
+         /* fallthrough */
+     case DOMDYING_dead:
++        /* fallthrough */
++    default:
+         break;
+     }
+ 
+@@ -1569,6 +1571,8 @@ long vm_assist(struct domain *p, unsigned int cmd, unsigned int type,
+     case VMASST_CMD_disable:
+         clear_bit(type, &p->vm_assist);
+         return 0;
++    default:
++        break;
+     }
+ 
+     return -ENOSYS;
+diff --git a/xen/common/efi/boot.c b/xen/common/efi/boot.c
+index 79193784ff14..673d4a625178 100644
+--- a/xen/common/efi/boot.c
++++ b/xen/common/efi/boot.c
+@@ -582,6 +582,8 @@ static CHAR16 *__init point_tail(CHAR16 *fn)
+         case L'_':
+             tail = fn;
+             break;
++        default:
++            break;
+         }
+ }
+ /*
+diff --git a/xen/common/event_channel.c b/xen/common/event_channel.c
+index 6fbe346490fb..191a967c4b1d 100644
+--- a/xen/common/event_channel.c
++++ b/xen/common/event_channel.c
+@@ -105,6 +105,8 @@ static bool virq_is_global(unsigned int virq)
+ 
+     case VIRQ_ARCH_0 ... VIRQ_ARCH_7:
+         return arch_virq_is_global(virq);
++    default:
++        break;
+     }
+ 
+     ASSERT(virq < NR_VIRQS);
+@@ -1419,6 +1421,9 @@ static void domain_dump_evtchn_info(struct domain *d)
+         case ECS_VIRQ:
+             printk(" v=%d", chn->u.virq);
+             break;
++        default:
++            printk(" unknown state: %u", chn->state);
++            break;
+         }
+ 
+         ssid = xsm_show_security_evtchn(d, chn);
+diff --git a/xen/common/grant_table.c b/xen/common/grant_table.c
+index fd099a8f2593..0ed1c46c1790 100644
+--- a/xen/common/grant_table.c
++++ b/xen/common/grant_table.c
+@@ -640,6 +640,8 @@ static unsigned int nr_grant_entries(struct grant_table *gt)
+                      GNTTAB_NR_RESERVED_ENTRIES);
+         return f2e(nr_grant_frames(gt), 2);
+ #undef f2e
++    default:
++        break;
+     }
+ 
+     return 0;
+@@ -2992,7 +2994,9 @@ gnttab_set_version(XEN_GUEST_HANDLE_PARAM(gnttab_set_version_t) uop)
+     case 2:
+         for ( i = 0; i < GNTTAB_NR_RESERVED_ENTRIES; i++ )
+         {
+-            switch ( shared_entry_v2(gt, i).hdr.flags & GTF_type_mask )
++            unsigned int flags = shared_entry_v2(gt, i).hdr.flags;
++
++            switch ( flags & GTF_type_mask )
+             {
+             case GTF_permit_access:
+                  if ( !(shared_entry_v2(gt, i).full_page.frame >> 32) )
+@@ -3003,9 +3007,17 @@ gnttab_set_version(XEN_GUEST_HANDLE_PARAM(gnttab_set_version_t) uop)
+                          "tried to change grant table version to 1 with non-representable entries\n");
+                 res = -ERANGE;
+                 goto out_unlock;
++            default:
++                gdprintk(XENLOG_ERR,
++                         "bad flags %#x in grant %#x when switching version\n",
++                         flags, i);
++                res = -EINVAL;
++                goto out_unlock;
+             }
+         }
+         break;
++    default:
++        break;
+     }
+ 
+     /* Preserve the first 8 entries (toolstack reserved grants). */
+@@ -3038,6 +3050,8 @@ gnttab_set_version(XEN_GUEST_HANDLE_PARAM(gnttab_set_version_t) uop)
+             }
+         }
+         break;
++    default:
++        break;
+     }
+ 
+     if ( op.version < 2 && gt->gt_version == 2 &&
+@@ -3069,6 +3083,8 @@ gnttab_set_version(XEN_GUEST_HANDLE_PARAM(gnttab_set_version_t) uop)
+                     reserved_entries[i].frame;
+             }
+             break;
++        default:
++            break;
+         }
+     }
+ 
+diff --git a/xen/common/kernel.c b/xen/common/kernel.c
+index 612575430f1c..3983977b1643 100644
+--- a/xen/common/kernel.c
++++ b/xen/common/kernel.c
+@@ -267,6 +267,9 @@ int parse_bool(const char *s, const char *e)
+         if ( !strncmp("disable", s, 7) )
+             return 0;
+         break;
++
++    default:
++        break;
+     }
+ 
+     return -1;
+@@ -565,6 +568,9 @@ DO(xen_version)(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
+ 
+         return sz;
+     }
++
++    default:
++        break;
+     }
+ 
+     return -ENOSYS;
+diff --git a/xen/common/libelf/libelf-dominfo.c b/xen/common/libelf/libelf-dominfo.c
+index 508f08db428d..1f5acc2f71f8 100644
+--- a/xen/common/libelf/libelf-dominfo.c
++++ b/xen/common/libelf/libelf-dominfo.c
+@@ -216,6 +216,9 @@ elf_errorstatus elf_xen_parse_note(struct elf_binary *elf,
+     case XEN_ELFNOTE_PHYS32_ENTRY:
+         parms->phys_entry = val;
+         break;
++
++    default:
++        break;
+     }
+     return 0;
+ }
+diff --git a/xen/common/libfdt/fdt.c b/xen/common/libfdt/fdt.c
+index d02f4bf5f312..c30b45f8b49e 100644
+--- a/xen/common/libfdt/fdt.c
++++ b/xen/common/libfdt/fdt.c
+@@ -190,6 +190,8 @@ int fdt_next_node(const void *fdt, int offset, int *depth)
+ 				return -FDT_ERR_NOTFOUND;
+ 			else
+ 				return nextoffset;
++		default:
++			break;
+ 		}
+ 	} while (tag != FDT_BEGIN_NODE);
+ 
+diff --git a/xen/common/libfdt/fdt_ro.c b/xen/common/libfdt/fdt_ro.c
+index 36f9b480d19e..bed77e195496 100644
+--- a/xen/common/libfdt/fdt_ro.c
++++ b/xen/common/libfdt/fdt_ro.c
+@@ -120,6 +120,9 @@ static int _nextprop(const void *fdt, int offset)
+ 
+ 		case FDT_PROP:
+ 			return offset;
++
++		default:
++			break;
+ 		}
+ 		offset = nextoffset;
+ 	} while (tag == FDT_NOP);
+diff --git a/xen/common/sched_arinc653.c b/xen/common/sched_arinc653.c
+index a4c6d00b8185..ba16b9e17f8c 100644
+--- a/xen/common/sched_arinc653.c
++++ b/xen/common/sched_arinc653.c
+@@ -689,6 +689,9 @@ a653sched_adjust_global(const struct scheduler *ops,
+         if ( copy_to_guest(sc->u.sched_arinc653.schedule, &local_sched, 1) )
+             rc = -EFAULT;
+         break;
++
++    default:
++        break;
+     }
+ 
+     return rc;
+diff --git a/xen/common/sched_credit.c b/xen/common/sched_credit.c
+index 3abe20def842..b485d4c4fdf0 100644
+--- a/xen/common/sched_credit.c
++++ b/xen/common/sched_credit.c
+@@ -1291,6 +1291,9 @@ csched_sys_cntl(const struct scheduler *ops,
+         params->vcpu_migr_delay_us = prv->vcpu_migr_delay / MICROSECS(1);
+         rc = 0;
+         break;
++
++    default:
++        break;
+     }
+     out:
+     return rc;
+diff --git a/xen/common/sched_credit2.c b/xen/common/sched_credit2.c
+index 543dc3664dd3..927a70eab944 100644
+--- a/xen/common/sched_credit2.c
++++ b/xen/common/sched_credit2.c
+@@ -3037,6 +3037,9 @@ static int csched2_sys_cntl(const struct scheduler *ops,
+     case XEN_SYSCTL_SCHEDOP_getinfo:
+         params->ratelimit_us = prv->ratelimit_us;
+         break;
++
++    default:
++        return -EINVAL;
+     }
+ 
+     return 0;
+diff --git a/xen/common/sched_rt.c b/xen/common/sched_rt.c
+index f1b81f037329..87db8bb68c9c 100644
+--- a/xen/common/sched_rt.c
++++ b/xen/common/sched_rt.c
+@@ -1455,6 +1455,9 @@ rt_dom_cntl(
+             /* notify upper caller how many vcpus have been processed. */
+             op->u.v.nr_vcpus = index;
+         break;
++    default:
++        rc = -EINVAL;
++        break;
+     }
+ 
+     return rc;
+diff --git a/xen/common/trace.c b/xen/common/trace.c
+index cc294fc38473..e345767552f8 100644
+--- a/xen/common/trace.c
++++ b/xen/common/trace.c
+@@ -863,6 +863,8 @@ void __trace_hypercall(uint32_t event, unsigned long op,
+     case __HYPERVISOR_sched_op:
+         APPEND_ARG32(0); /* cmd */
+         break;
++    default:
++        break;
+     }
+ 
+     __trace_var(event, 1, sizeof(uint32_t) * (1 + (a - d.args)), &d);
+diff --git a/xen/common/vsprintf.c b/xen/common/vsprintf.c
+index 352d43b42519..c2ee5ec06220 100644
+--- a/xen/common/vsprintf.c
++++ b/xen/common/vsprintf.c
+@@ -361,11 +361,13 @@ static char *print_domain(char *str, char *end, const struct domain *d)
+     case DOMID_XEN:  name = "[XEN]";  break;
+     case DOMID_COW:  name = "[COW]";  break;
+     case DOMID_IDLE: name = "[IDLE]"; break;
++    default:
+         /*
+          * In principle, we could ASSERT_UNREACHABLE() in the default case.
+          * However, this path is used to print out crash information, which
+          * risks recursing infinitely and not printing any useful information.
+          */
++        break;
+     }
+ 
+     if ( str < end )
+@@ -455,6 +457,8 @@ static char *pointer(char *str, char *end, const char **fmt_ptr,
+             ++*fmt_ptr;
+             sep = 0;
+             break;
++        default:
++            break;
+         }
+ 
+         for ( i = 0; ; )
+@@ -519,6 +523,9 @@ static char *pointer(char *str, char *end, const char **fmt_ptr,
+     case 'v': /* d<domain-id>v<vcpu-id> from a struct vcpu */
+         ++*fmt_ptr;
+         return print_vcpu(str, end, arg);
++
++    default:
++        break;
+     }
+ 
+     if ( field_width == -1 )
+@@ -594,6 +601,7 @@ int vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
+         case ' ': flags |= SPACE; goto repeat;
+         case '#': flags |= SPECIAL; goto repeat;
+         case '0': flags |= ZEROPAD; goto repeat;
++        default : break;
+         }
+ 
+         /* get field width */
+-- 
+2.20.1
+

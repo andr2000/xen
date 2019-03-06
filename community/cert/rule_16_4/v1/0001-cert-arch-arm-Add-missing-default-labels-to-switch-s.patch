@@ -1,0 +1,187 @@
+From 58f1fcda01ca26554db4caad1c048455637bb453 Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Fri, 22 Feb 2019 09:23:15 +0200
+Subject: [Xen-devel][RFC PATCH 1/4] cert:arch/arm: Add missing default labels
+ to switch statements
+
+It is required by MISRA [1] that every switch statement has a default
+label as a measure of defensive programming technique.
+
+The changes in this patch are to match MISRA C:2012: Rule 16.4
+requirements.
+
+[1] https://www.misra.org.uk/
+
+Signed-off-by: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+---
+ xen/arch/arm/decode.c     |  3 +++
+ xen/arch/arm/domain.c     | 10 ++++++++++
+ xen/arch/arm/guest_walk.c |  2 ++
+ xen/arch/arm/mm.c         |  3 +++
+ xen/arch/arm/p2m.c        |  7 +++++++
+ xen/arch/arm/traps.c      |  6 ++++++
+ xen/arch/arm/vsmc.c       |  9 +++++++++
+ 7 files changed, 40 insertions(+)
+
+diff --git a/xen/arch/arm/decode.c b/xen/arch/arm/decode.c
+index 8b1e15d11892..1ed37696d678 100644
+--- a/xen/arch/arm/decode.c
++++ b/xen/arch/arm/decode.c
+@@ -112,6 +112,9 @@ static int decode_thumb(register_t pc, struct hsr_dabt *dabt)
+         case 3: /* Signed byte */
+             update_dabt(dabt, reg, 0, true);
+             break;
++        default:
++            ASSERT_UNREACHABLE();
++            goto bad_thumb;
+         }
+ 
+         break;
+diff --git a/xen/arch/arm/domain.c b/xen/arch/arm/domain.c
+index 6dc633ed5048..ecb43736a7c3 100644
+--- a/xen/arch/arm/domain.c
++++ b/xen/arch/arm/domain.c
+@@ -439,6 +439,11 @@ unsigned long hypercall_create_continuation(
+                 case 3: regs->x3 = arg; break;
+                 case 4: regs->x4 = arg; break;
+                 case 5: regs->x5 = arg; break;
++                /*
++                 * arm_abi Hypercall Calling Convention:
++                 * A hypercall can take up to 5 arguments.
++                 */
++                default: BUG(); break;
+                 }
+             }
+ 
+@@ -462,6 +467,11 @@ unsigned long hypercall_create_continuation(
+                 case 3: regs->r3 = arg; break;
+                 case 4: regs->r4 = arg; break;
+                 case 5: regs->r5 = arg; break;
++                /*
++                 * arm_abi Hypercall Calling Convention:
++                 * A hypercall can take up to 5 arguments.
++                 */
++                default: BUG(); break;
+                 }
+             }
+ 
+diff --git a/xen/arch/arm/guest_walk.c b/xen/arch/arm/guest_walk.c
+index 7db7a7321b20..8c4be32b7ef8 100644
+--- a/xen/arch/arm/guest_walk.c
++++ b/xen/arch/arm/guest_walk.c
+@@ -101,6 +101,8 @@ static bool guest_walk_sd(const struct vcpu *v,
+ 
+     switch ( pte.walk.dt )
+     {
++    default:
++        /* Fall through. */
+     case L1DESC_INVALID:
+         return false;
+ 
+diff --git a/xen/arch/arm/mm.c b/xen/arch/arm/mm.c
+index 01ae2cccc068..ba5bf5b2b3ba 100644
+--- a/xen/arch/arm/mm.c
++++ b/xen/arch/arm/mm.c
+@@ -1112,6 +1112,9 @@ static void set_pte_flags_on_range(const char *p, unsigned long l, enum mg mg)
+             pte.pt.xn = 0;
+             pte.pt.ro = 1;
+             break;
++        default:
++            pte.pt.valid = 0;
++            break;
+         }
+         write_pte(xen_xenmap + i, pte);
+     }
+diff --git a/xen/arch/arm/p2m.c b/xen/arch/arm/p2m.c
+index c38bd7e16e26..1e12dc0fd482 100644
+--- a/xen/arch/arm/p2m.c
++++ b/xen/arch/arm/p2m.c
+@@ -540,6 +540,10 @@ static void p2m_set_permission(lpae_t *e, p2m_type_t t, p2m_access_t a)
+     case p2m_max_real_type:
+         BUG();
+         break;
++
++    default:
++        BUG();
++        break;
+     }
+ 
+     /* Then restrict with access permissions */
+@@ -574,6 +578,9 @@ static void p2m_set_permission(lpae_t *e, p2m_type_t t, p2m_access_t a)
+         e->p2m.read = e->p2m.write = 0;
+         e->p2m.xn = 1;
+         break;
++    default:
++        BUG();
++        break;
+     }
+ }
+ 
+diff --git a/xen/arch/arm/traps.c b/xen/arch/arm/traps.c
+index 8741aa1d59ce..42e1bd54d31f 100644
+--- a/xen/arch/arm/traps.c
++++ b/xen/arch/arm/traps.c
+@@ -1306,6 +1306,10 @@ int do_bug_frame(const struct cpu_user_regs *regs, vaddr_t pc)
+         show_execution_state(regs);
+         panic("Assertion '%s' failed at %s%s:%d\n",
+               predicate, prefix, filename, lineno);
++        break;
++
++    default:
++        break;
+     }
+ 
+     return -EINVAL;
+@@ -1972,6 +1976,8 @@ static void do_trap_stage2_abort_guest(struct cpu_user_regs *regs,
+                 advance_pc(regs, hsr);
+                 return;
+             case IO_UNHANDLED:
++                /* Fall through. */
++            default:
+                 /* IO unhandled, try another way to handle it. */
+                 break;
+             }
+diff --git a/xen/arch/arm/vsmc.c b/xen/arch/arm/vsmc.c
+index c72b9a04ff76..9eabed89f9c5 100644
+--- a/xen/arch/arm/vsmc.c
++++ b/xen/arch/arm/vsmc.c
+@@ -109,6 +109,8 @@ static bool handle_arch(struct cpu_user_regs *regs)
+         case ARM_SMCCC_ARCH_WORKAROUND_2_FID:
+             switch ( get_ssbd_state() )
+             {
++            default:
++                /* Fall through. */
+             case ARM_SSBD_UNKNOWN:
+             case ARM_SSBD_FORCE_DISABLE:
+                 break;
+@@ -123,6 +125,8 @@ static bool handle_arch(struct cpu_user_regs *regs)
+                 break;
+             }
+             break;
++        default:
++            break;
+         }
+ 
+         set_user_reg(regs, 0, ret);
+@@ -152,6 +156,9 @@ static bool handle_arch(struct cpu_user_regs *regs)
+ 
+         return true;
+     }
++
++    default:
++        break;
+     }
+ 
+     return false;
+@@ -276,6 +283,8 @@ static bool vsmccc_handle_call(struct cpu_user_regs *regs)
+         case ARM_SMCCC_OWNER_SIP:
+             handled = platform_smc(regs);
+             break;
++        default:
++            break;
+         }
+     }
+ 
+-- 
+2.20.1
+

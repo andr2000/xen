@@ -1,0 +1,1 @@
+git send-email --to xen-devel@lists.xenproject.org --cc=andr2000@gmail.com --cc=sstabellini@kernel.org --cc=julien.grall@arm.com --cc=Artem_Mygaiev@epam.com --cc=Andrii_Anisov@epam.com community/cert/rule_16_4/v1
