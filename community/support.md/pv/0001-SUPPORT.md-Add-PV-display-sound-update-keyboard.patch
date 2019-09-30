@@ -1,0 +1,53 @@
+From 56b0b02c6524bcdda4a0973ab9abd46b80804cb8 Mon Sep 17 00:00:00 2001
+From: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+Date: Mon, 30 Sep 2019 11:37:42 +0300
+Subject: [PATCH] SUPPORT.md: Add PV display/sound, update keyboard
+
+Signed-off-by: Oleksandr Andrushchenko <oleksandr_andrushchenko@epam.com>
+---
+ SUPPORT.md | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/SUPPORT.md b/SUPPORT.md
+index 375473a45640..b536cf0814f3 100644
+--- a/SUPPORT.md
++++ b/SUPPORT.md
+@@ -372,6 +372,12 @@ Guest-side driver capable of speaking the Xen PV Framebuffer protocol
+ 
+     Status, Linux (xen-fbfront): Supported
+ 
++### PV display (frontend)
++
++Guest-side driver capable of speaking the Xen PV display protocol
++
++    Status, Linux: Supported
++
+ ### PV Console (frontend)
+ 
+ Guest-side driver capable of speaking the Xen PV console protocol
+@@ -384,7 +390,8 @@ Guest-side driver capable of speaking the Xen PV console protocol
+ ### PV keyboard (frontend)
+ 
+ Guest-side driver capable of speaking the Xen PV keyboard protocol.
+-Note that the "keyboard protocol" includes mouse / pointer support as well.
++Note that the "keyboard protocol" includes mouse / pointer /
++multi-touch support as well.
+ 
+     Status, Linux (xen-kbdfront): Supported
+ 
+@@ -417,6 +424,12 @@ Guest-side driver capable of making pv system calls
+ 
+     Status, Linux: Tech Preview
+ 
++### PV sound (frontend)
++
++Guest-side driver capable of speaking the Xen PV sound protocol
++
++    Status, Linux: Supported
++
+ ## Virtual device support, host side
+ 
+ For host-side virtual device support,
+-- 
+2.23.0
+
