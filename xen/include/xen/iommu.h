@@ -378,7 +378,14 @@ DECLARE_PER_CPU(bool_t, iommu_dont_flush_iotlb);
 extern struct spinlock iommu_pt_cleanup_lock;
 extern struct page_list_head iommu_pt_cleanup_list;
 
+#ifndef CONFIG_ARM
 bool arch_iommu_use_permitted(const struct domain *d);
+#else
+static inline bool arch_iommu_use_permitted(const struct domain *d)
+{
+   return true;
+}
+#endif
 
 #endif /* _IOMMU_H_ */
 
