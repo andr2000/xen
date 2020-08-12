@@ -141,7 +141,6 @@ int pci_host_common_probe(struct dt_device_node *dev,
     struct pci_config_window *cfg;
     u32 segment;
 
-    printk("!!!!!!!!!!!!!!!!!!!! %s !!!!!!!!!!!!!!!!!!!!!\n", __func__);
     bridge = pci_alloc_host_bridge();
     if ( !bridge )
         return -ENOMEM;
@@ -177,10 +176,8 @@ struct pci_host_bridge *pci_find_host_bridge(uint16_t segment, uint8_t bus)
     struct pci_host_bridge *bridge;
     bool found = false;
 
-    printk("%s looking for segment %d\n", __func__, segment);
     list_for_each_entry( bridge, &pci_host_bridges, node )
     {
-        printk("%s found segment %d\n", __func__, bridge->segment);
         if ( bridge->segment != segment )
             continue;
 

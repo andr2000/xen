@@ -1575,6 +1575,7 @@ void libxl__device_pci_add(libxl__egc *egc, uint32_t domid,
         if ( rc )
             goto out;
     }
+
     if (!libxl_pcidev_assignable(ctx, pcidev)) {
         LOGD(ERROR, domid, "PCI device %x:%x:%x.%x is not assignable",
              pcidev->domain, pcidev->bus, pcidev->dev, pcidev->func);

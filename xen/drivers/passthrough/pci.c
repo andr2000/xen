@@ -583,8 +583,6 @@ struct pci_dev *pci_get_pdev_by_domain(const struct domain *d, int seg,
     ASSERT(seg != -1 || bus == -1);
     ASSERT(bus != -1 || devfn == -1);
 
-    printk("+++++++++++++++++++++ %s seg %x bus %x fn %x pseg %p\n",
-           __func__, seg, bus, devfn, pseg);
     if ( !pseg )
     {
         if ( seg == -1 )
@@ -594,16 +592,11 @@ struct pci_dev *pci_get_pdev_by_domain(const struct domain *d, int seg,
     }
 
     do {
-        list_for_each_entry ( pdev, &pseg->alldevs_list, alldevs_list ) {
-            printk("++++++++++++++++++++++++ %s pdev->bus %x pdev->fn %x\n",
-                   __func__, pdev->bus, pdev->devfn);
+        list_for_each_entry ( pdev, &pseg->alldevs_list, alldevs_list )
             if ( (pdev->bus == bus || bus == -1) &&
                  (pdev->devfn == devfn || devfn == -1) &&
-                 (pdev->domain == d) ) {
-                printk("found pdev %p\n", pdev);
+                 (pdev->domain == d) )
                 return pdev;
-            }
-        }
     } while ( radix_tree_gang_lookup(&pci_segments, (void **)&pseg,
                                      pseg->nr + 1, 1) );
 
@@ -1542,7 +1535,6 @@ static int assign_device(struct domain *d, u16 seg, u8 bus, u8 devfn, u32 flag)
     struct pci_dev *pdev;
     int rc = 0;
 
-    printk("---------------------- %s -------------------\n", __func__);
     if ( !is_iommu_enabled(d) )
         return 0;
 

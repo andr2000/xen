@@ -106,7 +106,6 @@ static int gen_pci_dt_init(struct dt_device_node *dev, const void *data)
     const struct dt_device_match *of_id;
     struct pci_ecam_ops *ops;
 
-    printk("5555555555555555555555555555 %s 55555555555555555555555\n", __func__);
     of_id = dt_match_node(gen_pci_dt_match, dev->dev.of_node);
     ops = (struct pci_ecam_ops *) of_id->data;
 
