@@ -1050,7 +1050,11 @@ static inline bool is_xenstore_domain(const struct domain *d)
 
 static always_inline bool is_iommu_enabled(const struct domain *d)
 {
+#if 0
     return evaluate_nospec(d->options & XEN_DOMCTL_CDF_iommu);
+#else
+    return false;
+#endif
 }
 
 extern bool sched_smt_power_savings;

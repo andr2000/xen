@@ -209,6 +209,7 @@ static uint32_t vpci_read_hw(pci_sbdf_t sbdf, unsigned int reg,
 {
     uint32_t data;
 
+    printk("%s\n", __func__);
     switch ( size )
     {
     case 4:
@@ -320,6 +321,7 @@ uint32_t vpci_read(pci_sbdf_t sbdf, unsigned int reg, unsigned int size)
 
     /* Find the PCI dev matching the address. */
     pdev = pci_get_pdev_by_domain(d, sbdf.seg, sbdf.bus, sbdf.devfn);
+    printk("--------------- %s pdev %p\n", __func__, pdev);
     if ( !pdev )
         return vpci_read_hw(sbdf, reg, size);
 

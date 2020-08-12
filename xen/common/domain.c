@@ -333,7 +333,11 @@ static int sanitise_domain_config(struct xen_domctl_createdomain *config)
     if ( (config->flags & XEN_DOMCTL_CDF_iommu) && !iommu_enabled )
     {
         dprintk(XENLOG_INFO, "IOMMU is not enabled\n");
+#if 0
         return -EINVAL;
+#else
+        dprintk(XENLOG_INFO, "ignoring IOMMU is not enabled\n");
+#endif
     }
 
     return arch_sanitise_domain_config(config);

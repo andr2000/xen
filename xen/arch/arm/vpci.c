@@ -43,9 +43,12 @@ static int vpci_mmio_read(struct vcpu *v, mmio_info_t *info,
     uint32_t data = 0;
     unsigned int size = 1U << info->dabt.size;
 
+    printk("------------------ %s+\n", __func__);
     sbdf.bdf = (((info->gpa) & 0x0ffff000) >> 12);
     reg = (((info->gpa) & 0x00000ffc) | (info->gpa & 3));
 
+    printk("------------------ %s vpci_mmio_access_allowed %d \n", __func__,
+           vpci_mmio_access_allowed(reg, size));
     if ( !vpci_mmio_access_allowed(reg, size) )
         return 1;
 
@@ -82,8 +85,10 @@ static const struct mmio_handler_ops vpci_mmio_handler = {
 
 int domain_vpci_init(struct domain *d)
 {
+    printk("------------------ %s+\n", __func__);
     if ( !has_vpci(d) || is_hardware_domain(d) )
         return 0;
+    printk("------------------ %s-\n", __func__);
 
     register_mmio_handler(d, &vpci_mmio_handler,
             GUEST_VPCI_ECAM_BASE,GUEST_VPCI_ECAM_SIZE,NULL);
