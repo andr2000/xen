@@ -199,9 +199,6 @@ int pci_host_common_probe(struct dt_device_node *dev, const void *data)
     struct pci_ecam_ops *ops;
     int err;
 
-    if ( dt_device_for_passthrough(dev) )
-        return 0;
-
     ops = (struct pci_ecam_ops *) data;
 
     bridge = pci_alloc_host_bridge();
