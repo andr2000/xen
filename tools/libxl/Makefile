@@ -130,6 +130,10 @@ endif
 
 LIBXL_LIBS += -lyajl
 
+ifeq ($(CONFIG_X86),y)
+CFALGS += -DCONFIG_PCIBACK
+endif
+
 ifeq ($(CONFIG_ARM),y)
 CFALGS += -DCONFIG_ARM
 endif
