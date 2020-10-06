@@ -340,6 +340,42 @@ struct physdev_dbgp_op {
 typedef struct physdev_dbgp_op physdev_dbgp_op_t;
 DEFINE_XEN_GUEST_HANDLE(physdev_dbgp_op_t);
 
+#define PHYSDEVOP_pci_device_resources  32
+/*
+ * PCI resources are:
+ * #0-5: standard PCI resources
+ * #6: expansion ROM resource
+ * TODO: SR-IOV
+ */
+#define PHYSDEV_PCI_NUM_RESOURCES       7
+struct physdev_pci_device_resources {
+    /* IN */
+    uint16_t seg;
+    uint8_t bus;
+    uint8_t devfn;
+    /* TODO: will we need physfn for SR-IOV devices?
+    uint32_t flags;
+    struct {
+        uint8_t bus;
+        uint8_t devfn;
+    } physfn;
+    */
+    /*
+     * FIXME: this can only be determined if the driver is up
+     * and running, e.g. in its .open callback it calls
+     * request_irq. This is true for both legacy INTx and MSI/MSI-X
+     * interrupts.
+     */
+    uint32_t irq;
+    struct {
+        uint64_t start;
+        uint64_t length;
+        uint64_t flags;
+    } resource[PHYSDEV_PCI_NUM_RESOURCES];
+};
+typedef struct physdev_pci_device_resources physdev_pci_device_resources_t;
+DEFINE_XEN_GUEST_HANDLE(physdev_pci_device_resources_t);
+
 /*
  * Notify that some PIRQ-bound event channels have been unmasked.
  * ** This command is obsolete since interface version 0x00030202 and is **

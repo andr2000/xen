@@ -40,6 +40,9 @@
 #ifndef CONFIG_ARM
 #include <asm/msi.h>
 #endif
+#ifdef CONFIG_ARM
+#include <xen/iocap.h>
+#endif
 #include "ats.h"
 
 struct pci_seg {
@@ -879,6 +882,32 @@ int pci_remove_device(u16 seg, u8 bus, u8 devfn)
     return ret;
 }
 
+#ifdef CONFIG_ARM
+int pci_set_device_resources(u16 seg, u8 bus, u8 devfn, u32 irq,
+                             int num_res, struct pci_mmio_resource *res)
+{
+    struct pci_dev *pdev;
+    int i;
+
+    pdev = pci_get_pdev(seg, bus, devfn);
+    if ( !pdev )
+    {
+        printk(XENLOG_ERR "Can't find PCI device %04x:%02x:%02x.%u\n",
+               seg, bus, PCI_SLOT(devfn), PCI_FUNC(devfn));
+        return -ENODEV;
+    }
+
+    for (i = 0; i < PCI_NUM_RESOURCES; i++) {
+        pdev->mmio_resource[i].start = res[i].start;
+        pdev->mmio_resource[i].length = res[i].length;
+        pdev->mmio_resource[i].flags = res[i].flags;
+    }
+    pdev->irq = irq;
+
+    return 0;
+}
+#endif
+
 #ifndef CONFIG_ARM
 /*TODO :Implement MSI support for ARM  */
 static int pci_clean_dpci_irq(struct domain *d,
@@ -1545,6 +1574,66 @@ static int device_assigned(u16 seg, u8 bus, u8 devfn)
     return rc;
 }
 
+static int allow_iomem_permission(struct domain *d, unsigned long mfn,
+                                  unsigned long nr_mfns)
+{
+    int ret;
+
+    if ( (mfn + nr_mfns - 1) < mfn ) /* wrap? */
+        return -EINVAL;
+
+    ret = -EINVAL;
+    if ( !iomem_access_permitted(current->domain, mfn, mfn + nr_mfns - 1) ||
+         xsm_iomem_permission(XSM_HOOK, d, mfn, mfn + nr_mfns - 1, true) )
+        ret = -EPERM;
+    else
+        ret = iomem_permit_access(d, mfn, mfn + nr_mfns - 1);
+    if ( !ret )
+        memory_type_changed(d);
+    return ret;
+}
+
+static int assign_device_resources(struct domain *d, struct pci_dev *pdev)
+{
+    int i, ret;
+
+    if ( d->domain_id == DOMID_IO )
+        return 0;
+
+    printk(XENLOG_INFO "Assign resources for device %04x:%02x:%02x.%u:\n",
+           pdev->seg, pdev->bus,
+           PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn));
+    printk("IRQ %d\n", pdev->irq);
+    for (i = 0; i < PCI_NUM_RESOURCES; i++) {
+        if ( !pdev->mmio_resource[i].start || !pdev->mmio_resource[i].length )
+            continue;
+
+       /* todo: there are 2 places which already define the
+        * below ioresorce_xxx: tools and device_tree.c.
+        * need to move it somewhere.
+        */
+#define IORESOURCE_IO           0x00000100      /* PCI/ISA I/O ports */
+#define IORESOURCE_MEM          0x00000200
+
+        /* We do not want any IO ports, but MMIO only. */
+        if ( (pdev->mmio_resource[i].flags & IORESOURCE_MEM) == 0 )
+            continue;
+        printk("%s allow MFN %lx number of %lx\n", __func__,
+               PFN_DOWN(pdev->mmio_resource[i].start),
+               PFN_DOWN(pdev->mmio_resource[i].length));
+        ret = allow_iomem_permission(d,
+                                     PFN_DOWN(pdev->mmio_resource[i].start),
+                                     PFN_DOWN(pdev->mmio_resource[i].length));
+        if ( ret )
+            goto undo;
+    }
+    return 0;
+
+undo:
+    printk("%s undo all assigned\n", __func__);
+    return ret;
+}
+
 /* Caller should hold the pcidevs_lock */
 static int assign_device(struct domain *d, u16 seg, u8 bus, u8 devfn, u32 flag)
 {
@@ -1571,6 +1660,11 @@ static int assign_device(struct domain *d, u16 seg, u8 bus, u8 devfn, u32 flag)
     pdev = pci_get_pdev(seg, bus, devfn);
     ASSERT(pdev && (pdev->domain == hardware_domain ||
                     pdev->domain == dom_io));
+#ifdef CONFIG_ARM
+    rc = assign_device_resources(d, pdev);
+    if ( rc )
+        return rc;
+#endif
 
 #ifndef CONFIG_ARM
     /*TODO :Implement MSI support for ARM  */

@@ -75,6 +75,14 @@ struct pci_dev_info {
     } physfn;
 };
 
+#ifdef CONFIG_ARM
+struct pci_mmio_resource {
+    uint64_t start;
+    uint64_t length;
+    uint64_t flags;
+};
+#endif
+
 struct pci_dev {
     struct list_head alldevs_list;
     struct list_head domain_list;
@@ -132,6 +140,13 @@ struct pci_dev {
 
     /* Data for vPCI. */
     struct vpci *vpci;
+
+#ifdef CONFIG_ARM
+    /* Device resources: IO resources, IRQ  */
+    uint32_t irq;
+#define PCI_NUM_RESOURCES       7
+    struct pci_mmio_resource mmio_resource[PCI_NUM_RESOURCES];
+#endif
 };
 
 #define for_each_pdev(domain, pdev) \
@@ -168,6 +183,8 @@ const unsigned long *pci_get_ro_map(u16 seg);
 int pci_add_device(u16 seg, u8 bus, u8 devfn,
                    const struct pci_dev_info *, nodeid_t node);
 int pci_remove_device(u16 seg, u8 bus, u8 devfn);
+int pci_set_device_resources(u16 seg, u8 bus, u8 devfn, u32 irq,
+                             int num_res, struct pci_mmio_resource *res);
 int pci_ro_device(int seg, int bus, int devfn);
 int pci_hide_device(unsigned int seg, unsigned int bus, unsigned int devfn);
 struct pci_dev *pci_get_pdev(int seg, int bus, int devfn);

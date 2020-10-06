@@ -44,6 +44,52 @@ int do_physdev_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
 
                 break;
             }
+            case PHYSDEVOP_pci_device_resources:
+            {
+                struct physdev_pci_device_resources res;
+                struct pci_mmio_resource pci_res[PCI_NUM_RESOURCES];
+                int i, num_res;
+
+                ret = -EFAULT;
+                if ( copy_from_guest(&res, arg, 1) != 0 )
+                    break;
+
+                memset(pci_res, 0, sizeof(pci_res));
+                num_res = 0;
+                for (i = 0; i < PCI_NUM_RESOURCES; i++)
+                {
+                    /* TODO: there are 2 places which already define the
+                     * below IORESORCE_XXX: tools and device_tree.c.
+                     * Need to move it somewhere.
+                     */
+#define IORESOURCE_IO           0x00000100      /* PCI/ISA I/O ports */
+#define IORESOURCE_MEM          0x00000200
+
+                    if ((res.resource[i].flags &
+                         (IORESOURCE_IO | IORESOURCE_MEM)) == 0)
+                            continue;
+
+                    if ( !res.resource[i].start )
+                        continue;
+
+                    if ( !res.resource[i].length)
+                        continue;
+
+                    pci_res[num_res].start = res.resource[i].start;
+                    pci_res[num_res].length = res.resource[i].length;
+                    pci_res[num_res].flags = res.resource[i].flags;
+                    num_res++;
+                    if ( res.resource[i].flags & IORESOURCE_IO )
+                        printk("IORESOURCE_IO\n");
+                    if ( res.resource[i].flags & IORESOURCE_MEM )
+                        printk("IORESOURCE_MEM\n");
+                    printk("start %lx\n", pci_res[num_res].start);
+                }
+
+                ret = pci_set_device_resources(res.seg, res.bus, res.devfn,
+                                               res.irq, num_res, pci_res);
+                break;
+            }
 #endif
         default:
             gdprintk(XENLOG_DEBUG, "PHYSDEVOP cmd=%d: not implemented\n", cmd);
