@@ -184,7 +184,9 @@ int pci_add_device(u16 seg, u8 bus, u8 devfn,
                    const struct pci_dev_info *, nodeid_t node);
 int pci_remove_device(u16 seg, u8 bus, u8 devfn);
 int pci_set_device_resources(u16 seg, u8 bus, u8 devfn, u32 irq,
-                             int num_res, struct pci_mmio_resource *res);
+                             struct pci_mmio_resource *res);
+int pci_get_device_resources(u16 seg, u8 bus, u8 devfn, u32 *irq,
+                             struct pci_mmio_resource *res);
 int pci_ro_device(int seg, int bus, int devfn);
 int pci_hide_device(unsigned int seg, unsigned int bus, unsigned int devfn);
 struct pci_dev *pci_get_pdev(int seg, int bus, int devfn);

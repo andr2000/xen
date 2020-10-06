@@ -884,7 +884,7 @@ int pci_remove_device(u16 seg, u8 bus, u8 devfn)
 
 #ifdef CONFIG_ARM
 int pci_set_device_resources(u16 seg, u8 bus, u8 devfn, u32 irq,
-                             int num_res, struct pci_mmio_resource *res)
+                             struct pci_mmio_resource *res)
 {
     struct pci_dev *pdev;
     int i;
@@ -903,6 +903,30 @@ int pci_set_device_resources(u16 seg, u8 bus, u8 devfn, u32 irq,
         pdev->mmio_resource[i].flags = res[i].flags;
     }
     pdev->irq = irq;
+
+    return 0;
+}
+
+int pci_get_device_resources(u16 seg, u8 bus, u8 devfn, u32 *irq,
+                             struct pci_mmio_resource *res)
+{
+    struct pci_dev *pdev;
+    int i;
+
+    pdev = pci_get_pdev(seg, bus, devfn);
+    if ( !pdev )
+    {
+        printk(XENLOG_ERR "Can't find PCI device %04x:%02x:%02x.%u\n",
+               seg, bus, PCI_SLOT(devfn), PCI_FUNC(devfn));
+        return -ENODEV;
+    }
+
+    for (i = 0; i < PCI_NUM_RESOURCES; i++) {
+        res[i].start = pdev->mmio_resource[i].start;
+        res[i].length = pdev->mmio_resource[i].length;
+        res[i].flags = pdev->mmio_resource[i].flags;
+    }
+    *irq = pdev->irq;
 
     return 0;
 }
