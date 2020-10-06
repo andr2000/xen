@@ -42,6 +42,7 @@
 #endif
 #ifdef CONFIG_ARM
 #include <xen/iocap.h>
+#include <xen/hypercall.h>
 #endif
 #include "ats.h"
 
@@ -1598,25 +1599,6 @@ static int device_assigned(u16 seg, u8 bus, u8 devfn)
     return rc;
 }
 
-static int allow_iomem_permission(struct domain *d, unsigned long mfn,
-                                  unsigned long nr_mfns)
-{
-    int ret;
-
-    if ( (mfn + nr_mfns - 1) < mfn ) /* wrap? */
-        return -EINVAL;
-
-    ret = -EINVAL;
-    if ( !iomem_access_permitted(current->domain, mfn, mfn + nr_mfns - 1) ||
-         xsm_iomem_permission(XSM_HOOK, d, mfn, mfn + nr_mfns - 1, true) )
-        ret = -EPERM;
-    else
-        ret = iomem_permit_access(d, mfn, mfn + nr_mfns - 1);
-    if ( !ret )
-        memory_type_changed(d);
-    return ret;
-}
-
 static int assign_device_resources(struct domain *d, struct pci_dev *pdev)
 {
     int i, ret;
@@ -1629,8 +1611,13 @@ static int assign_device_resources(struct domain *d, struct pci_dev *pdev)
            PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn));
     printk("IRQ %d\n", pdev->irq);
     for (i = 0; i < PCI_NUM_RESOURCES; i++) {
+        unsigned long mfn, nr_mfns;
+
         if ( !pdev->mmio_resource[i].start || !pdev->mmio_resource[i].length )
             continue;
+
+        mfn = PFN_DOWN(pdev->mmio_resource[i].start);
+        nr_mfns = PFN_DOWN(pdev->mmio_resource[i].length);
 
        /* todo: there are 2 places which already define the
         * below ioresorce_xxx: tools and device_tree.c.
@@ -1642,12 +1629,14 @@ static int assign_device_resources(struct domain *d, struct pci_dev *pdev)
         /* We do not want any IO ports, but MMIO only. */
         if ( (pdev->mmio_resource[i].flags & IORESOURCE_MEM) == 0 )
             continue;
-        printk("%s allow MFN %lx number of %lx\n", __func__,
-               PFN_DOWN(pdev->mmio_resource[i].start),
-               PFN_DOWN(pdev->mmio_resource[i].length));
-        ret = allow_iomem_permission(d,
-                                     PFN_DOWN(pdev->mmio_resource[i].start),
-                                     PFN_DOWN(pdev->mmio_resource[i].length));
+        printk("%s allow MFN %lx count %lx\n", __func__,
+               mfn, nr_mfns);
+
+        ret = domctl_iomem_permission(d, mfn, nr_mfns, 1);
+        if ( ret )
+            goto undo;
+
+        ret = domctl_memory_mapping(d, mfn, mfn, nr_mfns, 1);
         if ( ret )
             goto undo;
     }

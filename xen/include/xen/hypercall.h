@@ -228,4 +228,11 @@ compat_dm_op(
 
 void arch_get_xen_caps(xen_capabilities_info_t *info);
 
+long domctl_irq_permission(struct domain *d, unsigned int pirq, int allow);
+long domctl_iomem_permission(struct domain *d, unsigned long mfn,
+                             unsigned long nr_mfns, int allow);
+long domctl_memory_mapping(struct domain *d,
+                           unsigned long gfn, unsigned long mfn,
+                           unsigned long nr_mfns, int add);
+
 #endif /* __XEN_HYPERCALL_H__ */
