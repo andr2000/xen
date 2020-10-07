@@ -341,7 +341,6 @@ typedef struct physdev_dbgp_op physdev_dbgp_op_t;
 DEFINE_XEN_GUEST_HANDLE(physdev_dbgp_op_t);
 
 #define PHYSDEVOP_pci_device_set_resources  32
-#define PHYSDEVOP_pci_device_get_resources  33
 /*
  * PCI resources are:
  * #0-5: standard PCI resources

@@ -85,34 +85,6 @@ int do_physdev_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
                                                res.irq, pci_res);
                 break;
             }
-
-            case PHYSDEVOP_pci_device_get_resources:
-            {
-                struct physdev_pci_device_resources res;
-                struct pci_mmio_resource pci_res[PCI_NUM_RESOURCES];
-                int i;
-
-                ret = -EFAULT;
-                if ( copy_from_guest(&res, arg, 1) != 0 )
-                    break;
-
-                ret = pci_get_device_resources(res.seg, res.bus, res.devfn,
-                                               &res.irq, pci_res);
-                if ( ret )
-                    break;
-
-                for (i = 0; i < PCI_NUM_RESOURCES; i++)
-                {
-                    res.resource[i].start = pci_res[i].start;
-                    res.resource[i].length = pci_res[i].length;
-                    res.resource[i].flags = pci_res[i].flags;
-                }
-
-                if ( copy_to_guest(arg, &res, 1) != 0 )
-                    ret = -EFAULT;
-
-                break;
-            }
 #endif
         default:
             gdprintk(XENLOG_DEBUG, "PHYSDEVOP cmd=%d: not implemented\n", cmd);
