@@ -1950,8 +1950,10 @@ static void do_pci_remove(libxl__egc *egc, uint32_t domid,
             goto out_fail;
         }
     } else {
+#if 0
+        /* PCI passthrough can also run on ARM PVH */
         assert(type == LIBXL_DOMAIN_TYPE_PV);
-
+#endif
         char *sysfs_path = GCSPRINTF(SYSFS_PCI_DEV"/"PCI_BDF"/resource", pcidev->domain,
                                      pcidev->bus, pcidev->dev, pcidev->func);
         FILE *f = fopen(sysfs_path, "r");
