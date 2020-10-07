@@ -130,6 +130,10 @@ endif
 
 LIBXL_LIBS += -lyajl
 
+ifeq ($(CONFIG_ARM),y)
+CFALGS += -DCONFIG_ARM
+endif
+
 LIBXL_OBJS = flexarray.o libxl.o libxl_create.o libxl_dm.o libxl_pci.o \
 			libxl_dom.o libxl_exec.o libxl_xshelp.o libxl_device.o \
 			libxl_internal.o libxl_utils.o libxl_uuid.o \
