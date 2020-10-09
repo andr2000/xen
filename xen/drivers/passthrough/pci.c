@@ -977,6 +977,68 @@ static int pci_clean_dpci_irqs(struct domain *d)
 }
 #endif
 
+#ifdef CONFIG_ARM
+static int assign_device_resources(struct domain *d, struct pci_dev *pdev,
+                                   bool allow)
+{
+    int i, ret;
+
+    if ( d->domain_id == DOMID_IO )
+        return 0;
+
+    printk(XENLOG_INFO "%sssign resources for device %04x:%02x:%02x.%u:\n",
+           allow ? "A" : "Dea",
+           pdev->seg, pdev->bus,
+           PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn));
+    printk("IRQ %d\n", pdev->irq);
+    for (i = 0; i < PCI_NUM_RESOURCES; i++) {
+        unsigned long mfn, nr_mfns;
+
+        if ( !pdev->mmio_resource[i].start || !pdev->mmio_resource[i].length )
+            continue;
+
+        mfn = PFN_DOWN(pdev->mmio_resource[i].start);
+        nr_mfns = PFN_DOWN(pdev->mmio_resource[i].length);
+
+       /* todo: there are 2 places which already define the
+        * below ioresorce_xxx: tools and device_tree.c.
+        * need to move it somewhere.
+        */
+#define IORESOURCE_IO           0x00000100      /* PCI/ISA I/O ports */
+#define IORESOURCE_MEM          0x00000200
+
+        /* We do not want any IO ports, but MMIO only. */
+        if ( (pdev->mmio_resource[i].flags & IORESOURCE_MEM) == 0 )
+            continue;
+        printk("%s %sallow MFN %lx count %lx\n", __func__, allow ? "" : "dis",
+               mfn, nr_mfns);
+
+        if (allow)
+        {
+            ret = domctl_iomem_permission(d, mfn, nr_mfns, allow);
+            if ( ret )
+                goto undo;
+
+            ret = domctl_memory_mapping(d, mfn, mfn, nr_mfns, allow);
+            if ( ret )
+                goto undo;
+        } else {
+            ret = domctl_memory_mapping(d, mfn, mfn, nr_mfns, allow);
+            if ( ret )
+                goto undo;
+            ret = domctl_iomem_permission(d, mfn, nr_mfns, allow);
+            if ( ret )
+                goto undo;
+        }
+    }
+    return 0;
+
+undo:
+    printk("%s undo all assigned, ret %d\n", __func__, ret);
+    return ret;
+}
+#endif
+
 /* Caller should hold the pcidevs_lock */
 static int deassign_device(struct domain *d, uint16_t seg, uint8_t bus,
                            uint8_t devfn)
@@ -1020,6 +1082,12 @@ static int deassign_device(struct domain *d, uint16_t seg, uint8_t bus,
         pdev->quarantine = false;
 
     pdev->fault.count = 0;
+
+#ifdef CONFIG_ARM
+    ret = assign_device_resources(d, pdev, false);
+    if ( ret )
+        goto out;
+#endif
 
  out:
     if ( ret )
@@ -1575,54 +1643,6 @@ static int device_assigned(u16 seg, u8 bus, u8 devfn)
     return rc;
 }
 
-static int assign_device_resources(struct domain *d, struct pci_dev *pdev)
-{
-    int i, ret;
-
-    if ( d->domain_id == DOMID_IO )
-        return 0;
-
-    printk(XENLOG_INFO "Assign resources for device %04x:%02x:%02x.%u:\n",
-           pdev->seg, pdev->bus,
-           PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn));
-    printk("IRQ %d\n", pdev->irq);
-    for (i = 0; i < PCI_NUM_RESOURCES; i++) {
-        unsigned long mfn, nr_mfns;
-
-        if ( !pdev->mmio_resource[i].start || !pdev->mmio_resource[i].length )
-            continue;
-
-        mfn = PFN_DOWN(pdev->mmio_resource[i].start);
-        nr_mfns = PFN_DOWN(pdev->mmio_resource[i].length);
-
-       /* todo: there are 2 places which already define the
-        * below ioresorce_xxx: tools and device_tree.c.
-        * need to move it somewhere.
-        */
-#define IORESOURCE_IO           0x00000100      /* PCI/ISA I/O ports */
-#define IORESOURCE_MEM          0x00000200
-
-        /* We do not want any IO ports, but MMIO only. */
-        if ( (pdev->mmio_resource[i].flags & IORESOURCE_MEM) == 0 )
-            continue;
-        printk("%s allow MFN %lx count %lx\n", __func__,
-               mfn, nr_mfns);
-
-        ret = domctl_iomem_permission(d, mfn, nr_mfns, 1);
-        if ( ret )
-            goto undo;
-
-        ret = domctl_memory_mapping(d, mfn, mfn, nr_mfns, 1);
-        if ( ret )
-            goto undo;
-    }
-    return 0;
-
-undo:
-    printk("%s undo all assigned\n", __func__);
-    return ret;
-}
-
 /* Caller should hold the pcidevs_lock */
 static int assign_device(struct domain *d, u16 seg, u8 bus, u8 devfn, u32 flag)
 {
@@ -1650,7 +1670,7 @@ static int assign_device(struct domain *d, u16 seg, u8 bus, u8 devfn, u32 flag)
     ASSERT(pdev && (pdev->domain == hardware_domain ||
                     pdev->domain == dom_io));
 #ifdef CONFIG_ARM
-    rc = assign_device_resources(d, pdev);
+    rc = assign_device_resources(d, pdev, true);
     if ( rc )
         return rc;
 #endif
