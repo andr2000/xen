@@ -2322,22 +2322,6 @@ int xc_domain_soft_reset(xc_interface *xch,
     return do_domctl(xch, &domctl);
 }
 
-int xc_pci_device_set_assigned(
-    xc_interface *xch,
-    uint32_t domid,
-    uint32_t machine_sbdf,
-    bool assigned)
-{
-    DECLARE_DOMCTL;
-
-    domctl.cmd = XEN_DOMCTL_pci_device_set_assigned;
-    domctl.domain = domid;
-    domctl.u.pci_set_assigned.machine_sbdf = machine_sbdf;
-    domctl.u.pci_set_assigned.assigned = assigned;
-
-    return do_domctl(xch, &domctl);
-}
-
 /*
  * Local variables:
  * mode: C

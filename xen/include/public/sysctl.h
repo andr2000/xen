@@ -1062,6 +1062,28 @@ typedef struct xen_sysctl_cpu_policy xen_sysctl_cpu_policy_t;
 DEFINE_XEN_GUEST_HANDLE(xen_sysctl_cpu_policy_t);
 #endif
 
+/*
+ * These are to emulate pciback device (de-)assignment used by the tools
+ * to track current device assignments: all the PCI devices that can
+ * be passed through must be assigned to the pciback to mark them
+ * as such. As on ARM we do not run pci{back|front} and are emulating
+ * PCI host bridge in Xen, so we need to maintain the assignments on our
+ * own in Xen itself.
+ *
+ * Note on xen_sysctl_pci_device_get_assigned: ENOENT is used to report
+ * that there are no assigned devices left.
+ */
+struct xen_sysctl_pci_device_set_assigned {
+    /* IN */
+    uint32_t machine_sbdf;
+    uint8_t assigned;
+};
+
+struct xen_sysctl_pci_device_get_assigned {
+    /* OUT */
+    uint32_t machine_sbdf;
+};
+
 struct xen_sysctl {
     uint32_t cmd;
 #define XEN_SYSCTL_readconsole                    1
@@ -1092,6 +1114,8 @@ struct xen_sysctl {
 #define XEN_SYSCTL_livepatch_op                  27
 /* #define XEN_SYSCTL_set_parameter              28 */
 #define XEN_SYSCTL_get_cpu_policy                29
+#define XEN_SYSCTL_pci_device_set_assigned       30
+#define XEN_SYSCTL_pci_device_get_assigned       31
     uint32_t interface_version; /* XEN_SYSCTL_INTERFACE_VERSION */
     union {
         struct xen_sysctl_readconsole       readconsole;
@@ -1122,6 +1146,8 @@ struct xen_sysctl {
 #if defined(__i386__) || defined(__x86_64__)
         struct xen_sysctl_cpu_policy        cpu_policy;
 #endif
+        struct xen_sysctl_pci_device_set_assigned pci_set_assigned;
+        struct xen_sysctl_pci_device_get_assigned pci_get_assigned;
         uint8_t                             pad[128];
     } u;
 };

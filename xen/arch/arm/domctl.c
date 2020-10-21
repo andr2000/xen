@@ -177,31 +177,6 @@ long arch_do_domctl(struct xen_domctl *domctl, struct domain *d,
 
         return rc;
     }
-    case XEN_DOMCTL_pci_device_set_assigned:
-    {
-        int rc;
-        u16 seg;
-        u8 bus, devfn;
-        uint32_t machine_sbdf;
-
-        machine_sbdf = domctl->u.pci_set_assigned.machine_sbdf;
-
-#if 0
-        ret = xsm_pci_device_set_assigned(XSM_HOOK, d);
-        if ( ret )
-            break;
-#endif
-
-        seg = machine_sbdf >> 16;
-        bus = PCI_BUS(machine_sbdf);
-        devfn = PCI_DEVFN2(machine_sbdf);
-
-        pcidevs_lock();
-        rc = pci_device_set_assigned(seg, bus, devfn,
-                                     !!domctl->u.pci_set_assigned.assigned);
-        pcidevs_unlock();
-        return rc;
-    }
     default:
     {
         int rc;

@@ -20,7 +20,41 @@ void arch_do_physinfo(struct xen_sysctl_physinfo *pi)
 long arch_do_sysctl(struct xen_sysctl *sysctl,
                     XEN_GUEST_HANDLE_PARAM(xen_sysctl_t) u_sysctl)
 {
-    return -ENOSYS;
+    long ret = 0;
+
+    switch ( sysctl->cmd )
+    {
+    case XEN_SYSCTL_pci_device_set_assigned:
+    {
+        int rc;
+        u16 seg;
+        u8 bus, devfn;
+        uint32_t machine_sbdf;
+
+        machine_sbdf = sysctl->u.pci_set_assigned.machine_sbdf;
+
+#if 0
+        ret = xsm_pci_device_set_assigned(XSM_HOOK, d);
+        if ( ret )
+            break;
+#endif
+
+        seg = machine_sbdf >> 16;
+        bus = PCI_BUS(machine_sbdf);
+        devfn = PCI_DEVFN2(machine_sbdf);
+
+        pcidevs_lock();
+        rc = pci_device_set_assigned(seg, bus, devfn,
+                                     !!sysctl->u.pci_set_assigned.assigned);
+        pcidevs_unlock();
+        return rc;
+    }
+    default:
+        ret = -ENOSYS;
+        break;
+    }
+
+    return ret;
 }
 
 /*

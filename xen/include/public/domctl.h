@@ -1135,28 +1135,6 @@ struct xen_domctl_vuart_op {
                                  */
 };
 
-/*
- * These are to emulate pciback device (de-)assignment used by the tools
- * to track current device assignments: all the PCI devices that can
- * be passed through must be assigned to the pciback to mark them
- * as such. As on ARM we do not run pci{back|front} and are emulating
- * PCI host bridge in Xen, so we need to maintain the assignments on our
- * own in Xen itself.
- *
- * Note on XEN_DOMCTL_pci_device_get_assigned: ENOENT is used to report
- * that there are no assigned devices left.
- */
-struct xen_domctl_pci_device_set_assigned {
-    /* IN */
-    uint32_t machine_sbdf;
-    uint8_t assigned;
-};
-
-struct xen_domctl_pci_device_get_assigned {
-    /* OUT */
-    uint32_t machine_sbdf;
-};
-
 struct xen_domctl {
     uint32_t cmd;
 #define XEN_DOMCTL_createdomain                   1
@@ -1238,8 +1216,6 @@ struct xen_domctl {
 #define XEN_DOMCTL_vuart_op                      81
 #define XEN_DOMCTL_get_cpu_policy                82
 #define XEN_DOMCTL_set_cpu_policy                83
-#define XEN_DOMCTL_pci_device_set_assigned       84
-#define XEN_DOMCTL_pci_device_get_assigned       85
 #define XEN_DOMCTL_gdbsx_guestmemio            1000
 #define XEN_DOMCTL_gdbsx_pausevcpu             1001
 #define XEN_DOMCTL_gdbsx_unpausevcpu           1002
@@ -1300,8 +1276,6 @@ struct xen_domctl {
         struct xen_domctl_monitor_op        monitor_op;
         struct xen_domctl_psr_alloc         psr_alloc;
         struct xen_domctl_vuart_op          vuart_op;
-        struct xen_domctl_pci_device_set_assigned pci_set_assigned;
-        struct xen_domctl_pci_device_get_assigned pci_get_assigned;
         uint8_t                             pad[128];
     } u;
 };

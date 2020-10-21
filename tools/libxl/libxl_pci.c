@@ -714,8 +714,7 @@ static int pciback_dev_assign(libxl__gc *gc, libxl_device_pci *pcidev)
 #else
     libxl_ctx *ctx = libxl__gc_owner(gc);
 
-    return xc_pci_device_set_assigned(ctx->xch, DOMID_IO,
-                                      pcidev_encode_bdf(pcidev),
+    return xc_pci_device_set_assigned(ctx->xch, pcidev_encode_bdf(pcidev),
                                       true);
 #endif
 }
@@ -741,8 +740,7 @@ static int pciback_dev_unassign(libxl__gc *gc, libxl_device_pci *pcidev)
 #else
     libxl_ctx *ctx = libxl__gc_owner(gc);
 
-    return xc_pci_device_set_assigned(ctx->xch, DOMID_IO,
-                                      pcidev_encode_bdf(pcidev),
+    return xc_pci_device_set_assigned(ctx->xch, pcidev_encode_bdf(pcidev),
                                       false);
 #endif
 }

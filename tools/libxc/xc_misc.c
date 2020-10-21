@@ -988,6 +988,20 @@ int xc_livepatch_replace(xc_interface *xch, char *name, uint32_t timeout, uint32
     return _xc_livepatch_action(xch, name, LIVEPATCH_ACTION_REPLACE, timeout, flags);
 }
 
+int xc_pci_device_set_assigned(
+    xc_interface *xch,
+    uint32_t machine_sbdf,
+    bool assigned)
+{
+    DECLARE_SYSCTL;
+
+    sysctl.cmd = XEN_SYSCTL_pci_device_set_assigned;
+    sysctl.u.pci_set_assigned.machine_sbdf = machine_sbdf;
+    sysctl.u.pci_set_assigned.assigned = assigned;
+
+    return do_sysctl(xch, &sysctl);
+}
+
 /*
  * Local variables:
  * mode: C
