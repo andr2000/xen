@@ -928,21 +928,19 @@ int pci_device_set_assigned(u16 seg, u8 bus, u8 devfn, bool assigned)
     return 0;
 }
 
-int pci_device_get_assigned(u16 *seg, u8 *bus, u8 *devfn)
+int pci_device_get_assigned(u16 seg, u8 bus, u8 devfn)
 {
     struct pci_dev *pdev;
 
-    pdev = pci_get_pdev(*seg, *bus, *devfn);
+    pdev = pci_get_pdev(seg, bus, devfn);
     if ( !pdev )
     {
         printk(XENLOG_ERR "Can't find PCI device %04x:%02x:%02x.%u\n",
-               *seg, *bus, PCI_SLOT(*devfn), PCI_FUNC(*devfn));
+               seg, bus, PCI_SLOT(devfn), PCI_FUNC(devfn));
         return -ENODEV;
     }
 
-    /* ITERATE */
-
-    return 0;
+    return pdev->assigned ? 0 : -ENODEV;
 }
 #endif
 

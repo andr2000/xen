@@ -1002,6 +1002,18 @@ int xc_pci_device_set_assigned(
     return do_sysctl(xch, &sysctl);
 }
 
+int xc_pci_device_get_assigned(
+    xc_interface *xch,
+    uint32_t machine_sbdf)
+{
+    DECLARE_SYSCTL;
+
+    sysctl.cmd = XEN_SYSCTL_pci_device_get_assigned;
+    sysctl.u.pci_get_assigned.machine_sbdf = machine_sbdf;
+
+    return do_sysctl(xch, &sysctl);
+}
+
 /*
  * Local variables:
  * mode: C

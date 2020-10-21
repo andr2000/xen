@@ -2654,6 +2654,7 @@ int xc_domain_cacheflush(xc_interface *xch, uint32_t domid,
 
 int xc_pci_device_set_assigned(xc_interface *xch, uint32_t machine_sbdf,
                                bool assigned);
+int xc_pci_device_get_assigned(xc_interface *xch, uint32_t machine_sbdf);
 
 /* Compat shims */
 #include "xenctrl_compat.h"

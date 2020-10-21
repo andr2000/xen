@@ -661,8 +661,8 @@ out:
 
 static int pciback_dev_is_assigned(libxl__gc *gc, libxl_device_pci *pcidev)
 {
-#ifdef CONFIG_PCIBACK
     int rc;
+#ifdef CONFIG_PCIBACK
     char * spath;
     struct stat st;
 
@@ -685,8 +685,10 @@ static int pciback_dev_is_assigned(libxl__gc *gc, libxl_device_pci *pcidev)
     LOGE(ERROR, "Accessing %s", spath);
     return -1;
 #else
-    printf("IMPLEMENT_ME: %s lstat %s\n", __func__, "XXX");
-    return 0;
+    libxl_ctx *ctx = libxl__gc_owner(gc);
+
+    rc = xc_pci_device_get_assigned(ctx->xch, pcidev_encode_bdf(pcidev));
+    return rc == 0 ? 1 : 0;
 #endif
 }
 

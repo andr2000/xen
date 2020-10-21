@@ -1080,7 +1080,7 @@ struct xen_sysctl_pci_device_set_assigned {
 };
 
 struct xen_sysctl_pci_device_get_assigned {
-    /* OUT */
+    /* IN */
     uint32_t machine_sbdf;
 };
 
