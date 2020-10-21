@@ -85,6 +85,20 @@ int do_physdev_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
                                                res.irq, pci_res);
                 break;
             }
+#if 0
+        case PHYSDEVOP_pci_device_get_assigned:
+            {
+                struct physdev_pci_device_get_assigned assigned;
+
+                ret = pci_device_get_assigned(&assigned.seg, &assigned.bus,
+                                              &assigned.devfn);
+                if ( !ret )
+                    break;
+
+                ret = copy_to_guest(arg, &assigned, 1);
+                break;
+            }
+#endif
 #endif
         default:
             gdprintk(XENLOG_DEBUG, "PHYSDEVOP cmd=%d: not implemented\n", cmd);

@@ -907,6 +907,43 @@ int pci_set_device_resources(u16 seg, u8 bus, u8 devfn, u32 irq,
 
     return 0;
 }
+
+int pci_device_set_assigned(u16 seg, u8 bus, u8 devfn, bool assigned)
+{
+    struct pci_dev *pdev;
+
+    pdev = pci_get_pdev(seg, bus, devfn);
+    if ( !pdev )
+    {
+        printk(XENLOG_ERR "Can't find PCI device %04x:%02x:%02x.%u\n",
+               seg, bus, PCI_SLOT(devfn), PCI_FUNC(devfn));
+        return -ENODEV;
+    }
+
+    pdev->assigned = assigned;
+    printk(XENLOG_ERR "pciback %sassign PCI device %04x:%02x:%02x.%u\n",
+           assigned ? "" : "de-",
+           seg, bus, PCI_SLOT(devfn), PCI_FUNC(devfn));
+
+    return 0;
+}
+
+int pci_device_get_assigned(u16 *seg, u8 *bus, u8 *devfn)
+{
+    struct pci_dev *pdev;
+
+    pdev = pci_get_pdev(*seg, *bus, *devfn);
+    if ( !pdev )
+    {
+        printk(XENLOG_ERR "Can't find PCI device %04x:%02x:%02x.%u\n",
+               *seg, *bus, PCI_SLOT(*devfn), PCI_FUNC(*devfn));
+        return -ENODEV;
+    }
+
+    /* ITERATE */
+
+    return 0;
+}
 #endif
 
 #ifndef CONFIG_ARM

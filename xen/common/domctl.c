@@ -472,6 +472,7 @@ long do_domctl(XEN_GUEST_HANDLE_PARAM(xen_domctl_t) u_domctl)
     {
     case XEN_DOMCTL_assign_device:
     case XEN_DOMCTL_deassign_device:
+    case XEN_DOMCTL_pci_device_set_assigned:
         if ( op->domain == DOMID_IO )
         {
             d = dom_io;

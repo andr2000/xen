@@ -614,6 +614,7 @@ bool libxl__is_igd_vga_passthru(libxl__gc *gc,
     return false;
 }
 
+#ifdef CONFIG_PCIBACK
 /*
  * A brief comment about slots.  I don't know what slots are for; however,
  * I have by experimentation determined:
@@ -632,7 +633,6 @@ bool libxl__is_igd_vga_passthru(libxl__gc *gc,
 /* Scan through /sys/.../pciback/slots looking for pcidev's BDF */
 static int pciback_dev_has_slot(libxl__gc *gc, libxl_device_pci *pcidev)
 {
-#ifdef CONFIG_PCIBACK
     FILE *f;
     int rc = 0;
     unsigned dom, bus, dev, func;
@@ -656,17 +656,14 @@ static int pciback_dev_has_slot(libxl__gc *gc, libxl_device_pci *pcidev)
 out:
     fclose(f);
     return rc;
-#else
-    printf("IMPLEMENT_ME: %s %s\n", __func__, SYSFS_PCIBACK_DRIVER"/slots");
-    return 1;
-#endif
 }
+#endif
 
 static int pciback_dev_is_assigned(libxl__gc *gc, libxl_device_pci *pcidev)
 {
-    char * spath;
 #ifdef CONFIG_PCIBACK
     int rc;
+    char * spath;
     struct stat st;
 
     if ( access(SYSFS_PCIBACK_DRIVER, F_OK) < 0 ) {
@@ -677,11 +674,9 @@ static int pciback_dev_is_assigned(libxl__gc *gc, libxl_device_pci *pcidev)
         }
         return -1;
     }
-#endif
     spath = GCSPRINTF(SYSFS_PCIBACK_DRIVER"/"PCI_BDF,
                       pcidev->domain, pcidev->bus,
                       pcidev->dev, pcidev->func);
-#ifdef CONFIG_PCIBACK
     rc = lstat(spath, &st);
     if( rc == 0 )
         return 1;
@@ -690,13 +685,14 @@ static int pciback_dev_is_assigned(libxl__gc *gc, libxl_device_pci *pcidev)
     LOGE(ERROR, "Accessing %s", spath);
     return -1;
 #else
-    printf("IMPLEMENT_ME: %s lstat %s\n", __func__, spath);
+    printf("IMPLEMENT_ME: %s lstat %s\n", __func__, "XXX");
     return 0;
 #endif
 }
 
 static int pciback_dev_assign(libxl__gc *gc, libxl_device_pci *pcidev)
 {
+#ifdef CONFIG_PCIBACK
     int rc;
 
     if ( (rc=pciback_dev_has_slot(gc, pcidev)) < 0 ) {
@@ -710,19 +706,23 @@ static int pciback_dev_assign(libxl__gc *gc, libxl_device_pci *pcidev)
         }
     }
 
-#ifdef CONFIG_PCIBACK
     if ( sysfs_write_bdf(gc, SYSFS_PCIBACK_DRIVER"/bind", pcidev) < 0 ) {
         LOGE(ERROR, "Couldn't bind device to pciback!");
         return ERROR_FAIL;
     }
-#else
-    printf("IMPLEMENT_ME: %s sysfs write %s\n", __func__, SYSFS_PCIBACK_DRIVER"/bind");
-#endif
     return 0;
+#else
+    libxl_ctx *ctx = libxl__gc_owner(gc);
+
+    return xc_pci_device_set_assigned(ctx->xch, DOMID_IO,
+                                      pcidev_encode_bdf(pcidev),
+                                      true);
+#endif
 }
 
 static int pciback_dev_unassign(libxl__gc *gc, libxl_device_pci *pcidev)
 {
+#ifdef CONFIG_PCIBACK
     /* Remove from pciback */
     if ( sysfs_dev_unbind(gc, pcidev, NULL) < 0 ) {
         LOG(ERROR, "Couldn't unbind device!");
@@ -738,6 +738,13 @@ static int pciback_dev_unassign(libxl__gc *gc, libxl_device_pci *pcidev)
         }
     }
     return 0;
+#else
+    libxl_ctx *ctx = libxl__gc_owner(gc);
+
+    return xc_pci_device_set_assigned(ctx->xch, DOMID_IO,
+                                      pcidev_encode_bdf(pcidev),
+                                      false);
+#endif
 }
 
 #define PCIBACK_INFO_PATH "/libxl/pciback"

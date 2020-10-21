@@ -2652,6 +2652,9 @@ int xc_livepatch_replace(xc_interface *xch, char *name, uint32_t timeout, uint32
 int xc_domain_cacheflush(xc_interface *xch, uint32_t domid,
                          xen_pfn_t start_pfn, xen_pfn_t nr_pfns);
 
+int xc_pci_device_set_assigned(xc_interface *xch, uint32_t domid,
+                               uint32_t machine_sbdf, bool assigned);
+
 /* Compat shims */
 #include "xenctrl_compat.h"
 
