@@ -1075,6 +1075,7 @@ DEFINE_XEN_GUEST_HANDLE(xen_sysctl_cpu_policy_t);
  */
 struct xen_sysctl_pci_device_set_assigned {
     /* IN */
+    /* FIXME: is this really a machine SBDF or as Domain-0 sees it? */
     uint32_t machine_sbdf;
     uint8_t assigned;
 };
@@ -1083,6 +1084,17 @@ struct xen_sysctl_pci_device_get_assigned {
     /* IN */
     uint32_t machine_sbdf;
 };
+
+struct xen_sysctl_pci_device_enum_assigned {
+    /* IN */
+    uint32_t idx;
+    uint8_t report_not_assigned;
+    /* OUT */
+    domid_t domain;
+    uint32_t machine_sbdf;
+};
+typedef struct xen_sysctl_pci_device_enum_assigned xen_sysctl_pci_device_enum_assigned_t;
+DEFINE_XEN_GUEST_HANDLE(xen_sysctl_pci_device_enum_assigned_t);
 
 struct xen_sysctl {
     uint32_t cmd;
@@ -1116,6 +1128,7 @@ struct xen_sysctl {
 #define XEN_SYSCTL_get_cpu_policy                29
 #define XEN_SYSCTL_pci_device_set_assigned       30
 #define XEN_SYSCTL_pci_device_get_assigned       31
+#define XEN_SYSCTL_pci_device_enum_assigned      32
     uint32_t interface_version; /* XEN_SYSCTL_INTERFACE_VERSION */
     union {
         struct xen_sysctl_readconsole       readconsole;
@@ -1148,6 +1161,7 @@ struct xen_sysctl {
 #endif
         struct xen_sysctl_pci_device_set_assigned pci_set_assigned;
         struct xen_sysctl_pci_device_get_assigned pci_get_assigned;
+        struct xen_sysctl_pci_device_enum_assigned pci_enum_assigned;
         uint8_t                             pad[128];
     } u;
 };

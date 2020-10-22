@@ -1959,6 +1959,62 @@ int iommu_do_pci_domctl(
     return ret;
 }
 
+#ifdef CONFIG_ARM
+struct list_assigned {
+    uint32_t cur_idx;
+    uint32_t from_idx;
+    bool assigned;
+    domid_t *domain;
+    uint32_t *machine_sbdf;
+};
+
+static int _enum_assigned_pci_devices(struct pci_seg *pseg, void *arg)
+{
+    struct list_assigned *ctxt = arg;
+    struct pci_dev *pdev;
+
+    list_for_each_entry ( pdev, &pseg->alldevs_list, alldevs_list )
+    {
+        if ( pdev->assigned == ctxt->assigned )
+        {
+            if ( ctxt->cur_idx == ctxt->from_idx )
+            {
+                *ctxt->domain = pdev->domain->domain_id;
+                *ctxt->machine_sbdf = pdev->sbdf.sbdf;
+                return 1;
+            }
+            ctxt->cur_idx++;
+        }
+    }
+    return 0;
+}
+
+int pci_device_enum_assigned(bool report_not_assigned,
+                             uint32_t from_idx, domid_t *domain,
+                             uint32_t *machine_sbdf)
+{
+    struct list_assigned ctxt = {
+        .assigned = !report_not_assigned,
+        .cur_idx = 0,
+        .from_idx = from_idx,
+        .domain = domain,
+        .machine_sbdf = machine_sbdf,
+    };
+    int ret;
+
+    pcidevs_lock();
+    ret = pci_segments_iterate(_enum_assigned_pci_devices, &ctxt);
+    pcidevs_unlock();
+    /*
+     * If not found then report as EINVAL to mark
+     * enumeration process finished.
+     */
+    if ( !ret )
+        return -EINVAL;
+    return 0;
+}
+#endif
+
 /*
  * Local variables:
  * mode: C

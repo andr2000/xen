@@ -319,6 +319,7 @@ retry_transaction2:
 
 static int get_all_assigned_devices(libxl__gc *gc, libxl_device_pci **list, int *num)
 {
+#ifdef CONFIG_PCIBACK
     char **domlist;
     unsigned int nd = 0, i;
 
@@ -356,6 +357,33 @@ static int get_all_assigned_devices(libxl__gc *gc, libxl_device_pci **list, int 
             }
         }
     }
+#else
+    libxl_ctx *ctx = libxl__gc_owner(gc);
+    int ret;
+    xc_pci_device_enum_assigned_t e;
+
+    *list = NULL;
+    *num = 0;
+
+    memset(&e, 0, sizeof(e));
+    do {
+        ret = xc_pci_device_enum_assigned(ctx->xch, &e);
+        if ( ret && errno == EINVAL )
+            break;
+        *list = realloc(*list, sizeof(libxl_device_pci) * (e.idx + 1));
+        if (*list == NULL)
+            return ERROR_NOMEM;
+
+        pcidev_struct_fill(*list + e.idx,
+                           e.domain,
+                           e.machine_sbdf >> 8 & 0xff,
+                           PCI_SLOT(e.machine_sbdf),
+                           PCI_FUNC(e.machine_sbdf),
+                           0 /*vdevfn*/);
+        e.idx++;
+    } while (!ret);
+    *num = e.idx;
+#endif
     libxl__ptr_add(gc, *list);
 
     return 0;
@@ -411,19 +439,23 @@ static int sysfs_write_bdf(libxl__gc *gc, const char * sysfs_path,
 libxl_device_pci *libxl_device_pci_assignable_list(libxl_ctx *ctx, int *num)
 {
     GC_INIT(ctx);
-    libxl_device_pci *pcidevs = NULL, *new, *assigned;
-    int r, num_assigned;
+    libxl_device_pci *pcidevs = NULL, *new;
+    int r;
 #ifdef CONFIG_PCIBACK
+    libxl_device_pci *assigned;
+    int num_assigned;
     struct dirent *de;
     DIR *dir;
+#else
+    xc_pci_device_enum_assigned_t e;
 #endif
 
     *num = 0;
 
+#ifdef CONFIG_PCIBACK
     r = get_all_assigned_devices(gc, &assigned, &num_assigned);
     if (r) goto out;
 
-#ifdef CONFIG_PCIBACK
     dir = opendir(SYSFS_PCIBACK_DRIVER);
     if (NULL == dir) {
         if (errno == ENOENT) {
@@ -455,12 +487,33 @@ libxl_device_pci *libxl_device_pci_assignable_list(libxl_ctx *ctx, int *num)
     }
 
     closedir(dir);
-#else
-    printf("IMPLEMENT_ME: %s\n", __func__);
-    (void)new;
-    (void)assigned;
-#endif
 out:
+#else
+    memset(&e, 0, sizeof(e));
+    e.report_not_assigned = 1;
+    do {
+        r = xc_pci_device_enum_assigned(ctx->xch, &e);
+        if ( r && errno == EINVAL )
+            break;
+        new = realloc(pcidevs, (e.idx + 1) * sizeof(*new));
+        if (NULL == new)
+            continue;
+
+        pcidevs = new;
+        new = pcidevs + e.idx;
+
+        memset(new, 0, sizeof(*new));
+
+        pcidev_struct_fill(new,
+                           e.domain,
+                           e.machine_sbdf >> 8 & 0xff,
+                           PCI_SLOT(e.machine_sbdf),
+                           PCI_FUNC(e.machine_sbdf),
+                           0 /*vdevfn*/);
+        e.idx++;
+    } while (!r);
+    *num = e.idx;
+#endif
     GC_FREE;
     return pcidevs;
 }

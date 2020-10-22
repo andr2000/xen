@@ -10,6 +10,7 @@
 #include <xen/lib.h>
 #include <xen/errno.h>
 #include <xen/hypercall.h>
+#include <xen/guest_access.h>
 #include <public/sysctl.h>
 
 void arch_do_physinfo(struct xen_sysctl_physinfo *pi)
@@ -21,12 +22,12 @@ long arch_do_sysctl(struct xen_sysctl *sysctl,
                     XEN_GUEST_HANDLE_PARAM(xen_sysctl_t) u_sysctl)
 {
     long ret = 0;
+    bool copyback = 0;
 
     switch ( sysctl->cmd )
     {
     case XEN_SYSCTL_pci_device_set_assigned:
     {
-        int rc;
         u16 seg;
         u8 bus, devfn;
         uint32_t machine_sbdf;
@@ -44,14 +45,13 @@ long arch_do_sysctl(struct xen_sysctl *sysctl,
         devfn = PCI_DEVFN2(machine_sbdf);
 
         pcidevs_lock();
-        rc = pci_device_set_assigned(seg, bus, devfn,
-                                     !!sysctl->u.pci_set_assigned.assigned);
+        ret = pci_device_set_assigned(seg, bus, devfn,
+                                      !!sysctl->u.pci_set_assigned.assigned);
         pcidevs_unlock();
-        return rc;
+        break;
     }
     case XEN_SYSCTL_pci_device_get_assigned:
     {
-        int rc;
         u16 seg;
         u8 bus, devfn;
         uint32_t machine_sbdf;
@@ -63,14 +63,26 @@ long arch_do_sysctl(struct xen_sysctl *sysctl,
         devfn = PCI_DEVFN2(machine_sbdf);
 
         pcidevs_lock();
-        rc = pci_device_get_assigned(seg, bus, devfn);
+        ret = pci_device_get_assigned(seg, bus, devfn);
         pcidevs_unlock();
-        return rc;
+        break;
+    }
+    case XEN_SYSCTL_pci_device_enum_assigned:
+    {
+        ret = pci_device_enum_assigned(sysctl->u.pci_enum_assigned.report_not_assigned,
+                                       sysctl->u.pci_enum_assigned.idx,
+                                       &sysctl->u.pci_enum_assigned.domain,
+                                       &sysctl->u.pci_enum_assigned.machine_sbdf);
+        copyback = 1;
+        break;
     }
     default:
         ret = -ENOSYS;
         break;
     }
+    if ( copyback && (!ret || copyback > 0) &&
+         __copy_to_guest(u_sysctl, sysctl, 1) )
+        ret = -EFAULT;
 
     return ret;
 }

@@ -192,6 +192,9 @@ int pci_set_device_resources(u16 seg, u8 bus, u8 devfn, u32 irq,
                              struct pci_mmio_resource *res);
 int pci_device_set_assigned(u16 seg, u8 bus, u8 devfn, bool assigned);
 int pci_device_get_assigned(u16 seg, u8 bus, u8 devfn);
+int pci_device_enum_assigned(bool report_not_assigned,
+                             uint32_t from_idx, domid_t *domain,
+                             uint32_t *machine_sbdf);
 int pci_ro_device(int seg, int bus, int devfn);
 int pci_hide_device(unsigned int seg, unsigned int bus, unsigned int devfn);
 struct pci_dev *pci_get_pdev(int seg, int bus, int devfn);
