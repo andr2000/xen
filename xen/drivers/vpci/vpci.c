@@ -69,6 +69,7 @@ int __hwdom_init vpci_add_handlers(struct pci_dev *pdev)
         return -ENOMEM;
 
     INIT_LIST_HEAD(&pdev->vpci->handlers);
+    INIT_LIST_HEAD(&pdev->vpci->headers);
     spin_lock_init(&pdev->vpci->lock);
 
     for ( i = 0; i < NUM_VPCI_INIT; i++ )

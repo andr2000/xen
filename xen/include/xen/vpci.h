@@ -55,6 +55,40 @@ uint32_t vpci_hw_read32(const struct pci_dev *pdev, unsigned int reg,
  */
 bool __must_check vpci_process_pending(struct vcpu *v);
 
+#ifdef __XEN__
+struct vpci_header {
+    struct list_head node;
+    /* Domain that owns this view of the BARs. */
+    domid_t domain_id;
+    /* Information about the PCI BARs of this device. */
+    struct vpci_bar {
+        int index;
+        uint64_t addr;
+        uint64_t size;
+        enum {
+            VPCI_BAR_EMPTY,
+            VPCI_BAR_IO,
+            VPCI_BAR_MEM32,
+            VPCI_BAR_MEM64_LO,
+            VPCI_BAR_MEM64_HI,
+            VPCI_BAR_ROM,
+        } type;
+        bool prefetchable : 1;
+        /* Store whether the BAR is mapped into guest p2m. */
+        bool enabled      : 1;
+#define PCI_HEADER_NORMAL_NR_BARS        6
+#define PCI_HEADER_BRIDGE_NR_BARS        2
+    } bars[PCI_HEADER_NORMAL_NR_BARS + 1];
+    /* At most 6 BARS + 1 expansion ROM BAR. */
+
+    /*
+     * Store whether the ROM enable bit is set (doesn't imply ROM BAR
+     * is mapped into guest p2m) if there's a ROM BAR on the device.
+     */
+    bool rom_enabled      : 1;
+};
+#endif
+
 struct vpci {
     /* List of vPCI handlers for a device. */
     struct list_head handlers;
@@ -62,34 +96,8 @@ struct vpci {
 
 #ifdef __XEN__
     /* Hide the rest of the vpci struct from the user-space test harness. */
-    struct vpci_header {
-        /* Information about the PCI BARs of this device. */
-        struct vpci_bar {
-            uint64_t addr;
-            uint64_t size;
-            enum {
-                VPCI_BAR_EMPTY,
-                VPCI_BAR_IO,
-                VPCI_BAR_MEM32,
-                VPCI_BAR_MEM64_LO,
-                VPCI_BAR_MEM64_HI,
-                VPCI_BAR_ROM,
-            } type;
-            bool prefetchable : 1;
-            /* Store whether the BAR is mapped into guest p2m. */
-            bool enabled      : 1;
-#define PCI_HEADER_NORMAL_NR_BARS        6
-#define PCI_HEADER_BRIDGE_NR_BARS        2
-        } bars[PCI_HEADER_NORMAL_NR_BARS + 1];
-        /* At most 6 BARS + 1 expansion ROM BAR. */
-
-        /*
-         * Store whether the ROM enable bit is set (doesn't imply ROM BAR
-         * is mapped into guest p2m) if there's a ROM BAR on the device.
-         */
-        bool rom_enabled      : 1;
-        /* FIXME: currently there's no support for SR-IOV. */
-    } header;
+    /* List of vPCI headers for all domains. */
+    struct list_head headers;
 
 #ifdef CONFIG_X86
     /* MSI data. */
