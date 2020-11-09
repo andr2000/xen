@@ -80,15 +80,49 @@ static const struct mmio_handler_ops vpci_mmio_handler = {
     .write = vpci_mmio_write,
 };
 
+static int vpci_setup_mmio_handler(struct domain *d,
+                                   struct pci_host_bridge *bridge)
+{
+    struct pci_config_window *cfg = bridge->cfg;
+
+    register_mmio_handler(d, &vpci_mmio_handler,
+                          cfg->phys_addr, cfg->size, NULL);
+    return 0;
+}
+
 int domain_vpci_init(struct domain *d)
 {
     if ( !has_vpci(d) )
         return 0;
 
+    if ( is_hardware_domain(d) )
+        return pci_host_iterate_bridges(d, vpci_setup_mmio_handler);
+
+    /* Guest domains use what is programmed in their device tree. */
     register_mmio_handler(d, &vpci_mmio_handler,
                           GUEST_VPCI_ECAM_BASE, GUEST_VPCI_ECAM_SIZE, NULL);
 
     return 0;
+}
+
+int domain_vpci_get_num_mmio_handlers(struct domain *d)
+{
+    int count;
+
+    if ( is_hardware_domain(d) )
+        /* For each PCI host bridge's configuration space. */
+        count = pci_host_get_num_bridges();
+    else
+        /*
+         * VPCI_MSIX_MEM_NUM handlers for MSI-X tables per each PCI device
+         * being passed through. Maximum number of supported devices
+         * is 32 as virtual bus topology emulates the devices as embedded
+         * endpoints.
+         * +1 for a single emulated host bridge's configuration space.
+         */
+        count = VPCI_MSIX_MEM_NUM * 32 + 1;
+
+    return count;
 }
 
 /*
