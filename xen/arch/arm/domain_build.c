@@ -1218,6 +1218,9 @@ static int __init map_range_to_domain(const struct dt_device_node *dev,
     bool need_mapping = !dt_device_for_passthrough(dev);
     int res;
 
+    if ( need_mapping && (device_get_class(dev) == DEVICE_PCI) )
+        need_mapping = pci_host_bridge_need_mapping(d, dev, addr, len);
+
     res = iomem_permit_access(d, paddr_to_pfn(addr),
                               paddr_to_pfn(PAGE_ALIGN(addr + len - 1)));
     if ( res )
@@ -2566,7 +2569,11 @@ int __init construct_dom0(struct domain *d)
     if ( rc < 0 )
         return rc;
 
-    return construct_domain(d, &kinfo);
+    rc = construct_domain(d, &kinfo);
+    if ( rc < 0 )
+        return rc;
+
+    return rc;
 }
 
 /*

@@ -21,6 +21,8 @@
 #include <asm/device.h>
 #include <asm/io.h>
 #include <xen/pci.h>
+#include <xen/sched.h>
+#include <asm/p2m.h>
 #include <asm/pci.h>
 
 /*
@@ -85,6 +87,19 @@ int pci_ecam_config_read(struct pci_host_bridge *bridge, uint32_t sbdf,
     return 0;
 }
 
+static int pci_ecam_need_mapping(struct domain *d,
+                                 struct pci_host_bridge *bridge,
+                                 u64 addr, u64 len)
+{
+    struct pci_config_window *cfg = bridge->sysdata;
+
+    /* Only check for control domain which owns HW PCI host bridge. */
+    if ( !is_control_domain(d) )
+        return true;
+
+    return cfg->phys_addr != addr;
+}
+
 static int pci_ecam_register_mmio_handler(struct domain *d,
                                           struct pci_host_bridge *bridge,
                                           const struct mmio_handler_ops *ops)
@@ -101,6 +116,7 @@ struct pci_ecam_ops pci_generic_ecam_ops = {
     .pci_ops    = {
         .read                  = pci_ecam_config_read,
         .write                 = pci_ecam_config_write,
+        .need_mapping          = pci_ecam_need_mapping,
         .register_mmio_handler = pci_ecam_register_mmio_handler,
     }
 };

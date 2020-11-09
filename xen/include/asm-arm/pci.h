@@ -70,6 +70,8 @@ struct pci_ops {
                     uint32_t sbdf, int where, int size, u32 *val);
     int (*write)(struct pci_host_bridge *bridge,
                     uint32_t sbdf, int where, int size, u32 val);
+    int (*need_mapping)(struct domain *d, struct pci_host_bridge *bridge,
+                        u64 addr, u64 len);
     int (*register_mmio_handler)(struct domain *d,
                                  struct pci_host_bridge *bridge,
                                  const struct mmio_handler_ops *ops);
@@ -113,8 +115,17 @@ bool dt_pci_parse_bus_range(struct dt_device_node *dev,
 int pci_host_iterate_bridges(struct domain *d,
                              int (*clb)(struct domain *d,
                                         struct pci_host_bridge *bridge));
+bool pci_host_bridge_need_mapping(struct domain *d,
+                                  const struct dt_device_node *node,
+                                  u64 addr, u64 len);
 #else   /*!CONFIG_ARM_PCI*/
 struct arch_pci_dev { };
 static inline void  pci_init(void) { }
+static inline bool pci_host_bridge_need_mapping(struct domain *d,
+                                                const struct dt_device_node *node,
+                                                u64 addr, u64 len)
+{
+    return true;
+}
 #endif  /*!CONFIG_ARM_PCI*/
 #endif /* __ARM_PCI_H__ */
