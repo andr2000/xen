@@ -23,6 +23,7 @@
 #include <xen/pci.h>
 #include <asm/pci.h>
 #include <xen/vmap.h>
+#include <xen/vpci.h>
 
 /* Error values that may be returned by PCI functions */
 #define PCIBIOS_SUCCESSFUL		0x00
@@ -307,12 +308,80 @@ int pci_rcar_gen3_config_write(struct pci_host_bridge *bridge, uint32_t _sbdf,
     return ret;
 }
 
+static void pci_rcar_gen3_hwbar_init(const struct pci_dev *pdev,
+                                     struct vpci_header *header)
+
+{
+    static bool once = true;
+    struct vpci_bar *bars = header->bars;
+    unsigned int num_bars;
+    int i;
+
+    /* Run only once. */
+    if (!once)
+        return;
+    once = false;
+
+    printk("\n\n ------------------------ %s -------------------\n", __func__);
+    switch ( pci_conf_read8(pdev->sbdf, PCI_HEADER_TYPE) & 0x7f )
+    {
+    case PCI_HEADER_TYPE_NORMAL:
+        num_bars = PCI_HEADER_NORMAL_NR_BARS;
+        break;
+
+    case PCI_HEADER_TYPE_BRIDGE:
+        num_bars = PCI_HEADER_BRIDGE_NR_BARS;
+        break;
+
+    default:
+        return;
+    }
+
+    for ( i = 0; i < num_bars; i++ )
+    {
+        uint8_t reg = PCI_BASE_ADDRESS_0 + i * 4;
+
+        if ( bars[i].type == VPCI_BAR_MEM64_HI )
+        {
+            /*
+             * Skip hi part of the 64-bit register: it is read
+             * together with the lower part.
+             */
+            continue;
+        }
+
+        if ( bars[i].type == VPCI_BAR_IO )
+        {
+            /* Skip IO. */
+            continue;
+        }
+
+        if ( bars[i].type == VPCI_BAR_MEM64_LO )
+        {
+            /* Read both hi and lo parts of the 64-bit BAR. */
+            bars[i].addr =
+                (uint64_t)pci_conf_read32(pdev->sbdf, reg + 4) << 32 |
+                pci_conf_read32(pdev->sbdf, reg);
+        }
+        else if ( bars[i].type == VPCI_BAR_MEM32 )
+        {
+            bars[i].addr = pci_conf_read32(pdev->sbdf, reg);
+        }
+        else
+        {
+            /* Expansion ROM? */
+            continue;
+        }
+    }
+}
+
 /* R-Car Gen3 ops */
 static struct pci_ecam_ops pci_rcar_gen3_ops = {
     .bus_shift  = 20, /* FIXME: this is not used by RCar */
     .pci_ops    = {
         .read       = pci_rcar_gen3_config_read,
         .write      = pci_rcar_gen3_config_write,
+        .update_bar_header = pci_rcar_gen3_hwbar_init,
     }
 };
 
