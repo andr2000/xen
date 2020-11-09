@@ -31,14 +31,87 @@
 struct map_data {
     struct domain *d;
     bool map;
+    struct pci_dev *pdev;
 };
+
+static struct vpci_header *get_vpci_header(struct domain *d,
+                                           const struct pci_dev *pdev);
+
+static struct vpci_header *get_hwdom_vpci_header(const struct pci_dev *pdev)
+{
+    if ( unlikely(list_empty(&pdev->vpci->headers)) )
+        return get_vpci_header(hardware_domain, pdev);
+
+    /* hwdom's header is always the very first entry. */
+    return list_first_entry(&pdev->vpci->headers, struct vpci_header, node);
+}
+
+static struct vpci_header *get_vpci_header(struct domain *d,
+                                           const struct pci_dev *pdev)
+{
+    struct list_head *prev;
+    struct vpci_header *header;
+    struct vpci *vpci = pdev->vpci;
+
+    list_for_each( prev, &vpci->headers )
+    {
+        struct vpci_header *this = list_entry(prev, struct vpci_header, node);
+
+        if ( this->domain_id == d->domain_id )
+            return this;
+    }
+    printk(XENLOG_DEBUG "--------------------------------------" \
+           "Adding new vPCI BAR headers for domain %d: " PRI_pci" \n",
+           d->domain_id, pdev->sbdf.seg, pdev->sbdf.bus,
+           pdev->sbdf.dev, pdev->sbdf.fn);
+    header = xzalloc(struct vpci_header);
+    if ( !header )
+    {
+        printk(XENLOG_ERR
+               "Failed to add new vPCI BAR headers for domain %d: " PRI_pci" \n",
+               d->domain_id, pdev->sbdf.seg, pdev->sbdf.bus,
+               pdev->sbdf.dev, pdev->sbdf.fn);
+        return NULL;
+    }
+
+    if ( !is_hardware_domain(d) )
+    {
+        struct vpci_header *hwdom_header = get_hwdom_vpci_header(pdev);
+
+        /* Make a copy of the hwdom's BARs as the initial state for vBARs. */
+        memcpy(header, hwdom_header, sizeof(*header));
+    }
+
+    header->domain_id = d->domain_id;
+    list_add_tail(&header->node, &vpci->headers);
+    return header;
+}
+
+static struct vpci_bar *get_vpci_bar(struct domain *d,
+                                     const struct pci_dev *pdev,
+                                     int bar_idx)
+{
+    struct vpci_header *vheader;
+
+    vheader = get_vpci_header(d, pdev);
+    if ( !vheader )
+        return NULL;
+
+    return &vheader->bars[bar_idx];
+}
 
 static int map_range(unsigned long s, unsigned long e, void *data,
                      unsigned long *c)
 {
     const struct map_data *map = data;
-    int rc;
+    unsigned long mfn;
+    int rc, bar_idx;
+    struct vpci_header *header = get_hwdom_vpci_header(map->pdev);
 
+    bar_idx = s & ~PCI_BASE_ADDRESS_MEM_MASK;
+    s = PFN_DOWN(s);
+    e = PFN_DOWN(e);
+    mfn = _mfn(PFN_DOWN(header->bars[bar_idx].addr));
     for ( ; ; )
     {
         unsigned long size = e - s + 1;
@@ -52,11 +125,15 @@ static int map_range(unsigned long s, unsigned long e, void *data,
          * - {un}map_mmio_regions doesn't support preemption.
          */
 
-        rc = map->map ? map_mmio_regions(map->d, _gfn(s), size, _mfn(s))
-                      : unmap_mmio_regions(map->d, _gfn(s), size, _mfn(s));
+        rc = map->map ? map_mmio_regions(map->d, _gfn(s), size, mfn)
+                      : unmap_mmio_regions(map->d, _gfn(s), size, mfn);
         if ( rc == 0 )
         {
-            *c += size;
+            /*
+             * Range set is not expressed in frame numbers and the size
+             * is the number of frames, so update accordingly.
+             */
+            *c += size << PAGE_SHIFT;
             break;
         }
         if ( rc < 0 )
@@ -67,8 +144,9 @@ static int map_range(unsigned long s, unsigned long e, void *data,
             break;
         }
         ASSERT(rc < size);
-        *c += rc;
+        *c += rc << PAGE_SHIFT;
         s += rc;
+        mfn += rc;
         if ( general_preempt_check() )
                 return -ERESTART;
     }
@@ -84,7 +162,7 @@ static int map_range(unsigned long s, unsigned long e, void *data,
 static void modify_decoding(const struct pci_dev *pdev, uint16_t cmd,
                             bool rom_only)
 {
-    struct vpci_header *header = &pdev->vpci->header;
+    struct vpci_header *header = get_hwdom_vpci_header(pdev);
     bool map = cmd & PCI_COMMAND_MEMORY;
     unsigned int i;
 
@@ -136,6 +214,7 @@ bool vpci_process_pending(struct vcpu *v)
         struct map_data data = {
             .d = v->domain,
             .map = v->vpci.cmd & PCI_COMMAND_MEMORY,
+            .pdev = v->vpci.pdev,
         };
         int rc = rangeset_consume_ranges(v->vpci.mem, map_range, &data);
 
@@ -168,7 +247,8 @@ bool vpci_process_pending(struct vcpu *v)
 static int __init apply_map(struct domain *d, const struct pci_dev *pdev,
                             struct rangeset *mem, uint16_t cmd)
 {
-    struct map_data data = { .d = d, .map = true };
+    struct map_data data = { .d = d, .map = true,
+        .pdev = (struct pci_dev *)pdev };
     int rc;
 
     while ( (rc = rangeset_consume_ranges(mem, map_range, &data)) == -ERESTART )
@@ -205,7 +285,7 @@ static void defer_map(struct domain *d, struct pci_dev *pdev,
 
 static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
 {
-    struct vpci_header *header = &pdev->vpci->header;
+    struct vpci_header *header;
     struct rangeset *mem = rangeset_new(NULL, NULL, 0);
     struct pci_dev *tmp, *dev = NULL;
 #ifdef CONFIG_X86
@@ -217,6 +297,11 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
     if ( !mem )
         return -ENOMEM;
 
+    if ( is_hardware_domain(current->domain) )
+        header = get_hwdom_vpci_header(pdev);
+    else
+        header = get_vpci_header(current->domain, pdev);
+
     /*
      * Create a rangeset that represents the current device BARs memory region
      * and compare it against all the currently active BAR memory regions. If
@@ -225,12 +310,15 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
      * First fill the rangeset with all the BARs of this device or with the ROM
      * BAR only, depending on whether the guest is toggling the memory decode
      * bit of the command register, or the enable bit of the ROM BAR register.
+     *
+     * Use the PCI reserved bits of the BAR to pass BAR's index.
      */
     for ( i = 0; i < ARRAY_SIZE(header->bars); i++ )
     {
         const struct vpci_bar *bar = &header->bars[i];
-        unsigned long start = PFN_DOWN(bar->addr);
-        unsigned long end = PFN_DOWN(bar->addr + bar->size - 1);
+        unsigned long start = (bar->addr & PCI_BASE_ADDRESS_MEM_MASK) | i;
+        unsigned long end = (bar->addr & PCI_BASE_ADDRESS_MEM_MASK) +
+            bar->size - 1;
 
         if ( !MAPPABLE_BAR(bar) ||
              (rom_only ? bar->type != VPCI_BAR_ROM
@@ -251,9 +339,11 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
     /* Remove any MSIX regions if present. */
     for ( i = 0; msix && i < ARRAY_SIZE(msix->tables); i++ )
     {
-        unsigned long start = PFN_DOWN(vmsix_table_addr(pdev->vpci, i));
-        unsigned long end = PFN_DOWN(vmsix_table_addr(pdev->vpci, i) +
-                                     vmsix_table_size(pdev->vpci, i) - 1);
+        unsigned long start = (vmsix_table_addr(pdev->vpci, i) &
+                               PCI_BASE_ADDRESS_MEM_MASK) | i;
+        unsigned long end = (vmsix_table_addr(pdev->vpci, i) &
+                             PCI_BASE_ADDRESS_MEM_MASK ) +
+                             vmsix_table_size(pdev->vpci, i) - 1;
 
         rc = rangeset_remove_range(mem, start, end);
         if ( rc )
@@ -273,6 +363,8 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
      */
     for_each_pdev ( pdev->domain, tmp )
     {
+        struct vpci_header *header;
+
         if ( tmp == pdev )
         {
             /*
@@ -289,11 +381,14 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
                 continue;
         }
 
-        for ( i = 0; i < ARRAY_SIZE(tmp->vpci->header.bars); i++ )
+        header = get_vpci_header(tmp->domain, pdev);
+
+        for ( i = 0; i < ARRAY_SIZE(header->bars); i++ )
         {
-            const struct vpci_bar *bar = &tmp->vpci->header.bars[i];
-            unsigned long start = PFN_DOWN(bar->addr);
-            unsigned long end = PFN_DOWN(bar->addr + bar->size - 1);
+            const struct vpci_bar *bar = &header->bars[i];
+            unsigned long start = (bar->addr & PCI_BASE_ADDRESS_MEM_MASK) | i;
+            unsigned long end = (bar->addr & PCI_BASE_ADDRESS_MEM_MASK)
+                + bar->size - 1;
 
             if ( !bar->enabled || !rangeset_overlaps_range(mem, start, end) ||
                  /*
@@ -357,7 +452,7 @@ static void cmd_write(const struct pci_dev *pdev, unsigned int reg,
         pci_conf_write16(pdev->sbdf, reg, cmd);
 }
 
-static void bar_write(const struct pci_dev *pdev, unsigned int reg,
+static void bar_write_hwdom(const struct pci_dev *pdev, unsigned int reg,
                       uint32_t val, void *data)
 {
     struct vpci_bar *bar = data;
@@ -377,13 +472,16 @@ static void bar_write(const struct pci_dev *pdev, unsigned int reg,
     {
         /* If the value written is the current one avoid printing a warning. */
         if ( val != (uint32_t)(bar->addr >> (hi ? 32 : 0)) )
+        {
+            struct vpci_header *header = get_hwdom_vpci_header(pdev);
+
             gprintk(XENLOG_WARNING,
                     "%04x:%02x:%02x.%u: ignored BAR %lu write with memory decoding enabled\n",
                     pdev->seg, pdev->bus, slot, func,
-                    bar - pdev->vpci->header.bars + hi);
+                    bar - header->bars + hi);
+        }
         return;
     }
-
 
     /*
      * Update the cached address, so that when memory decoding is enabled
@@ -403,10 +501,89 @@ static void bar_write(const struct pci_dev *pdev, unsigned int reg,
     pci_conf_write32(pdev->sbdf, reg, val);
 }
 
+static uint32_t bar_read_hwdom(const struct pci_dev *pdev, unsigned int reg,
+                               void *data)
+{
+    return vpci_hw_read32(pdev, reg, data);
+}
+
+static void bar_write_guest(const struct pci_dev *pdev, unsigned int reg,
+                            uint32_t val, void *data)
+{
+    struct vpci_bar *vbar = data;
+    bool hi = false;
+
+    if ( vbar->type == VPCI_BAR_MEM64_HI )
+    {
+        ASSERT(reg > PCI_BASE_ADDRESS_0);
+        vbar--;
+        hi = true;
+    }
+    vbar->addr &= ~(0xffffffffull << (hi ? 32 : 0));
+    vbar->addr |= (uint64_t)val << (hi ? 32 : 0);
+}
+
+static uint32_t bar_read_guest(const struct pci_dev *pdev, unsigned int reg,
+                               void *data)
+{
+    struct vpci_bar *vbar = data;
+    uint32_t val;
+    bool hi = false;
+
+    if ( vbar->type == VPCI_BAR_MEM64_HI )
+    {
+        ASSERT(reg > PCI_BASE_ADDRESS_0);
+        vbar--;
+        hi = true;
+    }
+
+    if ( vbar->type == VPCI_BAR_MEM64_LO || vbar->type == VPCI_BAR_MEM64_HI )
+    {
+        if ( hi )
+            val = vbar->addr >> 32;
+        else
+            val = vbar->addr & 0xffffffff;
+        if ( val == ~0 )
+        {
+            /* Guests detects BAR's properties and sizes. */
+            if ( !hi )
+            {
+                val = 0xffffffff & ~(vbar->size - 1);
+                val |= vbar->type == VPCI_BAR_MEM32 ? PCI_BASE_ADDRESS_MEM_TYPE_32
+                                                    : PCI_BASE_ADDRESS_MEM_TYPE_64;
+                val |= vbar->prefetchable ? PCI_BASE_ADDRESS_MEM_PREFETCH : 0;
+            }
+            else
+                val = vbar->size >> 32;
+            vbar->addr &= ~(0xffffffffull << (hi ? 32 : 0));
+            vbar->addr |= (uint64_t)val << (hi ? 32 : 0);
+        }
+    }
+    else if ( vbar->type == VPCI_BAR_MEM32 )
+    {
+        val = vbar->addr;
+        if ( val == ~0 )
+        {
+            if ( !hi )
+            {
+                val = 0xffffffff & ~(vbar->size - 1);
+                val |= vbar->type == VPCI_BAR_MEM32 ? PCI_BASE_ADDRESS_MEM_TYPE_32
+                                                    : PCI_BASE_ADDRESS_MEM_TYPE_64;
+                val |= vbar->prefetchable ? PCI_BASE_ADDRESS_MEM_PREFETCH : 0;
+            }
+        }
+    }
+    else
+    {
+        val = vbar->addr;
+    }
+    return val;
+}
+
 static void rom_write(const struct pci_dev *pdev, unsigned int reg,
                       uint32_t val, void *data)
 {
-    struct vpci_header *header = &pdev->vpci->header;
+    struct vpci_header *header = get_hwdom_vpci_header(pdev);
     struct vpci_bar *rom = data;
     uint8_t slot = PCI_SLOT(pdev->devfn), func = PCI_FUNC(pdev->devfn);
     uint16_t cmd = pci_conf_read16(pdev->sbdf, PCI_COMMAND);
@@ -452,14 +629,55 @@ static void rom_write(const struct pci_dev *pdev, unsigned int reg,
         rom->addr = val & PCI_ROM_ADDRESS_MASK;
 }
 
+static uint32_t bar_read_dispatch(const struct pci_dev *pdev, unsigned int reg,
+                                  void *data)
+{
+    struct vpci_bar *vbar, *bar = data;
+
+    if ( is_hardware_domain(current->domain) )
+        return bar_read_hwdom(pdev, reg, data);
+
+    vbar = get_vpci_bar(current->domain, pdev, bar->index);
+    if ( !vbar )
+        return ~0;
+
+    return bar_read_guest(pdev, reg, vbar);
+}
+
+static void bar_write_dispatch(const struct pci_dev *pdev, unsigned int reg,
+                               uint32_t val, void *data)
+{
+    struct vpci_bar *bar = data;
+
+    if ( is_hardware_domain(current->domain) )
+        bar_write_hwdom(pdev, reg, val, data);
+    else
+    {
+        struct vpci_bar *vbar = get_vpci_bar(current->domain, pdev, bar->index);
+
+        if ( !vbar )
+            return;
+        bar_write_guest(pdev, reg, val, vbar);
+    }
+}
+
+/*
+ * FIXME: This is called early while adding vPCI handlers which is done
+ * by and for hwdom.
+ */
 static int init_bars(struct pci_dev *pdev)
 {
     uint16_t cmd;
     uint64_t addr, size;
     unsigned int i, num_bars, rom_reg;
-    struct vpci_header *header = &pdev->vpci->header;
-    struct vpci_bar *bars = header->bars;
+    struct vpci_header *header;
+    struct vpci_bar *bars;
     int rc;
+
+    header = get_hwdom_vpci_header(pdev);
+    if ( !header )
+        return -ENOMEM;
+    bars = header->bars;
 
     switch ( pci_conf_read8(pdev->sbdf, PCI_HEADER_TYPE) & 0x7f )
     {
@@ -496,11 +714,12 @@ static int init_bars(struct pci_dev *pdev)
         uint8_t reg = PCI_BASE_ADDRESS_0 + i * 4;
         uint32_t val;
 
+        bars[i].index = i;
         if ( i && bars[i - 1].type == VPCI_BAR_MEM64_LO )
         {
             bars[i].type = VPCI_BAR_MEM64_HI;
-            rc = vpci_add_register(pdev->vpci, vpci_hw_read32, bar_write, reg,
-                                   4, &bars[i]);
+            rc = vpci_add_register(pdev->vpci, bar_read_dispatch,
+                                   bar_write_dispatch, reg, 4, &bars[i]);
             if ( rc )
             {
                 pci_conf_write16(pdev->sbdf, PCI_COMMAND, cmd);
@@ -540,8 +759,8 @@ static int init_bars(struct pci_dev *pdev)
         bars[i].size = size;
         bars[i].prefetchable = val & PCI_BASE_ADDRESS_MEM_PREFETCH;
 
-        rc = vpci_add_register(pdev->vpci, vpci_hw_read32, bar_write, reg, 4,
-                               &bars[i]);
+        rc = vpci_add_register(pdev->vpci, bar_read_dispatch,
+                               bar_write_dispatch, reg, 4, &bars[i]);
         if ( rc )
         {
             pci_conf_write16(pdev->sbdf, PCI_COMMAND, cmd);
@@ -558,6 +777,7 @@ static int init_bars(struct pci_dev *pdev)
         rom->type = VPCI_BAR_ROM;
         rom->size = size;
         rom->addr = addr;
+        rom->index = num_bars;
         header->rom_enabled = pci_conf_read32(pdev->sbdf, rom_reg) &
                               PCI_ROM_ADDRESS_ENABLE;
 

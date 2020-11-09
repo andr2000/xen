@@ -55,16 +55,14 @@ uint32_t vpci_hw_read32(const struct pci_dev *pdev, unsigned int reg,
  */
 bool __must_check vpci_process_pending(struct vcpu *v);
 
-struct vpci {
-    /* List of vPCI handlers for a device. */
-    struct list_head handlers;
-    spinlock_t lock;
-
 #ifdef __XEN__
-    /* Hide the rest of the vpci struct from the user-space test harness. */
     struct vpci_header {
+    struct list_head node;
+    /* Domain that owns this view of the BARs. */
+    domid_t domain_id;
         /* Information about the PCI BARs of this device. */
         struct vpci_bar {
+            int index;
             uint64_t addr;
             uint64_t size;
             enum {
@@ -88,8 +86,18 @@ struct vpci {
          * is mapped into guest p2m) if there's a ROM BAR on the device.
          */
         bool rom_enabled      : 1;
-        /* FIXME: currently there's no support for SR-IOV. */
-    } header;
+};
+#endif
+
+struct vpci {
+    /* List of vPCI handlers for a device. */
+    struct list_head handlers;
+    spinlock_t lock;
+
+#ifdef __XEN__
+    /* Hide the rest of the vpci struct from the user-space test harness. */
+    /* List of vPCI headers for all domains. */
+    struct list_head headers;
 
 #ifdef CONFIG_X86
     /* MSI data. */
