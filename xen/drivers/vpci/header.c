@@ -77,7 +77,14 @@ static struct vpci_header *get_vpci_header(struct domain *d,
     if ( !is_hardware_domain(d) )
     {
         struct vpci_header *hwdom_header = get_hwdom_vpci_header(pdev);
-
+#ifdef CONFIG_ARM
+        /*
+         * Non-ECAM host bridges in hwdom go directly to PCI
+         * config space, not through vpci. Thus hwdom's vpci BARs are
+         * never updated.
+         */
+        pci_host_bridge_update_bar_header(pdev, hwdom_header);
+#endif
         /* Make a copy of the hwdom's BARs as the initial state for vBARs. */
         memcpy(header, hwdom_header, sizeof(*header));
     }

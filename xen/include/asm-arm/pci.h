@@ -60,6 +60,9 @@ struct pci_config_window {
 /* Forward declaration as pci_host_bridge and pci_ops depend on each other. */
 struct pci_host_bridge;
 
+struct pci_dev;
+struct vpci_header;
+
 struct pci_ops {
     int (*read)(struct pci_host_bridge *bridge,
                     uint32_t sbdf, int where, int size, u32 *val);
@@ -69,6 +72,8 @@ struct pci_ops {
     int (*register_mmio_handler)(struct domain *d,
                                  struct pci_host_bridge *bridge,
                                  const struct mmio_handler_ops *ops);
+    void (*update_bar_header)(const struct pci_dev *pdev,
+                              struct vpci_header *header);
 };
 
 /*
@@ -110,6 +115,9 @@ int pci_host_iterate_bridges(struct domain *d,
                              int (*clb)(struct domain *d,
                                         struct pci_host_bridge *bridge));
 int pci_host_bridge_update_mappings(struct domain *d);
+void pci_host_bridge_update_bar_header(const struct pci_dev *pdev,
+                                       struct vpci_header *header);
+
 #else   /*!CONFIG_ARM_PCI*/
 struct arch_pci_dev { };
 static inline void  pci_init(void) { }

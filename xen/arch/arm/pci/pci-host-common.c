@@ -250,6 +250,19 @@ int pci_host_bridge_update_mappings(struct domain *d)
     return pci_host_iterate_bridges(d, pci_host_bridge_update_mapping);
 }
 
+void pci_host_bridge_update_bar_header(const struct pci_dev *pdev,
+                                       struct vpci_header *header)
+{
+    struct pci_host_bridge *bridge;
+
+    bridge = pci_find_host_bridge(pdev->seg, pdev->bus);
+    if ( unlikely(!bridge) )
+        return;
+
+    if ( bridge->ops->update_bar_header )
+        bridge->ops->update_bar_header(pdev, header);
+}
+
 /*
  * Local variables:
  * mode: C
