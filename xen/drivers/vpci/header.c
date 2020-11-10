@@ -111,13 +111,11 @@ static int map_range(unsigned long s, unsigned long e, void *data,
                      unsigned long *c)
 {
     const struct map_data *map = data;
-    unsigned long mfn;
+    mfn_t mfn;
     int rc, bar_idx;
     struct vpci_header *header = get_hwdom_vpci_header(map->pdev);
 
     bar_idx = s & ~PCI_BASE_ADDRESS_MEM_MASK;
-    s = PFN_DOWN(s);
-    e = PFN_DOWN(e);
     mfn = _mfn(PFN_DOWN(header->bars[bar_idx].addr));
     for ( ; ; )
     {
@@ -131,29 +129,35 @@ static int map_range(unsigned long s, unsigned long e, void *data,
          *
          * - {un}map_mmio_regions doesn't support preemption.
          */
-
-        rc = map->map ? map_mmio_regions(map->d, _gfn(s), size, mfn)
-                      : unmap_mmio_regions(map->d, _gfn(s), size, mfn);
+        rc = map->map ? map_mmio_regions(map->d, _gfn(PFN_DOWN(s)),
+                                         PFN_UP(size), mfn)
+                      : unmap_mmio_regions(map->d, _gfn(PFN_DOWN(s)),
+                                           PFN_UP(size), mfn);
         if ( rc == 0 )
         {
-            /*
-             * Range set is not expressed in frame numbers and the size
-             * is the number of frames, so update accordingly.
-             */
-            *c += size << PAGE_SHIFT;
+            *c += size;
             break;
         }
         if ( rc < 0 )
         {
             printk(XENLOG_G_WARNING
-                   "Failed to identity %smap [%lx, %lx] for d%d: %d\n",
-                   map->map ? "" : "un", s, e, map->d->domain_id, rc);
+                   "Failed to %smap [%lx, %lx] for d%d: %d\n",
+                   map->map ? "" : "un", PFN_DOWN(s), PFN_DOWN(e),
+                   map->d->domain_id, rc);
             break;
         }
-        ASSERT(rc < size);
-        *c += rc << PAGE_SHIFT;
-        s += rc;
-        mfn += rc;
+        /*
+         * Range set is setup with memory addresses, but we map/unmap with
+         * frame numbers. As we pass BAR index in the lower bits of the
+         * address we can't update the partially consumed size by adding
+         * rc << PAGE_SHIFT, so need to update the size to match range
+         * set's expectation.
+         */
+        size = (rc << PAGE_SHIFT) - (s & ~PAGE_MASK);
+        ASSERT(rc <= PFN_DOWN(round_pgup(size)));
+        *c = size;
+        s += size;
+        mfn = mfn_add(mfn, rc);
         if ( general_preempt_check() )
                 return -ERESTART;
     }
