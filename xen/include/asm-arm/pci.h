@@ -120,6 +120,8 @@ int pci_host_iterate_bridges(struct domain *d,
 bool pci_host_bridge_need_mapping(struct domain *d,
                                   const struct dt_device_node *node,
                                   u64 addr, u64 len);
+bool pci_is_owner_domain(struct domain *d, u16 seg, u8 bus);
+struct domain *pci_get_owner_domain(u16 seg, u8 bus);
 #else   /*!CONFIG_ARM_PCI*/
 struct arch_pci_dev { };
 static inline void  pci_init(void) { }
