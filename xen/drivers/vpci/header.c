@@ -40,7 +40,7 @@ static struct vpci_header *get_vpci_header(struct domain *d,
 static struct vpci_header *get_hwdom_vpci_header(const struct pci_dev *pdev)
 {
     if ( unlikely(list_empty(&pdev->vpci->headers)) )
-        return get_vpci_header(hardware_domain, pdev);
+        return get_vpci_header(pci_get_hardware_domain(pdev->seg), pdev);
 
     /* hwdom's header is always the very first entry. */
     return list_first_entry(&pdev->vpci->headers, struct vpci_header, node);
@@ -74,7 +74,7 @@ static struct vpci_header *get_vpci_header(struct domain *d,
         return NULL;
     }
 
-    if ( !is_hardware_domain(d) )
+    if ( !pci_is_hardware_domain(d, pdev->seg) )
     {
         struct vpci_header *hwdom_header = get_hwdom_vpci_header(pdev);
 #ifdef CONFIG_ARM
@@ -308,7 +308,7 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
     if ( !mem )
         return -ENOMEM;
 
-    if ( is_hardware_domain(current->domain) )
+    if ( pci_is_hardware_domain(current->domain, pdev->seg) )
         header = get_hwdom_vpci_header(pdev);
     else
         header = get_vpci_header(current->domain, pdev);
@@ -645,7 +645,7 @@ static uint32_t bar_read_dispatch(const struct pci_dev *pdev, unsigned int reg,
 {
     struct vpci_bar *vbar, *bar = data;
 
-    if ( is_hardware_domain(current->domain) )
+    if ( pci_is_hardware_domain(current->domain, pdev->seg) )
         return bar_read_hwdom(pdev, reg, data);
 
     vbar = get_vpci_bar(current->domain, pdev, bar->index);
@@ -660,7 +660,7 @@ static void bar_write_dispatch(const struct pci_dev *pdev, unsigned int reg,
 {
     struct vpci_bar *bar = data;
 
-    if ( is_hardware_domain(current->domain) )
+    if ( pci_is_hardware_domain(current->domain, pdev->seg) )
         bar_write_hwdom(pdev, reg, val, data);
     else
     {
