@@ -93,6 +93,29 @@ int vpci_add_handlers(struct pci_dev *pdev)
 
     return rc;
 }
+
+#ifdef CONFIG_HAS_VPCI_GUEST_SUPPORT
+/* Notify vPCI that device is assigned to guest. */
+int vpci_assign_device(struct domain *d, const struct pci_dev *pdev)
+{
+    /* It only makes sense to assign for hwdom or guest domain. */
+    if ( is_system_domain(d) || !has_vpci(d) )
+        return 0;
+
+    return 0;
+}
+
+/* Notify vPCI that device is de-assigned from guest. */
+int vpci_deassign_device(struct domain *d, const struct pci_dev *pdev)
+{
+    /* It only makes sense to de-assign from hwdom or guest domain. */
+    if ( is_system_domain(d) || !has_vpci(d) )
+        return 0;
+
+    return 0;
+}
+#endif /* CONFIG_HAS_VPCI_GUEST_SUPPORT */
+
 #endif /* __XEN__ */
 
 static int vpci_register_cmp(const struct vpci_register *r1,
