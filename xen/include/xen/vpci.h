@@ -57,6 +57,14 @@ uint32_t vpci_hw_read32(const struct pci_dev *pdev, unsigned int reg,
  */
 bool __must_check vpci_process_pending(struct vcpu *v);
 
+#ifdef CONFIG_HAS_VPCI_GUEST_SUPPORT
+/* Add/remove BAR handlers for a domain. */
+int vpci_bar_add_handlers(const struct domain *d,
+                          const struct pci_dev *pdev);
+int vpci_bar_remove_handlers(const struct domain *d,
+                             const struct pci_dev *pdev);
+#endif
+
 struct vpci {
     /* List of vPCI handlers for a device. */
     struct list_head handlers;

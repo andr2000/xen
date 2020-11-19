@@ -397,6 +397,17 @@ static void bar_write(const struct pci_dev *pdev, unsigned int reg,
     pci_conf_write32(pdev->sbdf, reg, val);
 }
 
+static void guest_bar_write(const struct pci_dev *pdev, unsigned int reg,
+                            uint32_t val, void *data)
+{
+}
+
+static uint32_t guest_bar_read(const struct pci_dev *pdev, unsigned int reg,
+                               void *data)
+{
+    return 0xffffffff;
+}
+
 static void rom_write(const struct pci_dev *pdev, unsigned int reg,
                       uint32_t val, void *data)
 {
@@ -445,14 +456,25 @@ static void rom_write(const struct pci_dev *pdev, unsigned int reg,
         rom->addr = val & PCI_ROM_ADDRESS_MASK;
 }
 
-static int add_bar_handlers(const struct pci_dev *pdev)
+static void guest_rom_write(const struct pci_dev *pdev, unsigned int reg,
+                            uint32_t val, void *data)
+{
+}
+
+static uint32_t guest_rom_read(const struct pci_dev *pdev, unsigned int reg,
+                               void *data)
+{
+    return 0xffffffff;
+}
+
+static int add_bar_handlers(const struct pci_dev *pdev, bool is_hwdom)
 {
     unsigned int i;
     struct vpci_header *header = &pdev->vpci->header;
     struct vpci_bar *bars = header->bars;
     int rc;
 
-    /* Setup a handler for the command register. */
+    /* Setup a handler for the command register: same for hwdom and guests. */
     rc = vpci_add_register(pdev->vpci, vpci_hw_read16, cmd_write, PCI_COMMAND,
                            2, header);
     if ( rc )
@@ -475,8 +497,13 @@ static int add_bar_handlers(const struct pci_dev *pdev)
                 rom_reg = PCI_ROM_ADDRESS;
             else
                 rom_reg = PCI_ROM_ADDRESS1;
-            rc = vpci_add_register(pdev->vpci, vpci_hw_read32, rom_write,
-                                   rom_reg, 4, &bars[i]);
+            if ( is_hwdom )
+                rc = vpci_add_register(pdev->vpci, vpci_hw_read32, rom_write,
+                                       rom_reg, 4, &bars[i]);
+            else
+                rc = vpci_add_register(pdev->vpci,
+                                       guest_rom_read, guest_rom_write,
+                                       rom_reg, 4, &bars[i]);
             if ( rc )
                 return rc;
         }
@@ -485,8 +512,13 @@ static int add_bar_handlers(const struct pci_dev *pdev)
             uint8_t reg = PCI_BASE_ADDRESS_0 + i * 4;
 
             /* This is either VPCI_BAR_MEM32 or VPCI_BAR_MEM64_{LO|HI}. */
-            rc = vpci_add_register(pdev->vpci, vpci_hw_read32, bar_write, reg,
-                                   4, &bars[i]);
+            if ( is_hwdom )
+                rc = vpci_add_register(pdev->vpci, vpci_hw_read32, bar_write,
+                                       reg, 4, &bars[i]);
+            else
+                rc = vpci_add_register(pdev->vpci,
+                                       guest_bar_read, guest_bar_write,
+                                       reg, 4, &bars[i]);
             if ( rc )
                 return rc;
         }
@@ -520,7 +552,7 @@ static int init_bars(struct pci_dev *pdev)
     }
 
     if ( pdev->ignore_bars )
-        return add_bar_handlers(pdev);
+        return add_bar_handlers(pdev, true);
 
     /* Disable memory decoding before sizing. */
     cmd = pci_conf_read16(pdev->sbdf, PCI_COMMAND);
@@ -582,7 +614,7 @@ static int init_bars(struct pci_dev *pdev)
                               PCI_ROM_ADDRESS_ENABLE;
     }
 
-    rc = add_bar_handlers(pdev);
+    rc = add_bar_handlers(pdev, true);
     if ( rc )
     {
         pci_conf_write16(pdev->sbdf, PCI_COMMAND, cmd);
@@ -592,6 +624,31 @@ static int init_bars(struct pci_dev *pdev)
     return (cmd & PCI_COMMAND_MEMORY) ? modify_bars(pdev, cmd, false) : 0;
 }
 REGISTER_VPCI_INIT(init_bars, VPCI_PRIORITY_MIDDLE);
+
+#ifdef CONFIG_HAS_VPCI_GUEST_SUPPORT
+int vpci_bar_add_handlers(const struct domain *d, const struct pci_dev *pdev)
+{
+    int rc;
+
+    /* Remove previously added registers. */
+    vpci_remove_device_registers(pdev);
+
+    rc = add_bar_handlers(pdev, is_hardware_domain(d));
+    if ( rc )
+        gdprintk(XENLOG_ERR,
+                 "%pp: failed to add BAR handlers for %pd: %d\n",
+                 &pdev->sbdf, d, rc);
+
+    return rc;
+}
+
+int vpci_bar_remove_handlers(const struct domain *d, const struct pci_dev *pdev)
+{
+    /* Remove previously added registers. */
+    vpci_remove_device_registers(pdev);
+    return 0;
+}
+#endif
 
 /*
  * Local variables:

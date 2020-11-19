@@ -91,11 +91,26 @@ int __hwdom_init vpci_add_handlers(struct pci_dev *pdev)
 /* Notify vPCI that device is assigned to guest. */
 int vpci_assign_device(struct domain *d, const struct pci_dev *pdev)
 {
+    int rc;
+
     /* It only makes sense to assign for hwdom or guest domain. */
     if ( is_system_domain(d) || !has_vpci(d) )
         return 0;
 
+    rc = vpci_bar_add_handlers(d, pdev);
+    if ( rc )
+        goto fail;
+
     return 0;
+
+fail:
+    /*
+     * We are trying to clean up as much as we can, so ignore the return
+     * value of vpci_deassign_device below, so we can return the
+     * error which caused the failure.
+     */
+    vpci_deassign_device(d, pdev);
+    return rc;
 }
 
 /* Notify vPCI that device is de-assigned from guest. */
@@ -105,7 +120,7 @@ int vpci_deassign_device(struct domain *d, const struct pci_dev *pdev)
     if ( is_system_domain(d) || !has_vpci(d) )
         return 0;
 
-    return 0;
+    return vpci_bar_remove_handlers(d, pdev);
 }
 #endif /* CONFIG_HAS_VPCI_GUEST_SUPPORT */
 
