@@ -407,6 +407,8 @@ static int rcar_gen3_pci_host_probe(struct dt_device_node *dev)
     /* This is configuration space MCFG which we do not have. */
     bridge->sysdata = cfg;
     bridge->ops = &pci_rcar_gen3_ops.pci_ops;
+    bridge->bus_start = cfg->busn_start;
+    bridge->bus_end = cfg->busn_end;
 
     if ( !dt_property_read_u32(dev, "linux,pci-domain", &segment) )
     {
