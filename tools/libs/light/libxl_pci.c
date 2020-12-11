@@ -18,12 +18,355 @@
 
 #include "libxl_internal.h"
 
+#include <libxenvchan.h>
+#include <xenpcid.h>
+
 #define PCI_BDF                "%04x:%02x:%02x.%01x"
 #define PCI_BDF_SHORT          "%02x:%02x.%01x"
 #define PCI_BDF_VDEVFN         "%04x:%02x:%02x.%01x@%02x"
 #define PCI_OPTIONS            "msitranslate=%d,power_mgmt=%d"
 #define PCI_BDF_XSPATH         "%04x-%02x-%02x-%01x"
 #define PCI_PT_QDEV_ID         "pci-pt-%02x_%02x.%01x"
+
+/*
+ *******************************************************************************
+ * xenpcid support start
+ *******************************************************************************
+ */
+struct vchan_state {
+    /* Server domain ID. */
+    libxl_domid domid;
+    /* XenStore path of the server with the ring buffer and event channel. */
+    char *xs_path;
+
+    struct libxenvchan *ctrl;
+    int select_fd;
+    /* receive buffer */
+    char *rx_buf;
+    size_t rx_buf_size; /* current allocated size */
+    size_t rx_buf_used; /* actual data in the buffer */
+};
+
+/* Returns 1 if path exists, 0 if not, ERROR_* (<0) on error. */
+static int xs_path_exists(libxl__gc *gc, const char *xs_path)
+{
+    int rc;
+    const char *dir;
+
+    rc = libxl__xs_read_checked(gc, XBT_NULL, xs_path, &dir);
+    if ( rc )
+        return rc;
+    if ( dir )
+        return 1;
+    return 0;
+}
+
+static libxl_domid vchan_find_pcid_server(libxl_ctx *ctx)
+{
+    GC_INIT(ctx);
+    char **domains;
+    unsigned int i, n;
+    libxl_domid domid = DOMID_INVALID;
+
+    domains = libxl__xs_directory(gc, XBT_NULL, "/local/domain", &n);
+    if ( !n )
+        goto out;
+
+    for (i = 0; i < n; i++) {
+        int d;
+
+        if ( sscanf(domains[i], "%d", &d) != 1 )
+            continue;
+        if ( xs_path_exists(gc, GCSPRINTF(XENPCID_XS_PATH, d)) > 0 )
+        {
+            /* Found the domain where the pcid server lives. */
+            domid = d;
+            break;
+        }
+    }
+
+out:
+    GC_FREE;
+    return domid;
+}
+
+static int vchan_init_client(libxl__gc *gc, struct vchan_state *state)
+{
+    state->domid = vchan_find_pcid_server(CTX);
+    if ( state->domid == DOMID_INVALID )
+    {
+        LOGE(ERROR, "Can't find vchan server");
+        return ERROR_NOTFOUND;
+    }
+
+    state->xs_path = strdup(GCSPRINTF(XENPCID_XS_PATH, state->domid));
+    state->ctrl = libxenvchan_client_init(CTX->lg, state->domid,
+                                          state->xs_path);
+    if ( !state->ctrl )
+    {
+        LOGE(ERROR, "Couldn't intialize vchan client");
+        return ERROR_FAIL;
+    }
+    state->select_fd = libxenvchan_fd_for_select(state->ctrl);
+    LOG(INFO, "Intialized vchan client, server at %s", state->xs_path);
+    return 0;
+}
+
+static struct vchan_state *vchan_get_instance(libxl__gc *gc)
+{
+    static struct vchan_state *state = NULL;
+    int ret;
+
+    if ( state )
+        return state;
+
+    state = libxl__zalloc(gc, sizeof(*state));
+    ret = vchan_init_client(gc, state);
+    if ( ret )
+    {
+        state = NULL;
+        goto out;
+    }
+out:
+    return state;
+}
+
+static char *vchan_prepare_cmd(libxl__gc *gc, const char *cmd,
+                               const libxl__json_object *args,
+                               int id)
+{
+    yajl_gen hand = NULL;
+    /* memory for 'buf' is owned by 'hand' */
+    const unsigned char *buf;
+    libxl_yajl_length len;
+    yajl_gen_status s;
+    char *ret = NULL;
+
+    hand = libxl_yajl_gen_alloc(NULL);
+
+    if ( !hand ) {
+        return NULL;
+    }
+
+#if HAVE_YAJL_V2
+    /* Disable beautify for data sent to QEMU */
+    yajl_gen_config(hand, yajl_gen_beautify, 0);
+#endif
+
+    yajl_gen_map_open(hand);
+    libxl__yajl_gen_asciiz(hand, XENPCID_MSG_EXECUTE);
+    libxl__yajl_gen_asciiz(hand, cmd);
+    libxl__yajl_gen_asciiz(hand, XENPCID_MSG_FIELD_ID);
+    yajl_gen_integer(hand, id);
+    if ( args ) {
+        libxl__yajl_gen_asciiz(hand, XENPCID_MSG_FIELD_ARGS);
+        libxl__json_object_to_yajl_gen(gc, hand, args);
+    }
+    yajl_gen_map_close(hand);
+
+    s = yajl_gen_get_buf(hand, &buf, &len);
+
+    if ( s != yajl_gen_status_ok )
+        goto out;
+
+    ret = libxl__sprintf(gc, "%*.*s" XENPCID_END_OF_MESSAGE,
+                         (int)len, (int)len, buf);
+
+out:
+    yajl_gen_free(hand);
+    return ret;
+}
+
+static int vchan_get_next_msg(libxl__gc *gc, struct vchan_state *state,
+                              libxl__json_object **o_r)
+    /* Find a JSON object and store it in o_r.
+     * return ERROR_NOTFOUND if no object is found.
+     */
+{
+    size_t len;
+    char *end = NULL;
+    const char eom[] = XENPCID_END_OF_MESSAGE;
+    const size_t eoml = sizeof(eom) - 1;
+    libxl__json_object *o = NULL;
+
+    if ( !state->rx_buf_used )
+        return ERROR_NOTFOUND;
+
+    /* Search for the end of a message: "\r\n" */
+    end = memmem(state->rx_buf, state->rx_buf_used, eom, eoml);
+    if ( !end )
+        return ERROR_NOTFOUND;
+    len = (end - state->rx_buf) + eoml;
+
+    LOGD(DEBUG, state->domid, "parsing %luB: '%.*s'", len, (int)len,
+         state->rx_buf);
+
+    /* Replace \r by \0 so that libxl__json_parse can use strlen */
+    state->rx_buf[len - eoml] = '\0';
+    o = libxl__json_parse(gc, state->rx_buf);
+
+    if ( !o ) {
+        LOGD(ERROR, state->domid, "Parse error");
+        return ERROR_PROTOCOL_ERROR_PCID;
+    }
+
+    state->rx_buf_used -= len;
+    memmove(state->rx_buf, state->rx_buf + len, state->rx_buf_used);
+
+    LOGD(DEBUG, state->domid, "JSON object received: %s", JSON(o));
+
+    *o_r = o;
+
+    return 0;
+}
+
+static libxl__pcid_message_type pcid_response_type(const libxl__json_object *o)
+{
+    libxl__pcid_message_type type;
+    libxl__json_map_node *node = NULL;
+    int i = 0;
+
+    for (i = 0; (node = libxl__json_map_node_get(o, i)); i++) {
+        if (libxl__pcid_message_type_from_string(node->map_key, &type) == 0)
+            return type;
+    }
+    return LIBXL__PCID_MESSAGE_TYPE_INVALID;
+}
+
+static int vchan_handle_message(libxl__gc *gc,
+                                struct vchan_state *state,
+                                const libxl__json_object *resp,
+                                const libxl__json_object **result)
+{
+    libxl__pcid_message_type type = pcid_response_type(resp);
+
+    *result = NULL;
+    switch (type)
+    {
+    case LIBXL__PCID_MESSAGE_TYPE_RETURN:
+        *result = libxl__json_map_get(XENPCID_MSG_RETURN, resp, JSON_ANY);
+        return 0;
+    case LIBXL__PCID_MESSAGE_TYPE_ERROR:
+        break;
+    case LIBXL__PCID_MESSAGE_TYPE_INVALID:
+        return ERROR_PROTOCOL_ERROR_PCID;
+    default:
+        break;
+    }
+    return ERROR_INVAL;
+}
+
+#define QMP_RECEIVE_BUFFER_SIZE 4096
+#define QMP_MAX_SIZE_RX_BUF MB(1)
+
+static int vchan_read_reply(libxl__gc *gc,
+                            struct vchan_state *state,
+                            const libxl__json_object **result)
+{
+    int rc;
+    ssize_t r;
+
+    while ( true )
+    {
+        while ( true )
+        {
+            libxl__json_object *o = NULL;
+
+            /* parse rx buffer to find one json object */
+            rc = vchan_get_next_msg(gc, state, &o);
+            if ( rc == ERROR_NOTFOUND )
+                break;
+            else if ( rc )
+                return rc;
+
+            return vchan_handle_message(gc, state, o, result);
+        }
+
+        /* Check if the buffer still have space, or increase size */
+        if ( state->rx_buf_size - state->rx_buf_used < QMP_RECEIVE_BUFFER_SIZE )
+        {
+            size_t newsize = state->rx_buf_size * 2 + QMP_RECEIVE_BUFFER_SIZE;
+
+            if ( newsize > QMP_MAX_SIZE_RX_BUF )
+            {
+                LOGD(ERROR, state->domid,
+                     "pcid receive buffer is too big (%zu > %lld)",
+                     newsize, QMP_MAX_SIZE_RX_BUF);
+                return ERROR_BUFFERFULL;
+            }
+            state->rx_buf_size = newsize;
+            state->rx_buf = libxl__realloc(gc, state->rx_buf,
+                                           state->rx_buf_size);
+        }
+
+        while ( libxenvchan_data_ready(state->ctrl) )
+        {
+            r = libxenvchan_read(state->ctrl,
+                                 state->rx_buf + state->rx_buf_used,
+                                 state->rx_buf_size - state->rx_buf_used);
+            if ( r < 0 )
+            {
+                LOGED(ERROR, state->domid, "error reading from pcid");
+                return ERROR_FAIL;
+            }
+
+            LOGE(DEBUG, "received %ldB: '%.*s'", r,
+                 (int)r, state->rx_buf + state->rx_buf_used);
+
+            state->rx_buf_used += r;
+            assert(state->rx_buf_used <= state->rx_buf_size);
+        }
+    }
+    return 0;
+}
+
+static int vchan_write(libxl__gc *gc, struct vchan_state *state, char *cmd)
+{
+    int len, ret;
+
+    len = strlen(cmd);
+    while ( len )
+    {
+        ret = libxenvchan_write(state->ctrl, cmd, len);
+        if ( ret < 0 )
+        {
+            LOGE(ERROR, "vchan write failed");
+            return ERROR_FAIL;
+        }
+        if ( ret > 0 )
+        {
+            cmd += ret;
+            len -= ret;
+        }
+    }
+    return 0;
+}
+
+static const libxl__json_object *vchan_send_command(libxl__gc *gc,
+                                                    struct vchan_state *state,
+                                                    const char *cmd,
+                                                    const libxl__json_object *args)
+{
+    const libxl__json_object *result;
+    char *json;
+    int ret;
+
+    json = vchan_prepare_cmd(gc, cmd, args, 0);
+    if ( !json )
+        return NULL;
+
+    ret = vchan_write(gc, state, json);
+    if ( ret < 0 )
+        return NULL;
+    ret = vchan_read_reply(gc, state, &result);
+    return NULL;
+}
+
+/*
+ *******************************************************************************
+ * xenpcid support stop
+ *******************************************************************************
+ */
 
 static unsigned int pci_encode_bdf(libxl_pci_bdf *pcibdf)
 {
@@ -438,6 +781,7 @@ static void pci_info_xs_remove(libxl__gc *gc, libxl_pci_bdf *pcibdf,
 }
 
 libxl_pci_bdf *libxl_pci_bdf_assignable_list(libxl_ctx *ctx, int *num)
+#if 0
 {
     GC_INIT(ctx);
     libxl_pci_bdf *pcibdfs = NULL, *new;
@@ -482,6 +826,64 @@ out:
     GC_FREE;
     return pcibdfs;
 }
+#else
+{
+    GC_INIT(ctx);
+    libxl_pci_bdf *pcibdfs = NULL, *new;
+    struct dirent *de;
+    DIR *dir;
+    struct vchan_state *vchan;
+    libxl__json_object *args = NULL;
+    const libxl__json_object *result;
+
+    *num = 0;
+
+    vchan = vchan_get_instance(gc);
+    if ( !vchan )
+        goto out;
+
+    libxl__qmp_param_add_string(gc, &args, XENPCID_CMD_LIST_DIR_ID,
+                                XENPCID_PCIBACK_DRIVER);
+    result = vchan_send_command(gc, vchan, XENPCID_CMD_LIST, args);
+    return 0;
+
+    dir = opendir(SYSFS_PCIBACK_DRIVER);
+    if (NULL == dir) {
+        if (errno == ENOENT) {
+            LOG(ERROR, "Looks like pciback driver not loaded");
+        } else {
+            LOGE(ERROR, "Couldn't open %s", SYSFS_PCIBACK_DRIVER);
+        }
+        goto out;
+    }
+
+    while((de = readdir(dir))) {
+        unsigned dom, bus, dev, func;
+        if (sscanf(de->d_name, PCI_BDF, &dom, &bus, &dev, &func) != 4)
+            continue;
+
+        new = realloc(pcibdfs, ((*num) + 1) * sizeof(*new));
+        if (NULL == new)
+            continue;
+
+        pcibdfs = new;
+        new = pcibdfs + *num;
+
+        libxl_pci_bdf_init(new);
+        pcibdf_struct_fill(new, dom, bus, dev, func);
+
+        if (pci_info_xs_read(gc, new, "domid")) /* already assigned */
+            continue;
+
+        (*num)++;
+    }
+
+    closedir(dir);
+out:
+    GC_FREE;
+    return pcibdfs;
+}
+#endif
 
 void libxl_pci_bdf_assignable_list_free(libxl_pci_bdf *list, int num)
 {
