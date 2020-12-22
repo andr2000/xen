@@ -274,6 +274,9 @@ struct domain *pci_get_owner_domain(u16 seg, u8 bus)
 {
     struct pci_host_bridge *bridge = pci_find_host_bridge(seg, bus);
 
+    printk("--------------------- %s:%d bridge %p bridge->dt_node->used_by %d\n",
+           __func__, __LINE__, bridge,
+           bridge->dt_node->used_by);
     if ( unlikely(!bridge) )
         return false;
 

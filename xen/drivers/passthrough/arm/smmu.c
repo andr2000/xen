@@ -701,15 +701,14 @@ static void parse_driver_options(struct arm_smmu_device *smmu)
 
 static struct device_node *dev_get_dev_node(struct device *dev)
 {
-#if 0 /* Xen: TODO: Add support for PCI */
 	if (dev_is_pci(dev)) {
-		struct pci_bus *bus = to_pci_dev(dev)->bus;
+		struct device *root_dev;
 
-		while (!pci_is_root_bus(bus))
-			bus = bus->parent;
-		return bus->bridge->parent->of_node;
+		root_dev = pci_find_host_bridge_device(dev);
+		if ( !root_dev )
+			return NULL;
+		return root_dev->of_node;
 	}
-#endif
 
 	return dev->of_node;
 }
@@ -816,18 +815,24 @@ static int arm_smmu_dt_add_device_legacy(struct arm_smmu_device *smmu,
 
 static int arm_smmu_dt_add_device_generic(u8 devfn, struct device *dev)
 {
+#if 0
 	struct arm_smmu_device *smmu;
 	struct iommu_fwspec *fwspec;
 
 	fwspec = dev_iommu_fwspec_get(dev);
+	printk("!!!!!!!!!!!!! %s:%d fwspec %p\n", __func__, __LINE__, fwspec);
 	if (fwspec == NULL)
 		return -ENXIO;
 
 	smmu = (struct arm_smmu_device *) find_smmu(fwspec->iommu_dev);
+	printk("!!!!!!!!!!!!! %s:%d smmu %p\n", __func__, __LINE__, smmu);
 	if (smmu == NULL)
 		return -ENXIO;
 
 	return arm_smmu_dt_add_device_legacy(smmu, dev, fwspec);
+#else
+	return 0;
+#endif
 }
 
 static int arm_smmu_dt_xlate_generic(struct device *dev,
@@ -1956,6 +1961,9 @@ static int arm_smmu_add_device(struct device *dev)
 	void (*releasefn)(void *) = NULL;
 	int ret;
 
+	printk("--------------------- %s:%d\n", __func__, __LINE__);
+	if (dev_is_pci(dev))
+		return 0;
 	smmu = find_smmu_for_device(dev);
 	if (!smmu)
 		return -ENODEV;
@@ -2640,6 +2648,7 @@ static int arm_smmu_assign_dev(struct domain *d, u8 devfn,
 	struct arm_smmu_xen_domain *xen_domain;
 	int ret = 0;
 
+	printk("--------------------- %s:%d\n", __func__, __LINE__);
 	xen_domain = dom_iommu(d)->arch.priv;
 
 	if (!dev->archdata.iommu) {
@@ -2647,6 +2656,9 @@ static int arm_smmu_assign_dev(struct domain *d, u8 devfn,
 		if (!dev->archdata.iommu)
 			return -ENOMEM;
 	}
+
+	if ( dev_is_pci(dev) )
+		return 0;
 
 	if (!dev_iommu_group(dev)) {
 		ret = arm_smmu_add_device(dev);
@@ -2679,7 +2691,6 @@ static int arm_smmu_assign_dev(struct domain *d, u8 devfn,
 
 		/* Chain the new context to the domain */
 		list_add(&domain->list, &xen_domain->contexts);
-
 	}
 
 	ret = arm_smmu_attach_dev(domain, dev);
@@ -2743,6 +2754,24 @@ static int arm_smmu_reassign_dev(struct domain *s, struct domain *t,
 		if (ret)
 			return ret;
 	}
+
+#ifdef CONFIG_HAS_PCI
+	if ( dev_is_pci(dev) )
+	{
+		struct pci_dev *pdev = dev_to_pci(dev);
+
+		if ( devfn == pdev->devfn )
+		{
+			list_move(&pdev->domain_list, &t->pdev_list);
+			pdev->domain = t;
+		}
+
+		printk(XENLOG_INFO
+		       "Re-assign %04x:%02x:%02x.%u from dom%d to dom%d\n",
+		       pdev->seg, pdev->bus, PCI_SLOT(devfn), PCI_FUNC(devfn),
+		       s->domain_id, t->domain_id);
+	}
+#endif
 
 	return 0;
 }
