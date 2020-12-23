@@ -778,16 +778,12 @@ int pci_add_device(u16 seg, u8 bus, u8 devfn,
     check_pdev(pdev);
 
     ret = 0;
-    printk("--------------------- %s:%d pdev->domain %p\n", __func__, __LINE__,
-           pdev->domain);
     if ( !pdev->domain )
     {
         struct domain *segment_dom = pci_get_hardware_domain(pdev->seg,
                                                              pdev->bus);
         pdev->domain = segment_dom;
         ret = iommu_add_device(pdev);
-        printk("--------------------- %s:%d pdev->domain %p iommu_add_device ret %d\n", __func__, __LINE__,
-               pdev->domain, ret);
         if ( ret )
         {
             pdev->domain = NULL;
@@ -1358,10 +1354,7 @@ static int iommu_add_device(struct pci_dev *pdev)
 #ifdef CONFIG_ARM
     pci_to_dev(pdev)->type = DEV_PCI;
 #endif
-    printk("--------------------- %s:%d\n", __func__, __LINE__);
     rc = hd->platform_ops->add_device(pdev->devfn, pci_to_dev(pdev));
-    printk("--------------------- %s:%d add_device %d\n", __func__, __LINE__,
-           rc);
     if ( rc || !pdev->phantom_stride )
         return rc;
 
@@ -1432,9 +1425,6 @@ static int device_assigned(u16 seg, u8 bus, u8 devfn)
     ASSERT(pcidevs_locked());
     pdev = pci_get_pdev(seg, bus, devfn);
 
-    printk("--------------------- %s:%d pdev->domain %p pci_get_hardware_domain(seg, bus) %p dom_io %p\n",
-           __func__, __LINE__,
-           pdev->domain, pci_get_hardware_domain(seg, bus), dom_io);
     if ( !pdev )
         rc = -ENODEV;
     /*
@@ -1456,11 +1446,9 @@ static int assign_device(struct domain *d, u16 seg, u8 bus, u8 devfn, u32 flag)
     struct pci_dev *pdev;
     int rc = 0;
 
-    printk("--------------------- %s:%d\n", __func__, __LINE__);
     if ( !is_iommu_enabled(d) )
         return 0;
 
-    printk("--------------------- %s:%d\n", __func__, __LINE__);
     if ( !arch_iommu_use_permitted(d) )
         return -EXDEV;
 
@@ -1482,9 +1470,7 @@ static int assign_device(struct domain *d, u16 seg, u8 bus, u8 devfn, u32 flag)
 
     pdev->fault.count = 0;
 
-    rc = hd->platform_ops->assign_device(d, devfn, pci_to_dev(pdev), flag);
-    printk("--------------------- %s:%d rc %d\n", __func__, __LINE__, rc);
-    if ( rc )
+    if ( (rc = hd->platform_ops->assign_device(d, devfn, pci_to_dev(pdev), flag)) )
         goto done;
 
     for ( ; pdev->phantom_stride; rc = 0 )
@@ -1493,14 +1479,12 @@ static int assign_device(struct domain *d, u16 seg, u8 bus, u8 devfn, u32 flag)
         if ( PCI_SLOT(devfn) != PCI_SLOT(pdev->devfn) )
             break;
         rc = hd->platform_ops->assign_device(d, devfn, pci_to_dev(pdev), flag);
-        printk("--------------------- %s:%d rc %d\n", __func__, __LINE__, rc);
     }
 
     if ( rc )
         goto done;
 
     rc = vpci_assign_device(d, pdev);
-    printk("--------------------- %s:%d rc %d\n", __func__, __LINE__, rc);
 
  done:
     if ( rc )
@@ -1646,8 +1630,6 @@ int iommu_do_pci_domctl(
         if ( domctl->u.assign_device.dev != XEN_DOMCTL_DEV_PCI )
             break;
 
-        printk("--------------------- %s:%d\n", __func__, __LINE__);
-
         ret = -EINVAL;
         flags = domctl->u.assign_device.flags;
         if ( domctl->cmd == XEN_DOMCTL_assign_device
@@ -1661,7 +1643,6 @@ int iommu_do_pci_domctl(
         if ( ret )
             break;
 
-        printk("--------------------- %s:%d\n", __func__, __LINE__);
         seg = machine_sbdf >> 16;
         bus = PCI_BUS(machine_sbdf);
         devfn = PCI_DEVFN2(machine_sbdf);
