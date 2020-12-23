@@ -1311,7 +1311,7 @@ static int ipmmu_add_device(u8 devfn, struct device *dev)
      * Can we have the single is_protected flag in struct device?
      */
 #ifdef CONFIG_HAS_PCI
-    if ( !dev_is_pci(dev) )
+    if ( dev_is_pci(dev) )
     {
         struct pci_dev *pdev = dev_to_pci(dev);
 
