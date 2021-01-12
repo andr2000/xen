@@ -451,8 +451,7 @@ static void cmd_write(const struct pci_dev *pdev, unsigned int reg,
         pci_conf_write16(pdev->sbdf, reg, cmd);
 }
 
-static void guest_cmd_write(const struct pci_dev *pdev, unsigned int reg,
-                            uint32_t cmd, void *data)
+static uint32_t emulate_cmd_reg(const struct pci_dev *pdev, uint32_t cmd)
 {
     /* TODO: Add proper emulation for all bits of the command register. */
 
@@ -467,14 +466,20 @@ static void guest_cmd_write(const struct pci_dev *pdev, unsigned int reg,
             cmd |= PCI_COMMAND_INTX_DISABLE;
         else
         {
-            uint16_t current_cmd = pci_conf_read16(pdev->sbdf, reg);
+            uint16_t current_cmd = pci_conf_read16(pdev->sbdf, PCI_COMMAND);
 
             if ( current_cmd & PCI_COMMAND_INTX_DISABLE )
                 cmd |= PCI_COMMAND_INTX_DISABLE;
         }
     }
 
-    cmd_write(pdev, reg, cmd, data);
+    return cmd;
+}
+
+static void guest_cmd_write(const struct pci_dev *pdev, unsigned int reg,
+                            uint32_t cmd, void *data)
+{
+    cmd_write(pdev, reg, emulate_cmd_reg(pdev, cmd), data);
 }
 
 static void bar_write(const struct pci_dev *pdev, unsigned int reg,
@@ -793,6 +798,9 @@ int vpci_bar_add_handlers(const struct domain *d, const struct pci_dev *pdev)
         gdprintk(XENLOG_ERR,
                  "%pp: failed to add BAR handlers for %pd: %d\n",
                  &pdev->sbdf, d, rc);
+
+    /* Reset the command register with respect to host settings. */
+    pci_conf_write16(pdev->sbdf, PCI_COMMAND, emulate_cmd_reg(pdev, 0));
 
     return rc;
 }
