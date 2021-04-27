@@ -855,6 +855,61 @@ int pci_remove_device(u16 seg, u8 bus, u8 devfn)
     return ret;
 }
 
+static struct vpci_dev *pci_find_virtual_device(const struct domain *d,
+                                                const struct pci_dev *pdev)
+{
+    struct vpci_dev *vdev;
+
+    list_for_each_entry ( vdev, &d->vdev_list, list )
+        if ( vdev->pdev == pdev )
+            return vdev;
+    return NULL;
+}
+
+int pci_add_virtual_device(struct domain *d, const struct pci_dev *pdev)
+{
+    struct vpci_dev *vdev;
+
+    ASSERT(!pci_find_virtual_device(d, pdev));
+
+    vdev = xzalloc(struct vpci_dev);
+    if ( !vdev )
+        return -ENOMEM;
+
+    /*
+     * Virtual devices are always mapped to physical devices with segment
+     * and bus set to 0: we only support a single virtual PCI host bridge.
+     * To assign a new virtual SBDF we set segment and bus to 0, take
+     * the next device number for this domain and use the physical device
+     * function as is.
+     * Device number 0 is always virtual PCI host bridge.
+     */
+    *(u16*) &vdev->seg = 0;
+    *((u8*) &vdev->bus) = 0;
+    *((u8*) &vdev->devfn) = PCI_DEVFN(++(d->vpci_dev_next),
+                                      PCI_FUNC(pdev->sbdf.bdf));
+    vdev->pdev = pdev;
+    vdev->domain = d;
+
+    pcidevs_lock();
+    list_add_tail(&vdev->list, &d->vdev_list);
+    pcidevs_unlock();
+
+    return 0;
+}
+
+int pci_remove_virtual_device(struct domain *d, const struct pci_dev *pdev)
+{
+    struct vpci_dev *vdev;
+
+    pcidevs_lock();
+    vdev = pci_find_virtual_device(d, pdev);
+    list_del(&vdev->list);
+    pcidevs_unlock();
+    xfree(vdev);
+    return 0;
+}
+
 /* Caller should hold the pcidevs_lock */
 static int deassign_device(struct domain *d, uint16_t seg, uint8_t bus,
                            uint8_t devfn)

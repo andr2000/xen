@@ -438,6 +438,13 @@ struct domain
 
 #ifdef CONFIG_HAS_PCI
     struct list_head pdev_list;
+    struct list_head vdev_list;
+    /*
+     * Current device number used by virtual PCI bus topology
+     * to assign SBDF to a passed through virtual PCI device.
+     * Device number 0 is always assigned to the virtual PCI bridge.
+     */
+    int vpci_dev_next;
 #endif
 
 #ifdef CONFIG_HAS_PASSTHROUGH
