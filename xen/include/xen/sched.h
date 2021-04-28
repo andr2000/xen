@@ -447,6 +447,8 @@ struct domain
     int vpci_dev_next;
     /* Virtual PCI MMIO handler's private data. */
     void *vpci_mmio_priv;
+    /* Virtual ECAM host PCI bridge private data. */
+    void *vhostbridge_priv;
 #endif
 
 #ifdef CONFIG_HAS_PASSTHROUGH
