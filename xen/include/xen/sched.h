@@ -445,6 +445,8 @@ struct domain
      * Device number 0 is always assigned to the virtual PCI bridge.
      */
     int vpci_dev_next;
+    /* Virtual PCI MMIO handler's private data. */
+    void *vpci_mmio_priv;
 #endif
 
 #ifdef CONFIG_HAS_PASSTHROUGH
