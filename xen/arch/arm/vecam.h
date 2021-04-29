@@ -18,7 +18,7 @@
 
 #include <xen/pci.h>
 
-int vecam_init(struct domain *d);
+int vecam_init(struct domain *d, const struct pci_dev *pdev);
 void vecam_fini(struct domain *d);
 uint32_t vecam_read(struct domain *d, pci_sbdf_t sbdf, unsigned int reg,
                     unsigned int size);

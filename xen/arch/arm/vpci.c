@@ -192,7 +192,9 @@ static int vpci_setup_mmio_handler(struct domain *d,
         /* Guest domains use what is programmed in their device tree. */
         register_mmio_handler(d, &vpci_mmio_handler,
                 GUEST_VPCI_ECAM_BASE,GUEST_VPCI_ECAM_SIZE, priv);
-        return vecam_init(d);
+        /* Get physical host bridge that this virtual one will emulate. */
+        return vecam_init(d, pci_get_pdev(bridge->segment,
+                                          bridge->bus_start, 0));
     }
     return 0;
 }

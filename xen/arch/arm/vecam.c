@@ -17,6 +17,7 @@
 
 #include <xen/pci.h>
 #include <xen/sched.h>
+#include <xen/vpci.h>
 
 #include "vecam.h"
 
@@ -24,47 +25,77 @@
 #define PCIE_CONFIG_SPACE_SIZE  0x1000
 
 struct vecam_priv {
+    /* Physical host bridge we are emulating. */
+    const struct pci_dev *pdev;
     /* PCI configuration space. */
     uint8_t config[PCIE_CONFIG_SPACE_SIZE];
+    struct vpci_header header[PCI_HEADER_BRIDGE_NR_BARS];
 };
 
-static void cfg_write16(uint8_t *cfg, int ofs, uint16_t val)
+static uint32_t cfg_read(uint8_t *cfg, unsigned int reg, unsigned int size)
 {
-    *((uint16_t *)(cfg + ofs)) = val;
+    switch (size)
+    {
+    case 1:
+        return cfg[reg];
+    case 2:
+        return *((uint16_t *)(cfg + reg));
+    case 4:
+        return *((uint32_t *)(cfg + reg));
+    default:
+        break;
+    }
+    return ~0;
 }
 
-static uint16_t cfg_read16(uint8_t *cfg, int ofs)
+static void cfg_write(uint8_t *cfg, unsigned int reg, unsigned int size,
+                      uint32_t data)
 {
-    return *((uint16_t *)(cfg + ofs));
-}
-
-static void cfg_write32(uint8_t *cfg, int ofs, uint32_t val)
-{
-    *((uint32_t *)(cfg + ofs)) = val;
-}
-
-static uint32_t cfg_read32(uint8_t *cfg, int ofs)
-{
-    return *((uint32_t *)(cfg + ofs));
+    switch (size)
+    {
+    case 1:
+        cfg[reg] = (uint8_t)data;
+        break;
+    case 2:
+        *((uint16_t *)(cfg + reg)) = (uint16_t)data;
+        break;
+    case 4:
+        *((uint32_t *)(cfg + reg)) = data;
+        break;
+    default:
+        break;
+    }
 }
 
 #define PCI_CLASS_BRIDGE_PCI     0x0604
 
-int vecam_init(struct domain *d)
+int vecam_init(struct domain *d, const struct pci_dev *pdev)
 {
-    uint8_t *cfg;
+    struct vecam_priv *priv;
 
-    d->vecam_priv = xzalloc(struct vecam_priv);
-    if ( !d->vecam_priv )
+    if ( !pdev )
+    {
+        printk(XENLOG_G_ERR
+               "d%d: vECAM: Can't find physical PCI host bridge\n",
+               d->domain_id);
+        return -EINVAL;
+    }
+
+    priv = xzalloc(struct vecam_priv);
+    if ( !priv )
         return -ENOMEM;
 
-    cfg = ((struct vecam_priv *)d->vecam_priv)->config;
+    d->vecam_priv = priv;
 
-    cfg_write16(cfg, PCI_VENDOR_ID, 0x1af4);
-    cfg_write16(cfg, PCI_DEVICE_ID, 0x1100);
-    cfg_write16(cfg, PCI_STATUS, PCI_STATUS_66MHZ | PCI_STATUS_FAST_BACK);
-    cfg_write16(cfg, PCI_CLASS_DEVICE, PCI_CLASS_BRIDGE_PCI);
-    cfg[PCI_HEADER_TYPE] = PCI_HEADER_TYPE_BRIDGE;
+    priv->pdev = pdev;
+
+    cfg_write(priv->config, PCI_VENDOR_ID, 2, 0x1af4);
+    cfg_write(priv->config, PCI_DEVICE_ID, 2, 0x1100);
+    cfg_write(priv->config, PCI_STATUS, 2,
+              PCI_STATUS_66MHZ | PCI_STATUS_FAST_BACK);
+    cfg_write(priv->config, PCI_CLASS_DEVICE, 2, PCI_CLASS_BRIDGE_PCI);
+    cfg_write(priv->config, PCI_HEADER_TYPE, 1, PCI_HEADER_TYPE_BRIDGE);
+
     return 0;
 }
 
@@ -81,20 +112,31 @@ uint32_t vecam_read(struct domain *d, pci_sbdf_t sbdf, unsigned int reg,
                     unsigned int size)
 {
     uint8_t *cfg = ((struct vecam_priv *)d->vecam_priv)->config;
+    uint32_t data = ~0;
 
-    printk("%s %pp reg %x sz %d\n", __func__, &sbdf, reg, size);
-    switch (size)
+    data = cfg_read(cfg, reg, size);
+    switch (reg)
     {
-    case 1:
-        return cfg[reg];
-    case 2:
-        return cfg_read16(cfg, reg);
-    case 4:
-        return cfg_read32(cfg, reg);
-    default:
-        break;
+        /*
+         * The Base Address registers are optional registers used to map
+         * internal (device-specific) registers into Memory or I/O Spaces.
+         * We do not emulate any, so return as 0.
+         */
+        case PCI_BASE_ADDRESS_0:
+            /* fallthrough */
+        case PCI_BASE_ADDRESS_1:
+            data = 0;
+            break;
+        /* No expansion ROM supported. */
+        case PCI_ROM_ADDRESS1:
+            data = 0;
+        case PCI_PREF_MEMORY_BASE:
+#define PCI_PREF_MEMORY_LIMIT	0x26
+        default:
+            break;
     }
-    return ~(uint32_t)0;
+    printk("%s %pp reg %x sz %d val %08x\n", __func__, &sbdf, reg, size, data);
+    return data;
 }
 
 void vecam_write(struct domain *d, pci_sbdf_t sbdf, unsigned int reg,
@@ -102,16 +144,7 @@ void vecam_write(struct domain *d, pci_sbdf_t sbdf, unsigned int reg,
 {
     uint8_t *cfg = ((struct vecam_priv *)d->vecam_priv)->config;
 
-    printk("%s %pp reg %x sz %d\n", __func__, &sbdf, reg, size);
-    switch (size)
-    {
-    case 1:
-        cfg[reg] = (uint8_t)data;
-    case 2:
-        cfg_write16(cfg, reg, data);
-    case 4:
-        cfg_write32(cfg, reg, data);
-    default:
-        break;
-    }
+    printk("%s %pp reg %x sz %d val %08x\n", __func__, &sbdf, reg, size, data);
+    /* TODO: Skip writing to read-only registers. */
+    cfg_write(cfg, reg, size, data);
 }
