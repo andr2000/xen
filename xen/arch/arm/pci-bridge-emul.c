@@ -55,6 +55,7 @@
  */
 #define lower_32_bits(n) ((u32)((n) & 0xffffffff))
 
+#define PCI_CLASS_BRIDGE_HOST    0x0600
 #define PCI_CLASS_BRIDGE_PCI		0x0604
 
 
@@ -100,7 +101,7 @@ struct pci_bridge_reg_behavior pci_regs_behavior[PCI_STD_HEADER_SIZEOF / 4] = {
 	[PCI_COMMAND / 4] = {
 		.rw = (PCI_COMMAND_IO | PCI_COMMAND_MEMORY |
 		       PCI_COMMAND_MASTER | PCI_COMMAND_PARITY |
-		       PCI_COMMAND_SERR),
+		       PCI_COMMAND_SERR | PCI_COMMAND_INTX_DISABLE),
 		.ro = ((PCI_COMMAND_SPECIAL | PCI_COMMAND_INVALIDATE |
 			PCI_COMMAND_VGA_PALETTE | PCI_COMMAND_WAIT |
 			PCI_COMMAND_FAST_BACK) |
@@ -186,8 +187,10 @@ struct pci_bridge_reg_behavior pci_regs_behavior[PCI_STD_HEADER_SIZEOF / 4] = {
 		.ro = GENMASK(7, 0),
 	},
 
+	/* We do not implement an Expansion ROM. */
 	[PCI_ROM_ADDRESS1 / 4] = {
-		.rw = GENMASK(31, 11) | BIT(0, U),
+		.ro = ~0,
+//		.rw = GENMASK(31, 11) | BIT(0, U),
 	},
 
 	/*
@@ -316,8 +319,8 @@ int pci_bridge_emul_init(struct pci_bridge_emul *bridge,
 	bridge->conf.header_type = PCI_HEADER_TYPE_BRIDGE;
 	bridge->conf.cache_line_size = 0x10;
 	bridge->conf.status = cpu_to_le16(PCI_STATUS_CAP_LIST);
-	bridge->pci_regs_behavior = xmemdup((struct pci_bridge_reg_behavior *)
-					    &pci_regs_behavior);
+	bridge->pci_regs_behavior = xmemdup_bytes(&pci_regs_behavior,
+						  sizeof(pci_regs_behavior));
 	if (!bridge->pci_regs_behavior)
 		return -ENOMEM;
 
@@ -329,8 +332,8 @@ int pci_bridge_emul_init(struct pci_bridge_emul *bridge,
 			cpu_to_le16(PCI_EXP_TYPE_ROOT_PORT << 4 | 2 |
 				    PCI_EXP_FLAGS_SLOT);
 		bridge->pcie_cap_regs_behavior =
-			xmemdup((struct pci_bridge_reg_behavior *)
-				&pcie_cap_regs_behavior);
+			xmemdup_bytes(&pcie_cap_regs_behavior,
+				      sizeof(pcie_cap_regs_behavior));
 		if (!bridge->pcie_cap_regs_behavior) {
 			xfree(bridge->pci_regs_behavior);
 			return -ENOMEM;
