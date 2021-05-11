@@ -202,13 +202,7 @@ static int vpci_setup_mmio_handler(struct domain *d,
         pdev = pci_get_pdev(bridge->segment, bridge->bus_start, 0);
         pcidevs_unlock();
         /* TODO: The addresses below must be passed by the toolstack. */
-        return vhostbridge_init(d, pdev,
-                                GUEST_VPCI_MEM_CPU_ADDR,
-                                GUEST_VPCI_MEM_SIZE,
-                                GUEST_VPCI_PREFETCH_MEM_CPU_ADDR,
-                                GUEST_VPCI_PREFETCH_MEM_SIZE,
-                                GUEST_VPCI_IO_CPU_ADDR,
-                                GUEST_VPCI_IO_SIZE);
+        return vhostbridge_init(d, pdev);
     }
     return 0;
 }

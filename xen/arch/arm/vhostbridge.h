@@ -18,10 +18,7 @@
 
 #include <xen/pci.h>
 
-int vhostbridge_init(struct domain *d, const struct pci_dev *pdev,
-                     const paddr_t addr_mem, const paddr_t sz_mem,
-                     const paddr_t addr_pref_mem, const paddr_t sz_pref_mem,
-                     const paddr_t addr_io_mem, const paddr_t sz_io_mem);
+int vhostbridge_init(struct domain *d, const struct pci_dev *pdev);
 void vhostbridge_fini(struct domain *d);
 uint32_t vhostbridge_read(struct domain *d, pci_sbdf_t sbdf, unsigned int reg,
                           unsigned int size);

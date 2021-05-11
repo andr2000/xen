@@ -217,10 +217,7 @@ static struct pci_bridge_emul_ops vhostbridge_emul_ops = {
     .write_pcie = vhostbridge_emul_ops_conf_write,
 };
 
-int vhostbridge_init(struct domain *d, const struct pci_dev *pdev,
-               const paddr_t addr_mem, const paddr_t sz_mem,
-               const paddr_t addr_pref_mem, const paddr_t sz_pref_mem,
-               const paddr_t addr_io_mem, const paddr_t sz_io_mem)
+int vhostbridge_init(struct domain *d, const struct pci_dev *pdev)
 {
     struct vhostbridge_priv *priv;
     struct pci_bridge_emul *bridge;
