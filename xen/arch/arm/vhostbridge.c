@@ -243,9 +243,10 @@ int vhostbridge_init(struct domain *d, const struct pci_dev *pdev,
 
     bridge = &priv->bridge;
 
-    bridge->conf.vendor = 0x1af4;
-    bridge->conf.device = 0x1100;
-    bridge->conf.class_revision = 0;
+    /* XenSource, Inc. */
+    bridge->conf.vendor = 0x5853;
+    /* 0xc3xx are not yet assigned - steal one ID. */
+    bridge->conf.device = 0xc300;
 
     /* We support 32 bits I/O addressing */
     bridge->conf.iobase = PCI_IO_RANGE_TYPE_32;
