@@ -329,7 +329,7 @@ int pci_bridge_emul_init(struct pci_bridge_emul *bridge,
 		bridge->pcie_conf.cap_id = PCI_CAP_ID_EXP;
 		/* Set PCIe v2, root port, slot support */
 		bridge->pcie_conf.cap =
-			cpu_to_le16(PCI_EXP_TYPE_ROOT_PORT << 4 | 2 |
+			cpu_to_le16(PCI_EXP_TYPE_PCI_BRIDGE << 4 | 2 |
 				    PCI_EXP_FLAGS_SLOT);
 		bridge->pcie_cap_regs_behavior =
 			xmemdup_bytes(&pcie_cap_regs_behavior,

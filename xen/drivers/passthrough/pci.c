@@ -885,9 +885,12 @@ int pci_add_virtual_device(struct domain *d, const struct pci_dev *pdev)
      * Device number 0 is always virtual PCI host bridge.
      */
     *(u16*) &vdev->seg = 0;
-    *((u8*) &vdev->bus) = 0;
-    *((u8*) &vdev->devfn) = PCI_DEVFN(++(d->vpci_dev_next),
+    *((u8*) &vdev->bus) = 1;
+    *((u8*) &vdev->devfn) = PCI_DEVFN(d->vpci_dev_next++,
                                       PCI_FUNC(pdev->sbdf.bdf));
+
+    printk("\n\n\n======================== %s %pp -> %pp\n\n\n",
+           __func__, &pdev->sbdf, &vdev->sbdf);
     vdev->pdev = pdev;
     vdev->domain = d;
 

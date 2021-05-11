@@ -38,6 +38,7 @@ struct vhostbridge_priv {
     paddr_t sz_io_mem;
 };
 
+#if 0
 struct reg_name {
   unsigned int cap;
   unsigned int offset;
@@ -189,7 +190,7 @@ static const char *get_reg_name(int reg)
         return pci_reg_names[i].name;
     return "N/A";
 }
-
+#endif
 static pci_bridge_emul_read_status_t
 vhostbridge_emul_ops_conf_read(struct pci_bridge_emul *bridge,
                                int reg, u32 *value)
@@ -286,8 +287,10 @@ uint32_t vhostbridge_read(struct domain *d, pci_sbdf_t sbdf, unsigned int reg,
 
     if ( pci_bridge_emul_conf_read(bridge, reg, size, &data) )
         data = ~0;
+#if 0
     printk("%s %pp %s reg %x sz %d val %08x\n", __func__, &sbdf,
            get_reg_name(reg), reg, size, data);
+#endif
     return data;
 }
 
@@ -299,6 +302,8 @@ void vhostbridge_write(struct domain *d, pci_sbdf_t sbdf, unsigned int reg,
 
     if ( pci_bridge_emul_conf_write(bridge, reg, size, data) )
         data = ~0;
+#if 0
     printk("%s %pp %s reg %x sz %d val %08x\n", __func__, &sbdf,
            get_reg_name(reg), reg, size, data);
+#endif
 }
