@@ -263,7 +263,7 @@ int vhostbridge_init(struct domain *d, const struct pci_dev *pdev,
     bridge->ops = &vhostbridge_emul_ops;
 
     /* Support interrupt A for MSI feature */
-    bridge->conf.intpin = 1;
+//    bridge->conf.intpin = 1;
 
     pci_bridge_emul_init(bridge, 0);
     return 0;
