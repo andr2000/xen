@@ -44,6 +44,12 @@ int do_physdev_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
 
                 break;
             }
+        case PHYSDEVOP_prepare_msix:
+            ret = 0;
+            break;
+        case PHYSDEVOP_release_msix:
+            ret = 0;
+            break;
 #endif
         case PHYSDEVOP_unmap_pirq:
         case PHYSDEVOP_map_pirq:
