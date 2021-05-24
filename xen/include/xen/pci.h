@@ -129,6 +129,13 @@ struct pci_dev {
 #define PT_FAULT_THRESHOLD 10
     } fault;
     u64 vf_rlen[6];
+    /*
+     * Vendor and Device IDs for virtual functions: VFs do not provide
+     * PCI_VENDOR_ID:PCI_DEVICE_ID pair in their configuration space
+     * and always return 0xffffffff by SR-IOV specification and is
+     * read out of SR-IOV capability of the PF.
+     */
+    uint32_t vf_vid_did;
 
     /* Data for vPCI. */
     spinlock_t vpci_lock;

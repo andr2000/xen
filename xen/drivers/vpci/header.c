@@ -695,6 +695,17 @@ static uint32_t guest_rom_read(const struct pci_dev *pdev, unsigned int reg,
     return 0xffffffff;
 }
 
+static uint32_t guest_vid_did_read(const struct pci_dev *pdev,
+                                   unsigned int reg, void *data)
+{
+    return pdev->vf_vid_did;
+}
+
+static void guest_vid_did_write(const struct pci_dev *pdev, unsigned int reg,
+                                uint32_t val, void *data)
+{
+}
+
 static int add_bar_handlers(struct pci_dev *pdev, bool is_hwdom)
 {
     unsigned int i;
@@ -707,6 +718,19 @@ static int add_bar_handlers(struct pci_dev *pdev, bool is_hwdom)
                            2, header);
     if ( rc )
         return rc;
+
+    /*
+     * Setup a handler for VENDOR_ID for guests only and allow hwdom reading
+     * directly: the handler is used for SR-IOV virtual functions.
+     */
+    if ( !is_hwdom && pdev->info.is_virtfn )
+    {
+        rc = vpci_add_register(pdev->vpci,
+                               guest_vid_did_read, guest_vid_did_write,
+                               PCI_VENDOR_ID, 4, header);
+        if ( rc )
+            return rc;
+    }
 
     if ( pdev->ignore_bars )
         return 0;

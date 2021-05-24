@@ -161,6 +161,7 @@ static void enable_tail(const struct pci_dev *pdev, struct vpci_sriov *sriov,
 
         pcidevs_lock();
         sriov->vf[i] = pci_get_pdev(pdev->seg, bdf.bus, bdf.extfunc);
+        sriov->vf[i]->vf_vid_did = pdev->vf_vid_did;
         pcidevs_unlock();
     }
 
@@ -282,6 +283,14 @@ static int init_sriov(struct pci_dev *pdev)
 
     if ( !pos )
         return 0;
+
+    /*
+     * Cache VID/DID for virtual functions use:
+     *   Vendor ID is the same as the PF's Venodr ID.
+     *   Device ID comes from the SR-IOV extended capability.
+     */
+    pdev->vf_vid_did = pci_conf_read16(pdev->sbdf, PCI_VENDOR_ID) |
+        pci_conf_read16(pdev->sbdf, pos + PCI_SRIOV_VF_DID) << 16;
 
     total_vfs = pci_conf_read16(pdev->sbdf,
                                 pos + PCI_SRIOV_TOTAL_VF);
