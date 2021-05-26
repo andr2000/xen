@@ -160,6 +160,14 @@ struct vpci {
         } entries[];
     } *msix;
 #endif /* CONFIG_HAS_PCI_MSI */
+    /*
+     * SR-IOV has PCI_SRIOV_NUM_BARS number of VF BARs, but for
+     * the p2m map/unmap machinery code be simpler and stay unified
+     * we provide more BARs here then needed.
+     * This must stay in sync with the number of BARs defined in the
+     * struct vpci_header.
+     */
+    struct vpci_bar vf_bars[PCI_HEADER_NORMAL_NR_BARS + 1];
 #endif
 };
 
