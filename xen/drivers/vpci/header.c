@@ -34,6 +34,49 @@ struct map_data {
     bool map;
 };
 
+struct vpci_vcpu_pending_task *
+vpci_alloc_pending_task(const struct pci_dev *pdev)
+{
+    struct vpci_vcpu_pending_task *task;
+
+    task = xmalloc(struct vpci_vcpu_pending_task);
+    if ( !task )
+        printk(XENLOG_G_ERR
+               "No memory while allocating memory for vPCI task for %pp\n",
+               &pdev->sbdf);
+    return task;
+}
+
+void vpci_add_pending_task(struct vpci_vcpu_pending_task *task)
+{
+    list_add_tail(&task->list, &current->vpci.pending_task_list);
+}
+
+static void free_pending_task(struct vpci_vcpu_pending_task *task)
+{
+    list_del(&task->list);
+    xfree(task);
+}
+
+static void remove_pending_tasks_pdev(struct pci_dev *pdev)
+{
+    struct vpci_vcpu_pending_task *task, *tmp;
+
+    list_for_each_entry_safe(task, tmp,
+                             &current->vpci.pending_task_list, list)
+        if ( task->pdev == pdev )
+            free_pending_task(task);
+}
+
+/* Remove all pending vPCI tasks for vCPU. */
+void vpci_remove_pending_tasks(struct vcpu *v)
+{
+    struct vpci_vcpu_pending_task *task, *tmp;
+
+    list_for_each_entry_safe(task, tmp, &v->vpci.pending_task_list, list)
+        free_pending_task(task);
+}
+
 static int map_range(unsigned long s, unsigned long e, void *data,
                      unsigned long *c)
 {
@@ -139,57 +182,68 @@ static void modify_decoding(const struct pci_dev *pdev, uint16_t cmd,
 
 bool vpci_process_pending(struct vcpu *v)
 {
-    if ( v->vpci.num_mem_ranges )
+    struct vpci_vcpu_pending_task *task, *tmp;
+
+    if ( likely(list_empty(&v->vpci.pending_task_list)) )
+        return false;
+
+    list_for_each_entry_safe(task, tmp, &v->vpci.pending_task_list, list)
     {
-        struct map_data data = {
-            .d = v->domain,
-            .map = v->vpci.cmd & PCI_COMMAND_MEMORY,
-        };
-        struct pci_dev *pdev = v->vpci.pdev;
-        struct vpci_header *header = &pdev->vpci->header;
-        unsigned int i;
-
-        for ( i = 0; i < ARRAY_SIZE(header->bars); i++ )
+        switch ( task->what )
         {
-            struct vpci_bar *bar = &header->bars[i];
-            int rc;
+        case MODIFY_MEMORY:
+        {
+            struct map_data data = {
+                .d = v->domain,
+                .map = task->memory.cmd & PCI_COMMAND_MEMORY,
+            };
+            struct pci_dev *pdev = task->pdev;
+            struct vpci_header *header = &pdev->vpci->header;
+            unsigned int i;
 
-            if ( !bar->mem )
-                continue;
-
-            data.start_gfn = pci_is_hardware_domain(v->domain,
-                                                    pdev->seg, pdev->bus) ?
-                _gfn(PFN_DOWN(bar->addr)) :
-                _gfn(PFN_DOWN(bar->guest_addr));
-            rc = rangeset_consume_ranges(bar->mem, map_range, &data);
-
-            if ( rc == -ERESTART )
-                return true;
-
-            if ( v->vpci.pdev )
+            for ( i = 0; i < ARRAY_SIZE(header->bars); i++ )
             {
-                spin_lock(&v->vpci.pdev->vpci_lock);
-                if ( v->vpci.pdev->vpci )
+                struct vpci_bar *bar = &header->bars[i];
+                int rc;
+
+                if ( !bar->mem )
+                    continue;
+
+                data.start_gfn = pci_is_hardware_domain(v->domain,
+                                                        pdev->seg, pdev->bus) ?
+                    _gfn(PFN_DOWN(bar->addr)) :
+                    _gfn(PFN_DOWN(bar->guest_addr));
+                rc = rangeset_consume_ranges(bar->mem, map_range, &data);
+
+                if ( rc == -ERESTART )
+                    return true;
+
+                spin_lock(&pdev->vpci_lock);
+                if ( pdev->vpci )
                     /* Disable memory decoding unconditionally on failure. */
                     modify_decoding(pdev,
-                                    rc ? v->vpci.cmd & ~PCI_COMMAND_MEMORY : v->vpci.cmd,
-                                    !rc && v->vpci.rom_only);
-                spin_unlock(&v->vpci.pdev->vpci_lock);
-            }
+                                    rc ? task->memory.cmd & ~PCI_COMMAND_MEMORY : task->memory.cmd,
+                                    !rc && task->memory.rom_only);
+                spin_unlock(&pdev->vpci_lock);
 
-            rangeset_destroy(bar->mem);
-            bar->mem = NULL;
-            v->vpci.num_mem_ranges--;
-            if ( rc )
-                /*
-                 * FIXME: in case of failure remove the device from the domain.
-                 * Note that there might still be leftover mappings. While this is
-                 * safe for Dom0, for DomUs the domain will likely need to be
-                 * killed in order to avoid leaking stale p2m mappings on
-                 * failure.
-                 */
-                vpci_remove_device(pdev);
+                rangeset_destroy(bar->mem);
+                bar->mem = NULL;
+                if ( rc )
+                    /*
+                     * FIXME: in case of failure remove the device from the domain.
+                     * Note that there might still be leftover mappings. While this is
+                     * safe for Dom0, for DomUs the domain will likely need to be
+                     * killed in order to avoid leaking stale p2m mappings on
+                     * failure.
+                     */
+                    vpci_remove_device(pdev);
+            }
+            break;
         }
+        default:
+            break;
+        }
+        free_pending_task(task);
     }
 
     return false;
@@ -226,9 +280,17 @@ static int __init apply_map(struct domain *d, const struct pci_dev *pdev,
 }
 
 static void defer_map(struct domain *d, struct pci_dev *pdev,
-                      uint16_t cmd, bool rom_only, uint8_t num_mem_ranges)
+                      uint16_t cmd, bool rom_only)
 {
-    struct vcpu *curr = current;
+    struct vpci_vcpu_pending_task *map_op;
+
+    map_op = vpci_alloc_pending_task(pdev);
+    if ( !map_op )
+    {
+        /* FIXME: in case of failure remove the device from the domain. */
+        vpci_remove_device(pdev);
+        return;
+    }
 
     /*
      * FIXME: when deferring the {un}map the state of the device should not
@@ -236,10 +298,11 @@ static void defer_map(struct domain *d, struct pci_dev *pdev,
      * is mapped. This can lead to parallel mapping operations being
      * started for the same device if the domain is not well-behaved.
      */
-    curr->vpci.pdev = pdev;
-    curr->vpci.cmd = cmd;
-    curr->vpci.rom_only = rom_only;
-    curr->vpci.num_mem_ranges = num_mem_ranges;
+    map_op->what = MODIFY_MEMORY;
+    map_op->pdev = pdev;
+    map_op->memory.cmd = cmd;
+    map_op->memory.rom_only = rom_only;
+    vpci_add_pending_task(map_op);
     /*
      * Raise a scheduler softirq in order to prevent the guest from resuming
      * execution with pending mapping operations, to trigger the invocation
@@ -410,7 +473,7 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
     if ( !num_mem_ranges )
         pci_conf_write16(pdev->sbdf, PCI_COMMAND, cmd);
     else
-        defer_map(dev->domain, dev, cmd, rom_only, num_mem_ranges);
+        defer_map(dev->domain, dev, cmd, rom_only);
 
     return 0;
 
@@ -791,7 +854,7 @@ static void teardown_bars(struct pci_dev *pdev)
          * device might have been removed, so don't attempt to disable memory
          * decoding afterwards.
          */
-        current->vpci.pdev = NULL;
+        remove_pending_tasks_pdev(pdev);
     }
 }
 REGISTER_VPCI_INIT(init_bars, teardown_bars, VPCI_PRIORITY_MIDDLE);

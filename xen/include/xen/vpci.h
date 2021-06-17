@@ -33,6 +33,16 @@ struct vpci_handler {
 /* Add vPCI handlers to device. */
 int __must_check vpci_add_handlers(struct pci_dev *dev);
 
+/* Allocate a new pending task. */
+struct vpci_vcpu_pending_task *
+vpci_alloc_pending_task(const struct pci_dev *pdev);
+
+/* Add a new pending task to the execution list. */
+void vpci_add_pending_task(struct vpci_vcpu_pending_task *task);
+
+/* Remove all pending vPCI tasks for vCPU. */
+void vpci_remove_pending_tasks(struct vcpu *v);
+
 /* Notify vPCI that device is assigned to guest. */
 int __must_check vpci_assign_device(struct domain *d, struct pci_dev *dev);
 
@@ -163,12 +173,29 @@ struct vpci {
 #endif
 };
 
-struct vpci_vcpu {
-    /* Per-vcpu structure to store state while {un}mapping of PCI BARs. */
+/*
+ * There could be multiple operations pending for different
+ * PCI devices. The structure below is used to represent such
+ * an operation.
+ */
+struct vpci_vcpu_pending_task {
+    struct list_head list;
+    enum {
+        MODIFY_MEMORY,
+    } what;
     struct pci_dev *pdev;
-    uint16_t cmd;
-    uint8_t num_mem_ranges;
-    bool rom_only : 1;
+    union {
+        struct {
+            /* Store state while {un}mapping of PCI BARs. */
+            uint16_t cmd;
+            bool rom_only : 1;
+        } memory;
+    };
+};
+
+struct vpci_vcpu {
+    /* List of pending operations. */
+    struct list_head pending_task_list;
 };
 
 #ifdef __XEN__

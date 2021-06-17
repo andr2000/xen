@@ -215,6 +215,9 @@ static int vcpu_teardown(struct vcpu *v)
  */
 static void vcpu_destroy(struct vcpu *v)
 {
+#ifdef CONFIG_HAS_PCI
+    vpci_remove_pending_tasks(v);
+#endif
     free_vcpu_struct(v);
 }
 
@@ -282,6 +285,10 @@ struct vcpu *vcpu_create(struct domain *d, unsigned int vcpu_id)
         v->next_in_list = d->vcpu[prev_id]->next_in_list;
         d->vcpu[prev_id]->next_in_list = v;
     }
+
+#ifdef CONFIG_HAS_PCI
+    INIT_LIST_HEAD(&v->vpci.pending_task_list);
+#endif
 
     /* Must be called after making new vcpu visible to for_each_vcpu(). */
     vcpu_check_shutdown(v);
