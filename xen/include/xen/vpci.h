@@ -168,12 +168,12 @@ struct vpci {
             struct vpci_arch_msix_entry arch;
         } entries[];
     } *msix;
+#endif /* CONFIG_HAS_PCI_MSI */
 
     struct vpci_sriov {
         uint16_t num_vfs;
         struct pci_dev *vf[];
     } *sriov;
-#endif /* CONFIG_HAS_PCI_MSI */
 #endif
 };
 
