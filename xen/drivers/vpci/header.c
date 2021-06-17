@@ -240,6 +240,12 @@ bool vpci_process_pending(struct vcpu *v)
             }
             break;
         }
+        case WAIT:
+            if ( NOW() < task->wait.end )
+                return true;
+
+            task->wait.callback(task->wait.data);
+            break;
         default:
             break;
         }

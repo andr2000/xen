@@ -182,6 +182,7 @@ struct vpci_vcpu_pending_task {
     struct list_head list;
     enum {
         MODIFY_MEMORY,
+        WAIT,
     } what;
     struct pci_dev *pdev;
     union {
@@ -190,6 +191,12 @@ struct vpci_vcpu_pending_task {
             uint16_t cmd;
             bool rom_only : 1;
         } memory;
+        struct {
+            /* Store wait state. */
+            cycles_t end;
+            void (*callback)(void *);
+            void *data;
+        } wait;
     };
 };
 
