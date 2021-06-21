@@ -69,6 +69,7 @@ struct pci_host_bridge {
 #ifdef CONFIG_HAS_VPCI_GUEST_SUPPORT
     void *mmio_priv;                 /* MMIO handler's private data. */
 #endif
+    u64 its_msi_base;
 };
 
 struct pci_ops {
