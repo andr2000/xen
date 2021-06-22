@@ -222,6 +222,14 @@ int vpci_assign_device(struct domain *d, const struct pci_dev *pdev)
     if ( rc )
         goto fail;
 
+    rc = vpci_add_msix_ctrl_hanlder(dev);
+    if ( rc )
+        goto fail;
+
+    rc = vpci_add_msi_ctrl_hanlder(dev);
+    if ( rc )
+        goto fail;
+
     rc = vpci_add_virtual_device(d, pdev);
     if ( rc )
     {
