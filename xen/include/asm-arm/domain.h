@@ -36,9 +36,9 @@ enum domain_type {
  * for ARM we enable support VPCI for guest domain also.
  */
 #ifdef CONFIG_HAS_VPCI
-#define has_vpci(d) (true)
+#define has_vpci(d) ((d=d),true)
 #else
-#define has_vpci(d) (false)
+#define has_vpci(d) ((d=d),false)
 #endif
 
 struct vtimer {
