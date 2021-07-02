@@ -880,14 +880,13 @@ int pci_add_virtual_device(struct domain *d, const struct pci_dev *pdev)
      * TODO:
      * 1. Segment needs to be aligned with the number of emulated
      *    host bridges: hardcode to 0 for a single emulated bridge
-     * 2. Bus need to be aligned to Linux view of the emulated device
-     * 3. For now bus is hardcoded to 1, so virtual devices are seen
-     *    as being behind the emulated bridge.
+     * 2. For now bus is hardcoded to 0, so virtual devices are seen
+     *    as embedded endpoints behind the root complex.
      */
     *(u16*) &vdev->seg = 0;
-    *((u8*) &vdev->bus) = 1;
-    *((u8*) &vdev->devfn) = PCI_DEVFN(d->vpci_dev_next++,
-                                      PCI_FUNC(pdev->sbdf.bdf));
+    *((u8*) &vdev->bus) = 0;
+    *((u8*) &vdev->devfn) = PCI_DEVFN(d->vpci_dev_next++, 0);
+
     vdev->pdev = pdev;
     vdev->domain = d;
 
