@@ -20,6 +20,7 @@ stop_cmd="xendriverdomain_stop"
 extra_commands=""
 
 XLDEVD_PIDFILE="@XEN_RUN_DIR@/xldevd.pid"
+XLPCID_PIDFILE="@XEN_RUN_DIR@/xlpcid.pid"
 
 xendriverdomain_precmd()
 {
@@ -33,6 +34,12 @@ xendriverdomain_startcmd()
 	${sbindir}/xl devd --pidfile=$XLDEVD_PIDFILE ${XLDEVD_ARGS}
 
 	printf "\n"
+
+	printf "Starting xenservices: xl pcid."
+
+	${sbindir}/xl pcid --pidfile=$XLPCID_PIDFILE ${XLPCID_ARGS}
+
+	printf "\n"
 }
 
 xendriverdomain_stop()
@@ -41,8 +48,14 @@ xendriverdomain_stop()
 
 	rc_pid=$(check_pidfile ${XLDEVD_PIDFILE} ${sbindir}/xl)
 
-	kill -${sig_stop:-TERM} $rc_pids
-	wait_for_pids $rc_pids
+	kill -${sig_stop:-TERM} $rc_pid
+
+	printf "Stopping xl pcid.\n"
+
+	rc_pid=$(check_pidfile ${XLPCID_PIDFILE} ${sbindir}/xl)
+
+	kill -${sig_stop:-TERM} $rc_pid
+	wait_for_pids $rc_pid
 }
 
 load_rc_config $name
