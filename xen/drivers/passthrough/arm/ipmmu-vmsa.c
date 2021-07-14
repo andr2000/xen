@@ -375,12 +375,18 @@ static uint32_t ipmmu_read(struct ipmmu_vmsa_device *mmu, uint32_t offset)
 {
     uint32_t data = readl(mmu->base + offset);
 
+    /* TODO remove debug */
+    dev_info(mmu->dev, ">>> read: offset 0x%x data 0x%x\n", offset, data);
+
     return data;
 }
 
 static void ipmmu_write(struct ipmmu_vmsa_device *mmu, uint32_t offset,
                         uint32_t data)
 {
+    /* TODO remove debug */
+    dev_info(mmu->dev, ">>> write: offset 0x%x data 0x%x\n", offset, data);
+
     writel(data, mmu->base + offset);
 }
 
