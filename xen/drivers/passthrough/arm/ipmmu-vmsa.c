@@ -284,10 +284,10 @@ static DEFINE_SPINLOCK(ipmmu_devices_lock);
 #define IMUASID_ASID0_MASK     (0xff << 0)
 #define IMUASID_ASID0_SHIFT    0
 
-#define IMSCTLR             0x0500
+#define IMSCTLR             0x1500
 #define IMSCTLR_DISCACHE    0xE0000000
 
-#define IMSAUXCTLR          0x0504
+#define IMSAUXCTLR          0x1504
 #define IMSAUXCTLR_S2PTE    (1 << 3)
 
 /* XXX Describe IMRGID/IMRGIDEN/IMSECGRP/IMAPQOS/IMQOS/IMSSTR for new H/W */
@@ -957,9 +957,10 @@ static int ipmmu_probe(struct dt_device_node *node)
         ipmmu_write(mmu, IMSAUXCTLR,
                     ipmmu_read(mmu, IMSAUXCTLR) | IMSAUXCTLR_S2PTE);
 
-        /* XXX Do we need this limitation for new H/W? */
-        /*dev_info(&node->dev, "IPMMU context 0 is reserved\n");
-        set_bit(0, mmu->ctx);*/
+        dev_info(&node->dev, "IMSAUXCTLR 0x%x\n", ipmmu_read(mmu, IMSAUXCTLR));
+
+        dev_info(&node->dev, "IPMMU context 0 is reserved\n");
+        set_bit(0, mmu->ctx);
     }
     else
     {
