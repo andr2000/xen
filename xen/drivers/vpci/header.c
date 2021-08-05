@@ -157,7 +157,7 @@ bool vpci_process_pending(struct vcpu *v)
     if ( v->vpci.num_mem_ranges )
     {
         struct map_data data = {
-            .d = v->domain,
+            .d = v->vpci.pdev->domain,
             .map = v->vpci.cmd & PCI_COMMAND_MEMORY,
         };
         struct pci_dev *pdev = v->vpci.pdev;
