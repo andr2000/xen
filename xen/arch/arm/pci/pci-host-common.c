@@ -18,6 +18,7 @@
 
 #include <xen/init.h>
 #include <xen/pci.h>
+#include <asm/setup.h>
 #include <xen/rwlock.h>
 #include <xen/sched.h>
 #include <xen/vmap.h>
@@ -317,6 +318,54 @@ int pci_host_get_num_bridges(void)
         count++;
 
     return count;
+}
+
+int __init pci_host_bridge_mappings(struct domain *d, p2m_type_t p2mt)
+{
+    struct pci_host_bridge *bridge;
+    struct map_range_data mr_data = {
+        .d = d,
+        .p2mt = p2mt,
+        .skip_mapping = false
+    };
+
+    /*
+     * For each PCI host bridge we need to only map those ranges
+     * which are used by Domain-0 to properly initialize the bridge,
+     * e.g. we do not want to map ECAM configuration space which lives in
+     * "reg" or "assigned-addresses" device tree property, but we want to
+     * map other regions of the host bridge. The PCI aperture defined by
+     * the "ranges" device tree property should also be skipped.
+     */
+    list_for_each_entry( bridge, &pci_host_bridges, node )
+    {
+        const struct dt_device_node *dev = bridge->dt_node;
+        unsigned int i;
+
+        for ( i = 0; i < dt_number_of_address(dev); i++ )
+        {
+            uint64_t addr, size;
+            int err;
+
+            err = dt_device_get_address(dev, i, &addr, &size);
+            if ( err )
+            {
+                printk(XENLOG_ERR
+                       "Unable to retrieve address range index=%u for %s\n",
+                       i, dt_node_full_name(dev));
+                return err;
+            }
+
+            if ( bridge->ops->need_p2m_hwdom_mapping(d, bridge, addr) )
+            {
+                err = map_range_to_domain(dev, addr, size, &mr_data);
+                if ( err )
+                    return err;
+            }
+        }
+    }
+
+    return 0;
 }
 
 /*
