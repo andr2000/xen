@@ -273,6 +273,7 @@ static inline bool __must_check vpci_process_pending(struct vcpu *v)
 /* Notify vPCI that device is assigned/de-assigned to/from guest. */
 int vpci_assign_device(struct domain *d, struct pci_dev *pdev);
 void vpci_deassign_device(struct domain *d, struct pci_dev *pdev);
+bool vpci_translate_virtual_device(const struct domain *d, pci_sbdf_t *sbdf);
 #else
 static inline int vpci_assign_device(struct domain *d, struct pci_dev *pdev)
 {
@@ -282,6 +283,12 @@ static inline int vpci_assign_device(struct domain *d, struct pci_dev *pdev)
 static inline void vpci_deassign_device(struct domain *d, struct pci_dev *pdev)
 {
 };
+
+static inline bool vpci_translate_virtual_device(const struct domain *d,
+                                                 pci_sbdf_t *sbdf)
+{
+    return false;
+}
 #endif
 
 #endif
