@@ -452,6 +452,8 @@ struct domain
      * to assign a unique SBDF to the next passed through virtual PCI device.
      */
     unsigned int vpci_dev_next;
+    /* Virtual PCI MMIO handler's private data. */
+    void *vpci_mmio_priv;
 #endif
 #endif
 

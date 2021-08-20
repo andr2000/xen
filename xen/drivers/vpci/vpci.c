@@ -184,6 +184,31 @@ static int vpci_remove_virtual_device(struct domain *d,
     return vdev ? 0 : -ENOENT;
 }
 
+/*
+ * Find the physical device which is mapped to the virtual device
+ * and translate virtual SBDF to the physical one.
+ */
+bool vpci_translate_virtual_device(struct domain *d, pci_sbdf_t *sbdf)
+{
+    const struct vpci_dev *vdev;
+    bool found = false;
+
+    spin_lock(&d->vdev_lock);
+    list_for_each_entry( vdev, &d->vdev_list, list )
+    {
+        if ( vdev->sbdf.sbdf == sbdf->sbdf )
+        {
+            /* Replace virtual SBDF with the physical one. */
+            *sbdf = vdev->pdev->sbdf;
+            found = true;
+            break;
+        }
+    }
+    spin_unlock(&d->vdev_lock);
+
+    return found;
+}
+
 /* Notify vPCI that device is assigned to guest. */
 int vpci_assign_device(struct domain *d, const struct pci_dev *pdev)
 {

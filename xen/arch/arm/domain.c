@@ -797,6 +797,7 @@ void arch_domain_destroy(struct domain *d)
                        get_order_from_bytes(d->arch.efi_acpi_len));
 #endif
     domain_io_free(d);
+    domain_vpci_free(d);
 }
 
 void arch_domain_shutdown(struct domain *d)
