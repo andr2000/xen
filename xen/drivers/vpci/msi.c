@@ -264,7 +264,7 @@ static int init_msi(struct pci_dev *pdev)
 }
 REGISTER_VPCI_INIT(init_msi, VPCI_PRIORITY_LOW);
 
-int vpci_add_msi_ctrl_hanlder(struct pci_dev *pdev)
+int vpci_add_msi_ctrl_handler(struct pci_dev *pdev)
 {
     int ret;
     uint8_t slot = PCI_SLOT(pdev->devfn), func = PCI_FUNC(pdev->devfn);

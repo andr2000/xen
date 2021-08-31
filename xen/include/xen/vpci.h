@@ -69,7 +69,7 @@ int vpci_bar_remove_handlers(const struct domain *d,
                              const struct pci_dev *pdev);
 #endif
 int vpci_add_msix_ctrl_hanlder(struct pci_dev *pdev);
-int vpci_add_msi_ctrl_hanlder(struct pci_dev *pdev);
+int vpci_add_msi_ctrl_handler(struct pci_dev *pdev);
 
 struct vpci {
     /* List of vPCI handlers for a device. */
