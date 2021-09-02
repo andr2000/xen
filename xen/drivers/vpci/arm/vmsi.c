@@ -57,7 +57,7 @@ static int vpci_get_msi_base(const struct pci_dev *pdev, u64 *msi_base)
         return -ENODEV;
     }
 
-    *msi_base = bridge->its_msi_base + ITS_DOORBELL_OFFSET ;
+    *msi_base = 0xfe440000;
 
     return 0;
 }
