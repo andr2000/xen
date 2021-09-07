@@ -18,6 +18,7 @@ config ARM
 	select HAS_PCI
 	select HAS_VPCI
 	select LATE_HWDOM
+	select HAS_VPCI_GUEST_SUPPORT
 
 config ARCH_DEFCONFIG
 	string
