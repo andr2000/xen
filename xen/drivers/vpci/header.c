@@ -451,6 +451,32 @@ static void cmd_write(const struct pci_dev *pdev, unsigned int reg,
         pci_conf_write16(pdev->sbdf, reg, cmd);
 }
 
+static void guest_cmd_write(const struct pci_dev *pdev, unsigned int reg,
+                            uint32_t cmd, void *data)
+{
+    /* TODO: Add proper emulation for all bits of the command register. */
+
+    if ( (cmd & PCI_COMMAND_INTX_DISABLE) == 0 )
+    {
+        /*
+         * Guest wants to enable INTx. It can't be enabled if:
+         *  - host has INTx disabled
+         *  - MSI/MSI-X enabled
+         */
+        if ( pdev->vpci->msi->enabled )
+            cmd |= PCI_COMMAND_INTX_DISABLE;
+        else
+        {
+            uint16_t current_cmd = pci_conf_read16(pdev->sbdf, reg);
+
+            if ( current_cmd & PCI_COMMAND_INTX_DISABLE )
+                cmd |= PCI_COMMAND_INTX_DISABLE;
+        }
+    }
+
+    cmd_write(pdev, reg, cmd, data);
+}
+
 static void bar_write(const struct pci_dev *pdev, unsigned int reg,
                       uint32_t val, void *data)
 {
@@ -598,9 +624,12 @@ static int add_bar_handlers(const struct pci_dev *pdev, bool is_hwdom)
     struct vpci_bar *bars = header->bars;
     int rc;
 
-    /* Setup a handler for the command register: same for hwdom and guests. */
-    rc = vpci_add_register(pdev->vpci, vpci_hw_read16, cmd_write, PCI_COMMAND,
-                           2, header);
+    if ( is_hwdom )
+        rc = vpci_add_register(pdev->vpci, vpci_hw_read16, cmd_write,
+                               PCI_COMMAND, 2, header);
+    else
+        rc = vpci_add_register(pdev->vpci, vpci_hw_read16, guest_cmd_write,
+                               PCI_COMMAND, 2, header);
     if ( rc )
         return rc;
 
