@@ -187,7 +187,7 @@ static int init_msix(struct pci_dev *pdev)
 }
 REGISTER_VPCI_INIT(init_msix, VPCI_PRIORITY_HIGH);
 
-int vpci_add_msix_ctrl_hanlder(struct pci_dev *pdev)
+int vpci_add_msix_ctrl_hanlder(const struct pci_dev *pdev)
 {
     uint8_t slot = PCI_SLOT(pdev->devfn), func = PCI_FUNC(pdev->devfn);
     unsigned int msix_offset;
