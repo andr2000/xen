@@ -31,6 +31,18 @@ struct vpci_register {
 };
 
 #ifdef __XEN__
+
+#ifdef CONFIG_HAS_VPCI_GUEST_SUPPORT
+struct vpci_dev {
+    struct list_head list;
+    /* Physical PCI device this virtual device is connected to. */
+    const struct pci_dev *pdev;
+    /* Virtual SBDF of the device. */
+    pci_sbdf_t sbdf;
+    struct domain *domain;
+};
+#endif
+
 extern vpci_register_init_t *const __start_vpci_array[];
 extern vpci_register_init_t *const __end_vpci_array[];
 #define NUM_VPCI_INIT (__end_vpci_array - __start_vpci_array)
@@ -88,6 +100,90 @@ int __hwdom_init vpci_add_handlers(struct pci_dev *pdev)
 }
 
 #ifdef CONFIG_HAS_VPCI_GUEST_SUPPORT
+static struct vpci_dev *vpci_find_virtual_device(struct domain *d,
+                                                 const struct pci_dev *pdev)
+{
+    struct vpci_dev *vdev;
+
+    ASSERT(spin_is_locked(&d->vdev_lock));
+
+    list_for_each_entry( vdev, &d->vdev_list, list )
+        if ( vdev->pdev == pdev )
+            return vdev;
+    return NULL;
+}
+
+static int vpci_add_virtual_device(struct domain *d, const struct pci_dev *pdev)
+{
+    struct vpci_dev *vdev;
+    int rc;
+
+    spin_lock(&d->vdev_lock);
+
+    ASSERT(!vpci_find_virtual_device(d, pdev));
+
+    /*
+     * Each PCI bus supports 32 devices/slots at max or up to 256 when
+     * there are multi-function ones which are not yet supported.
+     */
+    if ( pdev->info.is_extfn )
+    {
+        gdprintk(XENLOG_ERR, "%pp: only function 0 passthrough supported\n",
+                 &pdev->sbdf);
+        rc = -EOPNOTSUPP;
+        goto out;
+    }
+
+    if ( d->vpci_dev_next > PCI_SLOT(~0) )
+    {
+        rc = -ENOSPC;
+        goto out;
+    }
+
+    vdev = xzalloc(struct vpci_dev);
+    if ( !vdev )
+    {
+        rc = -ENOMEM;
+        goto out;
+    }
+
+    /*
+     * Both segment and bus number are 0:
+     *  - we emulate a single host bridge for the guest, e.g. segment 0
+     *  - with bus 0 the virtual devices are seen as embedded
+     *    endpoints behind the root complex
+     *
+     * TODO: add support for multi-function devices.
+     */
+    vdev->sbdf.devfn = PCI_DEVFN(d->vpci_dev_next++, 0);
+    vdev->pdev = pdev;
+    vdev->domain = d;
+    list_add_tail(&vdev->list, &d->vdev_list);
+
+    rc = 0;
+
+out:
+    spin_unlock(&d->vdev_lock);
+    return rc;
+
+}
+
+static int vpci_remove_virtual_device(struct domain *d,
+                                      const struct pci_dev *pdev)
+{
+    struct vpci_dev *vdev;
+
+    spin_lock(&d->vdev_lock);
+    vdev = vpci_find_virtual_device(d, pdev);
+    if ( vdev )
+        list_del(&vdev->list);
+    spin_unlock(&d->vdev_lock);
+
+    xfree(vdev);
+
+    return vdev ? 0 : -ENOENT;
+}
+
 /* Notify vPCI that device is assigned to guest. */
 int vpci_assign_device(struct domain *d, const struct pci_dev *pdev)
 {
@@ -100,6 +196,15 @@ int vpci_assign_device(struct domain *d, const struct pci_dev *pdev)
     rc = vpci_bar_add_handlers(d, pdev);
     if ( rc )
         goto fail;
+
+    rc = vpci_add_virtual_device(d, pdev);
+    if ( rc )
+    {
+        gdprintk(XENLOG_ERR,
+                 "%pp: failed to add virtual device for %pd: %d\n",
+                 &pdev->sbdf, d, rc);
+        goto fail;
+    }
 
     return 0;
 
@@ -116,9 +221,30 @@ fail:
 /* Notify vPCI that device is de-assigned from guest. */
 int vpci_deassign_device(struct domain *d, const struct pci_dev *pdev)
 {
+    int rc;
+
     /* It only makes sense to de-assign from hwdom or guest domain. */
     if ( is_system_domain(d) || !has_vpci(d) )
         return 0;
+
+    /*
+     * This can return -ENOENT in case the device was already removed
+     * while doing roll back after a failed assignment attempt.
+     */
+    rc = vpci_remove_virtual_device(d, pdev);
+    if ( rc && rc != -ENOENT )
+    {
+        gdprintk(XENLOG_ERR,
+                 "%pp: failed to remove virtual device for %pd: %d\n",
+                 &pdev->sbdf, d, rc);
+        /*
+         * We are trying to clean up as much as we can, so ignore the return
+         * value of vpci_bar_remove_handlers below, so we can return the
+         * error which caused the failure.
+         */
+        vpci_bar_remove_handlers(d, pdev);
+        return rc;
+    }
 
     return vpci_bar_remove_handlers(d, pdev);
 }

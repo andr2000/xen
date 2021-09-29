@@ -444,6 +444,15 @@ struct domain
 
 #ifdef CONFIG_HAS_PCI
     struct list_head pdev_list;
+#ifdef CONFIG_HAS_VPCI_GUEST_SUPPORT
+    struct list_head vdev_list;
+    struct spinlock vdev_lock;
+    /*
+     * Device number which will be used by virtual PCI bus topology
+     * to assign a unique SBDF to the next passed through virtual PCI device.
+     */
+    unsigned int vpci_dev_next;
+#endif
 #endif
 
 #ifdef CONFIG_HAS_PASSTHROUGH

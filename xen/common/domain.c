@@ -601,6 +601,10 @@ struct domain *domain_create(domid_t domid,
 
 #ifdef CONFIG_HAS_PCI
     INIT_LIST_HEAD(&d->pdev_list);
+#ifdef CONFIG_HAS_VPCI_GUEST_SUPPORT
+    INIT_LIST_HEAD(&d->vdev_list);
+    spin_lock_init(&d->vdev_lock);
+#endif
 #endif
 
     /* All error paths can depend on the above setup. */
