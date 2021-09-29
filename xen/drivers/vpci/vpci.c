@@ -89,6 +89,9 @@ int vpci_add_handlers(struct pci_dev *pdev)
         return -ENOMEM;
 
     INIT_LIST_HEAD(&vpci->handlers);
+#ifdef CONFIG_HAS_VPCI_GUEST_SUPPORT
+    vpci->guest_sbdf.sbdf = ~0;
+#endif
 
     spin_lock(&pdev->vpci_lock);
     pdev->vpci = vpci;
@@ -114,6 +117,57 @@ int vpci_add_handlers(struct pci_dev *pdev)
 }
 
 #ifdef CONFIG_HAS_VPCI_GUEST_SUPPORT
+static int add_virtual_device(struct pci_dev *pdev)
+{
+    struct domain *d = pdev->domain;
+    pci_sbdf_t sbdf = { 0 };
+    unsigned long new_dev_number;
+
+    if ( is_hardware_domain(d) )
+        return 0;
+
+    ASSERT(pcidevs_locked());
+
+    /*
+     * Each PCI bus supports 32 devices/slots at max or up to 256 when
+     * there are multi-function ones which are not yet supported.
+     */
+    if ( pdev->info.is_extfn )
+    {
+        gdprintk(XENLOG_ERR, "%pp: only function 0 passthrough supported\n",
+                 &pdev->sbdf);
+        return -EOPNOTSUPP;
+    }
+
+    new_dev_number = find_first_zero_bit(d->vpci_dev_assigned_map,
+                                         VPCI_MAX_VIRT_DEV);
+    if ( new_dev_number >= VPCI_MAX_VIRT_DEV )
+        return -ENOSPC;
+
+    __set_bit(new_dev_number, &d->vpci_dev_assigned_map);
+
+    /*
+     * Both segment and bus number are 0:
+     *  - we emulate a single host bridge for the guest, e.g. segment 0
+     *  - with bus 0 the virtual devices are seen as embedded
+     *    endpoints behind the root complex
+     *
+     * TODO: add support for multi-function devices.
+     */
+    sbdf.devfn = PCI_DEVFN(new_dev_number, 0);
+    pdev->vpci->guest_sbdf = sbdf;
+
+    return 0;
+
+}
+
+static void vpci_remove_virtual_device(struct domain *d,
+                                       const struct pci_dev *pdev)
+{
+    __clear_bit(pdev->vpci->guest_sbdf.dev, &d->vpci_dev_assigned_map);
+    pdev->vpci->guest_sbdf.sbdf = ~0;
+}
+
 /* Notify vPCI that device is assigned to guest. */
 int vpci_assign_device(struct domain *d, struct pci_dev *pdev)
 {
@@ -124,8 +178,16 @@ int vpci_assign_device(struct domain *d, struct pci_dev *pdev)
 
     rc = vpci_add_handlers(pdev);
     if ( rc )
-        vpci_deassign_device(d, pdev);
+        goto fail;
 
+    rc = add_virtual_device(pdev);
+    if ( rc )
+        goto fail;
+
+    return 0;
+
+ fail:
+    vpci_deassign_device(d, pdev);
     return rc;
 }
 
@@ -135,7 +197,15 @@ void vpci_deassign_device(struct domain *d, struct pci_dev *pdev)
     if ( !has_vpci(d) )
         return;
 
-    vpci_remove_device(pdev);
+    spin_lock(&pdev->vpci_lock);
+    if ( !pdev->vpci )
+        goto done;
+
+    vpci_remove_virtual_device(d, pdev);
+    vpci_remove_device_locked(pdev);
+
+ done:
+    spin_unlock(&pdev->vpci_lock);
 }
 #endif /* CONFIG_HAS_VPCI_GUEST_SUPPORT */
 
