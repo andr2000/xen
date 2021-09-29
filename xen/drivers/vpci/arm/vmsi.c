@@ -52,8 +52,7 @@ static int vpci_get_msi_base(const struct pci_dev *pdev, u64 *msi_base)
     bridge = pci_find_host_bridge(pdev->seg, pdev->bus);
     if ( unlikely(!bridge) )
     {
-        gprintk(XENLOG_ERR, "Unable to find PCI bridge for "PRI_pci"\n",
-                pdev->seg, pdev->bus, pdev->sbdf.dev, pdev->sbdf.fn);
+        gprintk(XENLOG_ERR, "Unable to find PCI bridge for %pp\n", &pdev->sbdf);
         return -ENODEV;
     }
 
