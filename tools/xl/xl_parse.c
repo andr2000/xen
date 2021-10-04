@@ -1497,6 +1497,14 @@ void parse_config_data(const char *config_source,
         }
         if (d_config->num_pcidevs && c_info->type == LIBXL_DOMAIN_TYPE_PV)
             libxl_defbool_set(&b_info->u.pv.e820_host, true);
+#if defined(__arm__) || defined(__aarch64__)
+        /*
+         * Enable VPCI support for ARM. VPCI support for DOMU guest is not
+         * supported for x86.
+         */
+        if (d_config->num_pcidevs)
+            libxl_defbool_set(&b_info->arch_arm.vpci, true);
+#endif
     }
 
     if (!xlu_cfg_get_list (config, "dtdev", &dtdevs, 0, 0)) {
