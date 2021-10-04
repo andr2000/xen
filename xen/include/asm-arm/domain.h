@@ -2,6 +2,7 @@
 #define __ASM_DOMAIN_H__
 
 #include <xen/cache.h>
+#include <xen/nospec.h>
 #include <xen/timer.h>
 #include <asm/page.h>
 #include <asm/p2m.h>
@@ -262,7 +263,11 @@ static inline void arch_vcpu_block(struct vcpu *v) {}
 
 #define arch_vm_assist_valid_mask(d) (1UL << VMASST_TYPE_runstate_update_flag)
 
-#define has_vpci(d)    ({ (void)(d); false; })
+/*
+ * For X86 VPCI is enabled and tested for PVH DOM0 only but
+ * for ARM we enable support VPCI for guest domain also.
+ */
+#define has_vpci(d) evaluate_nospec((d)->options & XEN_DOMCTL_CDF_vpci)
 
 #endif /* __ASM_DOMAIN_H__ */
 

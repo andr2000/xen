@@ -40,6 +40,8 @@
 #define PCI_SBDF3(s,b,df) \
     ((pci_sbdf_t){ .sbdf = (((s) & 0xffff) << 16) | PCI_BDF2(b, df) })
 
+#define MMCFG_BDF(addr)  (((addr) & 0x0ffff000) >> 12)
+
 typedef union {
     uint32_t sbdf;
     struct {
