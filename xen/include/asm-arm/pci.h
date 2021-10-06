@@ -66,7 +66,9 @@ struct pci_host_bridge {
     uint16_t segment;                /* Segment number */
     struct pci_config_window* cfg;   /* Pointer to the bridge config window */
     struct pci_ops *ops;
+#ifdef CONFIG_HAS_VPCI_GUEST_SUPPORT
     void *mmio_priv;                 /* MMIO handler's private data. */
+#endif
 };
 
 struct pci_ops {

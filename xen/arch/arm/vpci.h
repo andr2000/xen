@@ -18,7 +18,6 @@
 #ifdef CONFIG_HAS_VPCI
 int domain_vpci_init(struct domain *d);
 int domain_vpci_get_num_mmio_handlers(struct domain *d);
-void domain_vpci_free(struct domain *d);
 #else
 static inline int domain_vpci_init(struct domain *d)
 {
@@ -30,6 +29,11 @@ static inline int domain_vpci_get_num_mmio_handlers(struct domain *d)
     return 0;
 }
 
+#endif
+
+#if defined(CONFIG_HAS_VPCI) && defined(CONFIG_HAS_VPCI_GUEST_SUPPORT)
+void domain_vpci_free(struct domain *d);
+#else
 static inline void domain_vpci_free(struct domain *d) { }
 #endif
 

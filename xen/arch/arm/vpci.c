@@ -17,6 +17,7 @@
 
 #define REGISTER_OFFSET(addr)  ( (addr) & 0x00000fff)
 
+#ifdef CONFIG_HAS_VPCI_GUEST_SUPPORT
 struct vpci_mmio_priv {
     /*
      * Set to true if the MMIO handlers were set up for the emulated
@@ -24,6 +25,7 @@ struct vpci_mmio_priv {
      */
     bool is_virt_ecam;
 };
+#endif
 
 /* Do some sanity checks. */
 static bool vpci_mmio_access_allowed(unsigned int reg, unsigned int len)
@@ -46,7 +48,9 @@ static int vpci_mmio_read(struct vcpu *v, mmio_info_t *info,
     pci_sbdf_t sbdf;
     unsigned long data = ~0UL;
     unsigned int size = 1U << info->dabt.size;
+#ifdef CONFIG_HAS_VPCI_GUEST_SUPPORT
     struct vpci_mmio_priv *priv = (struct vpci_mmio_priv *)p;
+#endif
 
     sbdf.sbdf = MMCFG_BDF(info->gpa);
     reg = REGISTER_OFFSET(info->gpa);
@@ -54,6 +58,7 @@ static int vpci_mmio_read(struct vcpu *v, mmio_info_t *info,
     if ( !vpci_mmio_access_allowed(reg, size) )
         return 0;
 
+#ifdef CONFIG_HAS_VPCI_GUEST_SUPPORT
     /*
      * For the passed through devices we need to map their virtual SBDF
      * to the physical PCI device being passed through.
@@ -61,6 +66,7 @@ static int vpci_mmio_read(struct vcpu *v, mmio_info_t *info,
     if ( priv->is_virt_ecam &&
          !vpci_translate_virtual_device(v->domain, &sbdf) )
             return 1;
+#endif
 
     data = vpci_read(sbdf, reg, min(4u, size));
     if ( size == 8 )
@@ -78,7 +84,9 @@ static int vpci_mmio_write(struct vcpu *v, mmio_info_t *info,
     pci_sbdf_t sbdf;
     unsigned long data = r;
     unsigned int size = 1U << info->dabt.size;
+#ifdef CONFIG_HAS_VPCI_GUEST_SUPPORT
     struct vpci_mmio_priv *priv = (struct vpci_mmio_priv *)p;
+#endif
 
     sbdf.sbdf = MMCFG_BDF(info->gpa);
     reg = REGISTER_OFFSET(info->gpa);
@@ -86,6 +94,7 @@ static int vpci_mmio_write(struct vcpu *v, mmio_info_t *info,
     if ( !vpci_mmio_access_allowed(reg, size) )
         return 0;
 
+#ifdef CONFIG_HAS_VPCI_GUEST_SUPPORT
     /*
      * For the passed through devices we need to map their virtual SBDF
      * to the physical PCI device being passed through.
@@ -93,6 +102,7 @@ static int vpci_mmio_write(struct vcpu *v, mmio_info_t *info,
     if ( priv->is_virt_ecam &&
          !vpci_translate_virtual_device(v->domain, &sbdf) )
             return 1;
+#endif
 
     vpci_write(sbdf, reg, min(4u, size), data);
     if ( size == 8 )
@@ -123,6 +133,7 @@ static const struct mmio_handler_ops vpci_mmio_handler = {
 static int vpci_setup_mmio_handler(struct domain *d,
                                    struct pci_host_bridge *bridge)
 {
+#ifdef CONFIG_HAS_VPCI_GUEST_SUPPORT
     struct vpci_mmio_priv *priv;
 
     priv = xzalloc(struct vpci_mmio_priv);
@@ -130,19 +141,26 @@ static int vpci_setup_mmio_handler(struct domain *d,
         return -ENOMEM;
 
     priv->is_virt_ecam = !is_hardware_domain(d);
+#else
+    void *priv = NULL;
+#endif
 
     if ( is_hardware_domain(d) )
     {
         struct pci_config_window *cfg = bridge->cfg;
 
+#ifdef CONFIG_HAS_VPCI_GUEST_SUPPORT
         bridge->mmio_priv = priv;
+#endif
         register_mmio_handler(d, &vpci_mmio_handler,
                               cfg->phys_addr, cfg->size,
                               priv);
     }
     else
     {
+#ifdef CONFIG_HAS_VPCI_GUEST_SUPPORT
         d->vpci_mmio_priv = priv;
+#endif
         /* Guest domains use what is programmed in their device tree. */
         register_mmio_handler(d, &vpci_mmio_handler,
                               GUEST_VPCI_ECAM_BASE, GUEST_VPCI_ECAM_SIZE,
@@ -159,6 +177,7 @@ int domain_vpci_init(struct domain *d)
     return pci_host_iterate_bridges(d, vpci_setup_mmio_handler);
 }
 
+#ifdef CONFIG_HAS_VPCI_GUEST_SUPPORT
 static int domain_vpci_free_cb(struct domain *d,
                                struct pci_host_bridge *bridge)
 {
@@ -176,6 +195,7 @@ void domain_vpci_free(struct domain *d)
 
     pci_host_iterate_bridges(d, domain_vpci_free_cb);
 }
+#endif
 
 int domain_vpci_get_num_mmio_handlers(struct domain *d)
 {
