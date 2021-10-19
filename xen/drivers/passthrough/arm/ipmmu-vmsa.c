@@ -942,6 +942,9 @@ static int ipmmu_probe(struct dt_device_node *node)
 
         ipmmu_device_reset(mmu);
 
+        dev_info(&node->dev, "Root IMSAUXCTLR 0x%x\n", ipmmu_read(mmu, IMSAUXCTLR));
+        dev_info(&node->dev, "Root IMSCTLR 0x%x\n", ipmmu_read(mmu, IMSCTLR));
+
         /*
          * Use stage 2 translation table format when stage 2 translation
          * enabled.
@@ -954,6 +957,9 @@ static int ipmmu_probe(struct dt_device_node *node)
     }
     else
     {
+        dev_info(&node->dev, "Cache IMSAUXCTLR 0x%x\n", ipmmu_read(mmu, IMSAUXCTLR));
+        dev_info(&node->dev, "Cache IMSCTLR 0x%x\n", ipmmu_read(mmu, IMSCTLR));
+
         /* Only Cache devices are affected */
         mmu->is_mmu_tlb_disabled = ipmmu_is_mmu_tlb_disable_needed(node);
 
