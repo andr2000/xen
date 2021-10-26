@@ -1673,7 +1673,6 @@ static int __init map_dt_irq_to_domain(const struct dt_device_node *dev,
     struct domain *d = mr_data->d;
     unsigned int irq = dt_irq->irq;
     int res;
-    bool need_mapping = !mr_data->skip_mapping;
 
     if ( irq < NR_LOCAL_IRQS )
     {
@@ -1692,7 +1691,7 @@ static int __init map_dt_irq_to_domain(const struct dt_device_node *dev,
         return res;
     }
 
-    res = map_irq_to_domain(d, irq, need_mapping, dt_node_name(dev));
+    res = map_irq_to_domain(d, irq, !mr_data->skip_mapping, dt_node_name(dev));
 
     return 0;
 }
@@ -1702,7 +1701,6 @@ int __init map_range_to_domain(const struct dt_device_node *dev,
 {
     struct map_range_data *mr_data = data;
     struct domain *d = mr_data->d;
-    bool need_mapping = !mr_data->skip_mapping;
     int res;
 
     res = iomem_permit_access(d, paddr_to_pfn(addr),
@@ -1716,7 +1714,7 @@ int __init map_range_to_domain(const struct dt_device_node *dev,
         return res;
     }
 
-    if ( need_mapping )
+    if ( !mr_data->skip_mapping )
     {
         res = map_regions_p2mt(d,
                                gaddr_to_gfn(addr),
@@ -1839,7 +1837,7 @@ static int __init handle_device(struct domain *d, struct dt_device_node *dev,
     unsigned int i;
     int res;
     u64 addr, size;
-    bool need_mapping = !dt_device_for_passthrough(dev);
+    bool own_device = !dt_device_for_passthrough(dev);
     /*
      * For PCI passthrough we only need to remap to Dom0 the interrupts
      * and memory ranges from "reg" property which cover controller's
@@ -1850,17 +1848,17 @@ static int __init handle_device(struct domain *d, struct dt_device_node *dev,
     struct map_range_data mr_data = {
         .d = d,
         .p2mt = p2mt,
-        .skip_mapping = !need_mapping ||
+        .skip_mapping = !own_device ||
                         (is_pci_passthrough_enabled() &&
-                         (device_get_class(dev) == DEVICE_PCI))
+                        (device_get_class(dev) == DEVICE_PCI_HOSTBRIDGE))
     };
 
     naddr = dt_number_of_address(dev);
 
     dt_dprintk("%s passthrough = %d naddr = %u\n",
-               dt_node_full_name(dev), need_mapping, naddr);
+               dt_node_full_name(dev), own_device, naddr);
 
-    if ( need_mapping )
+    if ( own_device )
     {
         dt_dprintk("Check if %s is behind the IOMMU and add it\n",
                    dt_node_full_name(dev));
@@ -1886,7 +1884,7 @@ static int __init handle_device(struct domain *d, struct dt_device_node *dev,
         }
     }
 
-    res = handle_device_interrupts(d, dev, need_mapping);
+    res = handle_device_interrupts(d, dev, own_device);
     if ( res < 0 )
         return res;
 
@@ -3069,7 +3067,7 @@ static int __init construct_dom0(struct domain *d)
         if ( rc < 0 )
             return rc;
 #ifdef CONFIG_HAS_PCI
-        rc = pci_host_bridge_mappings(d, p2m_mmio_direct_c);
+        rc = pci_host_bridge_mappings(d);
 #endif
     }
     else

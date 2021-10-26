@@ -123,7 +123,7 @@ int pci_host_iterate_bridges(struct domain *d,
                                         struct pci_host_bridge *bridge));
 unsigned int pci_host_get_num_bridges(void);
 
-int pci_host_bridge_mappings(struct domain *d, p2m_type_t p2mt);
+int pci_host_bridge_mappings(struct domain *d);
 
 #else   /*!CONFIG_HAS_PCI*/
 

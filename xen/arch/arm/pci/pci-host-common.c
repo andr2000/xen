@@ -18,10 +18,11 @@
 
 #include <xen/init.h>
 #include <xen/pci.h>
-#include <asm/setup.h>
 #include <xen/rwlock.h>
 #include <xen/sched.h>
 #include <xen/vmap.h>
+
+#include <asm/setup.h>
 
 /*
  * List for all the pci host bridges.
@@ -317,12 +318,12 @@ unsigned int pci_host_get_num_bridges(void)
     return count;
 }
 
-int __init pci_host_bridge_mappings(struct domain *d, p2m_type_t p2mt)
+int __init pci_host_bridge_mappings(struct domain *d)
 {
     struct pci_host_bridge *bridge;
     struct map_range_data mr_data = {
         .d = d,
-        .p2mt = p2mt,
+        .p2mt = p2m_mmio_direct_dev,
         .skip_mapping = false
     };
 
@@ -330,9 +331,9 @@ int __init pci_host_bridge_mappings(struct domain *d, p2m_type_t p2mt)
      * For each PCI host bridge we need to only map those ranges
      * which are used by Domain-0 to properly initialize the bridge,
      * e.g. we do not want to map ECAM configuration space which lives in
-     * "reg" or "assigned-addresses" device tree property, but we want to
-     * map other regions of the host bridge. The PCI aperture defined by
-     * the "ranges" device tree property should also be skipped.
+     * "reg" device tree property, but we want to map other regions of
+     * the host bridge. The PCI aperture defined by the "ranges" device
+     * tree property should also be skipped.
      */
     list_for_each_entry( bridge, &pci_host_bridges, node )
     {

@@ -40,9 +40,9 @@ void __iomem *pci_ecam_map_bus(struct pci_host_bridge *bridge,
     return base + (PCI_DEVFN2(sbdf.bdf) << devfn_shift) + where;
 }
 
-bool pci_ecam_need_p2m_hwdom_mapping(struct domain *d,
-                                     struct pci_host_bridge *bridge,
-                                     uint64_t addr)
+bool __init pci_ecam_need_p2m_hwdom_mapping(struct domain *d,
+                                            struct pci_host_bridge *bridge,
+                                            uint64_t addr)
 {
     struct pci_config_window *cfg = bridge->cfg;
 
