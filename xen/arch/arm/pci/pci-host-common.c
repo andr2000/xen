@@ -305,10 +305,10 @@ int pci_host_iterate_bridges(struct domain *d,
     return 0;
 }
 
-int pci_host_get_num_bridges(void)
+unsigned int pci_host_get_num_bridges(void)
 {
     struct pci_host_bridge *bridge;
-    int count = 0;
+    unsigned int count = 0;
 
     list_for_each_entry( bridge, &pci_host_bridges, node )
         count++;

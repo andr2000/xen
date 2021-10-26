@@ -113,7 +113,7 @@ int pci_get_new_domain_nr(void);
 int pci_host_iterate_bridges(struct domain *d,
                              int (*clb)(struct domain *d,
                                         struct pci_host_bridge *bridge));
-int pci_host_get_num_bridges(void);
+unsigned int pci_host_get_num_bridges(void);
 
 #else   /*!CONFIG_HAS_PCI*/
 
