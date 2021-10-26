@@ -19,12 +19,18 @@
 static int vpci_mmio_read(struct vcpu *v, mmio_info_t *info,
                           register_t *r, void *p)
 {
+    struct pci_host_bridge *bridge = p;
     pci_sbdf_t sbdf;
     /* data is needed to prevent a pointer cast on 32bit */
     unsigned long data;
 
-    /* We ignore segment part and always handle segment 0 */
-    sbdf.sbdf = VPCI_ECAM_BDF(info->gpa - GUEST_VPCI_ECAM_BASE);
+    if ( bridge )
+    {
+        sbdf.sbdf = VPCI_ECAM_BDF(info->gpa - bridge->cfg->phys_addr);
+        sbdf.seg = bridge->segment;
+    }
+    else
+        sbdf.sbdf = VPCI_ECAM_BDF(info->gpa - GUEST_VPCI_ECAM_BASE);
 
     if ( vpci_ecam_read(sbdf, ECAM_REG_OFFSET(info->gpa),
                         1U << info->dabt.size, &data) )
@@ -41,10 +47,16 @@ static int vpci_mmio_read(struct vcpu *v, mmio_info_t *info,
 static int vpci_mmio_write(struct vcpu *v, mmio_info_t *info,
                            register_t r, void *p)
 {
+    struct pci_host_bridge *bridge = p;
     pci_sbdf_t sbdf;
 
-    /* We ignore segment part and always handle segment 0 */
-    sbdf.sbdf = VPCI_ECAM_BDF(info->gpa - GUEST_VPCI_ECAM_BASE);
+    if ( bridge )
+    {
+        sbdf.sbdf = VPCI_ECAM_BDF(info->gpa - bridge->cfg->phys_addr);
+        sbdf.seg = bridge->segment;
+    }
+    else
+        sbdf.sbdf = VPCI_ECAM_BDF(info->gpa - GUEST_VPCI_ECAM_BASE);
 
     return vpci_ecam_write(sbdf, ECAM_REG_OFFSET(info->gpa),
                            1U << info->dabt.size, r);
@@ -55,13 +67,13 @@ static const struct mmio_handler_ops vpci_mmio_handler = {
     .write = vpci_mmio_write,
 };
 
-static int vpci_setup_mmio_handler(struct domain *d,
-                                   struct pci_host_bridge *bridge)
+static int vpci_setup_mmio_handler_cb(struct domain *d,
+                                      struct pci_host_bridge *bridge)
 {
     struct pci_config_window *cfg = bridge->cfg;
 
     register_mmio_handler(d, &vpci_mmio_handler,
-                          cfg->phys_addr, cfg->size, NULL);
+                          cfg->phys_addr, cfg->size, bridge);
     return 0;
 }
 
@@ -71,7 +83,7 @@ int domain_vpci_init(struct domain *d)
         return 0;
 
     if ( is_hardware_domain(d) )
-        return pci_host_iterate_bridges(d, vpci_setup_mmio_handler);
+        return pci_host_iterate_bridges(d, vpci_setup_mmio_handler_cb);
 
     /* Guest domains use what is programmed in their device tree. */
     register_mmio_handler(d, &vpci_mmio_handler,
