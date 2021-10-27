@@ -1882,7 +1882,8 @@ static int __init handle_device(struct domain *d, struct dt_device_node *dev,
     unsigned int i;
     int res;
     u64 addr, size;
-    bool own_device = !dt_device_for_passthrough(dev);
+    bool own_device = !dt_device_for_passthrough(dev) &&
+                      dt_device_is_available(dev);
     /*
      * We want to avoid mapping the MMIO in dom0 for the following cases:
      *   - The device is owned by dom0 (i.e. it has been flagged for
