@@ -2291,6 +2291,18 @@ static bool check_for_vcpu_work(void)
 {
     struct vcpu *v = current;
 
+    if ( has_vpci(v->domain) )
+    {
+        bool pending;
+
+        local_irq_enable();
+        pending = vpci_process_pending(v);
+        local_irq_disable();
+
+        if ( pending )
+            return true;
+    }
+
 #ifdef CONFIG_IOREQ_SERVER
     if ( domain_has_ioreq_server(v->domain) )
     {
@@ -2304,18 +2316,6 @@ static bool check_for_vcpu_work(void)
             return true;
     }
 #endif
-
-    if ( has_vpci(v->domain) )
-    {
-        bool pending;
-
-        local_irq_enable();
-        pending = vpci_process_pending(v);
-        local_irq_disable();
-
-        if ( pending )
-            return true;
-    }
 
     if ( likely(!v->arch.need_flush_to_ram) )
         return false;
