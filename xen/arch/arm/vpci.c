@@ -16,21 +16,29 @@
 
 #include <asm/mmio.h>
 
+static pci_sbdf_t vpci_sbdf_from_gpa(const struct pci_host_bridge *bridge,
+                                     paddr_t gpa)
+{
+    pci_sbdf_t sbdf;
+
+    if ( bridge )
+    {
+        sbdf.sbdf = VPCI_ECAM_BDF(gpa - bridge->cfg->phys_addr);
+        sbdf.seg = bridge->segment;
+    }
+    else
+        sbdf.sbdf = VPCI_ECAM_BDF(gpa - GUEST_VPCI_ECAM_BASE);
+
+    return sbdf;
+}
+
 static int vpci_mmio_read(struct vcpu *v, mmio_info_t *info,
                           register_t *r, void *p)
 {
     struct pci_host_bridge *bridge = p;
-    pci_sbdf_t sbdf;
+    pci_sbdf_t sbdf = vpci_sbdf_from_gpa(bridge, info->gpa);
     /* data is needed to prevent a pointer cast on 32bit */
     unsigned long data;
-
-    if ( bridge )
-    {
-        sbdf.sbdf = VPCI_ECAM_BDF(info->gpa - bridge->cfg->phys_addr);
-        sbdf.seg = bridge->segment;
-    }
-    else
-        sbdf.sbdf = VPCI_ECAM_BDF(info->gpa - GUEST_VPCI_ECAM_BASE);
 
     if ( vpci_ecam_read(sbdf, ECAM_REG_OFFSET(info->gpa),
                         1U << info->dabt.size, &data) )
@@ -48,15 +56,7 @@ static int vpci_mmio_write(struct vcpu *v, mmio_info_t *info,
                            register_t r, void *p)
 {
     struct pci_host_bridge *bridge = p;
-    pci_sbdf_t sbdf;
-
-    if ( bridge )
-    {
-        sbdf.sbdf = VPCI_ECAM_BDF(info->gpa - bridge->cfg->phys_addr);
-        sbdf.seg = bridge->segment;
-    }
-    else
-        sbdf.sbdf = VPCI_ECAM_BDF(info->gpa - GUEST_VPCI_ECAM_BASE);
+    pci_sbdf_t sbdf = vpci_sbdf_from_gpa(bridge, info->gpa);
 
     return vpci_ecam_write(sbdf, ECAM_REG_OFFSET(info->gpa),
                            1U << info->dabt.size, r);
