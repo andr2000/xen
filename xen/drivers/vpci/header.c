@@ -471,9 +471,11 @@ static void guest_cmd_write(const struct pci_dev *pdev, unsigned int reg,
          *  - host has INTx disabled
          *  - MSI/MSI-X enabled
          */
+#ifdef CONFIG_HAS_PCI_MSI
         if ( pdev->vpci->msi->enabled )
             cmd |= PCI_COMMAND_INTX_DISABLE;
         else
+#endif
         {
             uint16_t current_cmd = pci_conf_read16(pdev->sbdf, reg);
 
