@@ -49,13 +49,9 @@ static int map_range(unsigned long s, unsigned long e, void *data,
         unsigned long size = e - s + 1;
 
         /*
-         * Any BAR may have holes in its memory we want to map, e.g.
-         * we don't want to map MSI-X regions which may be a part of that BAR
-         * when a single BAR is used for both MMIO and MSI-X.
-         * In this case MSI-X regions are subtracted from the mapping, but
-         * map->start_gfn still points to the very beginning of the BAR.
-         * So if there is a hole present then we need to adjust start_gfn
-         * to reflect the fact of that substraction.
+         * Ranges to be mapped don't always start at the BAR start address, as
+         * there can be holes or partially consumed ranges. Account for the
+         * offset of the current address from the BAR start.
          */
         start_gfn = gfn_add(map->start_gfn, s - mfn_x(map->start_mfn));
 
@@ -91,7 +87,6 @@ static int map_range(unsigned long s, unsigned long e, void *data,
         ASSERT(rc < size);
         *c += rc;
         s += rc;
-        gfn_add(map->start_gfn, rc);
         if ( general_preempt_check() )
                 return -ERESTART;
     }
@@ -173,7 +168,7 @@ bool vpci_process_pending(struct vcpu *v)
                 continue;
 
             data.start_gfn =
-                 _gfn(PFN_DOWN(is_hardware_domain(v->vpci.pdev->domain)
+                 _gfn(PFN_DOWN(is_hardware_domain(v->domain)
                                ? bar->addr : bar->guest_addr));
             data.start_mfn = _mfn(PFN_DOWN(bar->addr));
             rc = rangeset_consume_ranges(bar->mem, map_range, &data);
