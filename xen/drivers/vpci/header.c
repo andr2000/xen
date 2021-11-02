@@ -184,10 +184,22 @@ void vpci_cancel_pending(const struct pci_dev *pdev)
     struct vcpu *v = current;
 
     /* Cancel any pending work now. */
-    if ( v->vpci.mem && v->vpci.pdev == pdev)
+    if ( v->vpci.num_mem_ranges && v->vpci.pdev == pdev)
     {
-        rangeset_destroy(v->vpci.mem);
-        v->vpci.mem = NULL;
+        struct vpci_header *header = &pdev->vpci->header;
+        unsigned int i;
+
+        for ( i = 0; i < ARRAY_SIZE(header->bars); i++ )
+        {
+            struct vpci_bar *bar = &header->bars[i];
+
+            if ( !bar->mem )
+                continue;
+
+            rangeset_destroy(bar->mem);
+            bar->mem = NULL;
+        }
+        v->vpci.num_mem_ranges = 0;
     }
 }
 
