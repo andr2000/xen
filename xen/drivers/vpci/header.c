@@ -131,7 +131,7 @@ static void modify_decoding(const struct pci_dev *pdev, uint16_t cmd,
 
 bool vpci_process_pending(struct vcpu *v)
 {
-    if ( v->vpci.num_mem_ranges )
+    if ( v->vpci.map_pending )
     {
         struct map_data data = {
             .d = v->domain,
@@ -163,7 +163,6 @@ bool vpci_process_pending(struct vcpu *v)
 
             rangeset_destroy(bar->mem);
             bar->mem = NULL;
-            v->vpci.num_mem_ranges--;
             if ( rc )
                 /*
                  * FIXME: in case of failure remove the device from the domain.
@@ -174,6 +173,7 @@ bool vpci_process_pending(struct vcpu *v)
                  */
                 vpci_remove_device(pdev);
         }
+        v->vpci.map_pending = false;
     }
 
     return false;
@@ -184,7 +184,7 @@ void vpci_cancel_pending(const struct pci_dev *pdev)
     struct vcpu *v = current;
 
     /* Cancel any pending work now. */
-    if ( v->vpci.num_mem_ranges && v->vpci.pdev == pdev)
+    if ( v->vpci.map_pending && v->vpci.pdev == pdev)
     {
         struct vpci_header *header = &pdev->vpci->header;
         unsigned int i;
@@ -199,7 +199,7 @@ void vpci_cancel_pending(const struct pci_dev *pdev)
             rangeset_destroy(bar->mem);
             bar->mem = NULL;
         }
-        v->vpci.num_mem_ranges = 0;
+        v->vpci.map_pending = false;
     }
 }
 
@@ -231,7 +231,7 @@ static int __init apply_map(struct domain *d, const struct pci_dev *pdev,
 }
 
 static void defer_map(struct domain *d, struct pci_dev *pdev,
-                      uint16_t cmd, bool rom_only, uint8_t num_mem_ranges)
+                      uint16_t cmd, bool rom_only)
 {
     struct vcpu *curr = current;
 
@@ -244,7 +244,7 @@ static void defer_map(struct domain *d, struct pci_dev *pdev,
     curr->vpci.pdev = pdev;
     curr->vpci.cmd = cmd;
     curr->vpci.rom_only = rom_only;
-    curr->vpci.num_mem_ranges = num_mem_ranges;
+    curr->vpci.map_pending = true;
     /*
      * Raise a scheduler softirq in order to prevent the guest from resuming
      * execution with pending mapping operations, to trigger the invocation
@@ -260,7 +260,7 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
     const struct vpci_msix *msix = pdev->vpci->msix;
     unsigned int i, j;
     int rc;
-    uint8_t num_mem_ranges;
+    bool map_pending;
 
     /*
      * Create a rangeset per BAR that represents the current device memory region
@@ -390,14 +390,13 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
     }
 
     /* Find out how many memory ranges has left after MSI and overlaps. */
-    num_mem_ranges = 0;
+    map_pending = false;
     for ( i = 0; i < ARRAY_SIZE(header->bars); i++ )
-    {
-        struct vpci_bar *bar = &header->bars[i];
-
-        if ( !rangeset_is_empty(bar->mem) )
-            num_mem_ranges++;
-    }
+        if ( !rangeset_is_empty(header->bars[i].mem) )
+        {
+            map_pending = true;
+            break;
+        }
 
     /*
      * There are cases when PCI device, root port for example, has neither
@@ -406,10 +405,10 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
      *   - if there are no regions write the command register now
      *   - if there are regions then defer work and write later on
      */
-    if ( !num_mem_ranges )
+    if ( !map_pending )
         pci_conf_write16(pdev->sbdf, PCI_COMMAND, cmd);
     else
-        defer_map(dev->domain, dev, cmd, rom_only, num_mem_ranges);
+        defer_map(dev->domain, dev, cmd, rom_only);
 
     return 0;
 

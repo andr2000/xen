@@ -152,7 +152,7 @@ struct vpci_vcpu {
     /* Per-vcpu structure to store state while {un}mapping of PCI BARs. */
     struct pci_dev *pdev;
     uint16_t cmd;
-    uint8_t num_mem_ranges;
+    bool map_pending : 1;
     bool rom_only : 1;
 };
 
