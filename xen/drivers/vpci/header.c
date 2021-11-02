@@ -146,7 +146,7 @@ bool vpci_process_pending(struct vcpu *v)
             struct vpci_bar *bar = &header->bars[i];
             int rc;
 
-            if ( !bar->mem )
+            if ( rangeset_is_empty(bar->mem) )
                 continue;
 
             rc = rangeset_consume_ranges(bar->mem, map_range, &data);
@@ -161,9 +161,8 @@ bool vpci_process_pending(struct vcpu *v)
                             !rc && v->vpci.rom_only);
             spin_unlock(&pdev->vpci->lock);
 
-            rangeset_destroy(bar->mem);
-            bar->mem = NULL;
             if ( rc )
+            {
                 /*
                  * FIXME: in case of failure remove the device from the domain.
                  * Note that there might still be leftover mappings. While this is
@@ -172,6 +171,8 @@ bool vpci_process_pending(struct vcpu *v)
                  * failure.
                  */
                 vpci_remove_device(pdev);
+                break;
+            }
         }
         v->vpci.map_pending = false;
     }
@@ -188,16 +189,20 @@ void vpci_cancel_pending(const struct pci_dev *pdev)
     {
         struct vpci_header *header = &pdev->vpci->header;
         unsigned int i;
+        int rc;
 
         for ( i = 0; i < ARRAY_SIZE(header->bars); i++ )
         {
             struct vpci_bar *bar = &header->bars[i];
 
-            if ( !bar->mem )
+            if ( rangeset_is_empty(bar->mem) )
                 continue;
 
-            rangeset_destroy(bar->mem);
-            bar->mem = NULL;
+            rc = rangeset_remove_range(bar->mem, 0, ~0ULL);
+            if ( !rc )
+                printk(XENLOG_ERR
+                       "%pd %pp failed to remove range set for BAR: %d\n",
+                       v->domain, &pdev->sbdf, rc);
         }
         v->vpci.map_pending = false;
     }
@@ -215,14 +220,12 @@ static int __init apply_map(struct domain *d, const struct pci_dev *pdev,
     {
         struct vpci_bar *bar = &header->bars[i];
 
-        if ( !bar->mem )
+        if ( rangeset_is_empty(bar->mem) )
             continue;
 
         while ( (rc = rangeset_consume_ranges(bar->mem, map_range,
                                               &data)) == -ERESTART )
             process_pending_softirqs();
-        rangeset_destroy(bar->mem);
-        bar->mem = NULL;
     }
     if ( !rc )
         modify_decoding(pdev, cmd, false);
@@ -284,13 +287,6 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
                        : (bar->type == VPCI_BAR_ROM && !header->rom_enabled)) )
             continue;
 
-        bar->mem = rangeset_new(NULL, NULL, 0);
-        if ( !bar->mem )
-        {
-            rc = -ENOMEM;
-            goto fail;
-        }
-
         rc = rangeset_add_range(bar->mem, start, end);
         if ( rc )
         {
@@ -311,7 +307,7 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
         {
             const struct vpci_bar *bar = &header->bars[j];
 
-            if ( !bar->mem )
+            if ( rangeset_is_empty(bar->mem) )
                 continue;
 
             rc = rangeset_remove_range(bar->mem, start, end);
@@ -413,13 +409,7 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
     return 0;
 
 fail:
-    for ( i = 0; i < ARRAY_SIZE(header->bars); i++ )
-    {
-        struct vpci_bar *bar = &header->bars[i];
-
-        rangeset_destroy(bar->mem);
-        bar->mem = NULL;
-    }
+    vpci_cancel_pending(pdev);
     return rc;
 }
 
