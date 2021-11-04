@@ -18,10 +18,23 @@
 #define INVALID_VALUE (~0U)
 #define PCI_ERR_VALUE(len) GENMASK(0, len * 8)
 
+static void __iomem *map_bus(struct pci_host_bridge *bridge, pci_sbdf_t sbdf,
+                            uint32_t reg)
+{
+    if ( bridge->child_ops )
+    {
+        struct pci_config_window* cfg = bridge->child_cfg;
+
+        if ( (sbdf.bus >= cfg->busn_start) && (sbdf.bus <= cfg->busn_end) )
+            return bridge->child_ops->map_bus(bridge, sbdf, reg);
+    }
+    return bridge->ops->map_bus(bridge, sbdf, reg);
+}
+
 int pci_generic_config_read(struct pci_host_bridge *bridge, pci_sbdf_t sbdf,
                             uint32_t reg, uint32_t len, uint32_t *value)
 {
-    void __iomem *addr = bridge->ops->map_bus(bridge, sbdf, reg);
+    void __iomem *addr = map_bus(bridge, sbdf, reg);
 
     if ( !addr )
     {
@@ -50,7 +63,7 @@ int pci_generic_config_read(struct pci_host_bridge *bridge, pci_sbdf_t sbdf,
 int pci_generic_config_write(struct pci_host_bridge *bridge, pci_sbdf_t sbdf,
                              uint32_t reg, uint32_t len, uint32_t value)
 {
-    void __iomem *addr = bridge->ops->map_bus(bridge, sbdf, reg);
+    void __iomem *addr = map_bus(bridge, sbdf, reg);
 
     if ( !addr )
         return -ENODEV;
