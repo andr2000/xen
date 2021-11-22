@@ -30,6 +30,7 @@ int __must_check vpci_add_handlers(struct pci_dev *dev);
 
 /* Remove all handlers and free vpci related structures. */
 void vpci_remove_device(struct pci_dev *pdev);
+void vpci_remove_device_locked(struct pci_dev *pdev);
 
 /* Add/remove a register handler. Must be called holding the vpci_lock. */
 int __must_check vpci_add_register(struct vpci *vpci,
@@ -71,6 +72,7 @@ struct vpci {
             /* Guest view of the BAR: address and lower bits. */
             uint64_t guest_reg;
             uint64_t size;
+            struct rangeset *mem;
             enum {
                 VPCI_BAR_EMPTY,
                 VPCI_BAR_IO,
@@ -145,9 +147,9 @@ struct vpci {
 
 struct vpci_vcpu {
     /* Per-vcpu structure to store state while {un}mapping of PCI BARs. */
-    struct rangeset *mem;
     struct pci_dev *pdev;
     uint16_t cmd;
+    bool map_pending : 1;
     bool rom_only : 1;
 };
 
