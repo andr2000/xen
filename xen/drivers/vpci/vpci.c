@@ -35,8 +35,11 @@ extern vpci_register_init_t *const __start_vpci_array[];
 extern vpci_register_init_t *const __end_vpci_array[];
 #define NUM_VPCI_INIT (__end_vpci_array - __start_vpci_array)
 
-static void vpci_remove_device_locked(struct pci_dev *pdev)
+void vpci_remove_device_locked(struct pci_dev *pdev)
 {
+    struct vpci_header *header = &pdev->vpci->header;
+    unsigned int i;
+
     ASSERT(spin_is_locked(&pdev->vpci_lock));
 
     while ( !list_empty(&pdev->vpci->handlers) )
@@ -48,6 +51,10 @@ static void vpci_remove_device_locked(struct pci_dev *pdev)
         list_del(&r->node);
         xfree(r);
     }
+
+    for ( i = 0; i < ARRAY_SIZE(header->bars); i++ )
+        rangeset_destroy(header->bars[i].mem);
+
     xfree(pdev->vpci->msix);
     xfree(pdev->vpci->msi);
     xfree(pdev->vpci);
@@ -94,9 +101,15 @@ int vpci_add_handlers(struct pci_dev *pdev)
     }
 
     if ( rc )
-        vpci_remove_device_locked(pdev);
+        goto fail;
+
     spin_unlock(&pdev->vpci_lock);
 
+    return 0;
+
+ fail:
+    vpci_remove_device_locked(pdev);
+    spin_unlock(&pdev->vpci_lock);
     return rc;
 }
 
