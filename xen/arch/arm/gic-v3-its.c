@@ -61,6 +61,57 @@ struct its_device {
     struct pending_irq *pend_irqs;      /* One struct per event */
 };
 
+#define MEM_ALIGN       (sizeof(void *) * 2)
+
+static void *its_xmalloc_whole_pages(unsigned long size, unsigned long align)
+{
+    unsigned int i, order;
+    void *res, *p;
+
+    order = get_order_from_bytes(max(align, size));
+
+    res = alloc_xenheap_pages(order, MEMF_bits(32));
+    if ( res == NULL )
+        return NULL;
+
+    for ( p = res + PAGE_ALIGN(size), i = 0; i < order; ++i )
+        if ( (unsigned long)p & (PAGE_SIZE << i) )
+        {
+            free_xenheap_pages(p, i);
+            p += PAGE_SIZE << i;
+        }
+
+    PFN_ORDER(virt_to_page(res)) = PFN_UP(size);
+    /* Check that there was no truncation: */
+    ASSERT(PFN_ORDER(virt_to_page(res)) == PFN_UP(size));
+
+    return res;
+}
+
+static void *its_xzalloc(struct host_its *hw_its, unsigned long size,
+                         unsigned long align)
+{
+    if ( hw_its->flags & HOST_ITS_WORKAROUND_R8A779F0 )
+    {
+        void *buffer;
+
+        ASSERT((align & (align - 1)) == 0);
+        if ( align < MEM_ALIGN )
+            align = MEM_ALIGN;
+        size += align - MEM_ALIGN;
+
+        /* Guard against overflow. */
+        if ( size < align - MEM_ALIGN )
+            return NULL;
+
+        buffer = its_xmalloc_whole_pages(size, align);
+        printk("---- %s:%d buffer %lx\n", __func__, __LINE__, __pa(buffer));
+        return buffer;
+    }
+
+    return _xzalloc(size, align);
+}
+
 bool gicv3_its_host_has_its(void)
 {
     return !list_empty(&host_its_list);
@@ -330,12 +381,20 @@ static void *its_map_cbaser(struct host_its *its)
     void __iomem *cbasereg = its->its_base + GITS_CBASER;
     uint64_t reg;
     void *buffer;
+    uint64_t cache = GIC_BASER_CACHE_RaWaWb;
+    uint64_t shr = GIC_BASER_InnerShareable;
 
-    reg  = GIC_BASER_InnerShareable << GITS_BASER_SHAREABILITY_SHIFT;
+    if ( its->flags & HOST_ITS_WORKAROUND_CAVIUM_22375 )
+        /* erratum 24313: ignore memory access type */
+        cache = GIC_BASER_CACHE_nCnB; //Linux: GITS_BASER_nCnB;
+    if ( its->flags & HOST_ITS_WORKAROUND_R8A779F0 )
+        shr = GIC_BASER_NonShareable; //Linux: GIC_BASER_NonShareable;
+
+    reg  = shr << GITS_BASER_SHAREABILITY_SHIFT;
     reg |= GIC_BASER_CACHE_SameAsInner << GITS_BASER_OUTER_CACHEABILITY_SHIFT;
-    reg |= GIC_BASER_CACHE_RaWaWb << GITS_BASER_INNER_CACHEABILITY_SHIFT;
+    reg |= cache << GITS_BASER_INNER_CACHEABILITY_SHIFT;
 
-    buffer = _xzalloc(ITS_CMD_QUEUE_SZ, SZ_64K);
+    buffer = its_xzalloc(its, ITS_CMD_QUEUE_SZ, SZ_64K);
     if ( !buffer )
         return NULL;
 
@@ -347,8 +406,11 @@ static void *its_map_cbaser(struct host_its *its)
 
     reg |= GITS_VALID_BIT | virt_to_maddr(buffer);
     reg |= ((ITS_CMD_QUEUE_SZ / SZ_4K) - 1) & GITS_CBASER_SIZE_MASK;
+
+    printk("%s write cbasereg %lx\n", __func__, reg);
     writeq_relaxed(reg, cbasereg);
     reg = readq_relaxed(cbasereg);
+    printk("%s read cbasereg %lx\n", __func__, reg);
 
     /* If the ITS dropped shareability, drop cacheability as well. */
     if ( (reg & GITS_BASER_SHAREABILITY_MASK) == 0 )
@@ -373,8 +435,10 @@ static void *its_map_cbaser(struct host_its *its)
 /* The ITS BASE registers work with page sizes of 4K, 16K or 64K. */
 #define BASER_PAGE_BITS(sz) ((sz) * 2 + 12)
 
-static int its_map_baser(void __iomem *basereg, uint64_t regc,
-                         unsigned int nr_items)
+static int its_map_baser(struct host_its *hw_its,
+                         void __iomem *basereg, uint64_t regc,
+                         unsigned int nr_items,
+                         uint64_t cache, uint64_t shr)
 {
     uint64_t attr, reg;
     unsigned int entry_size = GITS_BASER_ENTRY_SIZE(regc);
@@ -382,9 +446,9 @@ static int its_map_baser(void __iomem *basereg, uint64_t regc,
     unsigned int table_size;
     void *buffer;
 
-    attr  = GIC_BASER_InnerShareable << GITS_BASER_SHAREABILITY_SHIFT;
-    attr |= GIC_BASER_CACHE_SameAsInner << GITS_BASER_OUTER_CACHEABILITY_SHIFT;
-    attr |= GIC_BASER_CACHE_RaWaWb << GITS_BASER_INNER_CACHEABILITY_SHIFT;
+    attr  = shr << GITS_BASER_SHAREABILITY_SHIFT;
+    attr |= GIC_BASER_CACHE_SameAsInner << GITS_BASER_OUTER_CACHEABILITY_SHIFT; //XXX: do we need this?
+    attr |= cache << GITS_BASER_INNER_CACHEABILITY_SHIFT;
 
     /*
      * Setup the BASE register with the attributes that we like. Then read
@@ -397,7 +461,7 @@ retry:
     /* The BASE registers support at most 256 pages. */
     table_size = min(table_size, 256U << BASER_PAGE_BITS(pagesz));
 
-    buffer = _xzalloc(table_size, BIT(BASER_PAGE_BITS(pagesz), UL));
+    buffer = its_xzalloc(hw_its, table_size, BIT(BASER_PAGE_BITS(pagesz), UL));
     if ( !buffer )
         return -ENOMEM;
 
@@ -415,8 +479,10 @@ retry:
     reg |= encode_baser_phys_addr(virt_to_maddr(buffer),
                                   BASER_PAGE_BITS(pagesz));
 
+    printk("%s read basereg %lx\n", __func__, reg);
     writeq_relaxed(reg, basereg);
     regc = readq_relaxed(basereg);
+    printk("%s read basereg %lx\n", __func__, regc);
 
     /* The host didn't like our attributes, just use what it returned. */
     if ( (regc & BASER_ATTR_MASK) != attr )
@@ -480,9 +546,55 @@ static int gicv3_disable_its(struct host_its *hw_its)
     return -ETIMEDOUT;
 }
 
+struct gic_quirk {
+    const char *desc;
+    const char *compatible;
+    bool (*init)(struct host_its *hw_its);
+    u32 iidr;
+    u32 mask;
+};
+
+static bool gicv3_its_enable_quirk_r8a779f0(struct host_its *hw_its)
+{
+    hw_its->flags |= HOST_ITS_WORKAROUND_CAVIUM_22375 |
+                     HOST_ITS_WORKAROUND_R8A779F0;
+
+    return true;
+}
+
+static const struct gic_quirk its_quirks[] = {
+    {
+        .desc	= "ITS: R-Car S4",
+        .iidr	= 0x0201743b,
+        .mask	= 0xffffffff,
+        .init	= gicv3_its_enable_quirk_r8a779f0,
+    },
+    {
+    }
+};
+
+static void gicv3_its_enable_quirks(struct host_its *hw_its)
+{
+    const struct gic_quirk *quirks = its_quirks;
+    uint32_t iidr = readl_relaxed(hw_its->its_base + GITS_IIDR);
+
+    for (; quirks->desc; quirks++)
+    {
+        if (quirks->compatible)
+            continue;
+        if (quirks->iidr != (quirks->mask & iidr))
+            continue;
+        if (quirks->init(hw_its))
+            printk("GICv3: enabling workaround for %s\n",
+                   quirks->desc);
+    }
+}
+
 static int gicv3_its_init_single_its(struct host_its *hw_its)
 {
     uint64_t reg;
+    uint64_t shr = GIC_BASER_InnerShareable; //Linux: GITS_BASER_InnerShareable;
+    uint64_t cache = GIC_BASER_CACHE_RaWaWb; //Linux: GITS_BASER_RaWaWb;
     int i, ret;
 
     hw_its->its_base = ioremap_nocache(hw_its->addr, hw_its->size);
@@ -501,6 +613,15 @@ static int gicv3_its_init_single_its(struct host_its *hw_its)
         hw_its->flags |= HOST_ITS_USES_PTA;
     spin_lock_init(&hw_its->cmd_lock);
 
+    gicv3_its_enable_quirks(hw_its);
+
+    //Linux: static int its_alloc_tables(struct its_node *its)
+    if ( hw_its->flags & HOST_ITS_WORKAROUND_CAVIUM_22375 )
+        /* erratum 24313: ignore memory access type */
+        cache = GIC_BASER_CACHE_nCnB; //Linux: GITS_BASER_nCnB;
+    if ( hw_its->flags & HOST_ITS_WORKAROUND_R8A779F0 )
+        shr = GIC_BASER_NonShareable; //Linux: GIC_BASER_NonShareable;
+
     for ( i = 0; i < GITS_BASER_NR_REGS; i++ )
     {
         void __iomem *basereg = hw_its->its_base + GITS_BASER0 + i * 8;
@@ -513,18 +634,20 @@ static int gicv3_its_init_single_its(struct host_its *hw_its)
         case GITS_BASER_TYPE_NONE:
             continue;
         case GITS_BASER_TYPE_DEVICE:
-            ret = its_map_baser(basereg, reg, BIT(hw_its->devid_bits, UL));
+            ret = its_map_baser(hw_its, basereg, reg,
+                                BIT(hw_its->devid_bits, UL), cache, shr);
             if ( ret )
                 return ret;
             break;
         case GITS_BASER_TYPE_COLLECTION:
-            ret = its_map_baser(basereg, reg, num_possible_cpus());
+            ret = its_map_baser(hw_its, basereg, reg, num_possible_cpus(),
+                                cache, shr);
             if ( ret )
                 return ret;
             break;
         /* In case this is a GICv4, provide a (dummy) vPE table as well. */
         case GITS_BASER_TYPE_VCPU:
-            ret = its_map_baser(basereg, reg, 1);
+            ret = its_map_baser(hw_its, basereg, reg, 1, cache, shr);
             if ( ret )
                 return ret;
             break;
@@ -747,7 +870,7 @@ int gicv3_its_map_guest_device(struct domain *d,
     ret = -ENOMEM;
 
     /* An Interrupt Translation Table needs to be 256-byte aligned. */
-    itt_addr = _xzalloc(nr_events * hw_its->itte_size, 256);
+    itt_addr = its_xzalloc(hw_its, nr_events * hw_its->itte_size, 256);
     if ( !itt_addr )
         goto out_unlock;
 
@@ -1144,6 +1267,8 @@ int gicv3_its_init(void)
     list_for_each_entry(hw_its, &host_its_list, entry)
     {
         ret = gicv3_its_init_single_its(hw_its);
+        printk("%s:%d gicv3_its_init_single_its: ret %d\n",
+               __func__, __LINE__, ret);
         if ( ret )
             return ret;
     }
