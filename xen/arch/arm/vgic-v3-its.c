@@ -1245,7 +1245,7 @@ static void sanitize_its_base_reg(uint64_t *reg)
     {
     case GIC_BASER_OuterShareable:
         r &= ~GITS_BASER_SHAREABILITY_MASK;
-        r |= GIC_BASER_InnerShareable << GITS_BASER_SHAREABILITY_SHIFT;
+        r |= /*GIC_BASER_InnerShareable*/GIC_BASER_NonShareable << GITS_BASER_SHAREABILITY_SHIFT;
         break;
     default:
         break;
@@ -1257,7 +1257,7 @@ static void sanitize_its_base_reg(uint64_t *reg)
     case GIC_BASER_CACHE_nCnB:
     case GIC_BASER_CACHE_nC:
         r &= ~GITS_BASER_INNER_CACHEABILITY_MASK;
-        r |= GIC_BASER_CACHE_RaWb << GITS_BASER_INNER_CACHEABILITY_SHIFT;
+        r |= /*GIC_BASER_CACHE_RaWb*/GIC_BASER_CACHE_nCnB << GITS_BASER_INNER_CACHEABILITY_SHIFT;
         break;
     default:
         break;
@@ -1271,7 +1271,7 @@ static void sanitize_its_base_reg(uint64_t *reg)
         break;
     default:
         r &= ~GITS_BASER_OUTER_CACHEABILITY_MASK;
-        r |= GIC_BASER_CACHE_nC << GITS_BASER_OUTER_CACHEABILITY_SHIFT;
+        r |= GIC_BASER_CACHE_nC << GITS_BASER_OUTER_CACHEABILITY_SHIFT; //fix me
         break;
     }
 
@@ -1508,9 +1508,9 @@ static int vgic_v3_its_init_virtual(struct domain *d, paddr_t guest_addr,
     if ( !its )
         return -ENOMEM;
 
-    base_attr  = GIC_BASER_InnerShareable << GITS_BASER_SHAREABILITY_SHIFT;
+    base_attr  = /*GIC_BASER_InnerShareable*/GIC_BASER_NonShareable << GITS_BASER_SHAREABILITY_SHIFT;
     base_attr |= GIC_BASER_CACHE_SameAsInner << GITS_BASER_OUTER_CACHEABILITY_SHIFT;
-    base_attr |= GIC_BASER_CACHE_RaWaWb << GITS_BASER_INNER_CACHEABILITY_SHIFT;
+    base_attr |= /*GIC_BASER_CACHE_RaWaWb*/GIC_BASER_CACHE_nCnB << GITS_BASER_INNER_CACHEABILITY_SHIFT;
 
     its->cbaser  = base_attr;
     base_attr |= 0ULL << GITS_BASER_PAGE_SIZE_SHIFT;    /* 4K pages */

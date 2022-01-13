@@ -242,9 +242,9 @@ static int gicv3_lpi_allocate_pendtable(uint64_t *reg)
     if ( this_cpu(lpi_redist).pending_table )
         return -EBUSY;
 
-    val  = GIC_BASER_CACHE_RaWaWb << GICR_PENDBASER_INNER_CACHEABILITY_SHIFT;
+    val  = /*GIC_BASER_CACHE_RaWaWb*/GIC_BASER_CACHE_nCnB << GICR_PENDBASER_INNER_CACHEABILITY_SHIFT;
     val |= GIC_BASER_CACHE_SameAsInner << GICR_PENDBASER_OUTER_CACHEABILITY_SHIFT;
-    val |= GIC_BASER_InnerShareable << GICR_PENDBASER_SHAREABILITY_SHIFT;
+    val |= /*GIC_BASER_InnerShareable*/GIC_BASER_NonShareable << GICR_PENDBASER_SHAREABILITY_SHIFT;
 
     /*
      * The pending table holds one bit per LPI and even covers bits for
@@ -276,6 +276,57 @@ static int gicv3_lpi_allocate_pendtable(uint64_t *reg)
     return 0;
 }
 
+static void *its_xmalloc_whole_pages(unsigned long size, unsigned long align)
+{
+    unsigned int i, order;
+    void *res, *p;
+
+    order = get_order_from_bytes(max(align, size));
+
+    res = alloc_xenheap_pages(order, MEMF_bits(32));
+    if ( res == NULL )
+        return NULL;
+
+    for ( p = res + PAGE_ALIGN(size), i = 0; i < order; ++i )
+        if ( (unsigned long)p & (PAGE_SIZE << i) )
+        {
+            free_xenheap_pages(p, i);
+            p += PAGE_SIZE << i;
+        }
+
+    PFN_ORDER(virt_to_page(res)) = PFN_UP(size);
+    /* Check that there was no truncation: */
+    ASSERT(PFN_ORDER(virt_to_page(res)) == PFN_UP(size));
+
+    return res;
+}
+
+#define MEM_ALIGN       (sizeof(void *) * 2)
+
+void *lpi_xmalloc(unsigned long size,
+                  unsigned long align)
+{
+    if ( /*hw_its->flags & HOST_ITS_WORKAROUND_R8A779F0*/ true )
+    {
+        void *buffer;
+
+        ASSERT((align & (align - 1)) == 0);
+        if ( align < MEM_ALIGN )
+            align = MEM_ALIGN;
+        size += align - MEM_ALIGN;
+
+        /* Guard against overflow. */
+        if ( size < align - MEM_ALIGN )
+            return NULL;
+
+        buffer = its_xmalloc_whole_pages(size, align);
+        printk("---- %s:%d buffer %lx\n", __func__, __LINE__, __pa(buffer));
+        return buffer;
+    }
+
+    return _xzalloc(size, align);
+}
+
 /*
  * Tell a redistributor about the (shared) property table, allocating one
  * if not already done.
@@ -284,9 +335,9 @@ static int gicv3_lpi_set_proptable(void __iomem * rdist_base)
 {
     uint64_t reg;
 
-    reg  = GIC_BASER_CACHE_RaWaWb << GICR_PROPBASER_INNER_CACHEABILITY_SHIFT;
+    reg  = /*GIC_BASER_CACHE_RaWaWb*/GIC_BASER_CACHE_nCnB << GICR_PROPBASER_INNER_CACHEABILITY_SHIFT;
     reg |= GIC_BASER_CACHE_SameAsInner << GICR_PROPBASER_OUTER_CACHEABILITY_SHIFT;
-    reg |= GIC_BASER_InnerShareable << GICR_PROPBASER_SHAREABILITY_SHIFT;
+    reg |= /*GIC_BASER_InnerShareable*/GIC_BASER_NonShareable << GICR_PROPBASER_SHAREABILITY_SHIFT;
 
     /*
      * The property table is shared across all redistributors, so allocate
@@ -295,7 +346,7 @@ static int gicv3_lpi_set_proptable(void __iomem * rdist_base)
     if ( !lpi_data.lpi_property )
     {
         /* The property table holds one byte per LPI. */
-        void *table = _xmalloc(lpi_data.max_host_lpi_ids, SZ_4K);
+        void *table = lpi_xmalloc(lpi_data.max_host_lpi_ids, SZ_4K);
 
         if ( !table )
             return -ENOMEM;
@@ -322,14 +373,19 @@ static int gicv3_lpi_set_proptable(void __iomem * rdist_base)
     /* If we can't do shareable, we have to drop cacheability as well. */
     if ( !(reg & GICR_PROPBASER_SHAREABILITY_MASK) )
     {
+        printk("%s:%d we can't do shareable, we have to drop cacheability as well.\n",
+               __func__, __LINE__);
         reg &= ~GICR_PROPBASER_INNER_CACHEABILITY_MASK;
         reg |= GIC_BASER_CACHE_nC << GICR_PROPBASER_INNER_CACHEABILITY_SHIFT;
     }
+
+    printk("%s:%d we want LPI_PROPTABLE_NEEDS_FLUSHING\n", __func__, __LINE__);
 
     /* Remember that we have to flush the property table if non-cacheable. */
     if ( (reg & GICR_PROPBASER_INNER_CACHEABILITY_MASK) <= GIC_BASER_CACHE_nC )
     {
         lpi_data.flags |= LPI_PROPTABLE_NEEDS_FLUSHING;
+        printk("GICv3: using cache flushing for LPI property table (force)\n");
         /* Update the redistributors knowledge about the attributes. */
         writeq_relaxed(reg, rdist_base + GICR_PROPBASER);
     }
@@ -362,7 +418,8 @@ int gicv3_lpi_init_rdist(void __iomem * rdist_base)
     if ( !(table_reg & GICR_PENDBASER_SHAREABILITY_MASK) )
     {
         table_reg &= ~GICR_PENDBASER_INNER_CACHEABILITY_MASK;
-        table_reg |= GIC_BASER_CACHE_nC << GICR_PENDBASER_INNER_CACHEABILITY_SHIFT;
+        printk("%s:%d GIC_BASER_CACHE_nC\n", __func__, __LINE__);
+        table_reg |= /*GIC_BASER_CACHE_nC*/GIC_BASER_CACHE_nCnB << GICR_PENDBASER_INNER_CACHEABILITY_SHIFT;
 
         writeq_relaxed(table_reg, rdist_base + GICR_PENDBASER);
     }

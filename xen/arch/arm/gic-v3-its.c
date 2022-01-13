@@ -88,8 +88,8 @@ static void *its_xmalloc_whole_pages(unsigned long size, unsigned long align)
     return res;
 }
 
-static void *its_xzalloc(struct host_its *hw_its, unsigned long size,
-                         unsigned long align)
+void *its_xzalloc(struct host_its *hw_its, unsigned long size,
+                  unsigned long align)
 {
     if ( hw_its->flags & HOST_ITS_WORKAROUND_R8A779F0 )
     {
