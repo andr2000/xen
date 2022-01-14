@@ -33,6 +33,66 @@
 #include <asm/page.h>
 #include <asm/sysregs.h>
 
+static void *its_xmalloc_whole_pages(unsigned long size, unsigned long align)
+{
+    unsigned int i, order;
+    void *res, *p;
+
+    order = get_order_from_bytes(max(align, size));
+
+    res = alloc_xenheap_pages(order, MEMF_bits(32));
+    if ( res == NULL )
+        return NULL;
+
+    memset(res, 0, PAGE_SIZE << order);
+    for ( p = res + PAGE_ALIGN(size), i = 0; i < order; ++i )
+        if ( (unsigned long)p & (PAGE_SIZE << i) )
+        {
+            free_xenheap_pages(p, i);
+            p += PAGE_SIZE << i;
+        }
+
+    PFN_ORDER(virt_to_page(res)) = PFN_UP(size);
+    /* Check that there was no truncation: */
+    ASSERT(PFN_ORDER(virt_to_page(res)) == PFN_UP(size));
+
+    return res;
+}
+
+#define MEM_ALIGN       (sizeof(void *) * 2)
+
+void *lpi_xmalloc(unsigned long size,
+                  unsigned long align)
+{
+    printk("--- %s size %ld align %ld\n", __func__, size, align);
+
+    if ( /*hw_its->flags & HOST_ITS_WORKAROUND_R8A779F0*/ true )
+    {
+        void *buffer;
+
+        ASSERT((align & (align - 1)) == 0);
+        if ( align < MEM_ALIGN )
+            align = MEM_ALIGN;
+        size += align - MEM_ALIGN;
+
+        /* Guard against overflow. */
+        if ( size < align - MEM_ALIGN )
+            return NULL;
+
+        buffer = its_xmalloc_whole_pages(size, align);
+        printk("---- %s:%d buffer %lx\n", __func__, __LINE__, __pa(buffer));
+        return buffer;
+    }
+
+    return _xzalloc(size, align);
+}
+
+void *lpi_xzalloc(unsigned long size,
+                  unsigned long align)
+{
+    return lpi_xmalloc(size, align);
+}
+
 /*
  * There could be a lot of LPIs on the host side, and they always go to
  * a guest. So having a struct irq_desc for each of them would be wasteful
@@ -252,7 +312,7 @@ static int gicv3_lpi_allocate_pendtable(uint64_t *reg)
      * The GICv3 imposes a 64KB alignment requirement, also requires
      * physically contiguous memory.
      */
-    pendtable = _xzalloc(lpi_data.max_host_lpi_ids / 8, SZ_64K);
+    pendtable = lpi_xzalloc(lpi_data.max_host_lpi_ids / 8, SZ_64K);
     if ( !pendtable )
         return -ENOMEM;
 
@@ -274,57 +334,6 @@ static int gicv3_lpi_allocate_pendtable(uint64_t *reg)
     *reg = val;
 
     return 0;
-}
-
-static void *its_xmalloc_whole_pages(unsigned long size, unsigned long align)
-{
-    unsigned int i, order;
-    void *res, *p;
-
-    order = get_order_from_bytes(max(align, size));
-
-    res = alloc_xenheap_pages(order, MEMF_bits(32));
-    if ( res == NULL )
-        return NULL;
-
-    for ( p = res + PAGE_ALIGN(size), i = 0; i < order; ++i )
-        if ( (unsigned long)p & (PAGE_SIZE << i) )
-        {
-            free_xenheap_pages(p, i);
-            p += PAGE_SIZE << i;
-        }
-
-    PFN_ORDER(virt_to_page(res)) = PFN_UP(size);
-    /* Check that there was no truncation: */
-    ASSERT(PFN_ORDER(virt_to_page(res)) == PFN_UP(size));
-
-    return res;
-}
-
-#define MEM_ALIGN       (sizeof(void *) * 2)
-
-void *lpi_xmalloc(unsigned long size,
-                  unsigned long align)
-{
-    if ( /*hw_its->flags & HOST_ITS_WORKAROUND_R8A779F0*/ true )
-    {
-        void *buffer;
-
-        ASSERT((align & (align - 1)) == 0);
-        if ( align < MEM_ALIGN )
-            align = MEM_ALIGN;
-        size += align - MEM_ALIGN;
-
-        /* Guard against overflow. */
-        if ( size < align - MEM_ALIGN )
-            return NULL;
-
-        buffer = its_xmalloc_whole_pages(size, align);
-        printk("---- %s:%d buffer %lx\n", __func__, __LINE__, __pa(buffer));
-        return buffer;
-    }
-
-    return _xzalloc(size, align);
 }
 
 /*

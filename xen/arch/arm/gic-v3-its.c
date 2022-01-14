@@ -68,11 +68,15 @@ static void *its_xmalloc_whole_pages(unsigned long size, unsigned long align)
     unsigned int i, order;
     void *res, *p;
 
+    printk("--- %s size %ld align %ld\n", __func__, size, align);
+
     order = get_order_from_bytes(max(align, size));
 
     res = alloc_xenheap_pages(order, MEMF_bits(32));
     if ( res == NULL )
         return NULL;
+
+    memset(res, 0, PAGE_SIZE << order);
 
     for ( p = res + PAGE_ALIGN(size), i = 0; i < order; ++i )
         if ( (unsigned long)p & (PAGE_SIZE << i) )
