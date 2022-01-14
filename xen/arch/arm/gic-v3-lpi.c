@@ -548,7 +548,9 @@ int gicv3_allocate_host_lpi_block(struct domain *d, uint32_t *first_lpi)
         union host_lpi *new_chunk;
 
         /* TODO: NUMA locality for quicker IRQ path? */
-        new_chunk = alloc_xenheap_page();
+
+        new_chunk = alloc_xenheap_page(); // <<< this is going to be programmed into HW
+
         if ( !new_chunk )
         {
             spin_unlock(&lpi_data.host_lpis_lock);
