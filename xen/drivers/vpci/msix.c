@@ -138,22 +138,33 @@ static void control_write(const struct pci_dev *pdev, unsigned int reg,
         pci_conf_write16(pdev->sbdf, reg, val);
 }
 
+/*
+ * Note: if vpci_msix found, then this function returns with
+ * pdev->vpci_lock held. Use msix_put to unlock.
+ */
 static struct vpci_msix *msix_get(const struct domain *d, unsigned long addr)
 {
     struct vpci_msix *msix;
 
     list_for_each_entry ( msix, &d->arch.hvm.msix_tables, next )
     {
-        const struct vpci_bar *bars = msix->pdev->vpci->header.bars;
+        const struct vpci_bar *bars;
         unsigned int i;
 
+        spin_lock(&msix->pdev->vpci_lock);
+        if ( !msix->pdev->vpci )
+        {
+            spin_unlock(&msix->pdev->vpci_lock);
+            continue;
+        }
+
+        bars = msix->pdev->vpci->header.bars;
         for ( i = 0; i < ARRAY_SIZE(msix->tables); i++ )
             if ( bars[msix->tables[i] & PCI_MSIX_BIRMASK].enabled &&
                  VMSIX_ADDR_IN_RANGE(addr, msix->pdev->vpci, i) )
-            {
-                spin_lock(&msix->pdev->vpci_lock);
                 return msix;
-            }
+
+        spin_unlock(&msix->pdev->vpci_lock);
     }
 
     return NULL;
@@ -161,9 +172,6 @@ static struct vpci_msix *msix_get(const struct domain *d, unsigned long addr)
 
 static void msix_put(struct vpci_msix *msix)
 {
-    if ( !msix )
-        return;
-
     spin_unlock(&msix->pdev->vpci_lock);
 }
 
@@ -171,7 +179,9 @@ static int msix_accept(struct vcpu *v, unsigned long addr)
 {
     struct vpci_msix *msix = msix_get(v->domain, addr);
 
-    msix_put(msix);
+    if ( msix )
+        msix_put(msix);
+
     return !!msix;
 }
 
