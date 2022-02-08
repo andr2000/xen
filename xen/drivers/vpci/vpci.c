@@ -215,13 +215,13 @@ int vpci_remove_register(struct vpci *vpci, unsigned int offset,
 }
 
 /* Wrappers for performing reads/writes to the underlying hardware. */
-static uint32_t vpci_read_hw(bool is_hwdom, pci_sbdf_t sbdf, unsigned int reg,
+static uint32_t vpci_read_hw(pci_sbdf_t sbdf, unsigned int reg,
                              unsigned int size)
 {
     uint32_t data;
 
     /* Guest domains are not allowed to read real hardware. */
-    if ( !is_hwdom )
+    if ( !is_hardware_domain(current->domain) )
         return ~(uint32_t)0;
 
     switch ( size )
@@ -264,11 +264,11 @@ static uint32_t vpci_read_hw(bool is_hwdom, pci_sbdf_t sbdf, unsigned int reg,
     return data;
 }
 
-static void vpci_write_hw(bool is_hwdom, pci_sbdf_t sbdf, unsigned int reg,
+static void vpci_write_hw(pci_sbdf_t sbdf, unsigned int reg,
                           unsigned int size, uint32_t data)
 {
     /* Guest domains are not allowed to write real hardware. */
-    if ( !is_hwdom )
+    if ( !is_hardware_domain(current->domain) )
         return;
 
     switch ( size )
@@ -330,7 +330,6 @@ uint32_t vpci_read(pci_sbdf_t sbdf, unsigned int reg, unsigned int size)
     const struct vpci_register *r;
     unsigned int data_offset = 0;
     uint32_t data = ~(uint32_t)0;
-    bool is_hwdom = is_hardware_domain(d);
 
     if ( !size )
     {
@@ -341,13 +340,13 @@ uint32_t vpci_read(pci_sbdf_t sbdf, unsigned int reg, unsigned int size)
     /* Find the PCI dev matching the address. */
     pdev = pci_get_pdev_by_domain(d, sbdf.seg, sbdf.bus, sbdf.devfn);
     if ( !pdev )
-        return vpci_read_hw(is_hwdom, sbdf, reg, size);
+        return vpci_read_hw(sbdf, reg, size);
 
     spin_lock(&pdev->vpci_lock);
     if ( !pdev->vpci )
     {
         spin_unlock(&pdev->vpci_lock);
-        return vpci_read_hw(is_hwdom, sbdf, reg, size);
+        return vpci_read_hw(sbdf, reg, size);
     }
 
     /* Read from the hardware or the emulated register handlers. */
@@ -370,7 +369,7 @@ uint32_t vpci_read(pci_sbdf_t sbdf, unsigned int reg, unsigned int size)
         {
             /* Heading gap, read partial content from hardware. */
             read_size = r->offset - emu.offset;
-            val = vpci_read_hw(is_hwdom, sbdf, emu.offset, read_size);
+            val = vpci_read_hw(sbdf, emu.offset, read_size);
             data = merge_result(data, val, read_size, data_offset);
             data_offset += read_size;
         }
@@ -396,7 +395,7 @@ uint32_t vpci_read(pci_sbdf_t sbdf, unsigned int reg, unsigned int size)
     if ( data_offset < size )
     {
         /* Tailing gap, read the remaining. */
-        uint32_t tmp_data = vpci_read_hw(is_hwdom, sbdf, reg + data_offset,
+        uint32_t tmp_data = vpci_read_hw(sbdf, reg + data_offset,
                                          size - data_offset);
 
         data = merge_result(data, tmp_data, size - data_offset, data_offset);
@@ -439,7 +438,6 @@ void vpci_write(pci_sbdf_t sbdf, unsigned int reg, unsigned int size,
     const struct vpci_register *r;
     unsigned int data_offset = 0;
     const unsigned long *ro_map = pci_get_ro_map(sbdf.seg);
-    bool is_hwdom = is_hardware_domain(d);
 
     if ( !size )
     {
@@ -458,7 +456,7 @@ void vpci_write(pci_sbdf_t sbdf, unsigned int reg, unsigned int size,
     pdev = pci_get_pdev_by_domain(d, sbdf.seg, sbdf.bus, sbdf.devfn);
     if ( !pdev )
     {
-        vpci_write_hw(is_hwdom, sbdf, reg, size, data);
+        vpci_write_hw(sbdf, reg, size, data);
         return;
     }
 
@@ -466,7 +464,7 @@ void vpci_write(pci_sbdf_t sbdf, unsigned int reg, unsigned int size,
     if ( !pdev->vpci )
     {
         spin_unlock(&pdev->vpci_lock);
-        vpci_write_hw(is_hwdom, sbdf, reg, size, data);
+        vpci_write_hw(sbdf, reg, size, data);
         return;
     }
 
@@ -489,7 +487,7 @@ void vpci_write(pci_sbdf_t sbdf, unsigned int reg, unsigned int size,
         if ( emu.offset < r->offset )
         {
             /* Heading gap, write partial content to hardware. */
-            vpci_write_hw(is_hwdom, sbdf, emu.offset, r->offset - emu.offset,
+            vpci_write_hw(sbdf, emu.offset, r->offset - emu.offset,
                           data >> (data_offset * 8));
             data_offset += r->offset - emu.offset;
         }
@@ -508,7 +506,7 @@ void vpci_write(pci_sbdf_t sbdf, unsigned int reg, unsigned int size,
 
     if ( data_offset < size )
         /* Tailing gap, write the remaining. */
-        vpci_write_hw(is_hwdom, sbdf, reg + data_offset, size - data_offset,
+        vpci_write_hw(sbdf, reg + data_offset, size - data_offset,
                       data >> (data_offset * 8));
 }
 
