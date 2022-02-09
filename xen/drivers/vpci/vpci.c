@@ -37,43 +37,58 @@ extern vpci_register_init_t *const __end_vpci_array[];
 
 void vpci_remove_device(struct pci_dev *pdev)
 {
+    struct vpci *vpci;
+
     if ( !has_vpci(pdev->domain) )
         return;
 
-    spin_lock(&pdev->vpci->lock);
+    write_lock(&pdev->domain->vpci_rwlock);
+    if ( !pdev->vpci )
+    {
+        write_unlock(&pdev->domain->vpci_rwlock);
+        return;
+    }
+
+    vpci = pdev->vpci;
+    pdev->vpci = NULL;
+    write_unlock(&pdev->domain->vpci_rwlock);
+
     while ( !list_empty(&pdev->vpci->handlers) )
     {
-        struct vpci_register *r = list_first_entry(&pdev->vpci->handlers,
+        struct vpci_register *r = list_first_entry(&vpci->handlers,
                                                    struct vpci_register,
                                                    node);
 
         list_del(&r->node);
         xfree(r);
     }
-    spin_unlock(&pdev->vpci->lock);
-    xfree(pdev->vpci->msix);
-    xfree(pdev->vpci->msi);
-    xfree(pdev->vpci);
-    pdev->vpci = NULL;
+    xfree(vpci->msix);
+    xfree(vpci->msi);
+    xfree(vpci);
 }
 
 int vpci_add_handlers(struct pci_dev *pdev)
 {
+    struct vpci *vpci;
     unsigned int i;
     int rc = 0;
 
     if ( !has_vpci(pdev->domain) )
         return 0;
 
+    vpci = xzalloc(struct vpci);
+    if ( !vpci )
+        return -ENOMEM;
+
+    INIT_LIST_HEAD(&vpci->handlers);
+    spin_lock_init(&vpci->lock);
+
+    write_lock(&pdev->domain->vpci_rwlock);
+
     /* We should not get here twice for the same device. */
     ASSERT(!pdev->vpci);
 
-    pdev->vpci = xzalloc(struct vpci);
-    if ( !pdev->vpci )
-        return -ENOMEM;
-
-    INIT_LIST_HEAD(&pdev->vpci->handlers);
-    spin_lock_init(&pdev->vpci->lock);
+    pdev->vpci = vpci;
 
     for ( i = 0; i < NUM_VPCI_INIT; i++ )
     {
@@ -81,6 +96,7 @@ int vpci_add_handlers(struct pci_dev *pdev)
         if ( rc )
             break;
     }
+    write_unlock(&pdev->domain->vpci_rwlock);
 
     if ( rc )
         vpci_remove_device(pdev);
@@ -129,6 +145,7 @@ uint32_t vpci_hw_read32(const struct pci_dev *pdev, unsigned int reg,
     return pci_conf_read32(pdev->sbdf, reg);
 }
 
+/* This must hold domain's vpci_rwlock in write mode. */
 int vpci_add_register(struct vpci *vpci, vpci_read_t *read_handler,
                       vpci_write_t *write_handler, unsigned int offset,
                       unsigned int size, void *data)
@@ -152,8 +169,6 @@ int vpci_add_register(struct vpci *vpci, vpci_read_t *read_handler,
     r->offset = offset;
     r->private = data;
 
-    spin_lock(&vpci->lock);
-
     /* The list of handlers must be kept sorted at all times. */
     list_for_each ( prev, &vpci->handlers )
     {
@@ -165,25 +180,23 @@ int vpci_add_register(struct vpci *vpci, vpci_read_t *read_handler,
             break;
         if ( cmp == 0 )
         {
-            spin_unlock(&vpci->lock);
             xfree(r);
             return -EEXIST;
         }
     }
 
     list_add_tail(&r->node, prev);
-    spin_unlock(&vpci->lock);
 
     return 0;
 }
 
+/* This must hold domain's vpci_rwlock in write mode. */
 int vpci_remove_register(struct vpci *vpci, unsigned int offset,
                          unsigned int size)
 {
     const struct vpci_register r = { .offset = offset, .size = size };
     struct vpci_register *rm;
 
-    spin_lock(&vpci->lock);
     list_for_each_entry ( rm, &vpci->handlers, node )
     {
         int cmp = vpci_register_cmp(&r, rm);
@@ -195,14 +208,12 @@ int vpci_remove_register(struct vpci *vpci, unsigned int offset,
         if ( !cmp && rm->offset == offset && rm->size == size )
         {
             list_del(&rm->node);
-            spin_unlock(&vpci->lock);
             xfree(rm);
             return 0;
         }
         if ( cmp <= 0 )
             break;
     }
-    spin_unlock(&vpci->lock);
 
     return -ENOENT;
 }
@@ -310,7 +321,7 @@ static uint32_t merge_result(uint32_t data, uint32_t new, unsigned int size,
 
 uint32_t vpci_read(pci_sbdf_t sbdf, unsigned int reg, unsigned int size)
 {
-    const struct domain *d = current->domain;
+    struct domain *d = current->domain;
     const struct pci_dev *pdev;
     const struct vpci_register *r;
     unsigned int data_offset = 0;
@@ -323,10 +334,18 @@ uint32_t vpci_read(pci_sbdf_t sbdf, unsigned int reg, unsigned int size)
     }
 
     /* Find the PCI dev matching the address. */
+    pcidevs_lock();
     pdev = pci_get_pdev_by_domain(d, sbdf.seg, sbdf.bus, sbdf.devfn);
+    pcidevs_unlock();
     if ( !pdev )
         return vpci_read_hw(sbdf, reg, size);
 
+    read_lock(&d->vpci_rwlock);
+    if ( !pdev->vpci )
+    {
+        read_unlock(&d->vpci_rwlock);
+        return vpci_read_hw(sbdf, reg, size);
+    }
     spin_lock(&pdev->vpci->lock);
 
     /* Read from the hardware or the emulated register handlers. */
@@ -371,6 +390,7 @@ uint32_t vpci_read(pci_sbdf_t sbdf, unsigned int reg, unsigned int size)
         ASSERT(data_offset < size);
     }
     spin_unlock(&pdev->vpci->lock);
+    read_unlock(&d->vpci_rwlock);
 
     if ( data_offset < size )
     {
@@ -413,11 +433,12 @@ static void vpci_write_helper(const struct pci_dev *pdev,
 void vpci_write(pci_sbdf_t sbdf, unsigned int reg, unsigned int size,
                 uint32_t data)
 {
-    const struct domain *d = current->domain;
+    struct domain *d = current->domain;
     const struct pci_dev *pdev;
     const struct vpci_register *r;
     unsigned int data_offset = 0;
     const unsigned long *ro_map = pci_get_ro_map(sbdf.seg);
+    bool write_locked = false;
 
     if ( !size )
     {
@@ -433,14 +454,38 @@ void vpci_write(pci_sbdf_t sbdf, unsigned int reg, unsigned int size,
      * Find the PCI dev matching the address.
      * Passthrough everything that's not trapped.
      */
+    pcidevs_lock();
     pdev = pci_get_pdev_by_domain(d, sbdf.seg, sbdf.bus, sbdf.devfn);
+    pcidevs_unlock();
     if ( !pdev )
     {
         vpci_write_hw(sbdf, reg, size, data);
         return;
     }
 
-    spin_lock(&pdev->vpci->lock);
+    if ( vpci_header_need_write_lock(pdev, reg, size) )
+    {
+        /* Gain exclusive access to all of the domain pdevs vpci. */
+        write_lock(&d->vpci_rwlock);
+        if ( !pdev->vpci )
+        {
+            write_unlock(&d->vpci_rwlock);
+            vpci_write_hw(sbdf, reg, size, data);
+            return;
+        }
+        write_locked = true;
+    }
+    else
+    {
+        read_lock(&d->vpci_rwlock);
+        if ( !pdev->vpci )
+        {
+            read_unlock(&d->vpci_rwlock);
+            vpci_write_hw(sbdf, reg, size, data);
+            return;
+        }
+        spin_lock(&pdev->vpci->lock);
+    }
 
     /* Write the value to the hardware or emulated registers. */
     list_for_each_entry ( r, &pdev->vpci->handlers, node )
@@ -475,7 +520,14 @@ void vpci_write(pci_sbdf_t sbdf, unsigned int reg, unsigned int size,
             break;
         ASSERT(data_offset < size);
     }
-    spin_unlock(&pdev->vpci->lock);
+
+    if ( write_locked )
+        write_unlock(&d->vpci_rwlock);
+    else
+    {
+        spin_unlock(&pdev->vpci->lock);
+        read_unlock(&d->vpci_rwlock);
+    }
 
     if ( data_offset < size )
         /* Tailing gap, write the remaining. */

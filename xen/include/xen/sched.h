@@ -444,6 +444,9 @@ struct domain
 
 #ifdef CONFIG_HAS_PCI
     struct list_head pdev_list;
+#ifdef CONFIG_HAS_VPCI
+    rwlock_t vpci_rwlock;
+#endif
 #endif
 
 #ifdef CONFIG_HAS_PASSTHROUGH

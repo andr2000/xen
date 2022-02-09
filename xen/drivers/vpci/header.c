@@ -142,12 +142,14 @@ bool vpci_process_pending(struct vcpu *v)
         if ( rc == -ERESTART )
             return true;
 
+        read_lock(&v->domain->vpci_rwlock);
         spin_lock(&v->vpci.pdev->vpci->lock);
         /* Disable memory decoding unconditionally on failure. */
         modify_decoding(v->vpci.pdev,
                         rc ? v->vpci.cmd & ~PCI_COMMAND_MEMORY : v->vpci.cmd,
                         !rc && v->vpci.rom_only);
         spin_unlock(&v->vpci.pdev->vpci->lock);
+        read_unlock(&v->domain->vpci_rwlock);
 
         rangeset_destroy(v->vpci.mem);
         v->vpci.mem = NULL;
@@ -171,8 +173,24 @@ static int __init apply_map(struct domain *d, const struct pci_dev *pdev,
     struct map_data data = { .d = d, .map = true };
     int rc;
 
+    ASSERT(rw_is_write_locked(&d->vpci_rwlock));
+
     while ( (rc = rangeset_consume_ranges(mem, map_range, &data)) == -ERESTART )
+    {
+        /*
+         * FIXME: apply_map is called from dom0 specific init code when
+         * system_state < SYS_STATE_active, so there is no race condition
+         * possible between this code and vpci_process_pending. So, neither
+         * vpci_process_pending may try to acquire the lock in read mode and
+         * also destroy pdev->vpci in its error path nor pdev may be disposed
+         * yet. This means that it is not required to check if the relevant
+         * pdev->vpci still exists after re-acquiring the lock.
+         */
+        write_unlock(&d->vpci_rwlock);
         process_pending_softirqs();
+        write_lock(&d->vpci_rwlock);
+    }
+
     rangeset_destroy(mem);
     if ( !rc )
         modify_decoding(pdev, cmd, false);
@@ -203,6 +221,7 @@ static void defer_map(struct domain *d, struct pci_dev *pdev,
     raise_softirq(SCHEDULE_SOFTIRQ);
 }
 
+/* This must hold domain's vpci_rwlock in write mode. */
 static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
 {
     struct vpci_header *header = &pdev->vpci->header;
@@ -267,6 +286,7 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
      * Check for overlaps with other BARs. Note that only BARs that are
      * currently mapped (enabled) are checked for overlaps.
      */
+    pcidevs_lock();
     for_each_pdev ( pdev->domain, tmp )
     {
         if ( tmp == pdev )
@@ -306,10 +326,12 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
                 printk(XENLOG_G_WARNING "Failed to remove [%lx, %lx]: %d\n",
                        start, end, rc);
                 rangeset_destroy(mem);
+                pcidevs_unlock();
                 return rc;
             }
         }
     }
+    pcidevs_unlock();
 
     ASSERT(dev);
 
@@ -454,6 +476,8 @@ static int init_bars(struct pci_dev *pdev)
     struct vpci_bar *bars = header->bars;
     int rc;
 
+    ASSERT(rw_is_write_locked(&pdev->domain->vpci_rwlock));
+
     switch ( pci_conf_read8(pdev->sbdf, PCI_HEADER_TYPE) & 0x7f )
     {
     case PCI_HEADER_TYPE_NORMAL:
@@ -542,6 +566,8 @@ static int init_bars(struct pci_dev *pdev)
         }
     }
 
+    ASSERT(!header->rom_reg);
+
     /* Check expansion ROM. */
     rc = pci_size_mem_bar(pdev->sbdf, rom_reg, &addr, &size, PCI_BAR_ROM);
     if ( rc > 0 && size )
@@ -558,11 +584,41 @@ static int init_bars(struct pci_dev *pdev)
                                4, rom);
         if ( rc )
             rom->type = VPCI_BAR_EMPTY;
+
+        header->rom_reg = rom_reg;
     }
 
     return (cmd & PCI_COMMAND_MEMORY) ? modify_bars(pdev, cmd, false) : 0;
 }
 REGISTER_VPCI_INIT(init_bars, VPCI_PRIORITY_MIDDLE);
+
+static bool overlap(unsigned int r1_offset, unsigned int r1_size,
+                    unsigned int r2_offset, unsigned int r2_size)
+{
+    /* Return true if there is an overlap. */
+    return r1_offset < r2_offset + r2_size && r2_offset < r1_offset + r1_size;
+}
+
+bool vpci_header_need_write_lock(const struct pci_dev *pdev,
+                                 unsigned int start, unsigned int size)
+{
+    /*
+     * Writing the command register and ROM BAR register may trigger
+     * modify_bars to run, which in turn may access multiple pdevs while
+     * checking for the existing BAR's overlap. The overlapping check, if done
+     * under the read lock, requires vpci->lock to be acquired on both devices
+     * being compared, which may produce a deadlock. At the same time it is not
+     * possible to upgrade read lock to write lock in such a case.
+     * Check which registers are going to be written and return true if lock
+     * needs to be acquired in write mode.
+     */
+    if ( overlap(start, size, PCI_COMMAND, 2) ||
+         (pdev->vpci->header.rom_reg &&
+          overlap(start, size, pdev->vpci->header.rom_reg, 4)) )
+        return true;
+
+    return false;
+}
 
 /*
  * Local variables:

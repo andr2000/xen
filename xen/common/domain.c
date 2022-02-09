@@ -616,6 +616,9 @@ struct domain *domain_create(domid_t domid,
 
 #ifdef CONFIG_HAS_PCI
     INIT_LIST_HEAD(&d->pdev_list);
+#ifdef CONFIG_HAS_VPCI
+    rwlock_init(&d->vpci_rwlock);
+#endif
 #endif
 
     /* All error paths can depend on the above setup. */

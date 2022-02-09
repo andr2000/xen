@@ -190,6 +190,8 @@ static int init_msi(struct pci_dev *pdev)
     uint16_t control;
     int ret;
 
+    ASSERT(rw_is_write_locked(&pdev->domain->vpci_rwlock));
+
     if ( !pos )
         return 0;
 
@@ -265,7 +267,7 @@ REGISTER_VPCI_INIT(init_msi, VPCI_PRIORITY_LOW);
 
 void vpci_dump_msi(void)
 {
-    const struct domain *d;
+    struct domain *d;
 
     rcu_read_lock(&domlist_read_lock);
     for_each_domain ( d )
@@ -276,6 +278,15 @@ void vpci_dump_msi(void)
             continue;
 
         printk("vPCI MSI/MSI-X d%d\n", d->domain_id);
+
+        if ( !read_trylock(&d->vpci_rwlock) )
+            continue;
+
+        if ( !pcidevs_trylock() )
+        {
+            read_unlock(&d->vpci_rwlock);
+            continue;
+        }
 
         for_each_pdev ( d, pdev )
         {
@@ -318,14 +329,22 @@ void vpci_dump_msi(void)
                      * holding the lock.
                      */
                     printk("unable to print all MSI-X entries: %d\n", rc);
-                    process_pending_softirqs();
-                    continue;
+                    goto pdev_done;
                 }
             }
 
             spin_unlock(&pdev->vpci->lock);
+ pdev_done:
+            pcidevs_unlock();
+            read_unlock(&d->vpci_rwlock);
+
             process_pending_softirqs();
+
+            read_lock(&d->vpci_rwlock);
+            pcidevs_lock();
         }
+        pcidevs_unlock();
+        read_unlock(&d->vpci_rwlock);
     }
     rcu_read_unlock(&domlist_read_lock);
 }

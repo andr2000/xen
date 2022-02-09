@@ -138,6 +138,7 @@ static void control_write(const struct pci_dev *pdev, unsigned int reg,
         pci_conf_write16(pdev->sbdf, reg, val);
 }
 
+/* This must hold domain's vpci_rwlock in write mode. */
 static struct vpci_msix *msix_find(const struct domain *d, unsigned long addr)
 {
     struct vpci_msix *msix;
@@ -158,7 +159,13 @@ static struct vpci_msix *msix_find(const struct domain *d, unsigned long addr)
 
 static int msix_accept(struct vcpu *v, unsigned long addr)
 {
-    return !!msix_find(v->domain, addr);
+    int rc;
+
+    read_lock(&v->domain->vpci_rwlock);
+    rc = !!msix_find(v->domain, addr);
+    read_unlock(&v->domain->vpci_rwlock);
+
+    return rc;
 }
 
 static bool access_allowed(const struct pci_dev *pdev, unsigned long addr,
@@ -185,18 +192,27 @@ static struct vpci_msix_entry *get_entry(struct vpci_msix *msix,
 static int msix_read(struct vcpu *v, unsigned long addr, unsigned int len,
                      unsigned long *data)
 {
-    const struct domain *d = v->domain;
-    struct vpci_msix *msix = msix_find(d, addr);
+    struct domain *d = v->domain;
+    struct vpci_msix *msix;
     const struct vpci_msix_entry *entry;
     unsigned int offset;
 
     *data = ~0ul;
 
+    read_lock(&d->vpci_rwlock);
+
+    msix = msix_find(d, addr);
     if ( !msix )
+    {
+        read_unlock(&d->vpci_rwlock);
         return X86EMUL_RETRY;
+    }
 
     if ( !access_allowed(msix->pdev, addr, len) )
+    {
+        read_unlock(&d->vpci_rwlock);
         return X86EMUL_OKAY;
+    }
 
     if ( VMSIX_ADDR_IN_RANGE(addr, msix->pdev->vpci, VPCI_MSIX_PBA) )
     {
@@ -222,6 +238,7 @@ static int msix_read(struct vcpu *v, unsigned long addr, unsigned int len,
             break;
         }
 
+        read_unlock(&d->vpci_rwlock);
         return X86EMUL_OKAY;
     }
 
@@ -255,6 +272,7 @@ static int msix_read(struct vcpu *v, unsigned long addr, unsigned int len,
         break;
     }
     spin_unlock(&msix->pdev->vpci->lock);
+    read_unlock(&d->vpci_rwlock);
 
     return X86EMUL_OKAY;
 }
@@ -262,16 +280,25 @@ static int msix_read(struct vcpu *v, unsigned long addr, unsigned int len,
 static int msix_write(struct vcpu *v, unsigned long addr, unsigned int len,
                       unsigned long data)
 {
-    const struct domain *d = v->domain;
-    struct vpci_msix *msix = msix_find(d, addr);
+    struct domain *d = v->domain;
+    struct vpci_msix *msix;
     struct vpci_msix_entry *entry;
     unsigned int offset;
 
+    read_lock(&d->vpci_rwlock);
+
+    msix = msix_find(d, addr);
     if ( !msix )
+    {
+        read_unlock(&d->vpci_rwlock);
         return X86EMUL_RETRY;
+    }
 
     if ( !access_allowed(msix->pdev, addr, len) )
+    {
+        read_unlock(&d->vpci_rwlock);
         return X86EMUL_OKAY;
+    }
 
     if ( VMSIX_ADDR_IN_RANGE(addr, msix->pdev->vpci, VPCI_MSIX_PBA) )
     {
@@ -294,6 +321,7 @@ static int msix_write(struct vcpu *v, unsigned long addr, unsigned int len,
             }
         }
 
+        read_unlock(&d->vpci_rwlock);
         return X86EMUL_OKAY;
     }
 
@@ -371,6 +399,7 @@ static int msix_write(struct vcpu *v, unsigned long addr, unsigned int len,
         break;
     }
     spin_unlock(&msix->pdev->vpci->lock);
+    read_unlock(&d->vpci_rwlock);
 
     return X86EMUL_OKAY;
 }
@@ -436,6 +465,8 @@ static int init_msix(struct pci_dev *pdev)
     uint16_t control;
     struct vpci_msix *msix;
     int rc;
+
+    ASSERT(rw_is_write_locked(&pdev->domain->vpci_rwlock));
 
     msix_offset = pci_find_cap_offset(pdev->seg, pdev->bus, slot, func,
                                       PCI_CAP_ID_MSIX);

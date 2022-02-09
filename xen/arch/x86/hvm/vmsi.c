@@ -893,6 +893,9 @@ int vpci_msix_arch_print(const struct vpci_msix *msix)
 {
     unsigned int i;
 
+    ASSERT(rw_is_locked(&msix->pdev->domain->vpci_rwlock));
+    ASSERT(pcidevs_locked());
+
     for ( i = 0; i < msix->max_entries; i++ )
     {
         const struct vpci_msix_entry *entry = &msix->entries[i];
@@ -911,7 +914,11 @@ int vpci_msix_arch_print(const struct vpci_msix *msix)
             struct pci_dev *pdev = msix->pdev;
 
             spin_unlock(&msix->pdev->vpci->lock);
+            pcidevs_unlock();
+            read_unlock(&pdev->domain->vpci_rwlock);
             process_pending_softirqs();
+            read_lock(&pdev->domain->vpci_rwlock);
+            pcidevs_lock();
             /* NB: we assume that pdev cannot go away for an alive domain. */
             if ( !pdev->vpci || !spin_trylock(&pdev->vpci->lock) )
                 return -EBUSY;
