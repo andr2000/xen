@@ -178,13 +178,9 @@ static int __init apply_map(struct domain *d, const struct pci_dev *pdev,
     while ( (rc = rangeset_consume_ranges(mem, map_range, &data)) == -ERESTART )
     {
         /*
-         * FIXME: apply_map is called from dom0 specific init code when
-         * system_state < SYS_STATE_active, so there is no race condition
-         * possible between this code and vpci_process_pending. So, neither
-         * vpci_process_pending may try to acquire the lock in read mode and
-         * also destroy pdev->vpci in its error path nor pdev may be disposed
-         * yet. This means that it is not required to check if the relevant
-         * pdev->vpci still exists after re-acquiring the lock.
+         * It's safe to drop and reacquire the lock in this context
+         * without risking pdev disappearing because devices cannot be
+         * removed until the initial domain has been started.
          */
         write_unlock(&d->vpci_rwlock);
         process_pending_softirqs();
