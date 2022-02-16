@@ -51,20 +51,38 @@ struct pci_seg {
 };
 
 static spinlock_t _pcidevs_lock = SPIN_LOCK_UNLOCKED;
+static DEFINE_RWLOCK(_pcidevs_rwlock);
 
 void pcidevs_lock(void)
 {
+    read_lock(&_pcidevs_rwlock);
     spin_lock_recursive(&_pcidevs_lock);
 }
 
 void pcidevs_unlock(void)
 {
     spin_unlock_recursive(&_pcidevs_lock);
+    read_unlock(&_pcidevs_rwlock);
 }
 
 bool_t pcidevs_locked(void)
 {
-    return !!spin_is_locked(&_pcidevs_lock);
+    return !!spin_is_locked(&_pcidevs_lock) || pcidevs_write_locked();
+}
+
+void pcidevs_write_lock(void)
+{
+    write_lock(&_pcidevs_rwlock);
+}
+
+void pcidevs_write_unlock(void)
+{
+    write_unlock(&_pcidevs_rwlock);
+}
+
+bool pcidevs_write_locked(void)
+{
+    return !!rw_is_write_locked(&_pcidevs_rwlock);
 }
 
 static struct radix_tree_root pci_segments;
@@ -758,7 +776,7 @@ int pci_add_device(u16 seg, u8 bus, u8 devfn,
 
     ret = -ENOMEM;
 
-    pcidevs_lock();
+    pcidevs_write_lock();
     pseg = alloc_pseg(seg);
     if ( !pseg )
         goto out;
@@ -854,7 +872,7 @@ int pci_add_device(u16 seg, u8 bus, u8 devfn,
     pci_enable_acs(pdev);
 
 out:
-    pcidevs_unlock();
+    pcidevs_write_unlock();
     if ( !ret )
     {
         printk(XENLOG_DEBUG "PCI add %s %pp\n", pdev_type,  &pdev->sbdf);
@@ -885,7 +903,7 @@ int pci_remove_device(u16 seg, u8 bus, u8 devfn)
     if ( !pseg )
         return -ENODEV;
 
-    pcidevs_lock();
+    pcidevs_write_lock();
     list_for_each_entry ( pdev, &pseg->alldevs_list, alldevs_list )
         if ( pdev->bus == bus && pdev->devfn == devfn )
         {
@@ -899,7 +917,7 @@ int pci_remove_device(u16 seg, u8 bus, u8 devfn)
             break;
         }
 
-    pcidevs_unlock();
+    pcidevs_write_unlock();
     return ret;
 }
 
@@ -1176,6 +1194,11 @@ static void __hwdom_init setup_one_hwdom_device(const struct setup_hwdom *ctxt,
                ctxt->d->domain_id, err);
 }
 
+/*
+ * It's safe to drop and re-acquire the write lock in this context without
+ * risking pdev disappearing because devices cannot be removed until the
+ * initial domain has been started.
+ */
 static int __hwdom_init _setup_hwdom_pci_devices(struct pci_seg *pseg, void *arg)
 {
     struct setup_hwdom *ctxt = arg;
@@ -1208,17 +1231,17 @@ static int __hwdom_init _setup_hwdom_pci_devices(struct pci_seg *pseg, void *arg
 
             if ( iommu_verbose )
             {
-                pcidevs_unlock();
+                pcidevs_write_unlock();
                 process_pending_softirqs();
-                pcidevs_lock();
+                pcidevs_write_lock();
             }
         }
 
         if ( !iommu_verbose )
         {
-            pcidevs_unlock();
+            pcidevs_write_unlock();
             process_pending_softirqs();
-            pcidevs_lock();
+            pcidevs_write_lock();
         }
     }
 
@@ -1230,9 +1253,9 @@ void __hwdom_init setup_hwdom_pci_devices(
 {
     struct setup_hwdom ctxt = { .d = d, .handler = handler };
 
-    pcidevs_lock();
+    pcidevs_write_lock();
     pci_segments_iterate(_setup_hwdom_pci_devices, &ctxt);
-    pcidevs_unlock();
+    pcidevs_write_unlock();
 }
 
 /* APEI not supported on ARM yet. */

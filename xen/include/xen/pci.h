@@ -152,6 +152,10 @@ void pcidevs_lock(void);
 void pcidevs_unlock(void);
 bool_t __must_check pcidevs_locked(void);
 
+void pcidevs_write_lock(void);
+void pcidevs_write_unlock(void);
+bool __must_check pcidevs_write_locked(void);
+
 bool_t pci_known_segment(u16 seg);
 bool_t pci_device_detect(u16 seg, u8 bus, u8 dev, u8 func);
 int scan_pci_devices(void);
