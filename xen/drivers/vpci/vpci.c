@@ -37,7 +37,9 @@ extern vpci_register_init_t *const __end_vpci_array[];
 
 void vpci_remove_device(struct pci_dev *pdev)
 {
-    if ( !has_vpci(pdev->domain) )
+    ASSERT(pcidevs_write_locked());
+
+    if ( !has_vpci(pdev->domain) || !pdev->vpci )
         return;
 
     spin_lock(&pdev->vpci->lock);
@@ -61,6 +63,8 @@ int vpci_add_handlers(struct pci_dev *pdev)
 {
     unsigned int i;
     int rc = 0;
+
+    ASSERT(pcidevs_write_locked());
 
     if ( !has_vpci(pdev->domain) )
         return 0;
@@ -136,6 +140,8 @@ int vpci_add_register(struct vpci *vpci, vpci_read_t *read_handler,
     struct list_head *prev;
     struct vpci_register *r;
 
+    ASSERT(pcidevs_write_locked());
+
     /* Some sanity checks. */
     if ( (size != 1 && size != 2 && size != 4) ||
          offset >= PCI_CFG_SPACE_EXP_SIZE || (offset & (size - 1)) ||
@@ -182,6 +188,8 @@ int vpci_remove_register(struct vpci *vpci, unsigned int offset,
 {
     const struct vpci_register r = { .offset = offset, .size = size };
     struct vpci_register *rm;
+
+    ASSERT(pcidevs_write_locked());
 
     spin_lock(&vpci->lock);
     list_for_each_entry ( rm, &vpci->handlers, node )
@@ -330,10 +338,14 @@ uint32_t vpci_read(pci_sbdf_t sbdf, unsigned int reg, unsigned int size)
         return data;
     }
 
+    pcidevs_read_lock();
     /* Find the PCI dev matching the address. */
     pdev = pci_get_pdev_by_domain(d, sbdf.seg, sbdf.bus, sbdf.devfn);
-    if ( !pdev )
+    if ( !pdev || (pdev && !pdev->vpci) )
+    {
+        pcidevs_read_unlock();
         return vpci_read_hw(sbdf, reg, size);
+    }
 
     spin_lock(&pdev->vpci->lock);
 
@@ -379,6 +391,7 @@ uint32_t vpci_read(pci_sbdf_t sbdf, unsigned int reg, unsigned int size)
         ASSERT(data_offset < size);
     }
     spin_unlock(&pdev->vpci->lock);
+    pcidevs_read_unlock();
 
     if ( data_offset < size )
     {
@@ -441,9 +454,11 @@ void vpci_write(pci_sbdf_t sbdf, unsigned int reg, unsigned int size,
      * Find the PCI dev matching the address.
      * Passthrough everything that's not trapped.
      */
+    pcidevs_read_lock();
     pdev = pci_get_pdev_by_domain(d, sbdf.seg, sbdf.bus, sbdf.devfn);
-    if ( !pdev )
+    if ( !pdev || (pdev && !pdev->vpci) )
     {
+        pcidevs_read_unlock();
         vpci_write_hw(sbdf, reg, size, data);
         return;
     }
@@ -484,6 +499,7 @@ void vpci_write(pci_sbdf_t sbdf, unsigned int reg, unsigned int size,
         ASSERT(data_offset < size);
     }
     spin_unlock(&pdev->vpci->lock);
+    pcidevs_read_unlock();
 
     if ( data_offset < size )
         /* Tailing gap, write the remaining. */
