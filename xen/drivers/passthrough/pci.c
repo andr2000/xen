@@ -57,6 +57,11 @@ void pcidevs_read_lock(void)
     read_lock(&_pcidevs_rwlock);
 }
 
+int pcidevs_read_trylock(void)
+{
+    return read_trylock(&_pcidevs_rwlock);
+}
+
 void pcidevs_read_unlock(void)
 {
     read_unlock(&_pcidevs_rwlock);
