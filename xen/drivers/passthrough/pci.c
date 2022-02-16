@@ -50,21 +50,36 @@ struct pci_seg {
     } bus2bridge[MAX_BUSES];
 };
 
-static spinlock_t _pcidevs_lock = SPIN_LOCK_UNLOCKED;
+static DEFINE_RWLOCK(_pcidevs_rwlock);
 
-void pcidevs_lock(void)
+void pcidevs_read_lock(void)
 {
-    spin_lock(&_pcidevs_lock);
+    read_lock(&_pcidevs_rwlock);
 }
 
-void pcidevs_unlock(void)
+void pcidevs_read_unlock(void)
 {
-    spin_unlock(&_pcidevs_lock);
+    read_unlock(&_pcidevs_rwlock);
 }
 
-bool_t pcidevs_locked(void)
+bool pcidevs_read_locked(void)
 {
-    return !!spin_is_locked(&_pcidevs_lock);
+    return !!rw_is_locked(&_pcidevs_rwlock);
+}
+
+void pcidevs_write_lock(void)
+{
+    write_lock(&_pcidevs_rwlock);
+}
+
+void pcidevs_write_unlock(void)
+{
+    write_unlock(&_pcidevs_rwlock);
+}
+
+bool pcidevs_write_locked(void)
+{
+    return !!rw_is_write_locked(&_pcidevs_rwlock);
 }
 
 static struct radix_tree_root pci_segments;
@@ -516,7 +531,7 @@ int __init pci_hide_device(unsigned int seg, unsigned int bus,
     struct pci_seg *pseg;
     int rc = -ENOMEM;
 
-    pcidevs_lock();
+    pcidevs_write_lock();
     pseg = alloc_pseg(seg);
     if ( pseg )
     {
@@ -527,7 +542,7 @@ int __init pci_hide_device(unsigned int seg, unsigned int bus,
             rc = 0;
         }
     }
-    pcidevs_unlock();
+    pcidevs_write_unlock();
 
     return rc;
 }
@@ -564,7 +579,7 @@ struct pci_dev *pci_get_pdev(int seg, int bus, int devfn)
     struct pci_seg *pseg = get_pseg(seg);
     struct pci_dev *pdev = NULL;
 
-    ASSERT(pcidevs_locked());
+    ASSERT(pcidevs_read_locked() || pcidevs_write_locked());
     ASSERT(seg != -1 || bus == -1);
     ASSERT(bus != -1 || devfn == -1);
 
@@ -737,11 +752,11 @@ int pci_add_device(u16 seg, u8 bus, u8 devfn,
         pdev_type = "device";
     else if ( info->is_virtfn )
     {
-        pcidevs_lock();
+        pcidevs_read_lock();
         pdev = pci_get_pdev(seg, info->physfn.bus, info->physfn.devfn);
         if ( pdev )
             pf_is_extfn = pdev->info.is_extfn;
-        pcidevs_unlock();
+        pcidevs_read_unlock();
         if ( !pdev )
             pci_add_device(seg, info->physfn.bus, info->physfn.devfn,
                            NULL, node);
@@ -758,7 +773,7 @@ int pci_add_device(u16 seg, u8 bus, u8 devfn,
 
     ret = -ENOMEM;
 
-    pcidevs_lock();
+    pcidevs_write_lock();
     pseg = alloc_pseg(seg);
     if ( !pseg )
         goto out;
@@ -854,7 +869,7 @@ int pci_add_device(u16 seg, u8 bus, u8 devfn,
     pci_enable_acs(pdev);
 
 out:
-    pcidevs_unlock();
+    pcidevs_write_unlock();
     if ( !ret )
     {
         printk(XENLOG_DEBUG "PCI add %s %pp\n", pdev_type,  &pdev->sbdf);
@@ -885,7 +900,7 @@ int pci_remove_device(u16 seg, u8 bus, u8 devfn)
     if ( !pseg )
         return -ENODEV;
 
-    pcidevs_lock();
+    pcidevs_write_lock();
     list_for_each_entry ( pdev, &pseg->alldevs_list, alldevs_list )
         if ( pdev->bus == bus && pdev->devfn == devfn )
         {
@@ -899,11 +914,10 @@ int pci_remove_device(u16 seg, u8 bus, u8 devfn)
             break;
         }
 
-    pcidevs_unlock();
+    pcidevs_write_unlock();
     return ret;
 }
 
-/* Caller should hold the pcidevs_lock */
 static int deassign_device(struct domain *d, uint16_t seg, uint8_t bus,
                            uint8_t devfn)
 {
@@ -915,7 +929,7 @@ static int deassign_device(struct domain *d, uint16_t seg, uint8_t bus,
     if ( !is_iommu_enabled(d) )
         return -EINVAL;
 
-    ASSERT(pcidevs_locked());
+    ASSERT(pcidevs_write_locked());
     pdev = pci_get_pdev_by_domain(d, seg, bus, devfn);
     if ( !pdev )
         return -ENODEV;
@@ -961,11 +975,11 @@ int pci_release_devices(struct domain *d)
     u8 bus, devfn;
     int ret;
 
-    pcidevs_lock();
+    pcidevs_write_lock();
     ret = arch_pci_clean_pirqs(d);
     if ( ret )
     {
-        pcidevs_unlock();
+        pcidevs_write_unlock();
         return ret;
     }
     list_for_each_entry_safe ( pdev, tmp, &d->pdev_list, domain_list )
@@ -974,7 +988,7 @@ int pci_release_devices(struct domain *d)
         devfn = pdev->devfn;
         ret = deassign_device(d, pdev->seg, bus, devfn) ?: ret;
     }
-    pcidevs_unlock();
+    pcidevs_write_unlock();
 
     return ret;
 }
@@ -1072,7 +1086,7 @@ void pci_check_disable_device(u16 seg, u8 bus, u8 devfn)
     s_time_t now = NOW();
     u16 cword;
 
-    pcidevs_lock();
+    pcidevs_read_lock();
     pdev = pci_get_real_pdev(seg, bus, devfn);
     if ( pdev )
     {
@@ -1083,7 +1097,7 @@ void pci_check_disable_device(u16 seg, u8 bus, u8 devfn)
         if ( ++pdev->fault.count < PT_FAULT_THRESHOLD )
             pdev = NULL;
     }
-    pcidevs_unlock();
+    pcidevs_read_unlock();
 
     if ( !pdev )
         return;
@@ -1139,9 +1153,9 @@ int __init scan_pci_devices(void)
 {
     int ret;
 
-    pcidevs_lock();
+    pcidevs_write_lock();
     ret = pci_segments_iterate(_scan_pci_devices, NULL);
-    pcidevs_unlock();
+    pcidevs_write_unlock();
 
     return ret;
 }
@@ -1176,6 +1190,11 @@ static void __hwdom_init setup_one_hwdom_device(const struct setup_hwdom *ctxt,
                ctxt->d->domain_id, err);
 }
 
+/*
+ * It's safe to drop and re-acquire the write lock in this context without
+ * risking pdev disappearing because devices cannot be removed until the
+ * initial domain has been started.
+ */
 static int __hwdom_init _setup_hwdom_pci_devices(struct pci_seg *pseg, void *arg)
 {
     struct setup_hwdom *ctxt = arg;
@@ -1208,17 +1227,17 @@ static int __hwdom_init _setup_hwdom_pci_devices(struct pci_seg *pseg, void *arg
 
             if ( iommu_verbose )
             {
-                pcidevs_unlock();
+                pcidevs_write_unlock();
                 process_pending_softirqs();
-                pcidevs_lock();
+                pcidevs_write_lock();
             }
         }
 
         if ( !iommu_verbose )
         {
-            pcidevs_unlock();
+            pcidevs_write_unlock();
             process_pending_softirqs();
-            pcidevs_lock();
+            pcidevs_write_lock();
         }
     }
 
@@ -1230,9 +1249,9 @@ void __hwdom_init setup_hwdom_pci_devices(
 {
     struct setup_hwdom ctxt = { .d = d, .handler = handler };
 
-    pcidevs_lock();
+    pcidevs_write_lock();
     pci_segments_iterate(_setup_hwdom_pci_devices, &ctxt);
-    pcidevs_unlock();
+    pcidevs_write_unlock();
 }
 
 /* APEI not supported on ARM yet. */
@@ -1353,9 +1372,9 @@ static int _dump_pci_devices(struct pci_seg *pseg, void *arg)
 static void dump_pci_devices(unsigned char ch)
 {
     printk("==== PCI devices ====\n");
-    pcidevs_lock();
+    pcidevs_read_lock();
     pci_segments_iterate(_dump_pci_devices, NULL);
-    pcidevs_unlock();
+    pcidevs_read_unlock();
 }
 
 static int __init setup_dump_pcidevs(void)
@@ -1374,7 +1393,7 @@ static int iommu_add_device(struct pci_dev *pdev)
     if ( !pdev->domain )
         return -EINVAL;
 
-    ASSERT(pcidevs_locked());
+    ASSERT(pcidevs_write_locked());
 
     hd = dom_iommu(pdev->domain);
     if ( !is_iommu_enabled(pdev->domain) )
@@ -1403,7 +1422,7 @@ static int iommu_enable_device(struct pci_dev *pdev)
     if ( !pdev->domain )
         return -EINVAL;
 
-    ASSERT(pcidevs_locked());
+    ASSERT(pcidevs_write_locked());
 
     hd = dom_iommu(pdev->domain);
     if ( !is_iommu_enabled(pdev->domain) ||
@@ -1451,7 +1470,11 @@ static int device_assigned(u16 seg, u8 bus, u8 devfn)
     struct pci_dev *pdev;
     int rc = 0;
 
-    ASSERT(pcidevs_locked());
+    /*
+     * Strictly speaking we only require a read lock here, but this is called
+     * in conjunction with assign_device which requires a write lock.
+     */
+    ASSERT(pcidevs_write_locked());
     pdev = pci_get_pdev(seg, bus, devfn);
 
     if ( !pdev )
@@ -1468,7 +1491,7 @@ static int device_assigned(u16 seg, u8 bus, u8 devfn)
     return rc;
 }
 
-/* Caller should hold the pcidevs_lock */
+/* Caller should hold the pcidevs_write_lock */
 static int assign_device(struct domain *d, u16 seg, u8 bus, u8 devfn, u32 flag)
 {
     const struct domain_iommu *hd = dom_iommu(d);
@@ -1482,7 +1505,7 @@ static int assign_device(struct domain *d, u16 seg, u8 bus, u8 devfn, u32 flag)
         return -EXDEV;
 
     /* device_assigned() should already have cleared the device for assignment */
-    ASSERT(pcidevs_locked());
+    ASSERT(pcidevs_write_locked());
     pdev = pci_get_pdev(seg, bus, devfn);
     ASSERT(pdev && (pdev->domain == hardware_domain ||
                     pdev->domain == dom_io));
@@ -1533,7 +1556,7 @@ static int iommu_get_device_group(
 
     group_id = iommu_call(ops, get_device_group_id, seg, bus, devfn);
 
-    pcidevs_lock();
+    pcidevs_read_lock();
     for_each_pdev( d, pdev )
     {
         unsigned int b = pdev->bus;
@@ -1552,28 +1575,28 @@ static int iommu_get_device_group(
 
             if ( unlikely(copy_to_guest_offset(buf, i, &bdf, 1)) )
             {
-                pcidevs_unlock();
+                pcidevs_read_unlock();
                 return -1;
             }
             i++;
         }
     }
 
-    pcidevs_unlock();
+    pcidevs_read_unlock();
 
     return i;
 }
 
 void iommu_dev_iotlb_flush_timeout(struct domain *d, struct pci_dev *pdev)
 {
-    pcidevs_lock();
+    pcidevs_write_lock();
 
     disable_ats_device(pdev);
 
     ASSERT(pdev->domain);
     if ( d != pdev->domain )
     {
-        pcidevs_unlock();
+        pcidevs_write_unlock();
         return;
     }
 
@@ -1587,7 +1610,7 @@ void iommu_dev_iotlb_flush_timeout(struct domain *d, struct pci_dev *pdev)
     if ( !is_hardware_domain(d) )
         domain_crash(d);
 
-    pcidevs_unlock();
+    pcidevs_write_unlock();
 }
 
 int iommu_do_pci_domctl(
@@ -1667,7 +1690,7 @@ int iommu_do_pci_domctl(
         bus = PCI_BUS(machine_sbdf);
         devfn = PCI_DEVFN2(machine_sbdf);
 
-        pcidevs_lock();
+        pcidevs_write_lock();
         ret = device_assigned(seg, bus, devfn);
         if ( domctl->cmd == XEN_DOMCTL_test_assign_device )
         {
@@ -1680,7 +1703,7 @@ int iommu_do_pci_domctl(
         }
         else if ( !ret )
             ret = assign_device(d, seg, bus, devfn, flags);
-        pcidevs_unlock();
+        pcidevs_write_unlock();
         if ( ret == -ERESTART )
             ret = hypercall_create_continuation(__HYPERVISOR_domctl,
                                                 "h", u_domctl);
@@ -1712,9 +1735,9 @@ int iommu_do_pci_domctl(
         bus = PCI_BUS(machine_sbdf);
         devfn = PCI_DEVFN2(machine_sbdf);
 
-        pcidevs_lock();
+        pcidevs_write_lock();
         ret = deassign_device(d, seg, bus, devfn);
-        pcidevs_unlock();
+        pcidevs_write_unlock();
         break;
 
     default:

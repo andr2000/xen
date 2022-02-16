@@ -197,7 +197,7 @@ static int vioapic_hwdom_map_gsi(unsigned int gsi, unsigned int trig,
         return ret;
     }
 
-    pcidevs_lock();
+    pcidevs_write_lock();
     ret = pt_irq_create_bind(currd, &pt_irq_bind);
     if ( ret )
     {
@@ -207,7 +207,7 @@ static int vioapic_hwdom_map_gsi(unsigned int gsi, unsigned int trig,
         unmap_domain_pirq(currd, pirq);
         spin_unlock(&currd->event_lock);
     }
-    pcidevs_unlock();
+    pcidevs_write_unlock();
 
     return ret;
 }

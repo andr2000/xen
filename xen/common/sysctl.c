@@ -446,7 +446,7 @@ long do_sysctl(XEN_GUEST_HANDLE_PARAM(xen_sysctl_t) u_sysctl)
                 break;
             }
 
-            pcidevs_lock();
+            pcidevs_read_lock();
             pdev = pci_get_pdev(dev.seg, dev.bus, dev.devfn);
             if ( !pdev )
                 node = XEN_INVALID_DEV;
@@ -454,7 +454,7 @@ long do_sysctl(XEN_GUEST_HANDLE_PARAM(xen_sysctl_t) u_sysctl)
                 node = XEN_INVALID_NODE_ID;
             else
                 node = pdev->node;
-            pcidevs_unlock();
+            pcidevs_read_unlock();
 
             if ( copy_to_guest_offset(ti->nodes, i, &node, 1) )
             {

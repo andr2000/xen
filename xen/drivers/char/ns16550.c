@@ -444,7 +444,7 @@ static void __init ns16550_init_postirq(struct serial_port *port)
             {
                 struct msi_desc *msi_desc = NULL;
 
-                pcidevs_lock();
+                pcidevs_write_lock();
 
                 rc = pci_enable_msi(&msi, &msi_desc);
                 if ( !rc )
@@ -459,7 +459,7 @@ static void __init ns16550_init_postirq(struct serial_port *port)
                         pci_disable_msi(msi_desc);
                 }
 
-                pcidevs_unlock();
+                pcidevs_write_unlock();
 
                 if ( rc )
                 {

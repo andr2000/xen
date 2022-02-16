@@ -1444,7 +1444,7 @@ int domain_context_mapping_one(
     if ( QUARANTINE_SKIP(domain) )
         return 0;
 
-    ASSERT(pcidevs_locked());
+    ASSERT(pcidevs_write_locked());
     spin_lock(&iommu->lock);
     maddr = bus_to_context_maddr(iommu, bus);
     context_entries = (struct context_entry *)map_vtd_domain_page(maddr);
@@ -1592,7 +1592,7 @@ static int domain_context_mapping(struct domain *domain, u8 devfn,
     if ( drhd && drhd->iommu->node != NUMA_NO_NODE )
         dom_iommu(domain)->node = drhd->iommu->node;
 
-    ASSERT(pcidevs_locked());
+    ASSERT(pcidevs_write_locked());
 
     switch ( pdev->type )
     {
@@ -1698,7 +1698,7 @@ int domain_context_unmap_one(
     if ( QUARANTINE_SKIP(domain) )
         return 0;
 
-    ASSERT(pcidevs_locked());
+    ASSERT(pcidevs_write_locked());
     spin_lock(&iommu->lock);
 
     maddr = bus_to_context_maddr(iommu, bus);
@@ -2029,7 +2029,7 @@ static int intel_iommu_add_device(u8 devfn, struct pci_dev *pdev)
     u16 bdf;
     int ret, i;
 
-    ASSERT(pcidevs_locked());
+    ASSERT(pcidevs_write_locked());
 
     if ( !pdev->domain )
         return -EINVAL;
@@ -2292,7 +2292,7 @@ static void __hwdom_init setup_hwdom_rmrr(struct domain *d)
     u16 bdf;
     int ret, i;
 
-    pcidevs_lock();
+    pcidevs_write_lock();
     for_each_rmrr_device ( rmrr, bdf, i )
     {
         /*
@@ -2307,7 +2307,7 @@ static void __hwdom_init setup_hwdom_rmrr(struct domain *d)
             dprintk(XENLOG_ERR VTDPREFIX,
                      "IOMMU: mapping reserved region failed\n");
     }
-    pcidevs_unlock();
+    pcidevs_write_unlock();
 }
 
 static struct iommu_state {

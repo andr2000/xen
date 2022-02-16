@@ -143,14 +143,18 @@ struct pci_dev {
 #define has_arch_pdevs(d) (!list_empty(&(d)->pdev_list))
 
 /*
- * The pcidevs_lock protect alldevs_list, and the assignment for the 
- * devices, it also sync the access to the msi capability that is not
+ * The pcidevs write lock protects alldevs_list, and the assignment for the 
+ * devices, it also syncs the access to the msi capability that is not
  * interrupt handling related (the mask bit register).
  */
 
-void pcidevs_lock(void);
-void pcidevs_unlock(void);
-bool_t __must_check pcidevs_locked(void);
+void pcidevs_read_lock(void);
+void pcidevs_read_unlock(void);
+bool __must_check pcidevs_read_locked(void);
+
+void pcidevs_write_lock(void);
+void pcidevs_write_unlock(void);
+bool __must_check pcidevs_write_locked(void);
 
 bool_t pci_known_segment(u16 seg);
 bool_t pci_device_detect(u16 seg, u8 bus, u8 dev, u8 func);

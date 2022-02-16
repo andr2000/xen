@@ -162,11 +162,11 @@ int physdev_unmap_pirq(domid_t domid, int pirq)
             goto free_domain;
     }
 
-    pcidevs_lock();
+    pcidevs_write_lock();
     spin_lock(&d->event_lock);
     ret = unmap_domain_pirq(d, pirq);
     spin_unlock(&d->event_lock);
-    pcidevs_unlock();
+    pcidevs_write_unlock();
 
  free_domain:
     rcu_unlock_domain(d);
@@ -530,10 +530,10 @@ ret_t do_physdev_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
         if ( copy_from_guest(&restore_msi, arg, 1) != 0 )
             break;
 
-        pcidevs_lock();
+        pcidevs_write_lock();
         pdev = pci_get_pdev(0, restore_msi.bus, restore_msi.devfn);
         ret = pdev ? pci_restore_msi_state(pdev) : -ENODEV;
-        pcidevs_unlock();
+        pcidevs_write_unlock();
         break;
     }
 
@@ -545,10 +545,10 @@ ret_t do_physdev_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
         if ( copy_from_guest(&dev, arg, 1) != 0 )
             break;
 
-        pcidevs_lock();
+        pcidevs_write_lock();
         pdev = pci_get_pdev(dev.seg, dev.bus, dev.devfn);
         ret = pdev ? pci_restore_msi_state(pdev) : -ENODEV;
-        pcidevs_unlock();
+        pcidevs_write_unlock();
         break;
     }
 

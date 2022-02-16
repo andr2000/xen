@@ -88,13 +88,13 @@ int pci_conf_write_intercept(unsigned int seg, unsigned int bdf,
     if ( reg < 64 || reg >= 256 )
         return 0;
 
-    pcidevs_lock();
+    pcidevs_write_lock();
 
     pdev = pci_get_pdev(seg, PCI_BUS(bdf), PCI_DEVFN2(bdf));
     if ( pdev )
         rc = pci_msi_conf_write_intercept(pdev, reg, size, data);
 
-    pcidevs_unlock();
+    pcidevs_write_unlock();
 
     return rc;
 }

@@ -197,12 +197,12 @@ int iommu_identity_mapping(struct domain *d, p2m_access_t p2ma,
     struct identity_map *map;
     struct domain_iommu *hd = dom_iommu(d);
 
-    ASSERT(pcidevs_locked());
+    ASSERT(pcidevs_write_locked());
     ASSERT(base < end);
 
     /*
      * No need to acquire hd->arch.mapping_lock: Both insertion and removal
-     * get done while holding pcidevs_lock.
+     * get done while holding pcidevs_write_lock.
      */
     list_for_each_entry( map, &hd->arch.identity_maps, list )
     {

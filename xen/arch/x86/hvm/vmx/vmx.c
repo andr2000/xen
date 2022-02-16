@@ -316,7 +316,7 @@ void vmx_pi_desc_fixup(unsigned int cpu)
  * vmx_intr_assist() path again (SN clear, NV = posted_interrupt).
  */
 
-/* This function is called when pcidevs_lock is held */
+/* This function is called when pcidevs_write_lock is held */
 void vmx_pi_hooks_assign(struct domain *d)
 {
     struct vcpu *v;
@@ -353,7 +353,7 @@ void vmx_pi_hooks_assign(struct domain *d)
     d->arch.hvm.pi_ops.vcpu_block = vmx_vcpu_block;
 }
 
-/* This function is called when pcidevs_lock is held */
+/* This function is called when pcidevs_write_lock is held */
 void vmx_pi_hooks_deassign(struct domain *d)
 {
     struct vcpu *v;

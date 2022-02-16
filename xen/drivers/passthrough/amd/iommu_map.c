@@ -482,9 +482,9 @@ int amd_iommu_get_reserved_device_memory(iommu_grdm_t *func, void *ctxt)
             /* May need to trigger the workaround in find_iommu_for_device(). */
             const struct pci_dev *pdev;
 
-            pcidevs_lock();
+            pcidevs_read_lock();
             pdev = pci_get_pdev(seg, sbdf.bus, sbdf.devfn);
-            pcidevs_unlock();
+            pcidevs_read_unlock();
 
             if ( pdev )
                 iommu = find_iommu_for_device(seg, bdf);
