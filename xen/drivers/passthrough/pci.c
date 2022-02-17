@@ -52,17 +52,18 @@ struct pci_seg {
 
 static spinlock_t _pcidevs_lock = SPIN_LOCK_UNLOCKED;
 static DEFINE_RWLOCK(_pcidevs_rwlock);
+static DEFINE_PER_CPU(unsigned int, pcidevs_rwlock_cnt);
 
 void pcidevs_lock(void)
 {
-    read_lock(&_pcidevs_rwlock);
+    pcidevs_read_lock();
     spin_lock_recursive(&_pcidevs_lock);
 }
 
 void pcidevs_unlock(void)
 {
     spin_unlock_recursive(&_pcidevs_lock);
-    read_unlock(&_pcidevs_rwlock);
+    pcidevs_read_unlock();
 }
 
 bool_t pcidevs_locked(void)
@@ -72,7 +73,9 @@ bool_t pcidevs_locked(void)
 
 void pcidevs_read_lock(void)
 {
-    read_lock(&_pcidevs_rwlock);
+    if ( get_cpu_var(pcidevs_rwlock_cnt) == 0 )
+        read_lock(&_pcidevs_rwlock);
+    get_cpu_var(pcidevs_rwlock_cnt)++;
 }
 
 int pcidevs_read_trylock(void)
@@ -82,7 +85,11 @@ int pcidevs_read_trylock(void)
 
 void pcidevs_read_unlock(void)
 {
-    read_unlock(&_pcidevs_rwlock);
+    ASSERT(get_cpu_var(pcidevs_rwlock_cnt));
+
+    if ( get_cpu_var(pcidevs_rwlock_cnt) == 1 )
+        read_unlock(&_pcidevs_rwlock);
+    get_cpu_var(pcidevs_rwlock_cnt)--;
 }
 
 bool pcidevs_read_locked(void)
