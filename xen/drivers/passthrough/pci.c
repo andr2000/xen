@@ -51,10 +51,14 @@ struct pci_seg {
 };
 
 static DEFINE_RWLOCK(_pcidevs_rwlock);
+static DEFINE_PER_CPU(unsigned int, pcidevs_rlock_cnt);
+static DEFINE_PER_CPU(unsigned int, pcidevs_wlock_cnt);
 
 void pcidevs_read_lock(void)
 {
-    read_lock(&_pcidevs_rwlock);
+    if ( get_cpu_var(pcidevs_rlock_cnt) == 0 )
+        read_lock(&_pcidevs_rwlock);
+    get_cpu_var(pcidevs_rlock_cnt)++;
 }
 
 int pcidevs_read_trylock(void)
@@ -64,7 +68,11 @@ int pcidevs_read_trylock(void)
 
 void pcidevs_read_unlock(void)
 {
-    read_unlock(&_pcidevs_rwlock);
+    ASSERT(get_cpu_var(pcidevs_rlock_cnt));
+
+    if ( get_cpu_var(pcidevs_rlock_cnt) == 1 )
+        read_unlock(&_pcidevs_rwlock);
+    get_cpu_var(pcidevs_rlock_cnt)--;
 }
 
 bool pcidevs_read_locked(void)
@@ -74,12 +82,18 @@ bool pcidevs_read_locked(void)
 
 void pcidevs_write_lock(void)
 {
-    write_lock(&_pcidevs_rwlock);
+    if ( get_cpu_var(pcidevs_wlock_cnt) == 0 )
+        write_lock(&_pcidevs_rwlock);
+    get_cpu_var(pcidevs_wlock_cnt)++;
 }
 
 void pcidevs_write_unlock(void)
 {
-    write_unlock(&_pcidevs_rwlock);
+    ASSERT(get_cpu_var(pcidevs_wlock_cnt));
+
+    if ( get_cpu_var(pcidevs_wlock_cnt) == 1 )
+        write_unlock(&_pcidevs_rwlock);
+    get_cpu_var(pcidevs_wlock_cnt)--;
 }
 
 bool pcidevs_write_locked(void)
