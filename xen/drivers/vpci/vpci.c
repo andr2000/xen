@@ -432,6 +432,7 @@ void vpci_write(pci_sbdf_t sbdf, unsigned int reg, unsigned int size,
     const struct vpci_register *r;
     unsigned int data_offset = 0;
     const unsigned long *ro_map = pci_get_ro_map(sbdf.seg);
+    bool write_locked = false;
 
     if ( !size )
     {
@@ -446,17 +447,46 @@ void vpci_write(pci_sbdf_t sbdf, unsigned int reg, unsigned int size,
     /*
      * Find the PCI dev matching the address.
      * Passthrough everything that's not trapped.
+     *
+     * We always start assuming we need a read lock. At the same time
+     * there are no means to upgrade the read lock to the write one in
+     * case the assumption is wrong. So, if this is the case, then we need
+     * to drop the read lock and re-start the attempt for acquiring the
+     * write lock. It is possible that, after we drop the read lock, pdev
+     * gets removed or re-created in between.
      */
-    pcidevs_read_lock();
+ acquire_write_lock:
+    if ( write_locked )
+        pcidevs_write_lock();
+    else
+        pcidevs_read_lock();
+
     pdev = pci_get_pdev_by_domain(d, sbdf.seg, sbdf.bus, sbdf.devfn);
     if ( !pdev || (pdev && !pdev->vpci) )
     {
-        pcidevs_read_unlock();
+        if ( write_locked )
+            pcidevs_write_unlock();
+        else
+            pcidevs_read_unlock();
         vpci_write_hw(sbdf, reg, size, data);
         return;
     }
 
-    spin_lock(&pdev->vpci->lock);
+    if ( !write_locked )
+    {
+        if ( vpci_header_need_write_lock(pdev, reg, size) )
+        {
+            /*
+             * We need to gain exclusive access to all of the domain pdevs vpci.
+             * For that drop the read lock and restart.
+             */
+            write_locked = true;
+            pcidevs_read_unlock();
+            goto acquire_write_lock;
+        }
+        else
+            spin_lock(&pdev->vpci->lock);
+    }
 
     /* Write the value to the hardware or emulated registers. */
     list_for_each_entry ( r, &pdev->vpci->handlers, node )
@@ -491,8 +521,14 @@ void vpci_write(pci_sbdf_t sbdf, unsigned int reg, unsigned int size,
             break;
         ASSERT(data_offset < size);
     }
-    spin_unlock(&pdev->vpci->lock);
-    pcidevs_read_unlock();
+
+    if ( write_locked )
+        pcidevs_write_unlock();
+    else
+    {
+        spin_unlock(&pdev->vpci->lock);
+        pcidevs_read_unlock();
+    }
 
     if ( data_offset < size )
         /* Tailing gap, write the remaining. */

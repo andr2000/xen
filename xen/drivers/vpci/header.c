@@ -352,6 +352,8 @@ static void cmd_write(const struct pci_dev *pdev, unsigned int reg,
 {
     uint16_t current_cmd = pci_conf_read16(pdev->sbdf, reg);
 
+    ASSERT(pcidevs_write_locked());
+
     /*
      * Let Dom0 play with all the bits directly except for the memory
      * decoding one.
@@ -419,6 +421,8 @@ static void rom_write(const struct pci_dev *pdev, unsigned int reg,
     struct vpci_bar *rom = data;
     uint16_t cmd = pci_conf_read16(pdev->sbdf, PCI_COMMAND);
     bool new_enabled = val & PCI_ROM_ADDRESS_ENABLE;
+
+    ASSERT(pcidevs_write_locked());
 
     if ( (cmd & PCI_COMMAND_MEMORY) && header->rom_enabled && new_enabled )
     {
@@ -563,6 +567,8 @@ static int init_bars(struct pci_dev *pdev)
     }
 
     /* Check expansion ROM. */
+    ASSERT(!header->rom_reg);
+
     rc = pci_size_mem_bar(pdev->sbdf, rom_reg, &addr, &size, PCI_BAR_ROM);
     if ( rc > 0 && size )
     {
@@ -578,11 +584,43 @@ static int init_bars(struct pci_dev *pdev)
                                4, rom);
         if ( rc )
             rom->type = VPCI_BAR_EMPTY;
+
+        header->rom_reg = rom_reg;
     }
 
     return (cmd & PCI_COMMAND_MEMORY) ? modify_bars(pdev, cmd, false) : 0;
 }
 REGISTER_VPCI_INIT(init_bars, VPCI_PRIORITY_MIDDLE);
+
+static bool overlap(unsigned int r1_offset, unsigned int r1_size,
+                    unsigned int r2_offset, unsigned int r2_size)
+{
+    /* Return true if there is an overlap. */
+    return r1_offset < r2_offset + r2_size && r2_offset < r1_offset + r1_size;
+}
+
+bool vpci_header_need_write_lock(const struct pci_dev *pdev,
+                                 unsigned int start, unsigned int size)
+{
+    ASSERT(pcidevs_read_locked());
+
+    /*
+     * Writing the command register and ROM BAR register may trigger
+     * modify_bars to run, which in turn may access multiple pdevs while
+     * checking for the existing BAR's overlap. The overlapping check, if done
+     * under the read lock, requires vpci->lock to be acquired on both devices
+     * being compared, which may produce a deadlock. At the same time it is not
+     * possible to upgrade read lock to write lock in such a case.
+     * Check which registers are going to be written and return true if lock
+     * needs to be acquired in write mode.
+     */
+    if ( overlap(start, size, PCI_COMMAND, 2) ||
+         (pdev->vpci->header.rom_reg &&
+          overlap(start, size, pdev->vpci->header.rom_reg, 4)) )
+        return true;
+
+    return false;
+}
 
 /*
  * Local variables:
