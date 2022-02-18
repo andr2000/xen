@@ -54,12 +54,12 @@ static spinlock_t _pcidevs_lock = SPIN_LOCK_UNLOCKED;
 
 void pcidevs_lock(void)
 {
-    spin_lock_recursive(&_pcidevs_lock);
+    spin_lock(&_pcidevs_lock);
 }
 
 void pcidevs_unlock(void)
 {
-    spin_unlock_recursive(&_pcidevs_lock);
+    spin_unlock(&_pcidevs_lock);
 }
 
 bool_t pcidevs_locked(void)
