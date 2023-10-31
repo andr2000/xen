@@ -100,6 +100,19 @@
             "comment": "Imported from Linux, ignore for now"
         },
         {
+            "rel_path": "arch/x86/hvm/mtrr.c",
+            "comment": "Contains structure formatted in a particular way",
+            "checkers": "codestyle",
+            "codestyle": {
+                "protect": [
+                    {
+                        "syntax_opening": "static const uint8_t mm_type_tbl",
+                        "syntax_closing": "};"
+                    }
+                ]
+            }
+        },
+        {
             "rel_path": "arch/x86/include/asm/alternative-asm.h",
             "comment": "Includes mostly assembly macro and it's meant to be included only in assembly code",
             "checkers": "codestyle"
