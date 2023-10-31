@@ -36,36 +36,36 @@ def action_protect_asm(filename, file_lines, protect):
     opening_asm = False
     cf_off_comment = '/* clang-format off */'
     cf_on_comment = '/* clang-format on */'
-    asm_stx = '(?:asm|__asm__)(?:\s(?:volatile|__volatile__))?\s?\('
-    asm_stx_close = ');'
+
+    config = filename[1]["protect"]
 
     if protect:
         # Look for closing parenthesis with semicolon ');'
-        closing_asm_rgx_rule = rf'^.*{re.escape(asm_stx_close)}.*$'
+        closing_asm_rgx_rule = lambda cl_stx: rf'^.*{re.escape(cl_stx)}.*$'
         # Look for opening asm syntax
-        opening_asm_rgx_rule = rf'^\s*{asm_stx}.*$'
+        opening_asm_rgx_rule = lambda op_stx: rf'^\s*{op_stx}.*$'
         macro_start_rgx_rule = r'^\s?#\s?define.*\\$'
-        opening_asm_find = rf'({asm_stx})'
+        opening_asm_find = lambda op_stx: rf'({op_stx})'
         opening_asm_replace = cf_off_comment + r'\1'
         opening_def_find = r'#\s?define'
         opening_def_replace = f'{cf_off_comment}#define'
-        closing_asm_find    = re.escape(asm_stx_close)
-        closing_asm_replace = asm_stx_close + cf_on_comment
+        closing_asm_find    = lambda cl_stx: re.escape(cl_stx)
+        closing_asm_replace = lambda cl_stx: cl_stx + cf_on_comment
         closing_def_find    = '\n'
         closing_def_replace = cf_on_comment + '\n'
     else:
         # Look for closing parenthesis with semicolon ');' and with the
         # special clang-format comment
-        closing_asm_rgx_rule = \
-            rf'^.*{re.escape(asm_stx_close)}.*{re.escape(cf_on_comment)}.*$'
+        closing_asm_rgx_rule = lambda cl_stx: \
+            rf'^.*{re.escape(cl_stx)}.*{re.escape(cf_on_comment)}.*$'
         # Look for opening asm syntax preceded by the special clang-format
         # comment, the comment is optional to generalise the algorithm to
         # un-protect asm outside and inside macros. The case outside is easy
         # because we will find '/* clang-format off */asm', instead the case
         # inside is more tricky and we are going to find only 'asm' and then
         # go backwards until we find '/* clang-format off */#define'
-        opening_asm_rgx_rule = \
-            rf'^\s*({re.escape(cf_off_comment)})?{asm_stx}.*$'
+        opening_asm_rgx_rule = lambda op_stx: \
+            rf'^\s*({re.escape(cf_off_comment)})?{op_stx}.*$'
         # Look for the define just before the asm invocation, here we look for
         # '/* clang-format off */#define' or '#define', this is to handle a rare
         # corner case where an asm invocation is inside a macro, but was not
@@ -76,24 +76,27 @@ def action_protect_asm(filename, file_lines, protect):
         # comments, but at least the tool won't complain
         macro_start_rgx_rule = \
             rf'^\s?(?:{re.escape(cf_off_comment)})?#\s?define.*\\$'
-        opening_asm_find = rf'({re.escape(cf_off_comment)}({asm_stx}))'
+        opening_asm_find = \
+            lambda op_stx: rf'({re.escape(cf_off_comment)}({op_stx}))'
         opening_asm_replace = r'\2'
         opening_def_find = rf'(?:{re.escape(cf_off_comment)})?#\s?define'
         opening_def_replace = '#define'
-        closing_asm_find \
-            = rf'{re.escape(asm_stx_close)}.*{re.escape(cf_on_comment)}'
-        closing_asm_replace = asm_stx_close
+        closing_asm_find = lambda cl_stx: \
+            rf'{re.escape(cl_stx)}.*{re.escape(cf_on_comment)}'
+        closing_asm_replace = lambda cl_stx: cl_stx
         closing_def_find    = cf_on_comment + '\n'
         closing_def_replace = '\n'
 
-    opening_asm_rgx = re.compile(opening_asm_rgx_rule)
-    closing_asm_rgx = re.compile(closing_asm_rgx_rule)
+    closing_asm_rgx = None
     macro_start_rgx = re.compile(macro_start_rgx_rule)
+    regx_open = ""
+    regx_close = ""
 
     i = 0
     i_max = len(file_lines)
     macro_begin = -1
     while i < i_max:
+        opening_match = False
         # Keep track of the last define we found
         if macro_start_rgx.match(file_lines[i]):
             macro_begin = i
@@ -101,7 +104,17 @@ def action_protect_asm(filename, file_lines, protect):
         # touch asm syntax inside macros that usually have the line ended by
         # a backslash, this is because insert stuff in them will have issues
         # when later clang-format will format the macro itself
-        if (not opening_asm) and opening_asm_rgx.match(file_lines[i]):
+        if (not opening_asm):
+            for elem in config:
+                regx_open = elem["syntax_opening"]
+                if re.match(opening_asm_rgx_rule(regx_open), file_lines[i]):
+                    regx_close = elem["syntax_closing"]
+                    closing_asm_rgx = \
+                        re.compile(closing_asm_rgx_rule(regx_close))
+                    opening_match = True
+                    break
+
+        if (not opening_asm) and opening_match:
             line_before = (i > 0) and file_lines[i-1].endswith('\\\n')
             if file_lines[i].endswith('\\\n') or line_before:
                 # This should never happen, but if it does, it means an
@@ -109,7 +122,7 @@ def action_protect_asm(filename, file_lines, protect):
                 if macro_begin < 0:
                     raise Exception("Begin of macro not found in {}\n"
                                     "The asm invocation is on line {}"
-                                    .format(filename, i))
+                                    .format(filename[0], i))
 
                 # asm invocation inside macro, need to protect the entire macro,
                 # macro_begin should point to this define
@@ -148,14 +161,15 @@ def action_protect_asm(filename, file_lines, protect):
             else:
                 # asm invocation is not inside a macro, protect the asm syntax
                 opening_asm = True
-                file_lines[i] = re.sub(opening_asm_find, opening_asm_replace,
-                                       file_lines[i])
+                file_lines[i] = re.sub(opening_asm_find(regx_open),
+                                       opening_asm_replace, file_lines[i])
 
         # Try to find in the current line the asm closing syntax, only if a
         # previous line already found an opening asm syntax
         if opening_asm and closing_asm_rgx.match(file_lines[i]):
             opening_asm = False
-            file_lines[i] = re.sub(closing_asm_find, closing_asm_replace,
+            file_lines[i] = re.sub(closing_asm_find(regx_close),
+                                   closing_asm_replace(regx_close),
                                    file_lines[i])
 
         i += 1
@@ -163,7 +177,7 @@ def action_protect_asm(filename, file_lines, protect):
     # This should never happen, but if it does, it means an unexpected syntax
     # is found in the file
     if opening_asm:
-        raise Exception("Unbalanced asm parenthesis in {}".format(filename))
+        raise Exception("Unbalanced asm parenthesis in {}".format(filename[0]))
 
     return file_lines
 
@@ -180,19 +194,19 @@ def stage(filename, actions):
         return
 
     try:
-        with open(filename, "rt") as infile:
+        with open(filename[0], "rt") as infile:
             file_lines = infile.readlines()
     except OSError as e:
-        raise Exception("Issue with reading file {}: {}".format(filename, e))
+        raise Exception("Issue with reading file {}: {}".format(filename[0], e))
 
     for task in actions:
         file_lines = task(filename, file_lines)
 
     try:
-        with open(filename, "wt") as outfile:
+        with open(filename[0], "wt") as outfile:
             outfile.writelines(file_lines)
     except OSError as e:
-        raise Exception("Issue writing file {}: {}".format(filename, e))
+        raise Exception("Issue writing file {}: {}".format(filename[0], e))
 
 
 def main(argv):
@@ -236,27 +250,37 @@ def main(argv):
 
     # Transform the lists of absolute path in the second element of the
     # exclusion_list into a plain list of absolute path to be exluded
-    excluded_c_files = [j for i in exclusion_list for j in i[1]]
+    excluded_c_files = [(j, i[2]) for i in exclusion_list for j in i[1]]
 
     file_to_format = []
+    default_config = {
+        "syntax_opening": "(?:asm|__asm__)(?:\s(?:volatile|__volatile__))?\s?\(",
+        "syntax_closing": ");"
+    }
     for file in c_files:
         add_to_list = True
+        cfg = {"protect": [default_config]}
         for excl in excluded_c_files:
-            if excl in file:
-                add_to_list = False
+            if excl[0] in file:
+                if excl[1] is not None and "protect" in excl[1]:
+                    excl[1]["protect"].append(default_config)
+                    cfg = excl[1]
+                else:
+                    add_to_list = False
                 break
         if add_to_list:
-            file_to_format.append(file)
+            file_to_format.append((file, cfg))
         elif len_args > 0:
             print("ERROR: file {} is excluded!".format(file))
             sys.exit(1)
 
-    for file in file_to_format:
+    for file_entry in file_to_format:
         try:
-            stage(file, pre_stage_actions)
-            utils.invoke_command("clang-format -i {}".format(file), False,
-                                 Exception, "Error occured invoking: {}\n")
-            stage(file, post_stage_actions)
+            stage(file_entry, pre_stage_actions)
+            utils.invoke_command("clang-format -i {}".format(file_entry[0]),
+                                 False, Exception,
+                                 "Error occured invoking: {}\n")
+            stage(file_entry, post_stage_actions)
         except Exception as e:
             print("ERROR: {}\n".format(e))
 

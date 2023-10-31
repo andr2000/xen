@@ -20,11 +20,12 @@ def cppcheck_exclusion_file_list(input_file):
 
 
 # Reads the exclusion file list and returns an array containing a set where the
-# first entry is what was listed in the exclusion list file, and the second
-# entry is the absolute path of the first entry.
+# first entry is what was listed in the exclusion list file, the second
+# entry is the absolute path of the first entry, the third entry is a checker
+# specific configuration if provided otherwise it will be None.
 # If the first entry contained a wildcard '*', the second entry will have an
 # array of the solved absolute path for that entry.
-# Returns [('path',[path,path,...]), ('path',[path,path,...]), ...]
+# Returns [('path',[path,path,...],<obj>), ('path',[path,path,...],<obj>), ...]
 def load_exclusion_file_list(input_file, checker=""):
     ret = []
     try:
@@ -63,6 +64,12 @@ def load_exclusion_file_list(input_file, checker=""):
         if checker not in entry_checkers:
             continue
 
+        # Get checker specific configuration if any
+        try:
+            checker_config = entry[checker] if checker != "" else None
+        except KeyError:
+            checker_config = None
+
         abs_path = settings.xen_dir + "/" + path
         check_path = [abs_path]
 
@@ -78,6 +85,6 @@ def load_exclusion_file_list(input_file, checker=""):
                     .format(path, filepath_object)
                 )
 
-        ret.append((path, check_path))
+        ret.append((path, check_path, checker_config))
 
     return ret

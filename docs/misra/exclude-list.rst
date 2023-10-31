@@ -25,7 +25,8 @@ Here is an example of the exclude-list.json file::
 |        {
 |            "rel_path": "relative/path/from/xen/folder/*",
 |            "comment": "This folder is a library",
-|            "checkers": "xen-analysis some-checker"
+|            "checkers": "xen-analysis some-checker",
+|            "xen-analysis": {...}
 |        },
 |        {
 |            "rel_path": "relative/path/from/xen/mem*.c",
@@ -49,6 +50,9 @@ Here is an explanation of the fields inside an object of the "content" array:
       and static analysis scan. (Implemented only for Cppcheck tool)
     - codestyle: the codestyle.py script exclude this entry from the formatting
       tool.
+ - <checker>: an optional parameter to pass a configuration to the checker about
+   this entry. The parameter to be specified is one of the value listed for the
+   "checkers" value.
 
 To ease the review and the modifications of the entries, they shall be listed in
 alphabetical order referring to the rel_path field.
