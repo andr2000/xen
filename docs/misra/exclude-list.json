@@ -5,6 +5,10 @@
             "rel_path": "arch/*/include/asm/*/efibind.h",
             "comment": "Imported from gnu-efi package, ignore for now"
         },
+            "rel_path": "arch/arm/arm32/lib/assembler.h",
+            "comment": "Includes mostly assembly macro and it's meant to be included only in assembly code",
+            "checkers": "codestyle"
+        },
         {
             "rel_path": "arch/arm/arm64/cpufeature.c",
             "comment": "Imported from Linux, ignore for now"
@@ -12,6 +16,35 @@
         {
             "rel_path": "arch/arm/arm64/insn.c",
             "comment": "Imported on Linux, ignore for now"
+        },
+        {
+            "rel_path": "arch/arm/arm64/lib/find_next_bit.c",
+            "comment": "Imported from Linux, ignore for now"
+        },
+        {
+            "rel_path": "arch/arm/include/asm/arm32/macros.h",
+            "comment": "Includes only assembly macro",
+            "checkers": "codestyle"
+        },
+        {
+            "rel_path": "arch/arm/include/asm/arm64/macros.h",
+            "comment": "Includes only assembly macro",
+            "checkers": "codestyle"
+        },
+        {
+            "rel_path": "arch/arm/include/asm/alternative.h",
+            "comment": "Imported from Linux, ignore for now",
+            "checkers": "codestyle"
+        },
+        {
+            "rel_path": "arch/arm/include/asm/asm_defns.h",
+            "comment": "Includes mostly assembly macro",
+            "checkers": "codestyle"
+        },
+        {
+            "rel_path": "arch/arm/include/asm/macros.h",
+            "comment": "Includes mostly assembly macro and it's meant to be included only in assembly code",
+            "checkers": "codestyle"
         },
         {
             "rel_path": "arch/x86/acpi/boot.c",
@@ -68,6 +101,36 @@
         {
             "rel_path": "arch/x86/cpu/mwait-idle.c",
             "comment": "Imported from Linux, ignore for now"
+        },
+        {
+            "rel_path": "arch/x86/include/asm/alternative-asm.h",
+            "comment": "Includes mostly assembly macro and it's meant to be included only in assembly code",
+            "checkers": "codestyle"
+        },
+        {
+            "rel_path": "arch/x86/include/asm/asm_defns.h",
+            "comment": "Includes mostly assembly macro",
+            "checkers": "codestyle"
+        },
+        {
+            "rel_path": "arch/x86/include/asm/asm-defns.h",
+            "comment": "Includes mostly assembly macro",
+            "checkers": "codestyle"
+        },
+        {
+            "rel_path": "arch/x86/include/asm/bug.h",
+            "comment": "Includes mostly assembly macro",
+            "checkers": "codestyle"
+        },
+        {
+            "rel_path": "arch/x86/include/asm/mpspec.h",
+            "comment": "Imported from Linux, also designated initializers ranges are not handled very well by clang-format, ignore for now",
+            "checkers": "codestyle"
+        },
+        {
+            "rel_path": "arch/x86/include/asm/spec_ctrl_asm.h",
+            "comment": "Includes mostly assembly macro",
+            "checkers": "codestyle"
         },
         {
             "rel_path": "arch/x86/delay.c",
@@ -218,6 +281,21 @@
           "comment": "Imported from Linux, ignore for now"
         },
         {
+            "rel_path": "include/efi/*.h",
+            "comment": "Imported from gnu-efi-3.0k, prefer their formatting",
+            "checkers": "codestyle"
+        },
+        {
+            "rel_path": "include/public/arch-x86/cpufeatureset.h",
+            "comment": "This file contains some inputs for the gen-cpuid.py script, leave it out",
+            "checkers": "codestyle"
+        },
+        {
+            "rel_path": "include/public/*",
+            "comment": "Public headers are quite sensitive to format tools",
+            "checkers": "codestyle"
+        },
+        {
             "rel_path": "include/xen/acpi.h",
             "comment": "Imported from Linux, ignore for now"
         },
@@ -234,6 +312,26 @@
             "comment": "Imported from Linux, ignore for now"
         },
         {
+            "rel_path": "include/xen/cper.h",
+            "comment": "Header does not follow Xen coding style",
+            "checkers": "codestyle"
+        },
+        {
+            "rel_path": "include/xen/nodemask.h",
+            "comment": "Imported from Linux, also designated initializers ranges are not handled by clang-format, ignore for now",
+            "checkers": "codestyle"
+        },
+        {
+            "rel_path": "include/xen/xen.lds.h",
+            "comment": "This file contains only macros used inside the linker script",
+            "checkers": "codestyle"
+        },
+        {
+            "rel_path": "include/hypercall-defs.c",
+            "comment": "This file contains only C preprocessing syntax, the other lines are not C and are used to generate the hypercall definition by another script.",
+            "checkers": "codestyle"
+        },
+        {
             "rel_path": "lib/list-sort.c",
             "comment": "Imported from Linux, ignore for now"
         },
@@ -244,6 +342,11 @@
         {
             "rel_path": "lib/xxhash*.c",
             "comment": "Imported from Linux, ignore for now"
+        },
+        {
+            "rel_path": "tools/*",
+            "comment": "Contains host tools imported from Linux, ignore for now",
+            "checkers": "codestyle"
         },
         {
             "rel_path": "xsm/flask/*",

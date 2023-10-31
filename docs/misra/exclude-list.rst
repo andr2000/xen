@@ -47,6 +47,8 @@ Here is an explanation of the fields inside an object of the "content" array:
 
     - xen-analysis: the xen-analysis.py script exclude this entry for both MISRA
       and static analysis scan. (Implemented only for Cppcheck tool)
+    - codestyle: the codestyle.py script exclude this entry from the formatting
+      tool.
 
 To ease the review and the modifications of the entries, they shall be listed in
 alphabetical order referring to the rel_path field.
