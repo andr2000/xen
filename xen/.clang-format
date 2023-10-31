@@ -29,8 +29,8 @@ AlignArrayOfStructures: Left
 # [not specified]
 # Align consecutive assignments (supported in clang-format 3.8)
 AlignConsecutiveAssignments:
-  Enabled: true
-  AcrossEmptyLines: true
+  Enabled: false
+  AcrossEmptyLines: false
   AcrossComments: false
 
 # [not specified]
@@ -46,8 +46,8 @@ AlignConsecutiveDeclarations: None
 # Align values of consecutive macros (supported in clang-format 9)
 AlignConsecutiveMacros:
   Enabled: true
-  AcrossEmptyLines: true
-  AcrossComments: true
+  AcrossEmptyLines: false
+  AcrossComments: false
 
 # [not specified]
 # Align escaped newlines to the right (supported in clang-format 5)
