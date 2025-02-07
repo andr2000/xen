@@ -5,6 +5,7 @@
             "rel_path": "arch/*/include/asm/*/efibind.h",
             "comment": "Imported from gnu-efi package, ignore for now"
         },
+        {
             "rel_path": "arch/arm/arm32/lib/assembler.h",
             "comment": "Includes mostly assembly macro and it's meant to be included only in assembly code",
             "checkers": "codestyle"
@@ -16,10 +17,6 @@
         {
             "rel_path": "arch/arm/arm64/insn.c",
             "comment": "Imported on Linux, ignore for now"
-        },
-        {
-            "rel_path": "arch/arm/arm64/lib/find_next_bit.c",
-            "comment": "Imported from Linux, ignore for now"
         },
         {
             "rel_path": "arch/arm/include/asm/arm32/macros.h",
