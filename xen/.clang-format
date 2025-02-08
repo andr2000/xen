@@ -10,6 +10,9 @@
 #
 ---
 
+################################################################################
+# How to review the changes
+################################################################################
 # ------------------------------------------------------------------------------
 # https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02126.html
 # ------------------------------------------------------------------------------
@@ -32,6 +35,107 @@
 # actually be easier for individual reviewers to do that on their own
 # trees, rather than to ask you to try to generate and post such patches
 # somewhere.
+
+################################################################################
+# do/while loops
+################################################################################
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-07/msg02276.html
+# ------------------------------------------------------------------------------
+# Jan:
+# > I've read the past threads about the brave people who dared to try to
+# > introduce clang-format for the xen codebase, some of them from 5 years ago,
+# > two points were clear: 1) goto label needs to be indented and 2) do-while
+# > loops have the braket in the same line.
+# > While point 1) was quite a blocker, it seemd to me that point 2) was less
+# > controversial to be changed in the Xen codestyle, so the current wrapper
+# > script handles only the point 1 (which is easy), the point 2 can be more
+# > tricky to handle.
+#
+# I'm afraid I view the do/while part pretty much as a blocker as well.
+# While placing the opening brace according to our style elsewhere would
+# be okay-ish (just a little wasteful to have two almost empty lines),
+# having the closing brace on a separate line is problematic: At least I
+# consider a block / scope to end at the line where the closing brace is.
+# So the farther do and while are apart, the more
+#
+#    do
+#    {
+#        ...;
+#    }
+#    while ( cond );
+#    ...;
+#
+# is going to be misleading. While normally we would write potentially
+# conflicting constructs this way
+#
+#     while ( cond )
+#         ;
+#
+# the alternative spelling still isn't outright wrong in our style (I
+# believe):
+#
+#     while ( cond );
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-07/msg02282.html
+# ------------------------------------------------------------------------------
+# Luca:
+# Thank you for your feedback, I could maybe misunderstood your reply, so please
+# tell me if I am wrong, the Xen coding style mandates this style for do-while
+# loops:
+#
+# do {
+# /* Do stuff. */
+# } while ( condition );
+#
+# Currently clang-format is able to do only this:
+#
+# do
+# {
+# /* Do stuff. */
+# } while ( condition );
+#
+# So the issue is only in the opening brackets, not the closing one. Is it a
+# blocker too?
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-07/msg02284.html
+# ------------------------------------------------------------------------------
+# Jan:
+# > do
+# > {
+# > /* Do stuff. */
+# > } while ( condition );
+#
+# Oh, I hadn't understood your description that way.
+#
+# > So the issue is only in the opening brackets, not the closing one. Is it a
+# > blocker too?
+#
+# No. I don't like the longer form, but I could live with it.
+
+################################################################################
+# clang version to use
+################################################################################
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-07/msg02301.html
+# ------------------------------------------------------------------------------
+# Alejandro:
+# > The minimum clang-format version for the file is 15, my ubuntu 22.04 comes
+# > with it, we can reason if it's too high, or if we could also use the latest
+# > version maybe shipped inside a docker image.
+# 15 sounds ok \methinks. In practice we'll just stick it in GitLab and let
+# it check commits, so we'll be safe even in the case where every developer
+# has a slightly different version of the tool. I wouldn't try to make this
+# (hard) task harder by trying to retrofit it in an older version.
+#
+# It might be worth stitching a flag in the python script to scream if the
+#clang-format version doesn't match. Or it may do a mess of the tree.
+
+################################################################################
+# Options and their discussions
+################################################################################
 
 # [not specified]
 # Align function parameter that goes into a new line, under the open bracket
@@ -397,6 +501,20 @@ AllowShortBlocksOnASingleLine: Never
 AllowShortCaseLabelsOnASingleLine: false
 
 # (supported in clang-format 3.5)
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-07/msg02355.html
+# ------------------------------------------------------------------------------
+# Luca:
+# >> static void __init efi_arch_cpu(void)
+# >> -{
+# >> -}
+# >> +{}
+# >>
+#
+# Also this one can be changed I think by tweaking
+# AllowShortFunctionsOnASingleLine, so that we can have just:
+#
+# static void __init efi_arch_cpu(void) {}
 AllowShortFunctionsOnASingleLine: None
 
 # (supported in clang-format 3.3)
