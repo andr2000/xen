@@ -11,6 +11,16 @@
             "checkers": "codestyle"
         },
         {
+            "rel_path": "arch/arm/arm32/lib/bitops.c",
+            "comment": "Includes mostly assembly macro",
+            "checkers": "codestyle"
+        },
+        {
+            "rel_path": "arch/arm/arm64/lib/bitops.c",
+            "comment": "Includes mostly assembly macro",
+            "checkers": "codestyle"
+        },
+        {
             "rel_path": "arch/arm/arm64/cpufeature.c",
             "comment": "Imported from Linux, ignore for now"
         },
