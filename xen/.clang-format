@@ -105,6 +105,39 @@ AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: false
 
 # Specify Xen's macro attributes (supported in clang-format 12)
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg00833.html
+# ------------------------------------------------------------------------------
+# Jan: Like above, the significance of having this list and needing to keep it
+# up-to-date is unclear to me. I guess the same also applies to a few
+# further settings down from here.
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg00867.html
+# ------------------------------------------------------------------------------
+# Luca: From what I understand, we should give to the formatter tool all the hint
+# possible to make it do a good
+# job, for example here we should maintain a list of our attributes so that
+# clang-format doesn’t think the function
+# below is called __init instead of device_tree_node_matches.
+
+# static bool __init device_tree_node_matches(const void *fdt, int node, const
+# char *match)
+# { ... }
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg00888.html
+# ------------------------------------------------------------------------------
+# Jan: Well, perhaps they indeed need to do some level of syntax analysis, in
+# which case knowing which identifiers act as attributes is likely going
+# to help. Which is where the "needs keeping up-to-date" aspect comes into
+# play. The example above is simple enough that I wouldn't think a parser
+# needs to guess what this represents, but presumably there are cases
+# where ambiguities might arise. (I also wouldn't exclude that the more
+# involved syntax in C++ increases the desire to have apriori knowledge on
+# the purpose of certain identifiers. In the end, as per above, the tool
+# is being told to expect C++ code.)
 AttributeMacros:
   - '__init'
   - '__exit'
@@ -539,6 +572,118 @@ SpacesInParentheses: false
 SpacesInSquareBrackets: false
 
 # (supported in clang-format 3.7)
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg00833.html
+# ------------------------------------------------------------------------------
+# Jan: Since I continue to be puzzled - iirc you said this is because of lack
+# of availability of "C99" as a value here. What's entirely unclear to
+# me is: How does this matter to a tool checking coding style (which is
+# largely about formatting, not any lexical or syntactical aspects)?
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg00867.html
+# ------------------------------------------------------------------------------
+# Luca: Ok, maybe I understand your point, you are looking for a reason to declare this
+# configurable instead of not specifying it at all?
+# If it’s that, from what I understand clang-format will use the default value if
+# we don’t specify anything for this one, so it will take ‘Latest’. I think we
+# should put a value for this one to fix it and don’t have surprises if that
+# behaviour changes and seeing that also in Linux that value is fixed
+# increased myconfidence.
+# However, if you feel that we should not specify it, I’ve done a test and not
+# specifying it is not changing the current output. I can’t say that for a
+# different clang-format version though or if changes happen in the future.
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg00887.html
+# ------------------------------------------------------------------------------
+# Alejandro: On C it _shouldn't_ matter because it's meant to affect C++ constructs
+# only. That said, clang-format doesn't understand (or care) whether the code
+# is C or C++, because C's syntax is strictly contained in that of C++ as far
+# as formatting cares.
+# While I agree it feels wrong to apply a C++ policy to a C project, it's
+# largely irrelevant. Setting a value here gives more deterministic output
+# because it fixes several options' default settings. One would hope none of
+# those settings affect C, but the world is complex and it's better to be
+# safe than sorry. Particularly when it's an inocuous one-liner.
+# There aren't strict C values. And Latest or Auto are simply shorthands for
+# one of the C++ options.
+#
+#  https://clang.llvm.org/docs/ClangFormatStyleOptions.html#standard
+#
+# IMO, C++03 is as good as any other. As long as it's a fixed one.
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg00888.html
+# ------------------------------------------------------------------------------
+# >>> This value is used also in Linux.
+# >>
+# >> Considering how different the two styles are, I don't think this is
+# >> overly relevant.
+# >
+# > Ok, maybe I understand your point, you are looking for a reason to declare
+# > this configurable instead of not specifying it at all?
+#
+# Jan: Not really, no. Here I was merely saying that with the styles being
+# sufficiently different, what Linux uses is probably not very significant
+# for our own decision.
+#
+# > However, if you feel that we should not specify it, I’ve done a test and not
+# > specifying it is not changing
+# > the current output. I can’t say that for a different clang-format version
+# > though or if changes happen in the
+# > future.
+# Jan: It's fine to set values. All I'm saying is that at least I would prefer
+# if it was also clear what exact effect the setting of a value has,
+# especially when that does not really match the language we use in the
+# project.
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg01035.html
+# ------------------------------------------------------------------------------
+# Luca: Yes I agree, I think Alejandro’s reply to this configurable reflects my
+# thoughts about it.
+# So if we all agree that we should set this parameter, do we all agree that it
+# should be the value above?
+# Do you have other concerns regarding this or the other parameters in this
+# thread?
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg01051.html
+# ------------------------------------------------------------------------------
+# Alejandro:
+# > > It's fine to set values. All I'm saying is that at least I would prefer
+# > > if it was also clear what exact effect the setting of a value has,
+# > > especially when that does not really match the language we use in the
+# > > project.
+# On C, allegedly, none. It ought to control defaults for things like
+# SpaceBeforeCpp11BracedList, SpacesInAngles and other C++-specific things,
+# because the C++ language sticks syntactical extensions every other Tuesday.
+# Alas, whatever it does (there's no full list). I'd feel a lot more
+# comfortable knowing it won't change under our feet.
+# For reference, clang-format's docs state as an example:
+# ```
+# c++03:                                 latest:
+# vector<set<int> > x;           vs.     vector<set<int>> x;
+# ```
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg01062.html
+# ------------------------------------------------------------------------------
+# Jan:
+# > Do you have other concerns regarding this or the other parameters in this
+# > thread?
+# I did raise what was occurring to me. This doesn't mean that down the
+# road yet something else might not pop up.
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg01063.html
+# ------------------------------------------------------------------------------
+# Luca:
+# > I did raise what was occurring to me. This doesn't mean that down the
+# > road yet something else might not pop up.
+# Sure, thanks for raising your concern, I’ve asked so that at the deadline if no
+# other concern are raised, we can move on with another set of configurable to
+# discuss.
 Standard: C++03
 
 # Macros which are ignored in front of a statement, as if they were an
@@ -550,6 +695,17 @@ Standard: C++03
 # Typical macros are expressions, and require a semi-colon to be added;
 # sometimes this is not the case, and this allows to make clang-format aware of
 # such cases. (supported in clang-format 8)
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg00833.html
+# ------------------------------------------------------------------------------
+# Jan: Ah, just wanted to ask. I agree that we'd better have here only items
+# which truly require an exception.
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg00867.html
+# ------------------------------------------------------------------------------
+# Luca: Yes my mistake, I’ll fix the list.
 StatementMacros:
   - 'PROGRESS'
   - 'PROGRESS_VCPU'
