@@ -277,7 +277,7 @@ def main(argv):
     for file_entry in file_to_format:
         try:
             stage(file_entry, pre_stage_actions)
-            utils.invoke_command("clang-format -i {}".format(file_entry[0]),
+            utils.invoke_command("/mnt/storage/projects/clang/llvm-project/build/bin/clang-format -i {}".format(file_entry[0]),
                                  False, Exception,
                                  "Error occured invoking: {}\n")
             stage(file_entry, post_stage_actions)
