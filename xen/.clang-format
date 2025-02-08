@@ -10,9 +10,156 @@
 #
 ---
 
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02126.html
+# ------------------------------------------------------------------------------
+# George Dunlap:
+# It's hard to agree on this one without seeing some of the examples of
+# what it does, some examples of the "weird behavior" Stefano &
+# Allejandro found, and some examples of places where it's going to
+# remove the alignment.
+#
+# I had tried to apply your series before and didn't get very far with
+# it for some reason ISTR.  One way to see the effect of individual
+# features would be:
+#
+# 1. Make a branch with one big patch applying clang-format for a given style
+#
+# 2. Change just one style line, re-run clang format, and create a new
+# patch from that
+#
+# Then it would be easy to see the difference between the two.  It might
+# actually be easier for individual reviewers to do that on their own
+# trees, rather than to ask you to try to generate and post such patches
+# somewhere.
+
 # [not specified]
 # Align function parameter that goes into a new line, under the open bracket
 # (supported in clang-format 3.8)
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg01993.html
+# ------------------------------------------------------------------------------
+# Luca: This one is to align function parameters that overflows the line length,
+# I chose to align them to the open bracket to match the current codebase
+# (hopefully) e.g.:
+# someLongFunction(argument1,
+#                  argument2);
+#
+# This one can be a candidate for an entry in our coding style
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02143.html
+# ------------------------------------------------------------------------------
+# Jan:
+# > e.g.:
+# > someLongFunction(argument1,
+# >                  argument2);
+# The above matches neither of the two generally permitted styles:
+#
+#    someLongFunction(argument1,
+#                     argument2);
+#
+#    someLongFunction(
+#        argument1,
+#        argument2);
+#
+# Then again from its name I would infer this isn't just about function
+# arguments?
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02172.html
+# ------------------------------------------------------------------------------
+# Luca:
+# I think it applies to parameters and arguments of functions and macro, given
+# the description in the docs.
+# I see your two snippets above but I’ve always found at least on arm a
+# predominance of the style above for functions, so arguments aligned after the
+# opening bracket, for macros there is a mix.
+# I might be wrong though and so another opinion from another maintainer would
+# help.
+# In any case we can choose among many value:
+# https://clang.llvm.org/docs/ClangFormatStyleOptions.html#alignafteropenbracket,
+# but when we do so, we need to stick to one permitted style only, the tool don’t
+# allow to specify more than one.
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02311.html
+# ------------------------------------------------------------------------------
+# Jan:
+# > I see your two snippets above but I’ve always found at least on arm a
+# > predominance of the style above for functions, so arguments aligned after
+# > the opening bracket, for macros there is a mix.
+#
+# The latter "above" refers to which form exactly? The one you originally
+# spelled out, or the former of what my reply had?
+#
+# > In any case we can choose among many value:
+# > https://clang.llvm.org/docs/ClangFormatStyleOptions.html#alignafteropenbracket,
+# > but when we do so, we need to stick to one permitted style only, the tool
+# > don’t allow to specify more than one.
+#
+# a2k: RED FLAG
+# On top of my earlier reply yet another reason perhaps that this tool then
+# won't really fit our intended use.
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02356.html
+# ------------------------------------------------------------------------------
+# Luca:
+# > The latter "above" refers to which form exactly? The one you originally
+# > spelled out, or the former of what my reply had?
+#
+# In my reply I was referring to the one I originally spelled out.
+#
+# > On top of my earlier reply yet another reason perhaps that this tool then
+# > won't really fit our intended use.
+# ok
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02361.html
+# ------------------------------------------------------------------------------
+# Jan:
+# > In my reply I was referring to the one I originally spelled out.
+#
+# But that's properly malformed, for not aligning argument2 with argument1.
+# Where are such constructs commonly used? I just took one example (cpuerrata.c)
+# and only found my first form of wrapping.
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02366.html
+# ------------------------------------------------------------------------------
+# Luca:
+# > But that's properly malformed, for not aligning argument2 with argument1.
+# > Where are such constructs commonly used? I just took one example (cpuerrata.c)
+# > and only found my first form of wrapping.
+#
+# I had to go back to the thread to realise there was some style issue, the
+# snippet I thought I sent already had argument2 aligned under argument1, like
+# this:
+#
+# e.g.:
+# someLongFunction(argument1,
+#                                argument2);
+#
+# Even my wording was not really accurate, as I meant:
+# “This one is to align function parameters that overflows the line length, I
+# chose to align them *after* the open bracket to match the current codebase
+# (hopefully)”
+# So to summarize, this value formats the code to have overflowing args/param
+# aligned after the open braket.
+#
+# But I understand that having only one format is not desirable.
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02367.html
+# ------------------------------------------------------------------------------
+# Jan:
+# > So to summarize, this value formats the code to have overflowing args/param
+# > aligned after the open braket.
+#
+# But the example above _again_ does not have the two arguments aligned.
+# I would have suspected a mail UI issue, but
+# https://lists.xen.org/archives/html/xen-devel/2023-11/msg02366.html
+# similarly shows way too many indenting blanks on the 2nd line.
 AlignAfterOpenBracket: Align
 
 # [not specified]
@@ -24,22 +171,189 @@ AlignAfterOpenBracket: Align
 #     {7,  5,     "!!"   }
 # };
 # (supported in clang-format 13)
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg01993.html
+# ------------------------------------------------------------------------------
+# Luca: "When using initialization for an array of structs aligns the fields into
+# columns."
+# It’s important to say that even if we specify "None", it is going to format the
+# data structure anyway, I choose left, but clearly I’m open to suggestions.
+# I don’t know how to phrase this one in our coding style
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02143.html
+# ------------------------------------------------------------------------------
+# Jan:
+# You don't say in which way it re-formats such constructs.
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02172.html
+# ------------------------------------------------------------------------------
+# Luca:
+# > You don't say in which way it re-formats such constructs.
+# Sure, taking as example an array of structure, xen/drivers/video/modelines.h,
+# With AlignArrayOfStructures: None we have this below.
+#
+# diff --git a/xen/drivers/video/modelines.h b/xen/drivers/video/modelines.h
+# index 9cb7cdde055f..3ff23ef1f8a7 100644
+# --- a/xen/drivers/video/modelines.h
+# +++ b/xen/drivers/video/modelines.h
+# @@ -42,36 +42,36 @@ struct modeline {
+#  };
+#
+#  struct modeline __initdata videomodes[] = {
+# -    { "640x480@60",   25175,  640,  16,   96,   48,   480,  11,   2,    31 },
+#
+# [snip]
+#
+# With AlignArrayOfStructures: Left we have (I noticed there might be a small
+# bug in clang-format since the first entry has no space after the opening curly
+# bracket):
+#
+# diff --git a/xen/drivers/video/modelines.h b/xen/drivers/video/modelines.h
+# index 9cb7cdde055f..1afe725dcb4c 100644
+# --- a/xen/drivers/video/modelines.h
+# +++ b/xen/drivers/video/modelines.h
+# @@ -42,36 +42,36 @@ struct modeline {
+#  };
+#
+#  struct modeline __initdata videomodes[] = {
+# -    { "640x480@60",   25175,  640,  16,   96,   48,   480,  11,   2,    31 },
+#
+# [snip]
+#
+# With AlignArrayOfStructures: Right we have:
+#
+# diff --git a/xen/drivers/video/modelines.h b/xen/drivers/video/modelines.h
+# index 9cb7cdde055f..539ab7c12d00 100644
+# --- a/xen/drivers/video/modelines.h
+# +++ b/xen/drivers/video/modelines.h
+# @@ -42,36 +42,36 @@ struct modeline {
+#  };
+#
+#  struct modeline __initdata videomodes[] = {
+# -    { "640x480@60",   25175,  640,  16,   96,   48,   480,  11,   2,    31 },
+#
+# [snip]
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02311.html
+# ------------------------------------------------------------------------------
+# Jan:
+# a2k: RED FLAG
+# None of which improve what we have at present, imo. Yet another reason not
+# to use this tool then, I would say.
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02356.html
+# ------------------------------------------------------------------------------
+# Luca:
+# > None of which improve what we have at present, imo. Yet another reason not
+# > to use this tool then, I would say.
+# Ok
 AlignArrayOfStructures: Left
 
 # [not specified]
 # Align consecutive assignments (supported in clang-format 3.8)
-AlignConsecutiveAssignments:
-  Enabled: false
-  AcrossEmptyLines: false
-  AcrossComments: false
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg01993.html
+# ------------------------------------------------------------------------------
+# Luca: This one is disabled because of feedbacks from Stefano and Alejandro
+# about some weird behaviour on our codebase.
+# This one could be phased along this line: “Consecutive assignments don't need
+# to be aligned.”, the issue is that in this way it seems that it’s optional,
+# but clang-format is going to remove the alignment anyway for assignment that
+# are consecutive and aligned.
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02126.html
+# ------------------------------------------------------------------------------
+# George: It's hard to agree on this one without seeing some of the examples of
+# what it does, some examples of the "weird behavior" Stefano &
+# Allejandro found, and some examples of places where it's going to
+# remove the alignment.
+#
+# I had tried to apply your series before and didn't get very far with
+# it for some reason ISTR.  One way to see the effect of individual
+# features would be:
+#
+# 1. Make a branch with one big patch applying clang-format for a given style
+# 2. Change just one style line, re-run clang format, and create a new
+# patch from that
+#
+# Then it would be easy to see the difference between the two.  It might
+# actually be easier for individual reviewers to do that on their own
+# trees, rather than to ask you to try to generate and post such patches
+# somewhere.
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02132.html
+# ------------------------------------------------------------------------------
+# Luca:
+# > It's hard to agree on this one without seeing some of the examples of
+# > what it does, some examples of the "weird behavior" Stefano &
+# > Allejandro found,
+# I think there was a comment from Stefano for the RFC v1:
+# https://patchwork.kernel.org/project/xen-devel/cover/20230728081144.4124309-1-luca.fancellu@xxxxxxx/#25447625
+#
+# a2k:
+# RFC v1: https://patchew.org/Xen/20230728081144.4124309-1-luca.fancellu@arm.com/
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02143.html
+# ------------------------------------------------------------------------------
+# Jan:
+# > This one is disabled because of feedbacks from Stefano and Alejandro about
+# > some weird behaviour on our codebase.
+# > This one could be phased along this line: “Consecutive assignments don't need
+# > to be aligned.”, the issue is that in this way it seems that it’s optional,
+# > but clang-format is going to remove the alignment anyway for assignment
+# > that are consecutive and aligned.
+#
+# Like below if there's no way to say "leave alone", then I don't consider this
+# usable. Imo we want to permit people to align when they think it helps, but
+# we don't want to demand them doing so.
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02172.html
+# ------------------------------------------------------------------------------
+# Luca:
+# > Like below if there's no way to say "leave alone", then I don't consider this
+# > usable. Imo we want to permit people to align when they think it helps, but
+# > we don't want to demand them doing so.
+#
+# Yes I understand, unfortunately the tool doesn’t allow that and if we don’t
+# specify this configurable, it will take the default one which is disabled
+# (and so would remove the formatting from already aligned assignments
+# that it would eventually find).
+#
+# This most of the configurable, when not specified, they apply their default
+# to the code anyway.
+AlignConsecutiveAssignments: None
+# According to https://releases.llvm.org/15.0.0/tools/clang/docs/ClangFormatStyleOptions.html
+# Nested configuration flags: Alignment options.
+#
+# a2k: FIXME: If we use None above then the below options are not needed?
+# AlignConsecutiveAssignments:
+#   Enabled: false
+#   AcrossEmptyLines: false
+#   AcrossComments: false
 
 # [not specified]
 # Do not align consecutive bit fields (supported in clang-format 11)
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg01993.html
+# ------------------------------------------------------------------------------
+# Luca: Same thing as AlignConsecutiveAssignments, but for bitfields.
 AlignConsecutiveBitFields: None
 
 # [not specified]
 # Do not align values of consecutive declarations
 # (supported in clang-format 3.8)
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg01993.html
+# ------------------------------------------------------------------------------
+# Luca: This aligns declarations names, same considerations as
+# AlignConsecutiveAssignments.
 AlignConsecutiveDeclarations: None
 
 # [not specified]
@@ -468,6 +782,92 @@ PPIndentWidth: -1
 
 # [not specified]
 # (supported in clang-format 14)
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg01993.html
+# ------------------------------------------------------------------------------
+# Luca:
+# Our coding style doesn’t mention anything about alignment, shall we add a new
+# section? I can send patches when we reach agreement on each of these rules.
+#
+# QualifierAlignment: Custom
+# QualifierOrder: ['static', 'inline', 'const', 'volatile', 'type']
+#
+# ---
+# For “QualifierAlignment” I chose Custom in order to apply in “QualifierOrder”
+# an order for the qualifiers that match the current codebase, we could specify
+# also “Leave” in order to keep them as they are.
+# Depending on how the discussion goes on this one, it could be an entry in our
+# coding style
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02143.html
+# ------------------------------------------------------------------------------
+# Jan: Where do attributes go in this sequence?
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02172.html
+# ------------------------------------------------------------------------------
+# Luca:
+# > Where do attributes go in this sequence?
+#
+# I think function declaration/definition and variables.
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02311.html
+# ------------------------------------------------------------------------------
+# Jan:
+# > I think function declaration/definition and variables.
+#
+# How does this relate to my question? I asked about the sequence of elements
+# listed for QualifierOrder:, where attributes don't appear at all right now.
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02356.html
+# ------------------------------------------------------------------------------
+# Luca:
+# > How does this relate to my question? I asked about the sequence of elements
+# > listed for QualifierOrder:, where attributes don't appear at all right now.
+#
+# Sorry, I misread your question, attributes are like invisible for the tool,
+# they can be placed wherever between each of the QualifierOrder items.
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02361.html
+# ------------------------------------------------------------------------------
+# Jan:
+# > Sorry, I misread your question, attributes are like invisible for the tool,
+# > they can be placed wherever between each of the QualifierOrder items.
+#
+# Hoho, one thing where various options are tolerated.
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02469.html
+# ------------------------------------------------------------------------------
+# Luca:
+# >> Hoho, one thing where various options are tolerated.
+#
+# I realise now that my answer above is not fully correct, I wanted to say that
+# the attributes are like invisible for the tool only when dealing with this
+# rule about ordering of the qualifiers.
+#
+# On the other hand, yes, if the QualifierAlignment is “Leave”, clang-format
+# won’t touch them.
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02479.html
+# ------------------------------------------------------------------------------
+# Jan:
+# > On the other hand, yes, if the QualifierAlignment is “Leave”, clang-format
+# > won’t touch them.
+#
+# Hmm - gets me back to wondering what "Alignment" in the name is about, when
+# order of syntactical elements is affected.
+#
+# ------------------------------------------------------------------------------
+# https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg02481.html
+# ------------------------------------------------------------------------------
+# Luca:
+# Yes, probably QualifierAlignment is not the best name.
 QualifierAlignment: Custom
 
 # Specify in which order the qualifiers should appear 'static const int *var'
