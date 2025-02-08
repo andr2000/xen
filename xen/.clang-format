@@ -355,7 +355,8 @@ AlignAfterOpenBracket: Align
 # > None of which improve what we have at present, imo. Yet another reason not
 # > to use this tool then, I would say.
 # Ok
-AlignArrayOfStructures: Left
+# Luca: AlignArrayOfStructures: Left
+AlignArrayOfStructures: None
 
 # [not specified]
 # Align consecutive assignments (supported in clang-format 3.8)
@@ -463,18 +464,21 @@ AlignConsecutiveDeclarations: None
 # [not specified]
 # Align values of consecutive macros (supported in clang-format 9)
 AlignConsecutiveMacros:
-  Enabled: true
+# Luce:  Enabled: true
+  Enabled: false
   AcrossEmptyLines: false
   AcrossComments: false
 
 # [not specified]
 # Align escaped newlines to the right (supported in clang-format 5)
-AlignEscapedNewlines: Right
+# Luca: AlignEscapedNewlines: Right
+AlignEscapedNewlines: false
 
 # [not specified]
 # Aligns operands of a single expression that needs to be split over multiple
 # lines (supported in clang-format 3.5)
-AlignOperands: Align
+# Luca: AlignOperands: Align
+AlignOperands: false
 
 # Do not align trailing consecutive comments (It helps to make clang-format
 # reproduce the same output when it runs on an already formatted file)
@@ -495,7 +499,8 @@ AllowAllParametersOfDeclarationOnNextLine: false
 # Bracing condition needs to be respected even if the line is so short that the
 # final block brace can stay on a single line
 # (supported in clang-format 3.5)
-AllowShortBlocksOnASingleLine: Never
+# Luca: AllowShortBlocksOnASingleLine: Never
+AllowShortBlocksOnASingleLine: false
 
 # (supported in clang-format 3.6)
 AllowShortCaseLabelsOnASingleLine: false
@@ -515,10 +520,12 @@ AllowShortCaseLabelsOnASingleLine: false
 # AllowShortFunctionsOnASingleLine, so that we can have just:
 #
 # static void __init efi_arch_cpu(void) {}
-AllowShortFunctionsOnASingleLine: None
+# Luca: AllowShortFunctionsOnASingleLine: None
+AllowShortFunctionsOnASingleLine: false
 
 # (supported in clang-format 3.3)
-AllowShortIfStatementsOnASingleLine: Never
+# Luca: AllowShortIfStatementsOnASingleLine: Never
+AllowShortIfStatementsOnASingleLine: false
 
 # (supported in clang-format 3.7)
 AllowShortLoopsOnASingleLine: false
@@ -601,12 +608,14 @@ AttributeMacros:
 # [not specified]
 # Try always to pack function call arguments on the same line before breaking
 # (supported in clang-format 3.7)
-BinPackArguments: true
+# Luca: BinPackArguments: true
+BinPackArguments: false
 
 # [not specified]
 # Try always to pack function declaration parameters on the same line before
 # breaking (supported in clang-format 3.7)
-BinPackParameters: true
+# Luca: BinPackParameters: true
+BinPackParameters: false
 
 # [not specified]
 # Do not add a spaces on bitfield 'unsigned bf:2;'
@@ -616,12 +625,18 @@ BitFieldColonSpacing: None
 # Xen's coding style does not follow clang-format already available profiles for
 # breaking before braces, so set it to Custom and specify each case separately
 # (supported in clang-format 3.8)
+# If BreakBeforeBraces is set to BS_Custom, use this to specify how each
+# individual brace case should be handled. Otherwise, this is ignored.
 BraceWrapping:
   # Braces ('{' and '}') are usually placed on a line of their own
-  AfterCaseLabel: true
-  AfterFunction: true
-  BeforeElse: true
-  AfterExternBlock: true
+  # Luca: AfterCaseLabel: true
+  AfterCaseLabel: false
+  # Luca: AfterFunction: true
+  AfterFunction: false
+  # Luca: BeforeElse: true
+  BeforeElse: false
+  # Luca: AfterExternBlock: true
+  AfterExternBlock: false
   # except for the opening brace in definitions of enum, struct, and union
   AfterEnum: false
   AfterStruct: false
@@ -649,7 +664,8 @@ BraceWrapping:
   # {
   #     /* Do stuff. */
   # } while ( condition );
-  AfterControlStatement: Always
+  # Luca: AfterControlStatement: Always
+  AfterControlStatement: false
   BeforeWhile: false
   IndentBraces: false
   # [not specified]
@@ -662,13 +678,16 @@ BraceWrapping:
   AfterObjCDeclaration: false
   BeforeCatch: false
   BeforeLambdaBody: false
-  SplitEmptyRecord: true
-  SplitEmptyNamespace: true
+  # Luca: SplitEmptyRecord: true
+  SplitEmptyRecord: false
+  # SplitEmptyNamespace: true
+  SplitEmptyNamespace: false
 
 # [not specified]
 # Break only after the operator in case of a long expression
 # (supported in clang-format 3.6)
-BreakBeforeBinaryOperators: None
+# Luca: BreakBeforeBinaryOperators: None
+BreakBeforeBinaryOperators: false
 
 # Xen's coding style does not follow clang-format already available profiles for
 # breaking before braces, so set it to Custom and specify each case separately
@@ -685,7 +704,8 @@ BreakBeforeBraces: Custom
 # [not specified]
 # Ternary operators '?, :' can be put after a line break
 # (supported in clang-format 3.7)
-BreakBeforeTernaryOperators: true
+# Luca: BreakBeforeTernaryOperators: true
+BreakBeforeTernaryOperators: false
 
 # (supported in clang-format 5)
 BreakConstructorInitializers: BeforeComma
@@ -986,11 +1006,12 @@ PPIndentWidth: -1
 # ------------------------------------------------------------------------------
 # Luca:
 # Yes, probably QualifierAlignment is not the best name.
-QualifierAlignment: Custom
+# Luca: QualifierAlignment: Custom
+QualifierAlignment: Leave
 
 # Specify in which order the qualifiers should appear 'static const int *var'
 # (supported in clang-format 14)
-QualifierOrder: ['static', 'inline', 'const', 'volatile', 'type']
+# Luca: QualifierOrder: ['static', 'inline', 'const', 'volatile', 'type']
 
 # Don't try to reflow comments to respect the column limit (It helps to make
 # clang-format reproduce the same output when it runs on an already formatted
@@ -1002,7 +1023,8 @@ ReflowComments: false
 # Specifies the use of empty lines to separate definition blocks, including
 # structs, enums, and functions
 # (supported in clang-format 14)
-SeparateDefinitionBlocks: Always
+# Luca: SeparateDefinitionBlocks: Always
+SeparateDefinitionBlocks: Leave
 
 # [not specified]
 # Sort the include files by name (supported in clang-format 3.8)
