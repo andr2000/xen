@@ -1,0 +1,210 @@
+---
+Language:        Cpp
+# BasedOnStyle:  LLVM
+AccessModifierOffset: 0
+AlignAfterOpenBracket: Align
+AlignConsecutiveMacros: Consecutive
+AlignConsecutiveAssignments: None
+AlignConsecutiveBitFields: None
+AlignConsecutiveDeclarations: None
+AlignEscapedNewlines: Right
+AlignOperands:   Align
+AlignTrailingComments: true
+AllowAllArgumentsOnNextLine: false
+AllowAllConstructorInitializersOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortEnumsOnASingleLine: true
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortLambdasOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterDefinitionReturnType: None
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: false
+AlwaysBreakTemplateDeclarations: No
+AttributeMacros:
+  - '__init'
+  - '__exit'
+  - '__initdata'
+  - '__initconst'
+  - '__initconstrel'
+  - '__exitdata'
+  - '__initsetup'
+  - '__init_call'
+  - '__exit_call'
+  - 'initcall_t'
+  - 'exitcall_t'
+BinPackArguments: true
+BinPackParameters: true
+BraceWrapping:
+  AfterCaseLabel:  true
+  AfterClass:      true
+  AfterControlStatement: Always
+  AfterEnum:       true
+  AfterFunction:   true
+  AfterNamespace:  true
+  AfterObjCDeclaration: true
+  AfterStruct:     true
+  AfterUnion:      false
+  AfterExternBlock: true
+  BeforeCatch:     true
+  BeforeElse:      true
+  BeforeLambdaBody: false
+  BeforeStructInitialization: false
+  BeforeWhile:     false
+  IndentBraces:    false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+BreakBeforeBinaryOperators: None
+BreakBeforeBraces: Custom
+BreakBeforeInheritanceComma: false
+BreakInheritanceList: AfterColon
+BreakBeforeInlineASMColon: false
+BreakBeforeTernaryOperators: false
+BreakConstructorInitializersBeforeComma: false
+BreakConstructorInitializers: AfterColon
+BreakAfterJavaFieldAnnotations: false
+BreakStringLiterals: false
+ColumnLimit:     80
+CompactNamespaces: false
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+ConstructorInitializerIndentWidth: 4
+ContinuationIndentWidth: 4
+Cpp11BracedListStyle: false
+DeriveLineEnding: true
+DerivePointerAlignment: false
+DisableFormat:   false
+EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: LogicalBlock
+ExperimentalAutoDetectBinPacking: true
+FixNamespaceComments: true
+ForEachMacros:
+  - foreach
+  - item_foreach
+  - hash_vcpu_foreach
+  - hash_domain_foreach
+  - foreach_pinned_shadow
+  - hlist_for_each_entry_rcu
+  - hlist_for_each
+  - hlist_for_each_safe
+  - hlist_for_each_entry
+  - hlist_for_each_entry_from
+  - hlist_for_each_entry_safe
+  - hlist_for_each_entry_continue
+  - for_each_cpu
+  - for_each_possible_cpu
+  - for_each_online_cpu
+  - for_each_present_cpu
+  - for_each_set_bit
+  - ebitmap_for_each_positive_bit
+  - for_each_vcpu
+  - for_each_affinity_balance_step
+  - list_for_each
+  - for_each_kimage_entry
+  - page_list_for_each
+  - list_for_each_entry
+  - list_for_each_safe
+  - dt_for_each_device_node
+  - for_each_domain
+  - for_each_drhd_unit
+  - for_each_rmrr_device
+  - for_each_pdev
+  - for_each_amd_iommu
+  - tapdisk_vbd_for_each_request
+  - tapdisk_vbd_for_each_image
+  - scheduler_for_each_event
+  - for_each_memblk
+  - libxl_for_each_set_bit
+IncludeBlocks:   Preserve
+IncludeCategories:
+  - Regex:           '.*'
+    Priority:        1
+    SortPriority:    0
+    CaseSensitive:   false
+IncludeIsMainRegex: '(Test)?$'
+IncludeIsMainSourceRegex: ''
+IndentAccessModifiers: false
+IndentCaseLabels: false
+IndentCaseBlocks: false
+IndentGotoLabels: true
+IndentPPDirectives: None
+IndentExternBlock: AfterExternBlock
+IndentRequires:  false
+IndentWidth:     4
+IndentWrappedFunctionNames: false
+InsertTrailingCommas: None
+JavaScriptQuotes: Leave
+JavaScriptWrapImports: true
+KeepEmptyLinesAtTheStartOfBlocks: false
+MacroBlockBegin: '^PLATFORM_START|\
+PROGRESS$'
+MacroBlockEnd:   '^PLATFORM_END|\
+PROGRESS_END$'
+MaxEmptyLinesToKeep: 1
+NamespaceIndentation: None
+ObjCBinPackProtocolList: Always
+ObjCBlockIndentWidth: 4
+ObjCBreakBeforeNestedBlockParam: false
+ObjCSpaceAfterProperty: false
+ObjCSpaceBeforeProtocolList: true
+PenaltyBreakAssignment: 1001
+PenaltyBreakBeforeFirstCallParameter: 1003
+PenaltyBreakComment: 300
+PenaltyBreakFirstLessLess: 120
+PenaltyBreakString: 1000
+PenaltyBreakTemplateDeclaration: 10
+PenaltyExcessCharacter: 1000000
+PenaltyReturnTypeOnItsOwnLine: 60
+PenaltyIndentedWhitespace: 0
+PointerAlignment: Right
+ReflowComments:  true
+ShortNamespaceLines: 1
+SortIncludes: Never
+SortJavaStaticImport: Before
+SortUsingDeclarations: false
+SpaceAfterCStyleCast: true
+SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeCpp11BracedList: false
+SpaceBeforeCtorInitializerColon: false
+SpaceBeforeInheritanceColon: false
+SpaceBeforeParens: ControlStatements
+SpaceAroundPointerQualifiers: Default
+SpaceBeforeRangeBasedForLoopColon: false
+SpaceInEmptyBlock: false
+SpaceInEmptyParentheses: false
+SpacesBeforeTrailingComments: 1
+SpacesInAngles:  Never
+SpacesInConditionalStatement: true
+SpacesInContainerLiterals: true
+SpacesInCStyleCastParentheses: false
+SpacesInLineCommentPrefix:
+  Minimum:         1
+  Maximum:         -1
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpaceBeforeSquareBrackets: false
+TypenameMacros:
+  - 'XEN_GUEST_HANDLE'
+  - 'XEN_GUEST_HANDLE_PARAM'
+  - '__XEN_GUEST_HANDLE'
+  - 'DEFINE_XEN_GUEST_HANDLE'
+  - 'presmp_initcall'
+  - '__initcall'
+  - '__exitcall'
+BitFieldColonSpacing: None
+Standard:        c++03
+StatementMacros:
+  - PROGRESS
+  - bitop
+  - testop
+  - TRYFAILGOTO
+TabWidth:        4
+UseCRLF:         false
+UseTab:          Never
+...
