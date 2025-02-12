@@ -1,0 +1,379 @@
+This is the collected inputs from discussing this mail
+(see https://lists.xen.org/archives/html/xen-devel/2025-02/msg00430.html)
+
+
+> 
+> Hello, everybody!
+> 
+> What is the rationale behind introducing a tool to help with coding style
+> verification? I will partially quote Viktor Mitin here [2]:
+> 
+> "The Xen Project has a coding standard in place, but like many projects, the
+> standard is only enforced through peer review. Such mistakes slip through and
+> code is imported from other projects which may not follow the same standard. The
+> goal would be to come up with a tool that can audit the code base as part of a
+> CI loop for code style inconsistencies and potentially provide corrections. This
+> tool is to embed as a part of the continuous integration loop."
+> 
+> I would add that it would better reflect reality to say that Xen's coding style
+> is quite incomplete to become a standard and needs some improvement to achieve
+> that.
+> 
+> Here, I would like to provide a bit of history and acknowledge those brave
+> individuals who dared and tried to introduce to Xen coding style checking and
+> formatting support with clang-format.
+> 
+> Year 2017, Ishani Chugh.
+> ---------------------------------------------------------------------
+> This journey began with a request from an Outreachy program member [1].
+> Then came the first patches by Ishani Chugh [2]
+> Status: *busted*.
+> 
+> Year 2019, Viktor Mitin
+> ---------------------------------------------------------------------
+> Then picked up by Viktor Mitin, EPAM's first attempt [3].
+> Status: *busted*.
+> 
+> Year 2020, Anastasiia Lukianenko
+> ---------------------------------------------------------------------
+> Continued by Anastasiia Lukianenko, EPAM's second attempt [4], [5].
+> Some contributions were made to LLVM to make clang-format a better fit for
+> Xen [6].
+> Xen-summit and presentation [7] and the summary document [8].
+> Status: *busted*.
+> 
+> Year 2023, Luca Fancellu
+> ---------------------------------------------------------------------
+> Luca restarted it, first ARM attempt [9], [10], [11].
+> Status: *busted*.
+> 
+> That's all for now, but it is still impressive as of 2025.
+> 
+> So, in my opinion, what were the main issues with all these attempts? There are
+> many different views, but I would emphasize the following:
+> 
+> 1) clang-format doesn't perfectly fit Xen's code style as some rules it applies
+> are not liked by the community or it applies rules that Xen's coding style
+> doesn't define (those Luca described in his .clang-format for every clang
+> option).
+> 
+> 2) clang-format doesn't work in a "one-option-at-a-time" mode [12]: clang
+> maintainers strongly oppose requests to allow turning off all options except
+> some. Believe it or not, other maintainers also have strong opinions on what is
+> right and what is not for their projects, and this is one area where they will
+> not compromise.
+> 
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++ 3) and its discussion
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+> 3) The size of the patch after applying clang-format is huge. Really. Something
+> like 9 MB. Even if everyone agrees that the approach is good and we can proceed
+> with it, it is highly unlikely anyone will be able to review it. Considering
+> that new patches are being added to the upstream during such a review, it may
+> also lead to new code style violations or require a new review of that huge
+> patch.
+> 
+
+Roger:
+-------------------------------------------------------------------------------
+I think this approach is difficult.  It would likely introduce a lot
+of noise when using `git blame` (I know, it's just one extra jump,
+but...), plus would likely break every patch that we currently have
+in-flight.
+
+Luca:
+-------------------------------------------------------------------------------
+>> Could you make a list of what would need to change in Xen coding style for
+>> it to match perfectly what clang-format will check?
+
+I think we already discussed this in the past and having some churn was accepted,
+also about breaking existing patches, every change merged has the potential to do
+that, this one is more likely but it’s the game I guess?
+
+Roger:
+-------------------------------------------------------------------------------
+Hm, maybe, I don't get rebasing issues very often TBH.  Not sure how
+intrusive such patch would be.
+
+Jan:
+-------------------------------------------------------------------------------
+>> I think we already discussed this in the past and having some churn was accepted,
+>> also about breaking existing patches, every change merged has the potential to do
+>> that, this one is more likely but it’s the game I guess?
+
+That's easy to say if you have just a few patches in flight, yet I'm worried
+about this when considering the hundreds of mine that are awaiting review.
+Of course this would be of almost no concern (to me) if for the experimental
+phase it was only Arm code that was converted. Yet even then the plan is going
+to be to later do a full conversion (to whatever the worked out final style
+is), and I don't foresee the review situation to get any better. It'll be only
+yet more patches then that will need re-basing.
+
+Roger:
+-------------------------------------------------------------------------------
+>> That's easy to say if you have just a few patches in flight, yet I'm worried
+>> about this when considering the hundreds of mine that are awaiting review.
+
+There are also downstreams (including distros) with varying length of
+patch queues on top of Xen.  Arguably they have to rebase the queue
+every time they update, but a wide change in coding style will likely
+be fairly disruptive to them.
+
+Don't take this as a reason to reject clang-format.  As mentioned
+elsewhere I think the format supported by clang-format would need to
+be fairly similar to the current Xen one (up to the point that chunks
+of code using the new and the old style could live together).  Then we
+would enforce it only for newly added chunks of code initially IMO.
+
+Marek:
+-------------------------------------------------------------------------------
+>> Then we
+>> would enforce it only for newly added chunks of code initially IMO.
+
+While clang-format surely will force some changes (the earlier 9MB patch
+is a data point here...), I generally expect it should match fairly
+close to the current code style, and so the rebase shouldn't be _that_
+painful. In some cases git likely will handle large part of the work
+already.
+
+It surely is a cost of introducing such a change, but IMO it's a cost
+worth paying.
+
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* 3) discussion end
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+> 4) Which clang-format version should we set as the one used by Xen, so it is
+> easy for everyone to use it on their hosts?
+> 
+> 5) You name it. I think many people in the community can name their points for
+> and against clang-format.
+>
+
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++ common discussion
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Roger:
+-------------------------------------------------------------------------------
+What are the parts of our coding style that clang-format cannot
+correctly represent?  Could you make a list of what would need to
+change in Xen coding style for it to match perfectly what clang-format
+will check?
+
+Ideally the first step would be to prepare a patch to adjust the
+coding style so it's in line with what clang-format will do.
+
+Is it possible for clang-format to be applied exclusively to newly
+added chunks of code, while keeping the surroundings untouched?
+
+Luca:
+-------------------------------------------------------------------------------
+>> Could you make a list of what would need to change in Xen coding style for
+>> it to match perfectly what clang-format will check?
+
+we already went through that route, there is no checker anywhere that matches
+the Xen coding style perfectly, so it’s either we change the coding style or we
+don’t proceed further with any automatic check
+
+>> Ideally the first step would be to prepare a patch to adjust the
+>> coding style so it's in line with what clang-format will do.
+
+It’s easy to say that, but difficult to implement, if we could accept the clang-format
+rules it would be easier to adopt the configuration itself as coding style, maybe
+enhanced with some comments.
+
+Roger:
+-------------------------------------------------------------------------------
+I'm probably fine with changing coding style, that's why I'm asking
+for a list of what needs to be changed (unless we switch to a
+completely different coding style).
+
+>> It’s easy to say that, but difficult to implement, if we could accept the clang-format
+>> rules it would be easier to adopt the configuration itself as coding style, maybe
+>> enhanced with some comments.
+
+I'm kind of lost, why is it difficult to implement?  What I'm asking
+for is a patch to CODING_STYLE that modifies it in a way that we could
+use clang-format.  In any case we need to do that if we want to use
+clang-format.
+
+One question that seems to have been dropped from my previous email:
+would it be feasible to apply the updated style to newly added chunks
+of code only, but not to the (unmodified) surrounding context?
+
+Luca:
+-------------------------------------------------------------------------------
+>> I'm probably fine with changing coding style, that's why I'm asking
+>> for a list of what needs to be changed (unless we switch to a
+>> completely different coding style).
+
+Sure, I think listing the differences is fine.
+
+>> I'm kind of lost, why is it difficult to implement?  What I'm asking
+>> for is a patch to CODING_STYLE that modifies it in a way that we could
+>> use clang-format.  In any case we need to do that if we want to use
+>> clang-format.
+
+Changes to the CODING_STYLE are historically difficult, given that the natural
+language is prone to interpretation. I’m not opposing to that, I’m just pointing out that
+starting changing the CODING_STYLE in order to accept the clang-format feels
+more risky and time consuming than testing clang-format and modifying the
+CODING_STYLE accordingly.
+
+Anyway the resulting clang-format would have our coding style for what can be covered
+by the tool and have something new for what it cannot be covered, it’s just that at least
+you have a reproducible way that can be tested.
+
+>> One question that seems to have been dropped from my previous email:
+>> would it be feasible to apply the updated style to newly added chunks
+>> of code only, but not to the (unmodified) surrounding context?
+
+I dropped that one from my reply because I know there are tools that do that,
+but I’ve never investigated, maybe Oleksandr could try to have a look.
+
+I’m not sure if the result would feel more like a frankenstein, but it would for sure
+limit the churn.
+
+Roger:
+-------------------------------------------------------------------------------
+>> Changes to the CODING_STYLE are historically difficult, given that the natural
+>> language is prone to interpretation. I’m not opposing to that, I’m just pointing out that
+>> starting changing the CODING_STYLE in order to accept the clang-format feels
+>> more risky and time consuming than testing clang-format and modifying the
+>> CODING_STYLE accordingly.
+
+I suggested that because it's IMO important to see the resulting
+style.  I'm not suggesting to modify CODING_STYLE in a single change,
+it should be multiple patches that adjust the different areas that
+require changes to match what clang-format can do.
+
+I think it's important that we can see how the final style will look
+like, otherwise it's hard to compromise on intermediate seemingly
+unconnected changes without knowing what the end result will be.
+
+>> I’m not sure if the result would feel more like a frankenstein, but it would for sure
+>> limit the churn.
+
+Jan:
+-------------------------------------------------------------------------------
+>> I suggested that because it's IMO important to see the resulting
+>> style.  I'm not suggesting to modify CODING_STYLE in a single change,
+>> it should be multiple patches that adjust the different areas that
+>> require changes to match what clang-format can do.
+>> 
+>> I think it's important that we can see how the final style will look
+>> like, otherwise it's hard to compromise on intermediate seemingly
+>> unconnected changes without knowing what the end result will be.
+>> 
+>> Depends on how many differences there are between our current coding
+>> style and what clang-format can enforce that's closer to our existing
+>> style.
+
+>> Knowing the differences would be key in understanding whether this
+>> would be a viable approach.  It would certainly be my preference if
+>> the differences between our coding style and what clang-format can do
+>> are not too big.
+
++1 on both points.
+
+Anthony:
+-------------------------------------------------------------------------------
+>> One question that seems to have been dropped from my previous email:
+>> would it be feasible to apply the updated style to newly added chunks
+>> of code only, but not to the (unmodified) surrounding context?
+
+There's a tool that can format only one patch, `git-clang-format`.
+
+    https://clang.llvm.org/docs/ClangFormat.html#git-integration
+
+This could help temporally, or as a way to format a patch under review
+to get a better view of the new coding style (instead of having a whole
+file been formatted which could make reviewing the new style harder).
+
+Jan:
+-------------------------------------------------------------------------------
+>> Is it possible for clang-format to be applied exclusively to newly
+>> added chunks of code, while keeping the surroundings untouched?
+
+I, too, was wondering about this, at least as a data point. However,
+especially for files that aren't in a single style (e.g. where we're
+slowly transitioning from Linux to Xen style) this would then mean
+(at least) three styles in a single file.
+
+Roger:
+-------------------------------------------------------------------------------
+My expectation is that the proposed clang-format based style will be
+very close to the current Xen style.  Maybe that's unrealistic, that's
+why I requested a list of differences between our current coding style
+and what clang-format can do.
+
+> So, in this attempt, I would suggest the following approach:
+> I think that I could start sending patches after the latest .clang-format 21 for
+> some part of Xen, ARM code base for example, using work already done by Luca.
+
+Jan:
+-------------------------------------------------------------------------------
+Taking the suggestion of limiting the experiment to Arm: On its upside
+it would mean non-Arm folks are unaffected. Yet that's the downside at
+the same time: Non-Arm folks then also are unlikely to even look at the
+patches. May I suggest to consider e.g. drivers/ instead? That'll involve
+more people (to build an opinion) while at the same time it's fewer files
+and less code overall.
+
+
+> This way:
+> 
+> 1) Patches are formatted with clang-format, which is a strong plus.
+> 2) The diff is well maintained and I can still alter it by hand if there are
+> comments or dislikes.
+> 3) Finally, when the patch is accepted, we can be more confident that
+> clang-format will find far fewer inconsistencies than if it were just applied to
+> the "raw" code. Thus, the next time clang-format runs, it will produce a much
+> smaller patch than before.
+> 4) Finally, introduce clang-format and run it on the leftovers: at this stage,
+> it would be much easier to discuss every option clang has and the resulting
+> output it produces.
+> 5) Update existing/add new rules to the Xen coding style based on community
+> agreements and the results of this activity.
+> 
+> We may define the subsystems to start this activity on and also define an
+> acceptable size of the patch for review, say 100K. Considering that the longer
+> the review, the more outdated the patch becomes and will require a new round as
+> new code comes in.
+
+Jan:
+-------------------------------------------------------------------------------
+Why even go as big as 100k? Style changes can literally be done at any
+granularity. In particular for small enough files they can be done one
+file at a time. For larger files there can be multiple steps (preferably
+all committed together, but not doing so may still be acceptable).
+
+From the gigantic monolithic patch, would it be possible to fish out some
+very representative (for the changes that need making) files and start
+from there?
+
+> 
+> I would love to hear from the community on this approach and finally get it
+> done. Not busted.
+> 
+> Stay safe,
+> Oleksandr Andrushchenko
+> 
+> [1] https://lore.kernel.org/xen-devel/1130763396.5603480.1492372859631.JavaMail.zimbra@research.iiit.ac.in/T/#m1db2521362edd286875acf10296873993226dcf2
+> [2] https://lists.xenproject.org/archives/html/xen-devel/2017-04/msg01739.html
+> [3] https://lists.xenproject.org/archives/html/xen-devel/2019-07/msg01862.html
+> [4] https://lists.xenproject.org/archives/html/xen-devel/2020-09/msg02157.html
+> [5] https://lists.xenproject.org/archives/html/xen-devel/2020-10/msg00022.html
+> [6] https://reviews.llvm.org/D91950
+> [7] https://xenproject.org/blog/clang-format-for-xen-coding-style-checking-scheduled/
+> [8] https://docs.google.com/document/d/1MDzYkPgfVpI_UuO_3NRXsRLAXqIZ6pj2btF7vsMYj8o
+> [9] https://lists.xenproject.org/archives/html/xen-devel/2023-10/msg02294.html
+> [10] https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg00498.html
+> [11] https://lists.xenproject.org/archives/html/xen-devel/2023-11/msg01993.html
+> [12] https://github.com/llvm/llvm-project/issues/54137#issuecomment-1058564570
