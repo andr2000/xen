@@ -495,10 +495,19 @@ AllowAllParametersOfDeclarationOnNextLine: false
 # Bracing condition needs to be respected even if the line is so short that the
 # final block brace can stay on a single line
 # (supported in clang-format 3.5)
-AllowShortBlocksOnASingleLine: Never
+# Luca: AllowShortBlocksOnASingleLine: Never
+# Oleksandr: this is good for empty inline functions, e.g.
+#
+# -static inline void arm_smmu_disable_ats(struct arm_smmu_master *master) { }
+# +static inline void arm_smmu_disable_ats(struct arm_smmu_master *master)
+# +{}
+AllowShortBlocksOnASingleLine: Empty
 
 # (supported in clang-format 3.6)
 AllowShortCaseLabelsOnASingleLine: false
+
+# (supported in clang-format 3.11)
+AllowShortEnumsOnASingleLine: false
 
 # (supported in clang-format 3.5)
 # ------------------------------------------------------------------------------
@@ -515,7 +524,7 @@ AllowShortCaseLabelsOnASingleLine: false
 # AllowShortFunctionsOnASingleLine, so that we can have just:
 #
 # static void __init efi_arch_cpu(void) {}
-AllowShortFunctionsOnASingleLine: None
+AllowShortFunctionsOnASingleLine: Empty
 
 # (supported in clang-format 3.3)
 AllowShortIfStatementsOnASingleLine: Never
@@ -601,7 +610,7 @@ AttributeMacros:
 # [not specified]
 # Try always to pack function call arguments on the same line before breaking
 # (supported in clang-format 3.7)
-BinPackArguments: true
+BinPackArguments: false
 
 # [not specified]
 # Try always to pack function declaration parameters on the same line before
@@ -665,6 +674,9 @@ BraceWrapping:
   SplitEmptyRecord: true
   SplitEmptyNamespace: true
 
+# (supported in clang-format 3.18)
+BreakAdjacentStringLiterals: false
+
 # [not specified]
 # Break only after the operator in case of a long expression
 # (supported in clang-format 3.6)
@@ -680,7 +692,7 @@ BreakBeforeBraces: Custom
 # (This is a new feature upstreamed by EPAM during its work on clang-format for
 # Xen)
 # (supported in clang-format 16)
-# BreakBeforeInlineASMColon: OnlyMultiline
+BreakBeforeInlineASMColon: OnlyMultiline
 
 # [not specified]
 # Ternary operators '?, :' can be put after a line break
@@ -1010,6 +1022,11 @@ SeparateDefinitionBlocks: Always
 SortIncludes: Never
 
 # [not specified]
+# Do not format macro definition body
+# (supported in clang-format 3.18)
+SkipMacroDefinitionBody: true
+
+# [not specified]
 # Do not allow a space after a type cast '(type)var'
 # (supported in clang-format 3.5)
 SpaceAfterCStyleCast: false
@@ -1231,12 +1248,6 @@ StatementMacros:
   - 'guest_bitop'
   - 'testop'
   - 'guest_testop'
-  - 'DEFINE_XEN_GUEST_HANDLE'
-  - '__DEFINE_XEN_GUEST_HANDLE'
-  - '___DEFINE_XEN_GUEST_HANDLE'
-  - 'presmp_initcall'
-  - '__initcall'
-  - '__exitcall'
 
 # An indent level consists of four spaces (supported in clang-format 3.7)
 TabWidth: 4
@@ -1272,7 +1283,7 @@ AllowShortLambdasOnASingleLine: None
 BreakAfterJavaFieldAnnotations: false
 
 # (supported in clang-format 16)
-# BreakArrays: false
+BreakArrays: true
 
 # (supported in clang-format 12)
 BreakBeforeConceptDeclarations: Never
