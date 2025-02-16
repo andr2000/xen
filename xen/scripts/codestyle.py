@@ -211,12 +211,12 @@ def stage(filename, actions):
 
 def main(argv):
     # Setup actions for pre-stage and post-stage
-    pre_stage_asm_protect = \
-        lambda file, file_lines: action_protect_asm(file, file_lines, True)
-    post_stage_asm_unprotect = \
-        lambda file, file_lines: action_protect_asm(file, file_lines, False)
-    pre_stage_actions = [pre_stage_asm_protect]
-    post_stage_actions = [post_stage_asm_unprotect, action_fix_label_indent]
+#    pre_stage_asm_protect = \
+#        lambda file, file_lines: action_protect_asm(file, file_lines, True)
+#    post_stage_asm_unprotect = \
+#        lambda file, file_lines: action_protect_asm(file, file_lines, False)
+#    pre_stage_actions = [pre_stage_asm_protect]
+#    post_stage_actions = [post_stage_asm_unprotect, action_fix_label_indent]
 
     len_args = len(argv)
     if len_args > 0:
@@ -236,20 +236,21 @@ def main(argv):
                                         .format(path, argv[i]))
     else:
         # Find all files with .c and .h extension
-        c_files = utils.recursive_find_file(xen_dir, r'.*\.(?:c|h)$')
+        c_files = utils.recursive_find_file('drivers', r'.*\.(?:c|h)$')
 
-    try:
-        exclusion_file = \
-                "{}/docs/misra/exclude-list.json".format(repo_dir)
-        exclusion_list = \
-                exclusion_file_list.load_exclusion_file_list(exclusion_file,
-                                                             "codestyle")
-    except ExclusionFileListError as e:
-        print("ERROR: Issue with reading file {}: {}".format(exclusion_file, e))
-        sys.exit(1)
+#    try:
+#        exclusion_file = \
+#                "{}/docs/misra/exclude-list.json".format(repo_dir)
+#        exclusion_list = \
+#                exclusion_file_list.load_exclusion_file_list(exclusion_file,
+#                                                             "codestyle")
+#    except ExclusionFileListError as e:
+#        print("ERROR: Issue with reading file {}: {}".format(exclusion_file, e))
+#        sys.exit(1)
 
     # Transform the lists of absolute path in the second element of the
     # exclusion_list into a plain list of absolute path to be exluded
+    exclusion_list = []
     excluded_c_files = [(j, i[2]) for i in exclusion_list for j in i[1]]
 
     file_to_format = []
@@ -276,11 +277,11 @@ def main(argv):
 
     for file_entry in file_to_format:
         try:
-            stage(file_entry, pre_stage_actions)
+            #stage(file_entry, pre_stage_actions)
             utils.invoke_command("/mnt/storage/projects/clang/llvm-project/build/bin/clang-format -i {}".format(file_entry[0]),
                                  False, Exception,
                                  "Error occured invoking: {}\n")
-            stage(file_entry, post_stage_actions)
+            #stage(file_entry, post_stage_actions)
         except Exception as e:
             print("ERROR: {}\n".format(e))
 
