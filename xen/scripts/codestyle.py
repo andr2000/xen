@@ -236,7 +236,7 @@ def main(argv):
                                         .format(path, argv[i]))
     else:
         # Find all files with .c and .h extension
-        c_files = utils.recursive_find_file('drivers', r'.*\.(?:c|h)$')
+        c_files = utils.recursive_find_file(xen_dir, r'.*\.(?:c|h)$')
 
 #    try:
 #        exclusion_file = \
