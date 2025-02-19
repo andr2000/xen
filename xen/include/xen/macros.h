@@ -41,7 +41,7 @@
 #ifndef __ASSEMBLY__
 
 /* All clang versions supported by Xen have _Static_assert. */
-#if defined(__clang__) || \
+#if defined(__clang__) ||                                                      \
     (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 /* Force a compilation error if condition is true */
 #define BUILD_BUG_ON(cond) ({ _Static_assert(!(cond), "!(" #cond ")"); })

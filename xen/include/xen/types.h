@@ -25,7 +25,7 @@ typedef __PTRDIFF_TYPE__ ptrdiff_t;
  */
 #define BITS_TO_LONGS(bits) \
     (((bits)+BITS_PER_LONG-1)/BITS_PER_LONG)
-#define DECLARE_BITMAP(name,bits) \
+#define DECLARE_BITMAP(name, bits) \
     unsigned long name[BITS_TO_LONGS(bits)]
 
 #ifndef NULL

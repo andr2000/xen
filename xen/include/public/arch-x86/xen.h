@@ -38,23 +38,25 @@
 #define set_xen_guest_handle(hnd, val) set_xen_guest_handle_raw(hnd, val)
 
 #if defined(__i386__)
-# ifdef __XEN__
-__DeFiNe__ __DECL_REG_LO8(which) uint32_t e ## which ## x
-__DeFiNe__ __DECL_REG_LO16(name) union { uint32_t e ## name; }
-# endif
+#ifdef __XEN__
+__DeFiNe__ __DECL_REG_LO8(which)
+
+uint32_t e##which##x __DeFiNe__ __DECL_REG_LO16(name) union {
+    uint32_t e##name;
+}
+#endif
 #include "xen-x86_32.h"
-# ifdef __XEN__
-__UnDeF__ __DECL_REG_LO8
-__UnDeF__ __DECL_REG_LO16
-__DeFiNe__ __DECL_REG_LO8(which) e ## which ## x
-__DeFiNe__ __DECL_REG_LO16(name) e ## name
-# endif
+#ifdef __XEN__
+__UnDeF__
+    __DECL_REG_LO8 __UnDeF__ __DECL_REG_LO16 __DeFiNe__ __DECL_REG_LO8(which) e
+    ##which##x __DeFiNe__ __DECL_REG_LO16(name) e##name
+#endif
 #elif defined(__x86_64__)
 #include "xen-x86_64.h"
 #endif
 
 #ifndef __ASSEMBLY__
-typedef unsigned long xen_pfn_t;
+    typedef unsigned long xen_pfn_t;
 #define PRI_xen_pfn "lx"
 #define PRIu_xen_pfn "lu"
 #endif
@@ -82,7 +84,6 @@ typedef unsigned long xen_pfn_t;
 #define FIRST_RESERVED_GDT_PAGE  14
 #define FIRST_RESERVED_GDT_BYTE  (FIRST_RESERVED_GDT_PAGE * 4096)
 #define FIRST_RESERVED_GDT_ENTRY (FIRST_RESERVED_GDT_BYTE / 8)
-
 
 /*
  * ` enum neg_errnoval
@@ -133,12 +134,13 @@ typedef unsigned long xen_ulong_t;
  */
 #define TI_GET_DPL(_ti)      ((_ti)->flags & 3)
 #define TI_GET_IF(_ti)       ((_ti)->flags & 4)
-#define TI_SET_DPL(_ti,_dpl) ((_ti)->flags |= (_dpl))
-#define TI_SET_IF(_ti,_if)   ((_ti)->flags |= ((!!(_if))<<2))
+#define TI_SET_DPL(_ti, _dpl) ((_ti)->flags |= (_dpl))
+#define TI_SET_IF(_ti, _if)   ((_ti)->flags |= ((!!(_if))<<2))
+
 struct trap_info {
-    uint8_t       vector;  /* exception vector                              */
-    uint8_t       flags;   /* 0-3: privilege level; 4: clear event enable?  */
-    uint16_t      cs;      /* code selector                                 */
+    uint8_t vector; /* exception vector                              */
+    uint8_t flags; /* 0-3: privilege level; 4: clear event enable?  */
+    uint16_t cs; /* code selector                                 */
     unsigned long address; /* code offset                                   */
 };
 typedef struct trap_info trap_info_t;
@@ -159,7 +161,10 @@ typedef uint64_t tsc_timestamp_t; /* RDTSC timestamp */
  */
 struct vcpu_guest_context {
     /* FPU registers come first so they can be aligned for FXSAVE/FXRSTOR. */
-    struct { char x[512]; } fpu_ctxt;       /* User-level FPU registers     */
+    struct {
+        char x[512];
+    } fpu_ctxt; /* User-level FPU registers     */
+
 #define VGCF_I387_VALID                (1<<0)
 #define VGCF_IN_KERNEL                 (1<<2)
 #define _VGCF_i387_valid               0
@@ -172,19 +177,19 @@ struct vcpu_guest_context {
 #define VGCF_syscall_disables_events   (1<<_VGCF_syscall_disables_events)
 #define _VGCF_online                   5
 #define VGCF_online                    (1<<_VGCF_online)
-    unsigned long flags;                    /* VGCF_* flags                 */
-    struct cpu_user_regs user_regs;         /* User-level CPU registers     */
-    struct trap_info trap_ctxt[256];        /* Virtual IDT                  */
-    unsigned long ldt_base, ldt_ents;       /* LDT (linear address, # ents) */
+    unsigned long flags; /* VGCF_* flags                 */
+    struct cpu_user_regs user_regs; /* User-level CPU registers     */
+    struct trap_info trap_ctxt[256]; /* Virtual IDT                  */
+    unsigned long ldt_base, ldt_ents; /* LDT (linear address, # ents) */
     unsigned long gdt_frames[16], gdt_ents; /* GDT (machine frames, # ents) */
-    unsigned long kernel_ss, kernel_sp;     /* Virtual TSS (only SS1/SP1)   */
+    unsigned long kernel_ss, kernel_sp; /* Virtual TSS (only SS1/SP1)   */
     /* NB. User pagetable on x86/64 is placed in ctrlreg[1]. */
-    unsigned long ctrlreg[8];               /* CR0-CR7 (control registers)  */
-    unsigned long debugreg[8];              /* DB0-DB7 (debug registers)    */
+    unsigned long ctrlreg[8]; /* CR0-CR7 (control registers)  */
+    unsigned long debugreg[8]; /* DB0-DB7 (debug registers)    */
 #ifdef __i386__
-    unsigned long event_callback_cs;        /* CS:EIP of event callback     */
+    unsigned long event_callback_cs; /* CS:EIP of event callback     */
     unsigned long event_callback_eip;
-    unsigned long failsafe_callback_cs;     /* CS:EIP of failsafe callback  */
+    unsigned long failsafe_callback_cs; /* CS:EIP of failsafe callback  */
     unsigned long failsafe_callback_eip;
 #else
     unsigned long event_callback_eip;
@@ -192,8 +197,9 @@ struct vcpu_guest_context {
 #ifdef __XEN__
     union {
         unsigned long syscall_callback_eip;
+
         struct {
-            unsigned int event_callback_cs;    /* compat CS of event cb     */
+            unsigned int event_callback_cs; /* compat CS of event cb     */
             unsigned int failsafe_callback_cs; /* compat CS of failsafe cb  */
         };
     };
@@ -201,12 +207,12 @@ struct vcpu_guest_context {
     unsigned long syscall_callback_eip;
 #endif
 #endif
-    unsigned long vm_assist;                /* VMASST_TYPE_* bitmap */
+    unsigned long vm_assist; /* VMASST_TYPE_* bitmap */
 #ifdef __x86_64__
     /* Segment base addresses. */
-    uint64_t      fs_base;
-    uint64_t      gs_base_kernel;
-    uint64_t      gs_base_user;
+    uint64_t fs_base;
+    uint64_t gs_base_kernel;
+    uint64_t gs_base_user;
 #endif
 };
 typedef struct vcpu_guest_context vcpu_guest_context_t;
@@ -225,7 +231,7 @@ struct arch_shared_info {
      * p2m tree. In this case the linear mapper p2m list anchored at p2m_vaddr
      * is to be used.
      */
-    xen_pfn_t     pfn_to_mfn_frame_list_list;
+    xen_pfn_t pfn_to_mfn_frame_list_list;
     unsigned long nmi_reason;
     /*
      * Following three fields are valid if p2m_cr3 contains a value different
@@ -245,9 +251,9 @@ struct arch_shared_info {
      * Modifying a p2m element in the linear p2m list is allowed via an atomic
      * write only.
      */
-    unsigned long p2m_cr3;         /* cr3 value of the p2m address space */
-    unsigned long p2m_vaddr;       /* virtual address of the p2m list */
-    unsigned long p2m_generation;  /* generation count of p2m mapping */
+    unsigned long p2m_cr3; /* cr3 value of the p2m address space */
+    unsigned long p2m_vaddr; /* virtual address of the p2m list */
+    unsigned long p2m_generation; /* generation count of p2m mapping */
 #ifdef __i386__
     /* There's no room for this field in the generic structure. */
     uint32_t wc_sec_hi;
@@ -315,6 +321,7 @@ typedef struct xen_cpuid_leaf {
     uint32_t leaf, subleaf;
     uint32_t a, b, c, d;
 } xen_cpuid_leaf_t;
+
 DEFINE_XEN_GUEST_HANDLE(xen_cpuid_leaf_t);
 
 typedef struct xen_msr_entry {
@@ -322,6 +329,7 @@ typedef struct xen_msr_entry {
     uint32_t flags; /* Reserved MBZ. */
     uint64_t val;
 } xen_msr_entry_t;
+
 DEFINE_XEN_GUEST_HANDLE(xen_msr_entry_t);
 
 #endif /* !__ASSEMBLY__ */

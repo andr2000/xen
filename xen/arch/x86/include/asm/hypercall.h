@@ -4,7 +4,8 @@
 
 /* SAF-10-safe direct inclusion guard before */
 #ifndef __XEN_HYPERCALL_H__
-#error "asm/hypercall.h should not be included directly - include xen/hypercall.h instead"
+#error                                                                         \
+    "asm/hypercall.h should not be included directly - include xen/hypercall.h instead"
 #endif
 
 #ifndef __ASM_X86_HYPERCALL_H__
@@ -38,9 +39,8 @@ void pv_ring3_init_hypercall_page(void *ptr);
 #include <compat/physdev.h>
 #include <compat/platform.h>
 
-extern int
-compat_common_vcpu_op(
-    int cmd, struct vcpu *v, XEN_GUEST_HANDLE_PARAM(void) arg);
+extern int compat_common_vcpu_op(int cmd, struct vcpu *v,
+                                 XEN_GUEST_HANDLE_PARAM(void) arg);
 
 #endif /* CONFIG_COMPAT */
 
@@ -51,11 +51,21 @@ static inline void clobber_regs64(struct cpu_user_regs *regs,
     /* Deliberately corrupt used parameter regs. */
     switch ( nargs )
     {
-    case 5: regs->r8  = 0xdeadbeefdeadf00dUL; fallthrough;
-    case 4: regs->r10 = 0xdeadbeefdeadf00dUL; fallthrough;
-    case 3: regs->rdx = 0xdeadbeefdeadf00dUL; fallthrough;
-    case 2: regs->rsi = 0xdeadbeefdeadf00dUL; fallthrough;
-    case 1: regs->rdi = 0xdeadbeefdeadf00dUL; break;
+    case 5:
+        regs->r8 = 0xdeadbeefdeadf00dUL;
+        fallthrough;
+    case 4:
+        regs->r10 = 0xdeadbeefdeadf00dUL;
+        fallthrough;
+    case 3:
+        regs->rdx = 0xdeadbeefdeadf00dUL;
+        fallthrough;
+    case 2:
+        regs->rsi = 0xdeadbeefdeadf00dUL;
+        fallthrough;
+    case 1:
+        regs->rdi = 0xdeadbeefdeadf00dUL;
+        break;
     }
 #endif
 }
@@ -67,11 +77,21 @@ static inline void clobber_regs32(struct cpu_user_regs *regs,
     /* Deliberately corrupt used parameter regs. */
     switch ( nargs )
     {
-    case 5: regs->edi = 0xdeadf00dU; fallthrough;
-    case 4: regs->esi = 0xdeadf00dU; fallthrough;
-    case 3: regs->edx = 0xdeadf00dU; fallthrough;
-    case 2: regs->ecx = 0xdeadf00dU; fallthrough;
-    case 1: regs->ebx = 0xdeadf00dU; break;
+    case 5:
+        regs->edi = 0xdeadf00dU;
+        fallthrough;
+    case 4:
+        regs->esi = 0xdeadf00dU;
+        fallthrough;
+    case 3:
+        regs->edx = 0xdeadf00dU;
+        fallthrough;
+    case 2:
+        regs->ecx = 0xdeadf00dU;
+        fallthrough;
+    case 1:
+        regs->ebx = 0xdeadf00dU;
+        break;
     }
 #endif
 }

@@ -80,7 +80,7 @@ static uint64_t hpet_get_comparator(HPETState *h, unsigned int tn,
     {
         /* update comparator by number of periods elapsed since last update */
         uint64_t period = h->hpet.period[tn];
-        if (period)
+        if ( period )
         {
             elapsed = hpet_read_maincounter(h, guest_time) - comparator;
             if ( (int64_t)elapsed >= 0 )
@@ -97,6 +97,7 @@ static uint64_t hpet_get_comparator(HPETState *h, unsigned int tn,
     h->hpet.timers[tn].cmp = comparator;
     return comparator;
 }
+
 static inline uint64_t hpet_read64(HPETState *h, unsigned long addr,
                                    uint64_t guest_time)
 {
@@ -119,10 +120,10 @@ static inline uint64_t hpet_read64(HPETState *h, unsigned long addr,
     case HPET_Tn_CMP(0):
     case HPET_Tn_CMP(1):
     case HPET_Tn_CMP(2):
-        return hpet_get_comparator(h,
-                                   array_index_nospec(HPET_TN(CMP, addr),
-                                                      ARRAY_SIZE(h->hpet.timers)),
-                                   guest_time);
+        return hpet_get_comparator(
+            h,
+            array_index_nospec(HPET_TN(CMP, addr), ARRAY_SIZE(h->hpet.timers)),
+            guest_time);
     case HPET_Tn_ROUTE(0):
     case HPET_Tn_ROUTE(1):
     case HPET_Tn_ROUTE(2):
@@ -132,8 +133,8 @@ static inline uint64_t hpet_read64(HPETState *h, unsigned long addr,
     return 0;
 }
 
-static inline int hpet_check_access_length(
-    unsigned long addr, unsigned long len)
+static inline int hpet_check_access_length(unsigned long addr,
+                                           unsigned long len)
 {
     if ( (addr & (len - 1)) || (len > 8) )
     {
@@ -142,17 +143,18 @@ static inline int hpet_check_access_length(
          * in unexpected behaviour or master abort, but should not crash/hang.
          * Hence we read all-ones, drop writes, and log a warning.
          */
-        gdprintk(XENLOG_WARNING, "HPET: access across register boundary: "
-                 "%lx %lx\n", addr, len);
+        gdprintk(XENLOG_WARNING,
+                 "HPET: access across register boundary: " "%lx %lx\n",
+                 addr,
+                 len);
         return -EINVAL;
     }
 
     return 0;
 }
 
-static int cf_check hpet_read(
-    struct vcpu *v, unsigned long addr, unsigned int length,
-    unsigned long *pval)
+static int cf_check hpet_read(struct vcpu *v, unsigned long addr,
+                              unsigned int length, unsigned long *pval)
 {
     HPETState *h = vcpu_vhpet(v);
     unsigned long result;
@@ -164,7 +166,7 @@ static int cf_check hpet_read(
         goto out;
     }
 
-    addr &= HPET_MMAP_SIZE-1;
+    addr &= HPET_MMAP_SIZE - 1;
 
     if ( hpet_check_access_length(addr, length) != 0 )
     {
@@ -190,13 +192,12 @@ static int cf_check hpet_read(
     if ( length != 8 )
         result = (val >> ((addr & 7) * 8)) & ((1ULL << (length * 8)) - 1);
 
- out:
+out:
     *pval = result;
     return X86EMUL_OKAY;
 }
 
-static void hpet_stop_timer(HPETState *h, unsigned int tn,
-                            uint64_t guest_time)
+static void hpet_stop_timer(HPETState *h, unsigned int tn, uint64_t guest_time)
 {
     ASSERT(tn < HPET_TIMER_NUM);
     ASSERT(rw_is_write_locked(&h->lock));
@@ -220,10 +221,9 @@ static void cf_check hpet_timer_fired(struct vcpu *v, void *data)
 
 /* the number of HPET tick that stands for
  * 1/(2^10) second, namely, 0.9765625 milliseconds */
-#define  HPET_TINY_TIME_SPAN  ((h->stime_freq >> 10) / STIME_PER_HPET_TICK)
+#define HPET_TINY_TIME_SPAN  ((h->stime_freq >> 10) / STIME_PER_HPET_TICK)
 
-static void hpet_set_timer(HPETState *h, unsigned int tn,
-                           uint64_t guest_time)
+static void hpet_set_timer(HPETState *h, unsigned int tn, uint64_t guest_time)
 {
     uint64_t tn_cmp, cur_tick, diff;
     unsigned int irq;
@@ -250,11 +250,11 @@ static void hpet_set_timer(HPETState *h, unsigned int tn,
         return;
     }
 
-    tn_cmp   = hpet_get_comparator(h, tn, guest_time);
+    tn_cmp = hpet_get_comparator(h, tn, guest_time);
     cur_tick = hpet_read_maincounter(h, guest_time);
     if ( timer_is_32bit(h, tn) )
     {
-        tn_cmp   = (uint32_t)tn_cmp;
+        tn_cmp = (uint32_t)tn_cmp;
         cur_tick = (uint32_t)cur_tick;
     }
 
@@ -269,10 +269,10 @@ static void hpet_set_timer(HPETState *h, unsigned int tn,
      * is unlikely to be 'small'.
      */
     if ( (int64_t)diff < 0 )
-        diff = (timer_is_32bit(h, tn) &&
-                vhpet_domain(h)->creation_finished &&
+        diff = (timer_is_32bit(h, tn) && vhpet_domain(h)->creation_finished &&
                 (-diff > HPET_TINY_TIME_SPAN))
-            ? (uint32_t)diff : 0;
+                   ? (uint32_t)diff
+                   : 0;
 
     destroy_periodic_time(&h->pt[tn]);
     if ( (tn <= 1) && (h->hpet.config & HPET_CFG_LEGACY) )
@@ -304,17 +304,25 @@ static void hpet_set_timer(HPETState *h, unsigned int tn,
     if ( !oneshot )
         period_ns = hpet_tick_to_ns(h, h->hpet.period[tn]);
 
-    TRACE_TIME(TRC_HVM_EMUL_HPET_START_TIMER, tn, irq,
-               diff_ns, diff_ns >> 32, period_ns, period_ns >> 32);
+    TRACE_TIME(TRC_HVM_EMUL_HPET_START_TIMER,
+               tn,
+               irq,
+               diff_ns,
+               diff_ns >> 32,
+               period_ns,
+               period_ns >> 32);
 
-    create_periodic_time(vhpet_vcpu(h), &h->pt[tn], diff_ns, period_ns,
-                         irq, timer_level(h, tn) ? hpet_timer_fired : NULL,
+    create_periodic_time(vhpet_vcpu(h),
+                         &h->pt[tn],
+                         diff_ns,
+                         period_ns,
+                         irq,
+                         timer_level(h, tn) ? hpet_timer_fired : NULL,
                          timer_level(h, tn) ? (void *)(unsigned long)tn : NULL,
                          timer_level(h, tn));
 }
 
-static inline uint64_t hpet_fixup_reg(
-    uint64_t new, uint64_t old, uint64_t mask)
+static inline uint64_t hpet_fixup_reg(uint64_t new, uint64_t old, uint64_t mask)
 {
     new &= mask;
     new |= old & ~mask;
@@ -334,14 +342,12 @@ static void timer_sanitize_int_route(HPETState *h, unsigned int tn)
      * If the requested interrupt is not valid and the timer is
      * enabled pick the first irq.
      */
-    timer_config(h, tn) |=
-        MASK_INSR(ffs(timer_int_route_cap(h, tn)) - 1,
-                  HPET_TN_ROUTE);
+    timer_config(h, tn) |= MASK_INSR(ffs(timer_int_route_cap(h, tn)) - 1,
+                                     HPET_TN_ROUTE);
 }
 
-static int cf_check hpet_write(
-    struct vcpu *v, unsigned long addr,
-    unsigned int length, unsigned long val)
+static int cf_check hpet_write(struct vcpu *v, unsigned long addr,
+                               unsigned int length, unsigned long val)
 {
     HPETState *h = vcpu_vhpet(v);
     uint64_t old_val, new_val;
@@ -350,7 +356,7 @@ static int cf_check hpet_write(
 
     /* Acculumate a bit mask of timers whos state is changed by this write. */
     unsigned long start_timers = 0;
-    unsigned long stop_timers  = 0;
+    unsigned long stop_timers = 0;
 #define set_stop_timer(n)    (__set_bit((n), &stop_timers))
 #define set_start_timer(n)   (__set_bit((n), &start_timers))
 #define set_restart_timer(n) (set_stop_timer(n),set_start_timer(n))
@@ -358,7 +364,7 @@ static int cf_check hpet_write(
     if ( !v->domain->arch.hvm.params[HVM_PARAM_HPET_ENABLED] )
         goto out;
 
-    addr &= HPET_MMAP_SIZE-1;
+    addr &= HPET_MMAP_SIZE - 1;
 
     if ( hpet_check_access_length(addr, length) != 0 )
         goto out;
@@ -369,15 +375,16 @@ static int cf_check hpet_write(
     old_val = hpet_read64(h, addr, guest_time);
     new_val = val;
     if ( length != 8 )
-        new_val = hpet_fixup_reg(
-            new_val << (addr & 7) * 8, old_val,
-            ((1ULL << (length*8)) - 1) << ((addr & 7) * 8));
+        new_val = hpet_fixup_reg(new_val << (addr & 7) * 8,
+                                 old_val,
+                                 ((1ULL << (length * 8)) - 1)
+                                     << ((addr & 7) * 8));
 
     switch ( addr & ~7 )
     {
     case HPET_CFG:
-        h->hpet.config = hpet_fixup_reg(new_val, old_val,
-                                        HPET_CFG_ENABLE | HPET_CFG_LEGACY);
+        h->hpet.config =
+            hpet_fixup_reg(new_val, old_val, HPET_CFG_ENABLE | HPET_CFG_LEGACY);
 
         if ( !(old_val & HPET_CFG_ENABLE) && (new_val & HPET_CFG_ENABLE) )
         {
@@ -385,10 +392,10 @@ static int cf_check hpet_write(
             h->mc_offset = h->hpet.mc64 - guest_time;
             for ( i = 0; i < HPET_TIMER_NUM; i++ )
             {
-                h->hpet.comparator64[i] =
-                            h->hpet.timers[i].config & HPET_TN_32BIT ?
-                                          (uint32_t)h->hpet.timers[i].cmp :
-                                                    h->hpet.timers[i].cmp;
+                h->hpet.comparator64[i] = h->hpet.timers[i].config &
+                                                  HPET_TN_32BIT
+                                              ? (uint32_t)h->hpet.timers[i].cmp
+                                              : h->hpet.timers[i].cmp;
                 if ( timer_enabled(h, i) )
                     set_start_timer(i);
             }
@@ -443,10 +450,10 @@ static int cf_check hpet_write(
         tn = array_index_nospec(HPET_TN(CFG, addr), ARRAY_SIZE(h->hpet.timers));
 
         h->hpet.timers[tn].config =
-            hpet_fixup_reg(new_val, old_val,
-                           (HPET_TN_LEVEL | HPET_TN_ENABLE |
-                            HPET_TN_PERIODIC | HPET_TN_SETVAL |
-                            HPET_TN_32BIT | HPET_TN_ROUTE));
+            hpet_fixup_reg(new_val,
+                           old_val,
+                           (HPET_TN_LEVEL | HPET_TN_ENABLE | HPET_TN_PERIODIC |
+                            HPET_TN_SETVAL | HPET_TN_32BIT | HPET_TN_ROUTE));
 
         timer_sanitize_int_route(h, tn);
 
@@ -465,7 +472,7 @@ static int cf_check hpet_write(
                      * the right mode. */
                     set_restart_timer(tn);
                 else if ( (new_val & HPET_TN_32BIT) &&
-                         !(old_val & HPET_TN_32BIT) )
+                          !(old_val & HPET_TN_32BIT) )
                     /* switching from 64 bit to 32 bit mode could cause timer
                      * next fire time, or period, to change. */
                     set_restart_timer(tn);
@@ -534,14 +541,14 @@ static int cf_check hpet_write(
     }
 
     /* stop/start timers whos state was changed by this write. */
-    while (stop_timers)
+    while ( stop_timers )
     {
         i = ffsl(stop_timers) - 1;
         __clear_bit(i, &stop_timers);
         hpet_stop_timer(h, i, guest_time);
     }
 
-    while (start_timers)
+    while ( start_timers )
     {
         i = ffsl(start_timers) - 1;
         __clear_bit(i, &start_timers);
@@ -554,22 +561,19 @@ static int cf_check hpet_write(
 
     write_unlock(&h->lock);
 
- out:
+out:
     return X86EMUL_OKAY;
 }
 
 static int cf_check hpet_range(struct vcpu *v, unsigned long addr)
 {
-    return ( (addr >= HPET_BASE_ADDRESS) &&
-             (addr < (HPET_BASE_ADDRESS + HPET_MMAP_SIZE)) );
+    return ((addr >= HPET_BASE_ADDRESS) &&
+            (addr < (HPET_BASE_ADDRESS + HPET_MMAP_SIZE)));
 }
 
-static const struct hvm_mmio_ops hpet_mmio_ops = {
-    .check = hpet_range,
-    .read  = hpet_read,
-    .write = hpet_write
-};
-
+static const struct hvm_mmio_ops hpet_mmio_ops = { .check = hpet_range,
+                                                   .read = hpet_read,
+                                                   .write = hpet_write };
 
 static int cf_check hpet_save(struct vcpu *v, hvm_domain_context_t *h)
 {
@@ -704,7 +708,8 @@ static void hpet_set(HPETState *h)
 
     h->stime_freq = S_TO_NS;
 
-    h->hpet_to_ns_scale = ((S_TO_NS * STIME_PER_HPET_TICK) << 10) / h->stime_freq;
+    h->hpet_to_ns_scale = ((S_TO_NS * STIME_PER_HPET_TICK) << 10) /
+                          h->stime_freq;
     h->hpet_to_ns_limit = ~0ULL / h->hpet_to_ns_scale;
 
     h->hpet.capability = 0x80860001ULL |
@@ -713,12 +718,13 @@ static void hpet_set(HPETState *h)
 
     /* This is the number of femptoseconds per HPET tick. */
     /* Here we define HPET's frequency to be 1/16 of Xen system time */
-    h->hpet.capability |= ((S_TO_FS*STIME_PER_HPET_TICK/h->stime_freq) << 32);
+    h->hpet.capability |= ((S_TO_FS * STIME_PER_HPET_TICK / h->stime_freq)
+                           << 32);
 
     for ( i = 0; i < HPET_TIMER_NUM; i++ )
     {
-        h->hpet.timers[i].config =
-            HPET_TN_INT_ROUTE_CAP_VAL | HPET_TN_64BIT_CAP | HPET_TN_PERIODIC_CAP;
+        h->hpet.timers[i].config = HPET_TN_INT_ROUTE_CAP_VAL |
+                                   HPET_TN_64BIT_CAP | HPET_TN_PERIODIC_CAP;
         h->hpet.timers[i].cmp = ~0ULL;
         h->hpet.comparator64[i] = ~0ULL;
         h->pt[i].source = PTSRC_isa;

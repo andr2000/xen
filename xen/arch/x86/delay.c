@@ -25,5 +25,5 @@ void udelay(unsigned long usecs)
     {
         rep_nop();
         e = rdtsc_ordered();
-    } while ((e-s) < ticks);
+    } while ( (e - s) < ticks );
 }

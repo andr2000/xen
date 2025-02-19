@@ -64,7 +64,7 @@ static inline void local_irq_disable(void)
 
 static inline void local_irq_restore(unsigned long flags)
 {
-	csr_set(CSR_SSTATUS, flags & SSTATUS_SIE);
+    csr_set(CSR_SSTATUS, flags & SSTATUS_SIE);
 }
 
 static inline bool local_irq_is_enabled(void)

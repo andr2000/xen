@@ -26,34 +26,37 @@
 static unsigned int __read_mostly userspace_cmdline_freq;
 static DEFINE_PER_CPU(unsigned int, cpu_set_freq);
 
-static int cf_check cpufreq_governor_userspace(
-    struct cpufreq_policy *policy, unsigned int event)
+static int cf_check cpufreq_governor_userspace(struct cpufreq_policy *policy,
+                                               unsigned int event)
 {
     int ret = 0;
     unsigned int cpu;
 
-    if (unlikely(!policy) || 
-        unlikely(!cpu_online(cpu = policy->cpu)))
+    if ( unlikely(!policy) || unlikely(!cpu_online(cpu = policy->cpu)) )
         return -EINVAL;
 
-    switch (event) {
+    switch ( event )
+    {
     case CPUFREQ_GOV_START:
-        if (!per_cpu(cpu_set_freq, cpu))
+        if ( !per_cpu(cpu_set_freq, cpu) )
             per_cpu(cpu_set_freq, cpu) = policy->cur;
         break;
     case CPUFREQ_GOV_STOP:
         per_cpu(cpu_set_freq, cpu) = 0;
         break;
     case CPUFREQ_GOV_LIMITS:
-        if (policy->max < per_cpu(cpu_set_freq, cpu))
-            ret = __cpufreq_driver_target(policy, policy->max,
-                        CPUFREQ_RELATION_H);
-        else if (policy->min > per_cpu(cpu_set_freq, cpu))
-            ret = __cpufreq_driver_target(policy, policy->min,
-                        CPUFREQ_RELATION_L);
+        if ( policy->max < per_cpu(cpu_set_freq, cpu) )
+            ret = __cpufreq_driver_target(policy,
+                                          policy->max,
+                                          CPUFREQ_RELATION_H);
+        else if ( policy->min > per_cpu(cpu_set_freq, cpu) )
+            ret = __cpufreq_driver_target(policy,
+                                          policy->min,
+                                          CPUFREQ_RELATION_L);
         else
-            ret = __cpufreq_driver_target(policy, per_cpu(cpu_set_freq, cpu),
-                        CPUFREQ_RELATION_L);
+            ret = __cpufreq_driver_target(policy,
+                                          per_cpu(cpu_set_freq, cpu),
+                                          CPUFREQ_RELATION_L);
 
         break;
     default:
@@ -68,35 +71,37 @@ int write_userspace_scaling_setspeed(unsigned int cpu, unsigned int freq)
 {
     struct cpufreq_policy *policy;
 
-    if (!cpu_online(cpu) || !(policy = per_cpu(cpufreq_cpu_policy, cpu)))
+    if ( !cpu_online(cpu) || !(policy = per_cpu(cpufreq_cpu_policy, cpu)) )
         return -EINVAL;
 
     per_cpu(cpu_set_freq, cpu) = freq;
 
-    if (freq < policy->min)
+    if ( freq < policy->min )
         freq = policy->min;
-    if (freq > policy->max)
+    if ( freq > policy->max )
         freq = policy->max;
 
     return __cpufreq_driver_target(policy, freq, CPUFREQ_RELATION_L);
 }
 
-static bool __init cf_check
-cpufreq_userspace_handle_option(const char *name, const char *val)
+static bool __init cf_check cpufreq_userspace_handle_option(const char *name,
+                                                            const char *val)
 {
-    if (!strcmp(name, "speed") && val) {
+    if ( !strcmp(name, "speed") && val )
+    {
         userspace_cmdline_freq = simple_strtoul(val, NULL, 0);
         return 1;
     }
     return 0;
 }
 
-static int cf_check cpufreq_userspace_cpu_callback(
-    struct notifier_block *nfb, unsigned long action, void *hcpu)
+static int cf_check cpufreq_userspace_cpu_callback(struct notifier_block *nfb,
+                                                   unsigned long action,
+                                                   void *hcpu)
 {
     unsigned int cpu = (unsigned long)hcpu;
 
-    switch (action)
+    switch ( action )
     {
     case CPU_UP_PREPARE:
         per_cpu(cpu_set_freq, cpu) = userspace_cmdline_freq;
@@ -128,27 +133,27 @@ static int __init cf_check cpufreq_gov_userspace_init(void)
     register_cpu_notifier(&cpufreq_userspace_cpu_nfb);
     return cpufreq_register_governor(&cpufreq_gov_userspace);
 }
-__initcall(cpufreq_gov_userspace_init);
 
+__initcall(cpufreq_gov_userspace_init);
 
 /*
  * cpufreq performance governor
  */
-static int cf_check cpufreq_governor_performance(
-    struct cpufreq_policy *policy, unsigned int event)
+static int cf_check cpufreq_governor_performance(struct cpufreq_policy *policy,
+                                                 unsigned int event)
 {
     int ret = 0;
 
-    if (!policy)
+    if ( !policy )
         return -EINVAL;
 
-    switch (event) {
+    switch ( event )
+    {
     case CPUFREQ_GOV_START:
     case CPUFREQ_GOV_STOP:
         break;
     case CPUFREQ_GOV_LIMITS:
-        ret = __cpufreq_driver_target(policy, policy->max,
-                        CPUFREQ_RELATION_H);
+        ret = __cpufreq_driver_target(policy, policy->max, CPUFREQ_RELATION_H);
         break;
     default:
         ret = -EINVAL;
@@ -170,27 +175,27 @@ static int __init cf_check cpufreq_gov_performance_init(void)
 
     return cpufreq_register_governor(&cpufreq_gov_performance);
 }
-__initcall(cpufreq_gov_performance_init);
 
+__initcall(cpufreq_gov_performance_init);
 
 /*
  * cpufreq powersave governor
  */
-static int cf_check cpufreq_governor_powersave(
-    struct cpufreq_policy *policy, unsigned int event)
+static int cf_check cpufreq_governor_powersave(struct cpufreq_policy *policy,
+                                               unsigned int event)
 {
     int ret = 0;
 
-    if (!policy)
+    if ( !policy )
         return -EINVAL;
 
-    switch (event) {
+    switch ( event )
+    {
     case CPUFREQ_GOV_START:
     case CPUFREQ_GOV_STOP:
         break;
     case CPUFREQ_GOV_LIMITS:
-        ret = __cpufreq_driver_target(policy, policy->min,
-                        CPUFREQ_RELATION_L);
+        ret = __cpufreq_driver_target(policy, policy->min, CPUFREQ_RELATION_L);
         break;
     default:
         ret = -EINVAL;
@@ -212,4 +217,5 @@ static int __init cf_check cpufreq_gov_powersave_init(void)
 
     return cpufreq_register_governor(&cpufreq_gov_powersave);
 }
+
 __initcall(cpufreq_gov_powersave_init);

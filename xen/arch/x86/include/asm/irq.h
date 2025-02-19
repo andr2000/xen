@@ -67,26 +67,26 @@ struct irq_desc;
  * the old destinations.
  */
 struct arch_irq_desc {
-        int16_t vector;                  /* vector itself is only 8 bits, */
-        int16_t old_vector;              /* but we use -1 for unassigned  */
-        /*
+    int16_t vector; /* vector itself is only 8 bits, */
+    int16_t old_vector; /* but we use -1 for unassigned  */
+    /*
          * Except for high priority interrupts @cpu_mask may have bits set for
          * offline CPUs.  Consumers need to be careful to mask this down to
          * online ones as necessary.  There is supposed to always be a non-
          * empty intersection with cpu_online_map.
          */
-        cpumask_var_t cpu_mask;
-        cpumask_var_t old_cpu_mask;
-        cpumask_var_t pending_mask;
-        vmask_t *used_vectors;
-        unsigned move_cleanup_count;
-        bool move_in_progress : 1;
-        int8_t used;
-        /*
+    cpumask_var_t cpu_mask;
+    cpumask_var_t old_cpu_mask;
+    cpumask_var_t pending_mask;
+    vmask_t *used_vectors;
+    unsigned move_cleanup_count;
+    bool move_in_progress:1;
+    int8_t used;
+    /*
          * Weak reference to domain having permission over this IRQ (which can
          * be different from the domain actually having the IRQ assigned)
          */
-        domid_t creator_domid;
+    domid_t creator_domid;
 };
 
 /* For use with irq_desc.arch.used */
@@ -102,8 +102,8 @@ DECLARE_PER_CPU(vector_irq_t, vector_irq);
 extern bool opt_noirqbalance;
 
 #define OPT_IRQ_VECTOR_MAP_DEFAULT 0 /* Do the default thing  */
-#define OPT_IRQ_VECTOR_MAP_NONE    1 /* None */ 
-#define OPT_IRQ_VECTOR_MAP_GLOBAL  2 /* One global vector map (no vector sharing) */ 
+#define OPT_IRQ_VECTOR_MAP_NONE    1 /* None */
+#define OPT_IRQ_VECTOR_MAP_GLOBAL  2 /* One global vector map (no vector sharing) */
 #define OPT_IRQ_VECTOR_MAP_PERDEV  3 /* Per-device vetor map (no vector sharing w/in a device) */
 
 extern int opt_irq_vector_map;
@@ -144,8 +144,10 @@ extern unsigned int io_apic_irqs;
 DECLARE_PER_CPU(unsigned int, irq_count);
 
 struct pirq;
+
 struct arch_pirq {
     int irq;
+
     union {
         struct hvm_pirq {
             int emuirq;
@@ -157,10 +159,9 @@ struct arch_pirq {
 #define pirq_dpci(pirq) ((pirq) ? &(pirq)->arch.hvm.dpci : NULL)
 #define dpci_pirq(pd) container_of(pd, struct pirq, arch.hvm.dpci)
 
-int pirq_shared(struct domain *d , int pirq);
+int pirq_shared(struct domain *d, int pirq);
 
-int map_domain_pirq(struct domain *d, int pirq, int irq, int type,
-                           void *data);
+int map_domain_pirq(struct domain *d, int pirq, int irq, int type, void *data);
 int unmap_domain_pirq(struct domain *d, int pirq);
 int get_free_pirq(struct domain *d, int type);
 int get_free_pirqs(struct domain *d, unsigned int nr);
@@ -172,7 +173,7 @@ int unmap_domain_pirq_emuirq(struct domain *d, int pirq);
 void fixup_irqs(const cpumask_t *mask, bool verbose);
 void fixup_eoi(void);
 
-int  init_irq_data(void);
+int init_irq_data(void);
 
 void clear_irq_vector(int irq);
 
@@ -224,7 +225,7 @@ void cleanup_domain_irq_mapping(struct domain *d);
 
 bool cpu_has_pending_apic_eoi(void);
 
-static inline void arch_move_irqs(struct vcpu *v) { }
+static inline void arch_move_irqs(struct vcpu *v) {}
 
 struct msi_info;
 int allocate_and_map_gsi_pirq(struct domain *d, int index, int *pirq_p);

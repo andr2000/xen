@@ -27,7 +27,8 @@ static int __init cf_check parse_pv(const char *s)
     const char *ss;
     int val, rc = 0;
 
-    do {
+    do
+    {
         ss = strchr(s, ',');
         if ( !ss )
             ss = strchr(s, '\0');
@@ -48,6 +49,7 @@ static int __init cf_check parse_pv(const char *s)
 
     return rc;
 }
+
 custom_param("pv", parse_pv);
 
 static __read_mostly enum {
@@ -150,10 +152,9 @@ unsigned long pv_fixup_guest_cr4(const struct vcpu *v, unsigned long cr4)
     const struct cpu_policy *p = v->domain->arch.cpu_policy;
 
     /* Discard attempts to set guest controllable bits outside of the policy. */
-    cr4 &= ~((p->basic.tsc     ? 0 : X86_CR4_TSD)      |
-             (p->basic.de      ? 0 : X86_CR4_DE)       |
+    cr4 &= ~((p->basic.tsc ? 0 : X86_CR4_TSD) | (p->basic.de ? 0 : X86_CR4_DE) |
              (p->feat.fsgsbase ? 0 : X86_CR4_FSGSBASE) |
-             (p->basic.xsave   ? 0 : X86_CR4_OSXSAVE));
+             (p->basic.xsave ? 0 : X86_CR4_OSXSAVE));
 
     /* Masks expected to be disjoint sets. */
     BUILD_BUG_ON(PV_CR4_GUEST_MASK & PV_CR4_GUEST_VISIBLE_MASK);
@@ -178,13 +179,14 @@ static int __init cf_check pge_init(void)
 
     return 0;
 }
+
 __initcall(pge_init);
 
 unsigned long pv_make_cr4(const struct vcpu *v)
 {
     const struct domain *d = v->domain;
-    unsigned long cr4 = mmu_cr4_features &
-        ~(X86_CR4_PCIDE | X86_CR4_PGE | X86_CR4_TSD | X86_CR4_PKE);
+    unsigned long cr4 = mmu_cr4_features & ~(X86_CR4_PCIDE | X86_CR4_PGE |
+                                             X86_CR4_TSD | X86_CR4_PKE);
 
     /*
      * We want CR4.PKE set in HVM context when available, but don't support it
@@ -246,10 +248,9 @@ int switch_compat(struct domain *d)
     d->arch.has_32bit_shinfo = 1;
     d->arch.pv.is_32bit = true;
 
-    for_each_vcpu( d, v )
+    for_each_vcpu(d, v)
     {
-        if ( (rc = setup_compat_arg_xlat(v)) ||
-             (rc = setup_compat_l4(v)) )
+        if ( (rc = setup_compat_arg_xlat(v)) || (rc = setup_compat_l4(v)) )
             goto undo_and_fail;
     }
 
@@ -263,9 +264,9 @@ int switch_compat(struct domain *d)
 
     return 0;
 
- undo_and_fail:
+undo_and_fail:
     d->arch.pv.is_32bit = d->arch.has_32bit_shinfo = false;
-    for_each_vcpu( d, v )
+    for_each_vcpu(d, v)
     {
         free_compat_arg_xlat(v);
         release_compat_l4(v);
@@ -277,7 +278,8 @@ int switch_compat(struct domain *d)
 
 static int pv_create_gdt_ldt_l1tab(struct vcpu *v)
 {
-    return create_perdomain_mapping(v->domain, GDT_VIRT_START(v),
+    return create_perdomain_mapping(v->domain,
+                                    GDT_VIRT_START(v),
                                     1U << GDT_LDT_VCPU_SHIFT,
                                     v->domain->arch.pv.gdt_ldt_l1tab,
                                     NULL);
@@ -285,7 +287,8 @@ static int pv_create_gdt_ldt_l1tab(struct vcpu *v)
 
 static void pv_destroy_gdt_ldt_l1tab(struct vcpu *v)
 {
-    destroy_perdomain_mapping(v->domain, GDT_VIRT_START(v),
+    destroy_perdomain_mapping(v->domain,
+                              GDT_VIRT_START(v),
                               1U << GDT_LDT_VCPU_SHIFT);
 }
 
@@ -312,8 +315,7 @@ int pv_vcpu_initialise(struct vcpu *v)
     if ( rc )
         return rc;
 
-    BUILD_BUG_ON(X86_NR_VECTORS * sizeof(*v->arch.pv.trap_ctxt) >
-                 PAGE_SIZE);
+    BUILD_BUG_ON(X86_NR_VECTORS * sizeof(*v->arch.pv.trap_ctxt) > PAGE_SIZE);
     v->arch.pv.trap_ctxt = xzalloc_array(struct trap_info, X86_NR_VECTORS);
     if ( !v->arch.pv.trap_ctxt )
     {
@@ -335,7 +337,7 @@ int pv_vcpu_initialise(struct vcpu *v)
             goto done;
     }
 
- done:
+done:
     if ( rc )
         pv_vcpu_destroy(v);
     return rc;
@@ -345,7 +347,8 @@ void pv_domain_destroy(struct domain *d)
 {
     pv_l1tf_domain_destroy(d);
 
-    destroy_perdomain_mapping(d, GDT_LDT_VIRT_START,
+    destroy_perdomain_mapping(d,
+                              GDT_LDT_VIRT_START,
                               GDT_LDT_MBYTES << (20 - PAGE_SHIFT));
 
     XFREE(d->arch.pv.cpuidmasks);
@@ -359,7 +362,7 @@ int pv_domain_initialise(struct domain *d)
 {
     static const struct arch_csw pv_csw = {
         .from = paravirt_ctxt_switch_from,
-        .to   = paravirt_ctxt_switch_to,
+        .to = paravirt_ctxt_switch_to,
         .tail = continue_pv_domain,
     };
     int rc = -ENOMEM;
@@ -403,7 +406,7 @@ int pv_domain_initialise(struct domain *d)
 
     return 0;
 
-  fail:
+fail:
     pv_domain_destroy(d);
 
     return rc;
@@ -483,7 +486,7 @@ void toggle_guest_mode(struct vcpu *v)
         v->arch.pv.gs_base_kernel = gs_base;
     else
         v->arch.pv.gs_base_user = gs_base;
-    asm volatile ( "swapgs" );
+    asm volatile("swapgs");
 
     _toggle_guest_pt(v);
 

@@ -53,8 +53,8 @@ static void __init dt_uart_init(void)
             if ( ret >= 0 )
             {
                 printk("Taking dtuart configuration from /chosen/stdout-path\n");
-                if ( strlcpy(opt_dtuart, stdout, sizeof(opt_dtuart))
-                     >= sizeof(opt_dtuart) )
+                if ( strlcpy(opt_dtuart, stdout, sizeof(opt_dtuart)) >=
+                     sizeof(opt_dtuart) )
                     printk("WARNING: /chosen/stdout-path too long, truncated\n");
             }
             else if ( ret != -EINVAL /* Not present */ )
@@ -116,7 +116,7 @@ static void __init acpi_uart_init(void)
     }
 }
 #else
-static void __init acpi_uart_init(void) { }
+static void __init acpi_uart_init(void) {}
 #endif
 
 void __init uart_init(void)

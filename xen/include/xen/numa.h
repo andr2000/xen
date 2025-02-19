@@ -30,8 +30,8 @@ typedef uint8_t nodeid_t;
 /* The following content can be used when NUMA feature is enabled */
 #ifdef CONFIG_NUMA
 
-extern nodeid_t      cpu_to_node[NR_CPUS];
-extern cpumask_t     node_to_cpumask[];
+extern nodeid_t cpu_to_node[NR_CPUS];
+extern cpumask_t node_to_cpumask[];
 
 #define cpu_to_node(cpu)        cpu_to_node[cpu]
 #define parent_node(node)       (node)
@@ -41,8 +41,8 @@ struct node {
     paddr_t start, end;
 };
 
-extern int compute_hash_shift(const struct node *nodes,
-                              unsigned int numnodes, const nodeid_t *nodeids);
+extern int compute_hash_shift(const struct node *nodes, unsigned int numnodes,
+                              const nodeid_t *nodeids);
 
 extern bool numa_off;
 extern const char *numa_fw_nid_name;
@@ -120,8 +120,7 @@ static inline nodeid_t mfn_to_nid(mfn_t mfn)
  *
  * Note: the range is exclusive at the end, e.g. [*start, *end).
  */
-extern int arch_get_ram_range(unsigned int idx,
-                              paddr_t *start, paddr_t *end);
+extern int arch_get_ram_range(unsigned int idx, paddr_t *start, paddr_t *end);
 extern bool valid_numa_range(paddr_t start, paddr_t end, nodeid_t node);
 extern bool numa_memblks_available(void);
 extern bool numa_update_node_memblks(nodeid_t node, unsigned int arch_nid,

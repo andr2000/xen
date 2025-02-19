@@ -11,8 +11,7 @@
 #include <efi/efidevp.h>
 #include <efi/efiapi.h>
 
-void efi_multiboot2(EFI_HANDLE ImageHandle,
-                    EFI_SYSTEM_TABLE *SystemTable,
+void efi_multiboot2(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable,
                     const char *cmdline);
 
 #endif /* X86_ASM_EFI_H */

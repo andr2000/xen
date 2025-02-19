@@ -127,7 +127,7 @@ void do_tasklet(void)
 
     if ( list_empty(list) )
     {
-        clear_bit(_TASKLET_enqueued, work_to_do);        
+        clear_bit(_TASKLET_enqueued, work_to_do);
         raise_softirq(SCHEDULE_SOFTIRQ);
     }
 
@@ -176,7 +176,7 @@ void tasklet_kill(struct tasklet *t)
         spin_lock_irqsave(&tasklet_lock, flags);
     }
 
- unlock:
+unlock:
     spin_unlock_irqrestore(&tasklet_lock, flags);
 }
 
@@ -208,15 +208,15 @@ void tasklet_init(struct tasklet *t, void (*func)(void *data), void *data)
     t->data = data;
 }
 
-void softirq_tasklet_init(struct tasklet *t,
-                          void (*func)(void *data), void *data)
+void softirq_tasklet_init(struct tasklet *t, void (*func)(void *data),
+                          void *data)
 {
     tasklet_init(t, func, data);
     t->is_softirq = 1;
 }
 
-static int cf_check cpu_callback(
-    struct notifier_block *nfb, unsigned long action, void *hcpu)
+static int cf_check cpu_callback(struct notifier_block *nfb,
+                                 unsigned long action, void *hcpu)
 {
     unsigned int cpu = (unsigned long)hcpu;
 
@@ -238,10 +238,8 @@ static int cf_check cpu_callback(
     return NOTIFY_DONE;
 }
 
-static struct notifier_block cpu_nfb = {
-    .notifier_call = cpu_callback,
-    .priority = 99
-};
+static struct notifier_block cpu_nfb = { .notifier_call = cpu_callback,
+                                         .priority = 99 };
 
 void __init tasklet_subsys_init(void)
 {

@@ -17,9 +17,9 @@
 #include <xen/compiler.h>
 
 #if defined(CONFIG_ENFORCE_UNIQUE_SYMBOLS) || defined(__clang__)
-# define EMIT_FILE asm ( "" )
+#define EMIT_FILE asm ( "" )
 #else
-# define EMIT_FILE asm ( ".file \"" __FILE__ "\"" )
+#define EMIT_FILE asm ( ".file \"" __FILE__ "\"" )
 #endif
 
 #endif

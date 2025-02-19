@@ -11,7 +11,7 @@ extern const int32_t __trampoline_seg_start[], __trampoline_seg_stop[];
 
 #if defined(__i386__)
 void asmlinkage reloc_trampoline32(void)
-#elif defined (__x86_64__)
+#elif defined(__x86_64__)
 void reloc_trampoline64(void)
 #else
 #error Unknown architecture

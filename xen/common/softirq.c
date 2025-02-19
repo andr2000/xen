@@ -33,7 +33,7 @@ static void __do_softirq(unsigned long ignore_mask)
 
     ASSERT(!rcu_allowed || rcu_quiesce_allowed());
 
-    for ( ; ; )
+    for ( ;; )
     {
         /*
          * Initialise @cpu on every iteration: SCHEDULE_SOFTIRQ or
@@ -44,8 +44,8 @@ static void __do_softirq(unsigned long ignore_mask)
         if ( rcu_allowed && rcu_pending(cpu) )
             rcu_check_callbacks(cpu);
 
-        if ( ((pending = (softirq_pending(cpu) & ~ignore_mask)) == 0)
-             || cpu_is_offline(cpu) )
+        if ( ((pending = (softirq_pending(cpu) & ~ignore_mask)) == 0) ||
+             cpu_is_offline(cpu) )
             break;
 
         i = ffsl(pending) - 1;
@@ -94,8 +94,7 @@ void cpumask_raise_softirq(const cpumask_t *mask, unsigned int nr)
         raise_mask = &per_cpu(batch_mask, this_cpu);
 
     for_each_cpu(cpu, mask)
-        if ( !test_and_set_bit(nr, &softirq_pending(cpu)) &&
-             cpu != this_cpu &&
+        if ( !test_and_set_bit(nr, &softirq_pending(cpu)) && cpu != this_cpu &&
              !arch_skip_send_event_check(cpu) )
             __cpumask_set_cpu(cpu, raise_mask);
 
@@ -107,9 +106,8 @@ void cpu_raise_softirq(unsigned int cpu, unsigned int nr)
 {
     unsigned int this_cpu = smp_processor_id();
 
-    if ( test_and_set_bit(nr, &softirq_pending(cpu))
-         || (cpu == this_cpu)
-         || arch_skip_send_event_check(cpu) )
+    if ( test_and_set_bit(nr, &softirq_pending(cpu)) || (cpu == this_cpu) ||
+         arch_skip_send_event_check(cpu) )
         return;
 
     if ( !per_cpu(batching, this_cpu) || in_irq() )
@@ -129,7 +127,7 @@ void cpu_raise_softirq_batch_finish(void)
     cpumask_t *mask = &per_cpu(batch_mask, this_cpu);
 
     ASSERT(per_cpu(batching, this_cpu));
-    for_each_cpu ( cpu, mask )
+    for_each_cpu(cpu, mask)
         if ( !softirq_pending(cpu) )
             __cpumask_clear_cpu(cpu, mask);
     smp_send_event_check_mask(mask);

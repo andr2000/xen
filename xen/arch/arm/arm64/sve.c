@@ -34,7 +34,7 @@ extern void sve_save_ctx(uint64_t *sve_ctx, uint64_t *pregs, int save_ffr);
  * pregs - pointer to buffer for P0-15
  * restore_ffr - Restore FFR if non-zero
  */
-extern void sve_load_ctx(uint64_t const *sve_ctx, uint64_t const *pregs,
+extern void sve_load_ctx(const uint64_t *sve_ctx, const uint64_t *pregs,
                          int restore_ffr);
 
 /* Takes a vector length in bits and returns the ZCR_ELx encoding */
@@ -96,14 +96,14 @@ unsigned int get_sys_vl_len(void)
 
     /* ZCR_ELx len field is ((len + 1) * 128) = vector bits length */
     return ((system_cpuinfo.zcr64.bits[0] & ZCR_ELx_LEN_MASK) + 1U) *
-            SVE_VL_MULTIPLE_VAL;
+           SVE_VL_MULTIPLE_VAL;
 }
 
 int sve_context_init(struct vcpu *v)
 {
     unsigned int sve_vl_bits = sve_decode_vl(v->domain->arch.sve_vl);
     uint64_t *ctx = _xzalloc(sve_zreg_ctx_size(sve_vl_bits) +
-                             sve_ffrreg_ctx_size(sve_vl_bits),
+                                 sve_ffrreg_ctx_size(sve_vl_bits),
                              L1_CACHE_BYTES);
 
     if ( !ctx )
@@ -113,8 +113,8 @@ int sve_context_init(struct vcpu *v)
      * Points to the end of Z0-Z31 memory, just before FFR memory, to be kept in
      * sync with sve_context_free().
      */
-    v->arch.vfp.sve_zreg_ctx_end = ctx +
-        (sve_zreg_ctx_size(sve_vl_bits) / sizeof(uint64_t));
+    v->arch.vfp.sve_zreg_ctx_end =
+        ctx + (sve_zreg_ctx_size(sve_vl_bits) / sizeof(uint64_t));
 
     v->arch.zcr_el2 = vl_to_zcr(sve_vl_bits);
 

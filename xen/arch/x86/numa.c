@@ -2,7 +2,7 @@
  * Generic VM initialization for x86-64 NUMA setups.
  * Copyright 2002,2003 Andi Kleen, SuSE Labs.
  * Adapted for Xen: Ryan Harper <ryanh@us.ibm.com>
- */ 
+ */
 
 #include <xen/init.h>
 #include <xen/mm.h>
@@ -16,14 +16,13 @@
 #endif
 
 /* from proto.h */
-#define round_up(x,y) ((((x)+(y))-1) & (~((y)-1)))
+#define round_up(x, y) ((((x)+(y))-1) & (~((y)-1)))
 
 /*
  * Keep BIOS's CPU2node information, should not be used for memory allocaion
  */
-nodeid_t apicid_to_node[MAX_LOCAL_APIC] = {
-    [0 ... MAX_LOCAL_APIC-1] = NUMA_NO_NODE
-};
+nodeid_t apicid_to_node[MAX_LOCAL_APIC] = { [0 ... MAX_LOCAL_APIC - 1] =
+                                                NUMA_NO_NODE };
 
 int8_t __ro_after_init acpi_numa = 0;
 
@@ -96,8 +95,9 @@ unsigned int __init arch_get_dma_bitsize(void)
      * its spanned pages by (arbitrarily chosen) 4.
      */
     return min_t(unsigned int,
-                 flsl(node_start_pfn(node) + node_spanned_pages(node) / 4 - 1)
-                 + PAGE_SHIFT, 32);
+                 flsl(node_start_pfn(node) + node_spanned_pages(node) / 4 - 1) +
+                     PAGE_SHIFT,
+                 32);
 }
 
 /**

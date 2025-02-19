@@ -123,14 +123,14 @@ static size_t strcspn(const char *s, const char *reject)
     return count;
 }
 
-static unsigned int __maybe_unused strtoui(
-    const char *s, const char *stop, const char **next)
+static unsigned int __maybe_unused strtoui(const char *s, const char *stop,
+                                           const char **next)
 {
     char base = 10, l;
     unsigned long long res = 0;
 
     if ( *s == '0' )
-      base = (tolower(*++s) == 'x') ? (++s, 16) : 8;
+        base = (tolower(*++s) == 'x') ? (++s, 16) : 8;
 
     for ( ; *s != '\0'; ++s )
     {
@@ -161,9 +161,9 @@ static unsigned int __maybe_unused strtoui(
         }
     }
 
- out:
+out:
     if ( next )
-      *next = s;
+        *next = s;
 
     return res;
 }
@@ -184,7 +184,7 @@ static const char *find_opt(const char *cmdline, const char *opt, bool arg)
 
     lo = strlen(opt);
 
-    for ( ; ; )
+    for ( ;; )
     {
         cmdline += strspn(cmdline, delim_chars);
 
@@ -205,7 +205,8 @@ static const char *find_opt(const char *cmdline, const char *opt, bool arg)
 
 static bool skip_realmode(const char *cmdline)
 {
-    return find_opt(cmdline, "no-real-mode", false) || find_opt(cmdline, "tboot=", true);
+    return find_opt(cmdline, "no-real-mode", false) ||
+           find_opt(cmdline, "tboot=", true);
 }
 
 static uint8_t edd_parse(const char *cmdline)
@@ -288,7 +289,8 @@ static void vga_parse(const char *cmdline, early_boot_opts_t *ebo)
         else if ( !strsubcmp(c, "text-80x") )
         {
             c += strlen("text-80x");
-            ebo->boot_vid_mode = rows2vmode(strtoui(c, delim_chars_comma, NULL));
+            ebo->boot_vid_mode =
+                rows2vmode(strtoui(c, delim_chars_comma, NULL));
         }
         else if ( !strsubcmp(c, "gfx-") )
         {
@@ -329,8 +331,7 @@ static void vga_parse(const char *cmdline, early_boot_opts_t *ebo)
         }
         else if ( !strmaxcmp(c, "ask", delim_chars_comma) )
             ebo->boot_vid_mode = ASK_VGA;
-    }
-    while ( (c = find_opt(c, "vga=", true)) != NULL );
+    } while ( (c = find_opt(c, "vga=", true)) != NULL );
 }
 #endif
 

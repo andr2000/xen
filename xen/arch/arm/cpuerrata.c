@@ -83,8 +83,7 @@ static bool copy_hyp_vect_bpi(unsigned int slot, const char *hyp_vec_start,
 
 static bool __maybe_unused
 install_bp_hardening_vec(const struct arm_cpu_capabilities *entry,
-                         const char *hyp_vec_start,
-                         const char *hyp_vec_end,
+                         const char *hyp_vec_start, const char *hyp_vec_end,
                          const char *desc)
 {
     static int last_slot = -1;
@@ -101,7 +100,8 @@ install_bp_hardening_vec(const struct arm_cpu_capabilities *entry,
         return true;
 
     printk(XENLOG_INFO "CPU%u will %s on exception entry\n",
-           smp_processor_id(), desc);
+           smp_processor_id(),
+           desc);
 
     spin_lock(&bp_lock);
 
@@ -135,7 +135,8 @@ install_bp_hardening_vec(const struct arm_cpu_capabilities *entry,
     if ( ret )
     {
         /* Install the new vector table. */
-        WRITE_SYSREG((vaddr_t)(__bp_harden_hyp_vecs_start + slot * VECTOR_TABLE_SIZE),
+        WRITE_SYSREG((vaddr_t)(__bp_harden_hyp_vecs_start +
+                               slot * VECTOR_TABLE_SIZE),
                      VBAR_EL2);
         isb();
     }
@@ -148,13 +149,13 @@ install_bp_hardening_vec(const struct arm_cpu_capabilities *entry,
 extern char __smccc_workaround_smc_start_1[], __smccc_workaround_smc_end_1[];
 extern char __smccc_workaround_smc_start_3[], __smccc_workaround_smc_end_3[];
 extern char __mitigate_spectre_bhb_clear_insn_start[],
-            __mitigate_spectre_bhb_clear_insn_end[];
+    __mitigate_spectre_bhb_clear_insn_end[];
 extern char __mitigate_spectre_bhb_loop_start_8[],
-            __mitigate_spectre_bhb_loop_end_8[];
+    __mitigate_spectre_bhb_loop_end_8[];
 extern char __mitigate_spectre_bhb_loop_start_24[],
-            __mitigate_spectre_bhb_loop_end_24[];
+    __mitigate_spectre_bhb_loop_end_24[];
 extern char __mitigate_spectre_bhb_loop_start_32[],
-            __mitigate_spectre_bhb_loop_end_32[];
+    __mitigate_spectre_bhb_loop_end_32[];
 
 static int enable_smccc_arch_workaround_1(void *data)
 {
@@ -180,18 +181,20 @@ static int enable_smccc_arch_workaround_1(void *data)
         goto warn;
 
     arm_smccc_1_1_smc(ARM_SMCCC_ARCH_FEATURES_FID,
-                      ARM_SMCCC_ARCH_WORKAROUND_1_FID, &res);
+                      ARM_SMCCC_ARCH_WORKAROUND_1_FID,
+                      &res);
     /* The return value is in the lower 32-bits. */
     if ( (int)res.a0 < 0 )
         goto warn;
 
-    return !install_bp_hardening_vec(entry,__smccc_workaround_smc_start_1,
+    return !install_bp_hardening_vec(entry,
+                                     __smccc_workaround_smc_start_1,
                                      __smccc_workaround_smc_end_1,
                                      "call ARM_SMCCC_ARCH_WORKAROUND_1");
 
 warn:
-    printk_once("**** No support for ARM_SMCCC_ARCH_WORKAROUND_1. ****\n"
-                "**** Please update your firmware.                ****\n");
+    printk_once(
+        "**** No support for ARM_SMCCC_ARCH_WORKAROUND_1. ****\n" "**** Please update your firmware.                ****\n");
 
     return 0;
 }
@@ -226,9 +229,9 @@ static int enable_spectre_bhb_workaround(void *data)
 
     if ( cpu_data[smp_processor_id()].isa64.clearbhb )
         return !install_bp_hardening_vec(entry,
-                                    __mitigate_spectre_bhb_clear_insn_start,
-                                    __mitigate_spectre_bhb_clear_insn_end,
-                                     "use clearBHB instruction");
+                                         __mitigate_spectre_bhb_clear_insn_start,
+                                         __mitigate_spectre_bhb_clear_insn_end,
+                                         "use clearBHB instruction");
 
     /* Apply solution depending on hwcaps set on arm_errata */
     if ( cpus_have_cap(ARM_WORKAROUND_BHB_LOOP_8) )
@@ -257,7 +260,8 @@ static int enable_spectre_bhb_workaround(void *data)
             goto warn;
 
         arm_smccc_1_1_smc(ARM_SMCCC_ARCH_FEATURES_FID,
-                          ARM_SMCCC_ARCH_WORKAROUND_3_FID, &res);
+                          ARM_SMCCC_ARCH_WORKAROUND_3_FID,
+                          &res);
         /* The return value is in the lower 32-bits. */
         if ( (int)res.a0 < 0 )
         {
@@ -271,14 +275,15 @@ static int enable_spectre_bhb_workaround(void *data)
             goto warn;
         }
 
-        return !install_bp_hardening_vec(entry,__smccc_workaround_smc_start_3,
+        return !install_bp_hardening_vec(entry,
+                                         __smccc_workaround_smc_start_3,
                                          __smccc_workaround_smc_end_3,
                                          "call ARM_SMCCC_ARCH_WORKAROUND_3");
     }
 
 warn:
-    printk_once("**** No support for any spectre BHB workaround.  ****\n"
-                "**** Please update your firmware.                ****\n");
+    printk_once(
+        "**** No support for any spectre BHB workaround.  ****\n" "**** Please update your firmware.                ****\n");
 
     return 0;
 }
@@ -310,21 +315,20 @@ install_bp_hardening_vecs(const struct arm_cpu_capabilities *entry,
         return;
 
     printk(XENLOG_INFO "CPU%u will %s on guest exit\n",
-           smp_processor_id(), desc);
+           smp_processor_id(),
+           desc);
     this_cpu(bp_harden_vecs) = hyp_vecs;
 }
 
 static int enable_bp_inv_hardening(void *data)
 {
-    install_bp_hardening_vecs(data, hyp_traps_vector_bp_inv,
-                              "execute BPIALL");
+    install_bp_hardening_vecs(data, hyp_traps_vector_bp_inv, "execute BPIALL");
     return 0;
 }
 
 static int enable_ic_inv_hardening(void *data)
 {
-    install_bp_hardening_vecs(data, hyp_traps_vector_ic_inv,
-                              "execute ICIALLU");
+    install_bp_hardening_vecs(data, hyp_traps_vector_ic_inv, "execute ICIALLU");
     return 0;
 }
 
@@ -339,7 +343,8 @@ static int __init parse_spec_ctrl(const char *s)
     const char *ss;
     int rc = 0;
 
-    do {
+    do
+    {
         ss = strchr(s, ',');
         if ( !ss )
             ss = strchr(s, '\0');
@@ -365,6 +370,7 @@ static int __init parse_spec_ctrl(const char *s)
 
     return rc;
 }
+
 custom_param("spec-ctrl", parse_spec_ctrl);
 
 /* Arm64 only for now as for Arm32 the workaround is currently handled in C. */
@@ -399,7 +405,8 @@ static bool has_ssbd_mitigation(const struct arm_cpu_capabilities *entry)
         return false;
 
     arm_smccc_1_1_smc(ARM_SMCCC_ARCH_FEATURES_FID,
-                      ARM_SMCCC_ARCH_WORKAROUND_2_FID, &res);
+                      ARM_SMCCC_ARCH_WORKAROUND_2_FID,
+                      &res);
 
     switch ( (int)res.a0 )
     {
@@ -473,221 +480,219 @@ static bool has_ssbd_mitigation(const struct arm_cpu_capabilities *entry)
 static bool __maybe_unused
 is_affected_midr_range(const struct arm_cpu_capabilities *entry)
 {
-    return MIDR_IS_CPU_MODEL_RANGE(current_cpu_data.midr.bits, entry->midr_model,
+    return MIDR_IS_CPU_MODEL_RANGE(current_cpu_data.midr.bits,
+                                   entry->midr_model,
                                    entry->midr_range_min,
                                    entry->midr_range_max);
 }
 
 static const struct arm_cpu_capabilities arm_errata[] = {
     {
-        /* Cortex-A15 r0p4 */
+     /* Cortex-A15 r0p4 */
         .desc = "ARM erratum 766422",
-        .capability = ARM32_WORKAROUND_766422,
-        MIDR_RANGE(MIDR_CORTEX_A15, 0x04, 0x04),
-    },
-#if defined(CONFIG_ARM64_ERRATUM_827319) || \
-    defined(CONFIG_ARM64_ERRATUM_824069)
+     .capability = ARM32_WORKAROUND_766422,
+     MIDR_RANGE(MIDR_CORTEX_A15, 0x04, 0x04),
+     },
+#if defined(CONFIG_ARM64_ERRATUM_827319) || defined(CONFIG_ARM64_ERRATUM_824069)
     {
-        /* Cortex-A53 r0p[012] */
+     /* Cortex-A53 r0p[012] */
         .desc = "ARM errata 827319, 824069",
-        .capability = ARM64_WORKAROUND_CLEAN_CACHE,
-        MIDR_RANGE(MIDR_CORTEX_A53, 0x00, 0x02),
-    },
+     .capability = ARM64_WORKAROUND_CLEAN_CACHE,
+     MIDR_RANGE(MIDR_CORTEX_A53, 0x00, 0x02),
+     },
 #endif
 #ifdef CONFIG_ARM64_ERRATUM_819472
     {
-        /* Cortex-A53 r0[01] */
+     /* Cortex-A53 r0[01] */
         .desc = "ARM erratum 819472",
-        .capability = ARM64_WORKAROUND_CLEAN_CACHE,
-        MIDR_RANGE(MIDR_CORTEX_A53, 0x00, 0x01),
-    },
+     .capability = ARM64_WORKAROUND_CLEAN_CACHE,
+     MIDR_RANGE(MIDR_CORTEX_A53, 0x00, 0x01),
+     },
 #endif
 #ifdef CONFIG_ARM64_ERRATUM_832075
     {
-        /* Cortex-A57 r0p0 - r1p2 */
+     /* Cortex-A57 r0p0 - r1p2 */
         .desc = "ARM erratum 832075",
-        .capability = ARM64_WORKAROUND_DEVICE_LOAD_ACQUIRE,
-        MIDR_RANGE(MIDR_CORTEX_A57, 0x00,
-                   (1 << MIDR_VARIANT_SHIFT) | 2),
-    },
+     .capability = ARM64_WORKAROUND_DEVICE_LOAD_ACQUIRE,
+     MIDR_RANGE(MIDR_CORTEX_A57, 0x00, (1 << MIDR_VARIANT_SHIFT) | 2),
+     },
 #endif
 #ifdef CONFIG_ARM64_ERRATUM_834220
     {
-        /* Cortex-A57 r0p0 - r1p2 */
+     /* Cortex-A57 r0p0 - r1p2 */
         .desc = "ARM erratum 834220",
-        .capability = ARM64_WORKAROUND_834220,
-        MIDR_RANGE(MIDR_CORTEX_A57, 0x00,
-                   (1 << MIDR_VARIANT_SHIFT) | 2),
-    },
+     .capability = ARM64_WORKAROUND_834220,
+     MIDR_RANGE(MIDR_CORTEX_A57, 0x00, (1 << MIDR_VARIANT_SHIFT) | 2),
+     },
 #endif
 #ifdef CONFIG_ARM64_ERRATUM_1286807
     {
-        /* Cortex-A76 r0p0 - r3p0 */
+     /* Cortex-A76 r0p0 - r3p0 */
         .desc = "ARM erratum 1286807",
-        .capability = ARM64_WORKAROUND_REPEAT_TLBI,
-        MIDR_RANGE(MIDR_CORTEX_A76, 0, 3 << MIDR_VARIANT_SHIFT),
-    },
+     .capability = ARM64_WORKAROUND_REPEAT_TLBI,
+     MIDR_RANGE(MIDR_CORTEX_A76, 0, 3 << MIDR_VARIANT_SHIFT),
+     },
     {
-        /* Neoverse-N1 r0p0 - r3p0 */
+     /* Neoverse-N1 r0p0 - r3p0 */
         .desc = "ARM erratum 1286807",
-        .capability = ARM64_WORKAROUND_REPEAT_TLBI,
-        MIDR_RANGE(MIDR_NEOVERSE_N1, 0, 3 << MIDR_VARIANT_SHIFT),
-    },
+     .capability = ARM64_WORKAROUND_REPEAT_TLBI,
+     MIDR_RANGE(MIDR_NEOVERSE_N1, 0, 3 << MIDR_VARIANT_SHIFT),
+     },
 #endif
 #ifdef CONFIG_ARM64_HARDEN_BRANCH_PREDICTOR
     {
-        .capability = ARM_HARDEN_BRANCH_PREDICTOR,
-        MIDR_ALL_VERSIONS(MIDR_CORTEX_A57),
-        .enable = enable_smccc_arch_workaround_1,
-    },
+     .capability = ARM_HARDEN_BRANCH_PREDICTOR,
+     MIDR_ALL_VERSIONS(MIDR_CORTEX_A57),
+     .enable = enable_smccc_arch_workaround_1,
+     },
     {
-        .capability = ARM_HARDEN_BRANCH_PREDICTOR,
-        MIDR_RANGE(MIDR_CORTEX_A72, 0, 1 << MIDR_VARIANT_SHIFT),
-        .enable = enable_smccc_arch_workaround_1,
-    },
+     .capability = ARM_HARDEN_BRANCH_PREDICTOR,
+     MIDR_RANGE(MIDR_CORTEX_A72, 0, 1 << MIDR_VARIANT_SHIFT),
+     .enable = enable_smccc_arch_workaround_1,
+     },
     {
-        .capability = ARM_WORKAROUND_BHB_SMCC_3,
-        MIDR_ALL_VERSIONS(MIDR_CORTEX_A73),
-        .enable = enable_spectre_bhb_workaround,
-    },
+     .capability = ARM_WORKAROUND_BHB_SMCC_3,
+     MIDR_ALL_VERSIONS(MIDR_CORTEX_A73),
+     .enable = enable_spectre_bhb_workaround,
+     },
     {
-        .capability = ARM_WORKAROUND_BHB_SMCC_3,
-        MIDR_ALL_VERSIONS(MIDR_CORTEX_A75),
-        .enable = enable_spectre_bhb_workaround,
-    },
+     .capability = ARM_WORKAROUND_BHB_SMCC_3,
+     MIDR_ALL_VERSIONS(MIDR_CORTEX_A75),
+     .enable = enable_spectre_bhb_workaround,
+     },
     /* spectre BHB */
     {
-        .capability = ARM_WORKAROUND_BHB_LOOP_8,
-        MIDR_RANGE(MIDR_CORTEX_A72, 1 << MIDR_VARIANT_SHIFT,
-                   (MIDR_VARIANT_MASK | MIDR_REVISION_MASK)),
-        .enable = enable_spectre_bhb_workaround,
-    },
+     .capability = ARM_WORKAROUND_BHB_LOOP_8,
+     MIDR_RANGE(MIDR_CORTEX_A72, 1 << MIDR_VARIANT_SHIFT,
+     (MIDR_VARIANT_MASK | MIDR_REVISION_MASK)),
+     .enable = enable_spectre_bhb_workaround,
+     },
     {
-        .capability = ARM_WORKAROUND_BHB_LOOP_24,
-        MIDR_ALL_VERSIONS(MIDR_CORTEX_A76),
-        .enable = enable_spectre_bhb_workaround,
-    },
+     .capability = ARM_WORKAROUND_BHB_LOOP_24,
+     MIDR_ALL_VERSIONS(MIDR_CORTEX_A76),
+     .enable = enable_spectre_bhb_workaround,
+     },
     {
-        .capability = ARM_WORKAROUND_BHB_LOOP_24,
-        MIDR_ALL_VERSIONS(MIDR_CORTEX_A77),
-        .enable = enable_spectre_bhb_workaround,
-    },
+     .capability = ARM_WORKAROUND_BHB_LOOP_24,
+     MIDR_ALL_VERSIONS(MIDR_CORTEX_A77),
+     .enable = enable_spectre_bhb_workaround,
+     },
     {
-        .capability = ARM_WORKAROUND_BHB_LOOP_32,
-        MIDR_ALL_VERSIONS(MIDR_CORTEX_A78),
-        .enable = enable_spectre_bhb_workaround,
-    },
+     .capability = ARM_WORKAROUND_BHB_LOOP_32,
+     MIDR_ALL_VERSIONS(MIDR_CORTEX_A78),
+     .enable = enable_spectre_bhb_workaround,
+     },
     {
-        .capability = ARM_WORKAROUND_BHB_LOOP_32,
-        MIDR_ALL_VERSIONS(MIDR_CORTEX_A78C),
-        .enable = enable_spectre_bhb_workaround,
-    },
+     .capability = ARM_WORKAROUND_BHB_LOOP_32,
+     MIDR_ALL_VERSIONS(MIDR_CORTEX_A78C),
+     .enable = enable_spectre_bhb_workaround,
+     },
     {
-        .capability = ARM_WORKAROUND_BHB_LOOP_32,
-        MIDR_ALL_VERSIONS(MIDR_CORTEX_X1),
-        .enable = enable_spectre_bhb_workaround,
-    },
+     .capability = ARM_WORKAROUND_BHB_LOOP_32,
+     MIDR_ALL_VERSIONS(MIDR_CORTEX_X1),
+     .enable = enable_spectre_bhb_workaround,
+     },
     {
-        .capability = ARM_WORKAROUND_BHB_LOOP_32,
-        MIDR_ALL_VERSIONS(MIDR_CORTEX_X2),
-        .enable = enable_spectre_bhb_workaround,
-    },
+     .capability = ARM_WORKAROUND_BHB_LOOP_32,
+     MIDR_ALL_VERSIONS(MIDR_CORTEX_X2),
+     .enable = enable_spectre_bhb_workaround,
+     },
     {
-        .capability = ARM_WORKAROUND_BHB_LOOP_32,
-        MIDR_ALL_VERSIONS(MIDR_CORTEX_A710),
-        .enable = enable_spectre_bhb_workaround,
-    },
+     .capability = ARM_WORKAROUND_BHB_LOOP_32,
+     MIDR_ALL_VERSIONS(MIDR_CORTEX_A710),
+     .enable = enable_spectre_bhb_workaround,
+     },
     {
-        .capability = ARM_WORKAROUND_BHB_LOOP_24,
-        MIDR_ALL_VERSIONS(MIDR_NEOVERSE_N1),
-        .enable = enable_spectre_bhb_workaround,
-    },
+     .capability = ARM_WORKAROUND_BHB_LOOP_24,
+     MIDR_ALL_VERSIONS(MIDR_NEOVERSE_N1),
+     .enable = enable_spectre_bhb_workaround,
+     },
     {
-        .capability = ARM_WORKAROUND_BHB_LOOP_32,
-        MIDR_ALL_VERSIONS(MIDR_NEOVERSE_N2),
-        .enable = enable_spectre_bhb_workaround,
-    },
+     .capability = ARM_WORKAROUND_BHB_LOOP_32,
+     MIDR_ALL_VERSIONS(MIDR_NEOVERSE_N2),
+     .enable = enable_spectre_bhb_workaround,
+     },
     {
-        .capability = ARM_WORKAROUND_BHB_LOOP_32,
-        MIDR_ALL_VERSIONS(MIDR_NEOVERSE_V1),
-        .enable = enable_spectre_bhb_workaround,
-    },
+     .capability = ARM_WORKAROUND_BHB_LOOP_32,
+     MIDR_ALL_VERSIONS(MIDR_NEOVERSE_V1),
+     .enable = enable_spectre_bhb_workaround,
+     },
 
 #endif
 #ifdef CONFIG_ARM32_HARDEN_BRANCH_PREDICTOR
     {
-        .capability = ARM_HARDEN_BRANCH_PREDICTOR,
-        MIDR_ALL_VERSIONS(MIDR_CORTEX_A12),
-        .enable = enable_bp_inv_hardening,
-    },
+     .capability = ARM_HARDEN_BRANCH_PREDICTOR,
+     MIDR_ALL_VERSIONS(MIDR_CORTEX_A12),
+     .enable = enable_bp_inv_hardening,
+     },
     {
-        .capability = ARM_HARDEN_BRANCH_PREDICTOR,
-        MIDR_ALL_VERSIONS(MIDR_CORTEX_A17),
-        .enable = enable_bp_inv_hardening,
-    },
+     .capability = ARM_HARDEN_BRANCH_PREDICTOR,
+     MIDR_ALL_VERSIONS(MIDR_CORTEX_A17),
+     .enable = enable_bp_inv_hardening,
+     },
     {
-        .capability = ARM_HARDEN_BRANCH_PREDICTOR,
-        MIDR_ALL_VERSIONS(MIDR_CORTEX_A15),
-        .enable = enable_ic_inv_hardening,
-    },
+     .capability = ARM_HARDEN_BRANCH_PREDICTOR,
+     MIDR_ALL_VERSIONS(MIDR_CORTEX_A15),
+     .enable = enable_ic_inv_hardening,
+     },
 #endif
 #ifdef CONFIG_ARM_SSBD
     {
-        .desc = "Speculative Store Bypass Disabled",
-        .capability = ARM_SSBD,
-        .matches = has_ssbd_mitigation,
-    },
+     .desc = "Speculative Store Bypass Disabled",
+     .capability = ARM_SSBD,
+     .matches = has_ssbd_mitigation,
+     },
 #endif
 #ifdef CONFIG_ARM_ERRATUM_858921
     {
-        /* Cortex-A73 (all versions) */
+     /* Cortex-A73 (all versions) */
         .desc = "ARM erratum 858921",
-        .capability = ARM_WORKAROUND_858921,
-        MIDR_ALL_VERSIONS(MIDR_CORTEX_A73),
-    },
+     .capability = ARM_WORKAROUND_858921,
+     MIDR_ALL_VERSIONS(MIDR_CORTEX_A73),
+     },
 #endif
     {
-        /* Neoverse r0p0 - r2p0 */
+     /* Neoverse r0p0 - r2p0 */
         .desc = "ARM erratum 1165522",
-        .capability = ARM64_WORKAROUND_AT_SPECULATE,
-        MIDR_RANGE(MIDR_NEOVERSE_N1, 0, 2 << MIDR_VARIANT_SHIFT),
-    },
+     .capability = ARM64_WORKAROUND_AT_SPECULATE,
+     MIDR_RANGE(MIDR_NEOVERSE_N1, 0, 2 << MIDR_VARIANT_SHIFT),
+     },
     {
-        /* Cortex-A76 r0p0 - r2p0 */
+     /* Cortex-A76 r0p0 - r2p0 */
         .desc = "ARM erratum 1165522",
-        .capability = ARM64_WORKAROUND_AT_SPECULATE,
-        MIDR_RANGE(MIDR_CORTEX_A76, 0, 2 << MIDR_VARIANT_SHIFT),
-    },
+     .capability = ARM64_WORKAROUND_AT_SPECULATE,
+     MIDR_RANGE(MIDR_CORTEX_A76, 0, 2 << MIDR_VARIANT_SHIFT),
+     },
     {
-        .desc = "ARM erratum 1319537",
-        .capability = ARM64_WORKAROUND_AT_SPECULATE,
-        MIDR_ALL_VERSIONS(MIDR_CORTEX_A72),
-    },
+     .desc = "ARM erratum 1319537",
+     .capability = ARM64_WORKAROUND_AT_SPECULATE,
+     MIDR_ALL_VERSIONS(MIDR_CORTEX_A72),
+     },
     {
-        .desc = "ARM erratum 1319367",
-        .capability = ARM64_WORKAROUND_AT_SPECULATE,
-        MIDR_ALL_VERSIONS(MIDR_CORTEX_A57),
-    },
+     .desc = "ARM erratum 1319367",
+     .capability = ARM64_WORKAROUND_AT_SPECULATE,
+     MIDR_ALL_VERSIONS(MIDR_CORTEX_A57),
+     },
 #ifdef CONFIG_ARM64_ERRATUM_1508412
     {
-        /* Cortex-A77 r0p0 - r1p0 */
+     /* Cortex-A77 r0p0 - r1p0 */
         .desc = "ARM erratum 1508412 (hypervisor portion)",
-        .capability = ARM64_WORKAROUND_1508412,
-        MIDR_RANGE(MIDR_CORTEX_A77, 0, 1),
-    },
+     .capability = ARM64_WORKAROUND_1508412,
+     MIDR_RANGE(MIDR_CORTEX_A77, 0, 1),
+     },
 #endif
     {
-        /* Cortex-A55 (All versions as erratum is open in SDEN v14) */
+     /* Cortex-A55 (All versions as erratum is open in SDEN v14) */
         .desc = "ARM erratum 1530923",
-        .capability = ARM64_WORKAROUND_AT_SPECULATE,
-        MIDR_ALL_VERSIONS(MIDR_CORTEX_A55),
-    },
+     .capability = ARM64_WORKAROUND_AT_SPECULATE,
+     MIDR_ALL_VERSIONS(MIDR_CORTEX_A55),
+     },
     {
-        /* Cortex-A53 (All versions) */
+     /* Cortex-A53 (All versions) */
         .desc = "ARM erratum 1530924",
-        .capability = ARM64_WORKAROUND_AT_SPECULATE,
-        MIDR_ALL_VERSIONS(MIDR_CORTEX_A53),
-    },
+     .capability = ARM64_WORKAROUND_AT_SPECULATE,
+     MIDR_ALL_VERSIONS(MIDR_CORTEX_A53),
+     },
     {},
 };
 
@@ -700,12 +705,13 @@ void __init enable_errata_workarounds(void)
 {
     enable_cpu_capabilities(arm_errata);
 
-#if defined(CONFIG_ARM64_ERRATUM_832075) || defined(CONFIG_ARM64_ERRATUM_1508412)
+#if defined(CONFIG_ARM64_ERRATUM_832075) ||                                    \
+    defined(CONFIG_ARM64_ERRATUM_1508412)
     if ( cpus_have_cap(ARM64_WORKAROUND_DEVICE_LOAD_ACQUIRE) ||
          cpus_have_cap(ARM64_WORKAROUND_1508412) )
     {
-        printk_once("**** Guests without CPU erratum workarounds can deadlock the system! ****\n"
-                    "**** Only trusted guests should be used.                             ****\n");
+        printk_once(
+            "**** Guests without CPU erratum workarounds can deadlock the system! ****\n" "**** Only trusted guests should be used.                             ****\n");
 
         /* Taint the machine has being insecure */
         add_taint(TAINT_MACHINE_INSECURE);
@@ -713,8 +719,7 @@ void __init enable_errata_workarounds(void)
 #endif
 }
 
-static int cpu_errata_callback(struct notifier_block *nfb,
-                               unsigned long action,
+static int cpu_errata_callback(struct notifier_block *nfb, unsigned long action,
                                void *hcpu)
 {
     int rc = 0;
@@ -751,6 +756,7 @@ static int __init cpu_errata_notifier_init(void)
 
     return 0;
 }
+
 /*
  * Initialization has to be done at init rather than presmp_init phase because
  * the callback should execute only after the secondary CPUs are initially

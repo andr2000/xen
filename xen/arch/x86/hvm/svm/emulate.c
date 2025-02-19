@@ -82,7 +82,7 @@ unsigned int svm_get_insn_len(struct vcpu *v, unsigned int instr_enc)
     x86_emulate_free_state(state);
 
     /* Extract components from instr_enc. */
-    instr_modrm  = instr_enc & 0xff;
+    instr_modrm = instr_enc & 0xff;
     instr_opcode = instr_enc >> 8;
 
     if ( instr_opcode == ctxt.ctxt.opcode )
@@ -90,17 +90,23 @@ unsigned int svm_get_insn_len(struct vcpu *v, unsigned int instr_enc)
         if ( !instr_modrm )
             return emul_len;
 
-        if ( modrm_mod       == MASK_EXTR(instr_modrm, 0300) && /* octal-ok */
+        if ( modrm_mod == MASK_EXTR(instr_modrm, 0300) && /* octal-ok */
              (modrm_reg & 7) == MASK_EXTR(instr_modrm, 0070) && /* octal-ok */
-             (modrm_rm  & 7) == MASK_EXTR(instr_modrm, 0007) )  /* octal-ok */
+             (modrm_rm & 7) == MASK_EXTR(instr_modrm, 0007) ) /* octal-ok */
             return emul_len;
     }
 
-    printk(XENLOG_G_WARNING
-           "Insn mismatch: Expected opcode %#x, modrm %#x, got nrip_len %lu, emul_len %lu\n",
-           instr_opcode, instr_modrm, nrip_len, emul_len);
-    hvm_dump_emulation_state(XENLOG_G_WARNING, "SVM Insn len",
-                             &ctxt, X86EMUL_UNHANDLEABLE);
+    printk(
+        XENLOG_G_WARNING
+        "Insn mismatch: Expected opcode %#x, modrm %#x, got nrip_len %lu, emul_len %lu\n",
+        instr_opcode,
+        instr_modrm,
+        nrip_len,
+        emul_len);
+    hvm_dump_emulation_state(XENLOG_G_WARNING,
+                             "SVM Insn len",
+                             &ctxt,
+                             X86EMUL_UNHANDLEABLE);
 
     hvm_inject_hw_exception(X86_EXC_GP, 0);
     return 0;
@@ -136,10 +142,12 @@ unsigned int svm_get_task_switch_insn_len(void)
         if ( (unsigned int)x86_insn_modrm(state, NULL, &modrm_reg) >= 3 ||
              (modrm_reg != 3 && modrm_reg != 5) )
         {
-    default:
+        default:
             printk(XENLOG_G_WARNING "Bad instruction for task switch\n");
-            hvm_dump_emulation_state(XENLOG_G_WARNING, "SVM Insn len",
-                                     &ctxt, X86EMUL_UNHANDLEABLE);
+            hvm_dump_emulation_state(XENLOG_G_WARNING,
+                                     "SVM Insn len",
+                                     &ctxt,
+                                     X86EMUL_UNHANDLEABLE);
             emul_len = 0;
             break;
         }

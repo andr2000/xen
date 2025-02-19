@@ -5,9 +5,9 @@
 #define __ASM_ARM_VREG__
 
 typedef bool (*vreg_reg64_fn_t)(struct cpu_user_regs *regs, uint64_t *r,
-                                   bool read);
+                                bool read);
 typedef bool (*vreg_reg_fn_t)(struct cpu_user_regs *regs, register_t *r,
-                                   bool read);
+                              bool read);
 
 static inline bool vreg_emulate_cp32(struct cpu_user_regs *regs, union hsr hsr,
                                      vreg_reg_fn_t fn)
@@ -64,8 +64,8 @@ static inline bool vreg_emulate_cp64(struct cpu_user_regs *regs, union hsr hsr,
 }
 
 #ifdef CONFIG_ARM_64
-static inline bool vreg_emulate_sysreg(struct cpu_user_regs *regs, union hsr hsr,
-                                         vreg_reg_fn_t fn)
+static inline bool vreg_emulate_sysreg(struct cpu_user_regs *regs,
+                                       union hsr hsr, vreg_reg_fn_t fn)
 {
     struct hsr_sysreg sysreg = hsr.sysreg;
     register_t r = 0;

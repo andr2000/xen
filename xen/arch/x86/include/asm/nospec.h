@@ -52,9 +52,9 @@ static inline unsigned long array_index_mask_nospec(unsigned long index,
 {
     unsigned long mask;
 
-    asm volatile ( "cmp %[size], %[index]; sbb %[mask], %[mask];"
-                   : [mask] "=r" (mask)
-                   : [size] "g" (size), [index] "r" (index) );
+    asm volatile("cmp %[size], %[index]; sbb %[mask], %[mask];"
+                 : [mask] "=r"(mask)
+                 : [size] "g"(size), [index] "r"(index));
 
     return mask;
 }

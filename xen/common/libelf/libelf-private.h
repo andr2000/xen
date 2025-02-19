@@ -25,9 +25,9 @@
 
 /* we would like to use elf->log_callback but we can't because
  * there is no vprintk in Xen */
-#define elf_msg(elf, fmt, args ... ) \
+#define elf_msg(elf, fmt, args...) \
    if ((elf)->verbose) printk(fmt, ## args )
-#define elf_err(elf, fmt, args ... ) \
+#define elf_err(elf, fmt, args...) \
    printk(fmt, ## args )
 
 #define strtoull(str, end, base) simple_strtoull(str, end, base)
@@ -78,14 +78,15 @@
 #include "xc_private.h"
 #endif
 
-#define elf_msg(elf, fmt, args ... )                    \
+#define elf_msg(elf, fmt, args...)                    \
     elf_call_log_callback(elf, 0, fmt , ## args );
-#define elf_err(elf, fmt, args ... )                    \
+#define elf_err(elf, fmt, args...)                    \
     elf_call_log_callback(elf, 1, fmt , ## args );
 
-void elf_call_log_callback(struct elf_binary*, bool iserr, const char *fmt,...);
+void elf_call_log_callback(struct elf_binary *, bool iserr, const char *fmt,
+                           ...);
 
-#define safe_strcpy(d,s)                        \
+#define safe_strcpy(d, s)                        \
 do { strncpy((d),(s),sizeof((d))-1);            \
      (d)[sizeof((d))-1] = '\0';                 \
 } while (0)
@@ -101,7 +102,7 @@ do { strncpy((d),(s),sizeof((d))-1);            \
 #define memset  MISTAKE_unspecified_memset
 #define memmove MISTAKE_unspecified_memmove
 #define strcpy  MISTAKE_unspecified_strcpy
-  /* This prevents libelf from using these undecorated versions
+/* This prevents libelf from using these undecorated versions
    * of memcpy, memset, memmove and strcpy.  Every call site
    * must either use elf_mem*_unchecked, or elf_mem*_safe. */
 

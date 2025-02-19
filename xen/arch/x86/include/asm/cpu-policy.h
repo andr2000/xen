@@ -5,10 +5,10 @@
 struct cpu_policy;
 struct domain;
 
-extern struct cpu_policy     raw_cpu_policy;
-extern struct cpu_policy    host_cpu_policy;
-extern struct cpu_policy  pv_max_cpu_policy;
-extern struct cpu_policy  pv_def_cpu_policy;
+extern struct cpu_policy raw_cpu_policy;
+extern struct cpu_policy host_cpu_policy;
+extern struct cpu_policy pv_max_cpu_policy;
+extern struct cpu_policy pv_def_cpu_policy;
 extern struct cpu_policy hvm_max_cpu_policy;
 extern struct cpu_policy hvm_def_cpu_policy;
 

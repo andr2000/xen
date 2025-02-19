@@ -78,13 +78,11 @@ static u32 latest_granting = 0;
 
 /* Forward declaration. */
 static int context_struct_to_string(struct context *context, char **scontext,
-                                                            u32 *scontext_len);
+                                    u32 *scontext_len);
 
 static int context_struct_compute_av(struct context *scontext,
-				     struct context *tcontext,
-				     u16 tclass,
-				     u32 requested,
-				     struct av_decision *avd);
+                                     struct context *tcontext, u16 tclass,
+                                     u32 requested, struct av_decision *avd);
 
 /*
  * Return the boolean value of a constraint expression
@@ -98,8 +96,9 @@ static int context_struct_compute_av(struct context *scontext,
  * constraint_expr_eval should pass in NULL for xcontext.
  */
 static int constraint_expr_eval(struct context *scontext,
-                            struct context *tcontext, struct context *xcontext,
-                                                struct constraint_expr *cexpr)
+                                struct context *tcontext,
+                                struct context *xcontext,
+                                struct constraint_expr *cexpr)
 {
     u32 val1, val2;
     struct context *c;
@@ -113,103 +112,101 @@ static int constraint_expr_eval(struct context *scontext,
     {
         switch ( e->expr_type )
         {
-            case CEXPR_NOT:
-                BUG_ON(sp < 0);
-                s[sp] = !s[sp];
+        case CEXPR_NOT:
+            BUG_ON(sp < 0);
+            s[sp] = !s[sp];
             break;
-            case CEXPR_AND:
-                BUG_ON(sp < 1);
-                sp--;
-                s[sp] &= s[sp+1];
+        case CEXPR_AND:
+            BUG_ON(sp < 1);
+            sp--;
+            s[sp] &= s[sp + 1];
             break;
-            case CEXPR_OR:
-                BUG_ON(sp < 1);
-                sp--;
-                s[sp] |= s[sp+1];
+        case CEXPR_OR:
+            BUG_ON(sp < 1);
+            sp--;
+            s[sp] |= s[sp + 1];
             break;
-            case CEXPR_ATTR:
-                if ( sp == (CEXPR_MAXDEPTH-1) )
-                    return 0;
+        case CEXPR_ATTR:
+            if ( sp == (CEXPR_MAXDEPTH - 1) )
+                return 0;
             switch ( e->attr )
             {
-                case CEXPR_USER:
-                    val1 = scontext->user;
-                    val2 = tcontext->user;
-                    break;
-                case CEXPR_TYPE:
-                    val1 = scontext->type;
-                    val2 = tcontext->type;
-                    break;
-                case CEXPR_ROLE:
-                    val1 = scontext->role;
-                    val2 = tcontext->role;
-                    r1 = policydb.role_val_to_struct[val1 - 1];
-                    r2 = policydb.role_val_to_struct[val2 - 1];
+            case CEXPR_USER:
+                val1 = scontext->user;
+                val2 = tcontext->user;
+                break;
+            case CEXPR_TYPE:
+                val1 = scontext->type;
+                val2 = tcontext->type;
+                break;
+            case CEXPR_ROLE:
+                val1 = scontext->role;
+                val2 = tcontext->role;
+                r1 = policydb.role_val_to_struct[val1 - 1];
+                r2 = policydb.role_val_to_struct[val2 - 1];
                 switch ( e->op )
                 {
-                    case CEXPR_DOM:
-                        s[++sp] = ebitmap_get_bit(&r1->dominates, val2 - 1);
+                case CEXPR_DOM:
+                    s[++sp] = ebitmap_get_bit(&r1->dominates, val2 - 1);
                     continue;
-                    case CEXPR_DOMBY:
-                        s[++sp] = ebitmap_get_bit(&r2->dominates, val1 - 1);
+                case CEXPR_DOMBY:
+                    s[++sp] = ebitmap_get_bit(&r2->dominates, val1 - 1);
                     continue;
-                    case CEXPR_INCOMP:
-                        s[++sp] = ( !ebitmap_get_bit(&r1->dominates,
-                                         val2 - 1) &&
-                                !ebitmap_get_bit(&r2->dominates,
-                                         val1 - 1) );
+                case CEXPR_INCOMP:
+                    s[++sp] = (!ebitmap_get_bit(&r1->dominates, val2 - 1) &&
+                               !ebitmap_get_bit(&r2->dominates, val1 - 1));
                     continue;
-                    default:
+                default:
                     break;
                 }
                 break;
-                case CEXPR_L1L2:
-                    l1 = &(scontext->range.level[0]);
-                    l2 = &(tcontext->range.level[0]);
-                    goto mls_ops;
-                case CEXPR_L1H2:
-                    l1 = &(scontext->range.level[0]);
-                    l2 = &(tcontext->range.level[1]);
-                    goto mls_ops;
-                case CEXPR_H1L2:
-                    l1 = &(scontext->range.level[1]);
-                    l2 = &(tcontext->range.level[0]);
-                    goto mls_ops;
-                case CEXPR_H1H2:
-                    l1 = &(scontext->range.level[1]);
-                    l2 = &(tcontext->range.level[1]);
-                    goto mls_ops;
-                case CEXPR_L1H1:
-                    l1 = &(scontext->range.level[0]);
-                    l2 = &(scontext->range.level[1]);
-                    goto mls_ops;
-                case CEXPR_L2H2:
-                    l1 = &(tcontext->range.level[0]);
-                    l2 = &(tcontext->range.level[1]);
-                    goto mls_ops;
-mls_ops:
-            switch ( e->op )
-            {
+            case CEXPR_L1L2:
+                l1 = &(scontext->range.level[0]);
+                l2 = &(tcontext->range.level[0]);
+                goto mls_ops;
+            case CEXPR_L1H2:
+                l1 = &(scontext->range.level[0]);
+                l2 = &(tcontext->range.level[1]);
+                goto mls_ops;
+            case CEXPR_H1L2:
+                l1 = &(scontext->range.level[1]);
+                l2 = &(tcontext->range.level[0]);
+                goto mls_ops;
+            case CEXPR_H1H2:
+                l1 = &(scontext->range.level[1]);
+                l2 = &(tcontext->range.level[1]);
+                goto mls_ops;
+            case CEXPR_L1H1:
+                l1 = &(scontext->range.level[0]);
+                l2 = &(scontext->range.level[1]);
+                goto mls_ops;
+            case CEXPR_L2H2:
+                l1 = &(tcontext->range.level[0]);
+                l2 = &(tcontext->range.level[1]);
+                goto mls_ops;
+            mls_ops:
+                switch ( e->op )
+                {
                 case CEXPR_EQ:
                     s[++sp] = mls_level_eq(l1, l2);
-                continue;
+                    continue;
                 case CEXPR_NEQ:
                     s[++sp] = !mls_level_eq(l1, l2);
-                continue;
+                    continue;
                 case CEXPR_DOM:
                     s[++sp] = mls_level_dom(l1, l2);
-                continue;
+                    continue;
                 case CEXPR_DOMBY:
                     s[++sp] = mls_level_dom(l2, l1);
-                continue;
+                    continue;
                 case CEXPR_INCOMP:
                     s[++sp] = mls_level_incomp(l2, l1);
-                continue;
+                    continue;
                 default:
                     BUG();
                     return 0;
-            }
-            break;
+                }
+                break;
             default:
                 BUG();
                 return 0;
@@ -217,60 +214,60 @@ mls_ops:
 
             switch ( e->op )
             {
-                case CEXPR_EQ:
-                    s[++sp] = (val1 == val2);
+            case CEXPR_EQ:
+                s[++sp] = (val1 == val2);
                 break;
-                case CEXPR_NEQ:
-                    s[++sp] = (val1 != val2);
+            case CEXPR_NEQ:
+                s[++sp] = (val1 != val2);
                 break;
-                default:
-                    BUG();
-                    return 0;
-            }
-            break;
-            case CEXPR_NAMES:
-                if ( sp == (CEXPR_MAXDEPTH-1) )
-                    return 0;
-                c = scontext;
-                if ( e->attr & CEXPR_TARGET )
-                    c = tcontext;
-                else if ( e->attr & CEXPR_XTARGET )
-                {
-                    c = xcontext;
-                    if ( !c )
-                    {
-                        BUG();
-                        return 0;
-                    }
-                }
-                if ( e->attr & CEXPR_USER )
-                    val1 = c->user;
-                else if ( e->attr & CEXPR_ROLE )
-                    val1 = c->role;
-                else if ( e->attr & CEXPR_TYPE )
-                    val1 = c->type;
-                else
-                {
-                    BUG();
-                    return 0;
-                }
-
-            switch ( e->op )
-            {
-                case CEXPR_EQ:
-                    s[++sp] = ebitmap_get_bit(&e->names, val1 - 1);
-                break;
-                case CEXPR_NEQ:
-                    s[++sp] = !ebitmap_get_bit(&e->names, val1 - 1);
-                break;
-                default:
-                    BUG();
-                    return 0;
-            }
-            break;
             default:
                 BUG();
                 return 0;
+            }
+            break;
+        case CEXPR_NAMES:
+            if ( sp == (CEXPR_MAXDEPTH - 1) )
+                return 0;
+            c = scontext;
+            if ( e->attr & CEXPR_TARGET )
+                c = tcontext;
+            else if ( e->attr & CEXPR_XTARGET )
+            {
+                c = xcontext;
+                if ( !c )
+                {
+                    BUG();
+                    return 0;
+                }
+            }
+            if ( e->attr & CEXPR_USER )
+                val1 = c->user;
+            else if ( e->attr & CEXPR_ROLE )
+                val1 = c->role;
+            else if ( e->attr & CEXPR_TYPE )
+                val1 = c->type;
+            else
+            {
+                BUG();
+                return 0;
+            }
+
+            switch ( e->op )
+            {
+            case CEXPR_EQ:
+                s[++sp] = ebitmap_get_bit(&e->names, val1 - 1);
+                break;
+            case CEXPR_NEQ:
+                s[++sp] = !ebitmap_get_bit(&e->names, val1 - 1);
+                break;
+            default:
+                BUG();
+                return 0;
+            }
+            break;
+        default:
+            BUG();
+            return 0;
         }
     }
 
@@ -295,10 +292,8 @@ static int cf_check dump_masked_av_helper(void *k, void *d, void *args)
 }
 
 static void security_dump_masked_av(struct context *scontext,
-				    struct context *tcontext,
-				    u16 tclass,
-				    u32 permissions,
-				    const char *reason)
+                                    struct context *tcontext, u16 tclass,
+                                    u32 permissions, const char *reason)
 {
     struct common_datum *common_dat;
     struct class_datum *tclass_dat;
@@ -318,27 +313,29 @@ static void security_dump_masked_av(struct context *scontext,
     common_dat = tclass_dat->comdatum;
 
     /* init permission_names */
-    if ( common_dat &&
-         hashtab_map(common_dat->permissions.table,
-                     dump_masked_av_helper, permission_names) < 0 )
+    if ( common_dat && hashtab_map(common_dat->permissions.table,
+                                   dump_masked_av_helper,
+                                   permission_names) < 0 )
         goto out;
 
     if ( hashtab_map(tclass_dat->permissions.table,
-                    dump_masked_av_helper, permission_names) < 0 )
+                     dump_masked_av_helper,
+                     permission_names) < 0 )
         goto out;
 
-	/* get scontext/tcontext in text form */
-    if ( context_struct_to_string(scontext,
-                                 &scontext_name, &length) < 0 )
+    /* get scontext/tcontext in text form */
+    if ( context_struct_to_string(scontext, &scontext_name, &length) < 0 )
         goto out;
 
-    if ( context_struct_to_string(tcontext,
-                                 &tcontext_name, &length) < 0 )
+    if ( context_struct_to_string(tcontext, &tcontext_name, &length) < 0 )
         goto out;
 
-    printk("Flask: op=security_compute_av reason=%s "
-           "scontext=%s tcontext=%s tclass=%s perms=",
-           reason, scontext_name, tcontext_name, tclass_name);
+    printk(
+        "Flask: op=security_compute_av reason=%s " "scontext=%s tcontext=%s tclass=%s perms=",
+        reason,
+        scontext_name,
+        tcontext_name,
+        tclass_name);
 
     for ( index = 0; index < 32; index++ )
     {
@@ -349,8 +346,7 @@ static void security_dump_masked_av(struct context *scontext,
 
         printk("%s%s",
                need_comma ? "," : "",
-               permission_names[index]
-               ? permission_names[index] : "????");
+               permission_names[index] ? permission_names[index] : "????");
         need_comma = 1;
     }
     printk("\n");
@@ -367,18 +363,14 @@ out:
  * on boundary constraint.
  */
 static void type_attribute_bounds_av(struct context *scontext,
-                                     struct context *tcontext,
-                                     u16 tclass,
-                                     u32 requested,
-                                     struct av_decision *avd)
+                                     struct context *tcontext, u16 tclass,
+                                     u32 requested, struct av_decision *avd)
 {
     struct context lo_scontext;
     struct context lo_tcontext;
     struct av_decision lo_avd;
-    struct type_datum *source
-        = policydb.type_val_to_struct[scontext->type - 1];
-    struct type_datum *target
-        = policydb.type_val_to_struct[tcontext->type - 1];
+    struct type_datum *source = policydb.type_val_to_struct[scontext->type - 1];
+    struct type_datum *target = policydb.type_val_to_struct[tcontext->type - 1];
     u32 masked = 0;
 
     if ( source->bounds )
@@ -394,7 +386,7 @@ static void type_attribute_bounds_av(struct context *scontext,
                                   requested,
                                   &lo_avd);
         if ( (lo_avd.allowed & avd->allowed) == avd->allowed )
-            return;		/* no masked permission */
+            return; /* no masked permission */
         masked = ~lo_avd.allowed & avd->allowed;
     }
 
@@ -411,7 +403,7 @@ static void type_attribute_bounds_av(struct context *scontext,
                                   requested,
                                   &lo_avd);
         if ( (lo_avd.allowed & avd->allowed) == avd->allowed )
-            return;		/* no masked permission */
+            return; /* no masked permission */
         masked = ~lo_avd.allowed & avd->allowed;
     }
 
@@ -429,7 +421,7 @@ static void type_attribute_bounds_av(struct context *scontext,
                                   requested,
                                   &lo_avd);
         if ( (lo_avd.allowed & avd->allowed) == avd->allowed )
-            return;		/* no masked permission */
+            return; /* no masked permission */
         masked = ~lo_avd.allowed & avd->allowed;
     }
 
@@ -439,8 +431,7 @@ static void type_attribute_bounds_av(struct context *scontext,
         avd->allowed &= ~masked;
 
         /* audit masked permissions */
-        security_dump_masked_av(scontext, tcontext,
-                                tclass, masked, "bounds");
+        security_dump_masked_av(scontext, tcontext, tclass, masked, "bounds");
     }
 }
 
@@ -449,10 +440,8 @@ static void type_attribute_bounds_av(struct context *scontext,
  * the permissions in a particular class.
  */
 static int context_struct_compute_av(struct context *scontext,
-				     struct context *tcontext,
-				     u16 tclass,
-				     u32 requested,
-				     struct av_decision *avd)
+                                     struct context *tcontext, u16 tclass,
+                                     u32 requested, struct av_decision *avd)
 {
     struct constraint_node *constraint;
     struct role_allow *ra;
@@ -495,8 +484,8 @@ static int context_struct_compute_av(struct context *scontext,
             avkey.source_type = i + 1;
             avkey.target_type = j + 1;
             for ( node = avtab_search_node(&policydb.te_avtab, &avkey);
-                 node != NULL;
-                 node = avtab_search_node_next(node, avkey.specified) )
+                  node != NULL;
+                  node = avtab_search_node_next(node, avkey.specified) )
             {
                 if ( node->key.specified == AVTAB_ALLOWED )
                     avd->allowed |= node->datum.data;
@@ -508,7 +497,6 @@ static int context_struct_compute_av(struct context *scontext,
 
             /* Check conditional av table for additional permissions */
             cond_compute_av(&policydb.te_cond_avtab, &avkey, avd);
-
         }
     }
 
@@ -519,10 +507,10 @@ static int context_struct_compute_av(struct context *scontext,
     constraint = tclass_datum->constraints;
     while ( constraint )
     {
-        if ( (constraint->permissions & (avd->allowed) ) &&
-            !constraint_expr_eval(scontext, tcontext, NULL, constraint->expr))
+        if ( (constraint->permissions & (avd->allowed)) &&
+             !constraint_expr_eval(scontext, tcontext, NULL, constraint->expr) )
         {
-	    avd->allowed &= ~(constraint->permissions);
+            avd->allowed &= ~(constraint->permissions);
         }
         constraint = constraint->next;
     }
@@ -532,8 +520,7 @@ static int context_struct_compute_av(struct context *scontext,
      * role is changing, then check the (current_role, new_role)
      * pair.
      */
-    if ( tclass == SECCLASS_DOMAIN &&
-         (avd->allowed & DOMAIN__TRANSITION) &&
+    if ( tclass == SECCLASS_DOMAIN && (avd->allowed & DOMAIN__TRANSITION) &&
          scontext->role != tcontext->role )
     {
         for ( ra = policydb.role_allow; ra; ra = ra->next )
@@ -541,7 +528,7 @@ static int context_struct_compute_av(struct context *scontext,
             if ( scontext->role == ra->role && tcontext->role == ra->new_role )
                 break;
         }
-        if (!ra)
+        if ( !ra )
             avd->allowed &= ~DOMAIN__TRANSITION;
     }
 
@@ -550,13 +537,13 @@ static int context_struct_compute_av(struct context *scontext,
      * constraint, lazy checks have to mask any violated
      * permission and notice it to userspace via audit.
      */
-    type_attribute_bounds_av(scontext, tcontext,
-			     tclass, requested, avd);
+    type_attribute_bounds_av(scontext, tcontext, tclass, requested, avd);
     return 0;
 }
 
 static int security_validtrans_handle_fail(struct context *ocontext,
-                struct context *ncontext, struct context *tcontext, u16 tclass)
+                                           struct context *ncontext,
+                                           struct context *tcontext, u16 tclass)
 {
     char *o = NULL, *n = NULL, *t = NULL;
     u32 olen, nlen, tlen;
@@ -567,9 +554,12 @@ static int security_validtrans_handle_fail(struct context *ocontext,
         goto out;
     if ( context_struct_to_string(tcontext, &t, &tlen) < 0 )
         goto out;
-    printk("security_validate_transition:  denied for"
-              " oldcontext=%s newcontext=%s taskcontext=%s tclass=%s",
-              o, n, t, policydb.p_class_val_to_name[tclass-1]);
+    printk(
+        "security_validate_transition:  denied for" " oldcontext=%s newcontext=%s taskcontext=%s tclass=%s",
+        o,
+        n,
+        t,
+        policydb.p_class_val_to_name[tclass - 1]);
 out:
     xfree(o);
     xfree(n);
@@ -597,8 +587,9 @@ int security_validate_transition(u32 oldsid, u32 newsid, u32 tasksid,
 
     if ( !tclass || tclass > policydb.p_classes.nprim )
     {
-        printk(KERN_ERR "security_validate_transition: "
-                                            "unrecognized class %d\n", tclass);
+        printk(KERN_ERR
+               "security_validate_transition: " "unrecognized class %d\n",
+               tclass);
         rc = -EINVAL;
         goto out;
     }
@@ -607,8 +598,9 @@ int security_validate_transition(u32 oldsid, u32 newsid, u32 tasksid,
     ocontext = sidtab_search(&sidtab, oldsid);
     if ( !ocontext )
     {
-        printk(KERN_ERR "security_validate_transition: "
-               " unrecognized SID %d\n", oldsid);
+        printk(KERN_ERR
+               "security_validate_transition: " " unrecognized SID %d\n",
+               oldsid);
         rc = -EINVAL;
         goto out;
     }
@@ -616,8 +608,9 @@ int security_validate_transition(u32 oldsid, u32 newsid, u32 tasksid,
     ncontext = sidtab_search(&sidtab, newsid);
     if ( !ncontext )
     {
-        printk(KERN_ERR "security_validate_transition: "
-               " unrecognized SID %d\n", newsid);
+        printk(KERN_ERR
+               "security_validate_transition: " " unrecognized SID %d\n",
+               newsid);
         rc = -EINVAL;
         goto out;
     }
@@ -625,8 +618,9 @@ int security_validate_transition(u32 oldsid, u32 newsid, u32 tasksid,
     tcontext = sidtab_search(&sidtab, tasksid);
     if ( !tcontext )
     {
-        printk(KERN_ERR "security_validate_transition: "
-               " unrecognized SID %d\n", tasksid);
+        printk(KERN_ERR
+               "security_validate_transition: " " unrecognized SID %d\n",
+               tasksid);
         rc = -EINVAL;
         goto out;
     }
@@ -634,11 +628,15 @@ int security_validate_transition(u32 oldsid, u32 newsid, u32 tasksid,
     constraint = tclass_datum->validatetrans;
     while ( constraint )
     {
-        if ( !constraint_expr_eval(ocontext, ncontext, tcontext,
-                                                            constraint->expr) )
+        if ( !constraint_expr_eval(ocontext,
+                                   ncontext,
+                                   tcontext,
+                                   constraint->expr) )
         {
-            rc = security_validtrans_handle_fail(ocontext, ncontext,
-                                                 tcontext, tclass);
+            rc = security_validtrans_handle_fail(ocontext,
+                                                 ncontext,
+                                                 tcontext,
+                                                 tclass);
             goto out;
         }
         constraint = constraint->next;
@@ -711,7 +709,8 @@ out:
  * to point to this string and set `*scontext_len' to
  * the length of the string.
  */
-static int context_struct_to_string(struct context *context, char **scontext, u32 *scontext_len)
+static int context_struct_to_string(struct context *context, char **scontext,
+                                    u32 *scontext_len)
 {
     char *scontextp;
 
@@ -734,13 +733,15 @@ static int context_struct_to_string(struct context *context, char **scontext, u3
     /*
      * Copy the user name, role name and type name into the context.
      */
-    snprintf(scontextp, *scontext_len, "%s:%s:%s",
-        policydb.p_user_val_to_name[context->user - 1],
-        policydb.p_role_val_to_name[context->role - 1],
-        policydb.p_type_val_to_name[context->type - 1]);
-    scontextp += strlen(policydb.p_user_val_to_name[context->user - 1]) +
-                 1 + strlen(policydb.p_role_val_to_name[context->role - 1]) +
-                 1 + strlen(policydb.p_type_val_to_name[context->type - 1]);
+    snprintf(scontextp,
+             *scontext_len,
+             "%s:%s:%s",
+             policydb.p_user_val_to_name[context->user - 1],
+             policydb.p_role_val_to_name[context->role - 1],
+             policydb.p_type_val_to_name[context->type - 1]);
+    scontextp += strlen(policydb.p_user_val_to_name[context->user - 1]) + 1 +
+                 strlen(policydb.p_role_val_to_name[context->role - 1]) + 1 +
+                 strlen(policydb.p_type_val_to_name[context->type - 1]);
 
     mls_sid_to_context(context, &scontextp);
 
@@ -780,8 +781,10 @@ int security_sid_to_context(u32 sid, char **scontext, u32 *scontext_len)
             *scontext = scontextp;
             goto out;
         }
-        printk(KERN_ERR "security_sid_to_context:  called before initial "
-               "load_policy on unknown SID %d\n", sid);
+        printk(
+            KERN_ERR
+            "security_sid_to_context:  called before initial " "load_policy on unknown SID %d\n",
+            sid);
         rc = -EINVAL;
         goto out;
     }
@@ -789,8 +792,8 @@ int security_sid_to_context(u32 sid, char **scontext, u32 *scontext_len)
     context = sidtab_search(&sidtab, sid);
     if ( !context )
     {
-        printk(KERN_ERR "security_sid_to_context:  unrecognized SID "
-               "%d\n", sid);
+        printk(KERN_ERR "security_sid_to_context:  unrecognized SID " "%d\n",
+               sid);
         rc = -EINVAL;
         goto out_unlock;
     }
@@ -799,7 +802,6 @@ out_unlock:
     POLICY_RDUNLOCK;
 out:
     return rc;
-
 }
 
 /**
@@ -845,7 +847,7 @@ int security_context_to_sid(char *scontext, u32 scontext_len, u32 *sid)
        null suffix to the copy to avoid problems with the existing
        attr package, which doesn't view the null terminator as part
        of the attribute value. */
-    scontext2 = xmalloc_array(char, scontext_len+1);
+    scontext2 = xmalloc_array(char, scontext_len + 1);
     if ( !scontext2 )
     {
         rc = -ENOMEM;
@@ -862,14 +864,14 @@ int security_context_to_sid(char *scontext, u32 scontext_len, u32 *sid)
     /* Parse the security context. */
 
     rc = -EINVAL;
-    scontextp = (char *) scontext2;
+    scontextp = (char *)scontext2;
 
     /* Extract the user. */
     p = scontextp;
     while ( *p && *p != ':' )
         p++;
 
-    if (*p == 0)
+    if ( *p == 0 )
         goto out_unlock;
 
     *p++ = 0;
@@ -934,9 +936,10 @@ out:
     return rc;
 }
 
-static int compute_sid_handle_invalid_context(
-                struct context *scontext, struct context *tcontext, u16 tclass,
-                                                    struct context *newcontext)
+static int compute_sid_handle_invalid_context(struct context *scontext,
+                                              struct context *tcontext,
+                                              u16 tclass,
+                                              struct context *newcontext)
 {
     char *s = NULL, *t = NULL, *n = NULL;
     u32 slen, tlen, nlen;
@@ -947,11 +950,12 @@ static int compute_sid_handle_invalid_context(
         goto out;
     if ( context_struct_to_string(newcontext, &n, &nlen) < 0 )
         goto out;
-    printk("security_compute_sid:  invalid context %s"
-          " for scontext=%s"
-          " tcontext=%s"
-          " tclass=%s",
-          n, s, t, policydb.p_class_val_to_name[tclass-1]);
+    printk(
+        "security_compute_sid:  invalid context %s" " for scontext=%s" " tcontext=%s" " tclass=%s",
+        n,
+        s,
+        t,
+        policydb.p_class_val_to_name[tclass - 1]);
 out:
     xfree(s);
     xfree(t);
@@ -961,11 +965,8 @@ out:
     return -EACCES;
 }
 
-static int security_compute_sid(u32 ssid,
-                u32 tsid,
-                u16 tclass,
-                u32 specified,
-                u32 *out_sid)
+static int security_compute_sid(u32 ssid, u32 tsid, u16 tclass, u32 specified,
+                                u32 *out_sid)
 {
     struct context *scontext = NULL, *tcontext = NULL, newcontext;
     struct role_trans *roletr = NULL;
@@ -978,11 +979,11 @@ static int security_compute_sid(u32 ssid,
     {
         switch ( tclass )
         {
-            case SECCLASS_DOMAIN:
-                *out_sid = ssid;
+        case SECCLASS_DOMAIN:
+            *out_sid = ssid;
             break;
-            default:
-                *out_sid = tsid;
+        default:
+            *out_sid = tsid;
             break;
         }
         goto out;
@@ -1010,30 +1011,30 @@ static int security_compute_sid(u32 ssid,
     /* Set the user identity. */
     switch ( specified )
     {
-        case AVTAB_TRANSITION:
-        case AVTAB_CHANGE:
-            /* Use the process user identity. */
-            newcontext.user = scontext->user;
+    case AVTAB_TRANSITION:
+    case AVTAB_CHANGE:
+        /* Use the process user identity. */
+        newcontext.user = scontext->user;
         break;
-        case AVTAB_MEMBER:
-            /* Use the related object owner. */
-            newcontext.user = tcontext->user;
+    case AVTAB_MEMBER:
+        /* Use the related object owner. */
+        newcontext.user = tcontext->user;
         break;
     }
 
     /* Set the role and type to default values. */
     switch ( tclass )
     {
-        case SECCLASS_DOMAIN:
-            /* Use the current role and type of process. */
-            newcontext.role = scontext->role;
-            newcontext.type = scontext->type;
+    case SECCLASS_DOMAIN:
+        /* Use the current role and type of process. */
+        newcontext.role = scontext->role;
+        newcontext.type = scontext->type;
         break;
-        default:
-            /* Use the well-defined object role. */
-            newcontext.role = OBJECT_R_VAL;
-            /* Use the type of the related object. */
-            newcontext.type = tcontext->type;
+    default:
+        /* Use the well-defined object role. */
+        newcontext.role = OBJECT_R_VAL;
+        /* Use the type of the related object. */
+        newcontext.type = tcontext->type;
     }
 
     /* Look for a type transition/member/change rule. */
@@ -1066,23 +1067,23 @@ static int security_compute_sid(u32 ssid,
     /* Check for class-specific changes. */
     switch ( tclass )
     {
-        case SECCLASS_DOMAIN:
-            if ( specified & AVTAB_TRANSITION )
+    case SECCLASS_DOMAIN:
+        if ( specified & AVTAB_TRANSITION )
+        {
+            /* Look for a role transition rule. */
+            for ( roletr = policydb.role_tr; roletr; roletr = roletr->next )
             {
-                /* Look for a role transition rule. */
-                for ( roletr = policydb.role_tr; roletr; roletr = roletr->next )
+                if ( roletr->role == scontext->role &&
+                     roletr->type == tcontext->type )
                 {
-                    if ( roletr->role == scontext->role &&
-                                            roletr->type == tcontext->type )
-                    {
-                        /* Use the role transition rule. */
-                        newcontext.role = roletr->new_role;
-                        break;
-                    }
+                    /* Use the role transition rule. */
+                    newcontext.role = roletr->new_role;
+                    break;
                 }
             }
+        }
         break;
-        default:
+    default:
         break;
     }
 
@@ -1095,8 +1096,10 @@ static int security_compute_sid(u32 ssid,
     /* Check the validity of the context. */
     if ( !policydb_context_isvalid(&policydb, &newcontext) )
     {
-        rc = compute_sid_handle_invalid_context(scontext, tcontext, tclass,
-                                                                &newcontext);
+        rc = compute_sid_handle_invalid_context(scontext,
+                                                tcontext,
+                                                tclass,
+                                                &newcontext);
         if ( rc )
             goto out_unlock;
     }
@@ -1185,17 +1188,18 @@ static int validate_classes(struct policydb *p)
             continue;
         if ( i > p->p_classes.nprim )
         {
-            printk(KERN_INFO
-                   "Flask:  class %s not defined in policy\n",
+            printk(KERN_INFO "Flask:  class %s not defined in policy\n",
                    def_class);
             return -EINVAL;
         }
-        pol_class = p->p_class_val_to_name[i-1];
+        pol_class = p->p_class_val_to_name[i - 1];
         if ( strcmp(pol_class, def_class) )
         {
             printk(KERN_ERR
                    "Flask:  class %d is incorrect, found %s but should be %s\n",
-                   i, pol_class, def_class);
+                   i,
+                   pol_class,
+                   def_class);
             return -EINVAL;
         }
     }
@@ -1206,16 +1210,17 @@ static int validate_classes(struct policydb *p)
         def_perm = kdefs->av_perm_to_string[i].name;
         if ( class_val > p->p_classes.nprim )
             continue;
-        pol_class = p->p_class_val_to_name[class_val-1];
+        pol_class = p->p_class_val_to_name[class_val - 1];
         cladatum = hashtab_search(p->p_classes.table, pol_class);
-        BUG_ON( !cladatum );
+        BUG_ON(!cladatum);
         perms = &cladatum->permissions;
         nprim = 1 << (perms->nprim - 1);
         if ( perm_val > nprim )
         {
             printk(KERN_INFO
                    "Flask:  permission %s in class %s not defined in policy\n",
-                   def_perm, pol_class);
+                   def_perm,
+                   pol_class);
             return -EINVAL;
         }
         perdatum = hashtab_search(perms->table, def_perm);
@@ -1223,7 +1228,8 @@ static int validate_classes(struct policydb *p)
         {
             printk(KERN_ERR
                    "Flask:  permission %s in class %s not found in policy\n",
-                   def_perm, pol_class);
+                   def_perm,
+                   pol_class);
             return -EINVAL;
         }
         pol_val = 1 << (perdatum->value - 1);
@@ -1231,7 +1237,8 @@ static int validate_classes(struct policydb *p)
         {
             printk(KERN_ERR
                    "Flask:  permission %s in class %s has incorrect value\n",
-                   def_perm, pol_class);
+                   def_perm,
+                   pol_class);
             return -EINVAL;
         }
     }
@@ -1246,7 +1253,8 @@ static int cf_check clone_sid(u32 sid, struct context *context, void *arg)
     return sidtab_insert(s, sid, context);
 }
 
-static inline int convert_context_handle_invalid_context(struct context *context)
+static inline int
+convert_context_handle_invalid_context(struct context *context)
 {
     int rc = 0;
 
@@ -1381,8 +1389,7 @@ int security_load_policy(const void *data, size_t len)
         if ( validate_classes(&policydb) )
         {
             LOAD_UNLOCK;
-            printk(KERN_ERR
-                   "Flask:  the definition of a class is incorrect\n");
+            printk(KERN_ERR "Flask:  the definition of a class is incorrect\n");
             sidtab_destroy(&sidtab);
             policydb_destroy(&policydb);
             return -EINVAL;
@@ -1409,8 +1416,7 @@ int security_load_policy(const void *data, size_t len)
     /* Verify that the kernel defined classes are correct. */
     if ( validate_classes(&newpolicydb) )
     {
-        printk(KERN_ERR
-               "Flask:  the definition of a class is incorrect\n");
+        printk(KERN_ERR "Flask:  the definition of a class is incorrect\n");
         rc = -EINVAL;
         goto err;
     }
@@ -1461,7 +1467,6 @@ err:
     sidtab_destroy(&newsidtab);
     policydb_destroy(&newpolicydb);
     return rc;
-
 }
 
 int security_get_allow_unknown(void)
@@ -1525,7 +1530,7 @@ int security_iomem_sid(unsigned long mfn, u32 *out_sid)
     c = policydb.ocontexts[OCON_IOMEM];
     while ( c )
     {
-        if ( c->u.iomem.low_iomem <= mfn  && c->u.iomem.high_iomem >= mfn )
+        if ( c->u.iomem.low_iomem <= mfn && c->u.iomem.high_iomem >= mfn )
             break;
         c = c->next;
     }
@@ -1559,31 +1564,34 @@ int security_iterate_iomem_sids(unsigned long start, unsigned long end,
     POLICY_RDLOCK;
 
     c = policydb.ocontexts[OCON_IOMEM];
-    while (c && c->u.iomem.high_iomem < start)
+    while ( c && c->u.iomem.high_iomem < start )
         c = c->next;
 
-    while (c && c->u.iomem.low_iomem <= end) {
-        if (!c->sid)
+    while ( c && c->u.iomem.low_iomem <= end )
+    {
+        if ( !c->sid )
         {
             rc = sidtab_context_to_sid(&sidtab, &c->context, &c->sid);
             if ( rc )
                 goto out;
         }
-        if (start < c->u.iomem.low_iomem) {
+        if ( start < c->u.iomem.low_iomem )
+        {
             /* found a gap */
             rc = fn(data, SECINITSID_IOMEM, start, c->u.iomem.low_iomem - 1);
-            if (rc)
+            if ( rc )
                 goto out;
             start = c->u.iomem.low_iomem;
         }
-        if (end <= c->u.iomem.high_iomem) {
+        if ( end <= c->u.iomem.high_iomem )
+        {
             /* iteration ends in the middle of this range */
             rc = fn(data, c->sid, start, end);
             goto out;
         }
 
         rc = fn(data, c->sid, start, c->u.iomem.high_iomem);
-        if (rc)
+        if ( rc )
             goto out;
         start = c->u.iomem.high_iomem + 1;
 
@@ -1638,8 +1646,8 @@ out:
     return rc;
 }
 
-int security_iterate_ioport_sids(u32 start, u32 end,
-                                security_iterate_fn fn, void *data)
+int security_iterate_ioport_sids(u32 start, u32 end, security_iterate_fn fn,
+                                 void *data)
 {
     struct ocontext *c;
     int rc = 0;
@@ -1647,31 +1655,34 @@ int security_iterate_ioport_sids(u32 start, u32 end,
     POLICY_RDLOCK;
 
     c = policydb.ocontexts[OCON_IOPORT];
-    while (c && c->u.ioport.high_ioport < start)
+    while ( c && c->u.ioport.high_ioport < start )
         c = c->next;
 
-    while (c && c->u.ioport.low_ioport <= end) {
-        if (!c->sid)
+    while ( c && c->u.ioport.low_ioport <= end )
+    {
+        if ( !c->sid )
         {
             rc = sidtab_context_to_sid(&sidtab, &c->context, &c->sid);
             if ( rc )
                 goto out;
         }
-        if (start < c->u.ioport.low_ioport) {
+        if ( start < c->u.ioport.low_ioport )
+        {
             /* found a gap */
             rc = fn(data, SECINITSID_IOPORT, start, c->u.ioport.low_ioport - 1);
-            if (rc)
+            if ( rc )
                 goto out;
             start = c->u.ioport.low_ioport;
         }
-        if (end <= c->u.ioport.high_ioport) {
+        if ( end <= c->u.ioport.high_ioport )
+        {
             /* iteration ends in the middle of this range */
             rc = fn(data, c->sid, start, end);
             goto out;
         }
 
         rc = fn(data, c->sid, start, c->u.ioport.high_ioport);
-        if (rc)
+        if ( rc )
             goto out;
         start = c->u.ioport.high_ioport + 1;
 
@@ -1766,7 +1777,7 @@ int security_find_bool(const char *name)
     POLICY_RDLOCK;
     for ( i = 0; i < policydb.p_bools.nprim; i++ )
     {
-        if (!strcmp(name, policydb.p_bool_val_to_name[i]))
+        if ( !strcmp(name, policydb.p_bool_val_to_name[i]) )
         {
             rv = i;
             break;
@@ -1811,7 +1822,8 @@ int security_get_bools(int *len, char ***names, int **values, size_t *maxstr)
         size_t name_len = strlen(policydb.p_bool_val_to_name[i]);
 
         (*values)[i] = policydb.bool_val_to_struct[i]->state;
-        if ( names ) {
+        if ( names )
+        {
             (*names)[i] = xmalloc_array(char, name_len + 1);
             if ( !(*names)[i] )
                 goto err;
@@ -1834,7 +1846,6 @@ err:
     xfree(*values);
     goto out;
 }
-
 
 int security_set_bools(int len, int *values)
 {
@@ -1864,7 +1875,8 @@ int security_set_bools(int len, int *values)
         }
         if ( i != 0 )
             printk(", ");
-        printk("%s:%d", policydb.p_bool_val_to_name[i],
+        printk("%s:%d",
+               policydb.p_bool_val_to_name[i],
                policydb.bool_val_to_struct[i]->state);
     }
     printk(" }\n");
@@ -1964,8 +1976,8 @@ out:
     return rc;
 }
 
-int security_ocontext_add( u32 ocon, unsigned long low, unsigned long high
-                            ,u32 sid )
+int security_ocontext_add(u32 ocon, unsigned long low, unsigned long high,
+                          u32 sid)
 {
     int ret = 0;
     struct ocontext *c;
@@ -1977,7 +1989,7 @@ int security_ocontext_add( u32 ocon, unsigned long low, unsigned long high
     add->sid = sid;
 
     POLICY_WRLOCK;
-    switch( ocon )
+    switch ( ocon )
     {
     case OCON_PIRQ:
         add->u.pirq = (u16)low;
@@ -2015,27 +2027,32 @@ int security_ocontext_add( u32 ocon, unsigned long low, unsigned long high
         prev = NULL;
         c = policydb.ocontexts[OCON_IOPORT];
 
-        while ( c && c->u.ioport.high_ioport < low ) {
+        while ( c && c->u.ioport.high_ioport < low )
+        {
             prev = c;
             c = c->next;
         }
 
-        if (c && c->u.ioport.low_ioport <= high)
+        if ( c && c->u.ioport.low_ioport <= high )
         {
-            if (c->u.ioport.low_ioport == low &&
-                c->u.ioport.high_ioport == high && c->sid == sid)
+            if ( c->u.ioport.low_ioport == low &&
+                 c->u.ioport.high_ioport == high && c->sid == sid )
                 break;
 
             printk("flask: IO Port overlap with entry %#x - %#x\n",
-                   c->u.ioport.low_ioport, c->u.ioport.high_ioport);
+                   c->u.ioport.low_ioport,
+                   c->u.ioport.high_ioport);
             ret = -EEXIST;
             break;
         }
 
-        if (prev) {
+        if ( prev )
+        {
             add->next = prev->next;
             prev->next = add;
-        } else {
+        }
+        else
+        {
             add->next = policydb.ocontexts[OCON_IOPORT];
             policydb.ocontexts[OCON_IOPORT] = add;
         }
@@ -2048,33 +2065,39 @@ int security_ocontext_add( u32 ocon, unsigned long low, unsigned long high
         prev = NULL;
         c = policydb.ocontexts[OCON_IOMEM];
 
-        while ( c && c->u.iomem.high_iomem < low ) {
+        while ( c && c->u.iomem.high_iomem < low )
+        {
             prev = c;
             c = c->next;
         }
 
-        if (c && c->u.iomem.low_iomem <= high)
+        if ( c && c->u.iomem.low_iomem <= high )
         {
-            if (c->u.iomem.low_iomem == low &&
-                c->u.iomem.high_iomem == high && c->sid == sid)
+            if ( c->u.iomem.low_iomem == low && c->u.iomem.high_iomem == high &&
+                 c->sid == sid )
                 break;
 
-            printk("flask: IO Memory overlap with entry %#"PRIx64" - %#"PRIx64"\n",
-                   c->u.iomem.low_iomem, c->u.iomem.high_iomem);
+            printk("flask: IO Memory overlap with entry %#" PRIx64
+                   " - %#" PRIx64 "\n",
+                   c->u.iomem.low_iomem,
+                   c->u.iomem.high_iomem);
             ret = -EEXIST;
             break;
         }
 
-        if (prev) {
+        if ( prev )
+        {
             add->next = prev->next;
             prev->next = add;
-        } else {
+        }
+        else
+        {
             add->next = policydb.ocontexts[OCON_IOMEM];
             policydb.ocontexts[OCON_IOMEM] = add;
         }
         break;
 
-     case OCON_DEVICE:
+    case OCON_DEVICE:
         add->u.device = low;
         if ( high != low )
         {
@@ -2104,8 +2127,8 @@ int security_ocontext_add( u32 ocon, unsigned long low, unsigned long high
         }
         break;
 
-     default:
-         ret = -EINVAL;
+    default:
+        ret = -EINVAL;
     }
     POLICY_WRUNLOCK;
 
@@ -2114,17 +2137,17 @@ int security_ocontext_add( u32 ocon, unsigned long low, unsigned long high
     return ret;
 }
 
-int security_ocontext_del( u32 ocon, unsigned long low, unsigned long high )
+int security_ocontext_del(u32 ocon, unsigned long low, unsigned long high)
 {
     int ret = 0;
     struct ocontext *c, *before_c;
 
     POLICY_WRLOCK;
-    switch( ocon )
+    switch ( ocon )
     {
     case OCON_PIRQ:
-        for ( before_c = NULL, c = policydb.ocontexts[OCON_PIRQ];
-              c; before_c = c, c = c->next )
+        for ( before_c = NULL, c = policydb.ocontexts[OCON_PIRQ]; c;
+              before_c = c, c = c->next )
         {
             if ( c->u.pirq == low )
             {
@@ -2148,8 +2171,8 @@ int security_ocontext_del( u32 ocon, unsigned long low, unsigned long high )
         break;
 
     case OCON_IOPORT:
-        for ( before_c = NULL, c = policydb.ocontexts[OCON_IOPORT];
-              c; before_c = c, c = c->next )
+        for ( before_c = NULL, c = policydb.ocontexts[OCON_IOPORT]; c;
+              before_c = c, c = c->next )
         {
             if ( c->u.ioport.low_ioport == low &&
                  c->u.ioport.high_ioport == high )
@@ -2174,11 +2197,10 @@ int security_ocontext_del( u32 ocon, unsigned long low, unsigned long high )
         break;
 
     case OCON_IOMEM:
-        for ( before_c = NULL, c = policydb.ocontexts[OCON_IOMEM];
-              c; before_c = c, c = c->next )
+        for ( before_c = NULL, c = policydb.ocontexts[OCON_IOMEM]; c;
+              before_c = c, c = c->next )
         {
-            if ( c->u.iomem.low_iomem == low &&
-                 c->u.iomem.high_iomem == high )
+            if ( c->u.iomem.low_iomem == low && c->u.iomem.high_iomem == high )
             {
                 if ( before_c == NULL )
                 {
@@ -2200,8 +2222,8 @@ int security_ocontext_del( u32 ocon, unsigned long low, unsigned long high )
         break;
 
     case OCON_DEVICE:
-        for ( before_c = NULL, c = policydb.ocontexts[OCON_DEVICE];
-              c; before_c = c, c = c->next )
+        for ( before_c = NULL, c = policydb.ocontexts[OCON_DEVICE]; c;
+              before_c = c, c = c->next )
         {
             if ( c->u.device == low )
             {
@@ -2228,7 +2250,7 @@ int security_ocontext_del( u32 ocon, unsigned long low, unsigned long high )
         ret = -EINVAL;
     }
 
-  out:
+out:
     POLICY_WRUNLOCK;
     return ret;
 }

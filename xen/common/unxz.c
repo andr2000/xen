@@ -102,19 +102,19 @@
  * architecture or none if no BCJ filter is available for the architecture.
  */
 #ifdef CONFIG_X86
-#	define XZ_DEC_X86
+#define XZ_DEC_X86
 #endif
 #ifdef CONFIG_PPC
-#	define XZ_DEC_POWERPC
+#define XZ_DEC_POWERPC
 #endif
 #ifdef CONFIG_ARM
-#	define XZ_DEC_ARM
+#define XZ_DEC_ARM
 #endif
 #ifdef CONFIG_IA64
-#	define XZ_DEC_IA64
+#define XZ_DEC_IA64
 #endif
 #ifdef CONFIG_SPARC
-#	define XZ_DEC_SPARC
+#define XZ_DEC_SPARC
 #endif
 
 /*
@@ -158,143 +158,154 @@
  * fill() and flush() won't be used.
  */
 int __init unxz(unsigned char *in, unsigned int in_size,
-		int (*fill)(void *dest, unsigned int size),
-		int (*flush)(void *src, unsigned int size),
-		unsigned char *out, unsigned int *in_used,
-		void (*error)(const char *x))
+                int (*fill)(void *dest, unsigned int size),
+                int (*flush)(void *src, unsigned int size), unsigned char *out,
+                unsigned int *in_used, void (*error)(const char *x))
 {
-	struct xz_buf b;
-	struct xz_dec *s;
-	enum xz_ret ret;
-	bool must_free_in = false;
+    struct xz_buf b;
+    struct xz_dec *s;
+    enum xz_ret ret;
+    bool must_free_in = false;
 
-	xz_crc32_init();
+    xz_crc32_init();
 
-	if (in_used != NULL)
-		*in_used = 0;
+    if ( in_used != NULL )
+        *in_used = 0;
 
-	if (fill == NULL && flush == NULL)
-		s = xz_dec_init(XZ_SINGLE, 0);
-	else
-		s = xz_dec_init(XZ_DYNALLOC, (uint32_t)-1);
+    if ( fill == NULL && flush == NULL )
+        s = xz_dec_init(XZ_SINGLE, 0);
+    else
+        s = xz_dec_init(XZ_DYNALLOC, (uint32_t)-1);
 
-	if (s == NULL)
-		goto error_alloc_state;
+    if ( s == NULL )
+        goto error_alloc_state;
 
-	if (flush == NULL) {
-		b.out = out;
-		b.out_size = (size_t)-1;
-	} else {
-		b.out_size = XZ_IOBUF_SIZE;
-		b.out = malloc(XZ_IOBUF_SIZE);
-		if (b.out == NULL)
-			goto error_alloc_out;
-	}
+    if ( flush == NULL )
+    {
+        b.out = out;
+        b.out_size = (size_t)-1;
+    }
+    else
+    {
+        b.out_size = XZ_IOBUF_SIZE;
+        b.out = malloc(XZ_IOBUF_SIZE);
+        if ( b.out == NULL )
+            goto error_alloc_out;
+    }
 
-	if (in == NULL) {
-		must_free_in = true;
-		in = malloc(XZ_IOBUF_SIZE);
-		if (in == NULL)
-			goto error_alloc_in;
-	}
+    if ( in == NULL )
+    {
+        must_free_in = true;
+        in = malloc(XZ_IOBUF_SIZE);
+        if ( in == NULL )
+            goto error_alloc_in;
+    }
 
-	b.in = in;
-	b.in_pos = 0;
-	b.in_size = in_size;
-	b.out_pos = 0;
+    b.in = in;
+    b.in_pos = 0;
+    b.in_size = in_size;
+    b.out_pos = 0;
 
-	if (fill == NULL && flush == NULL) {
-		ret = xz_dec_run(s, &b);
-	} else {
-		do {
-			if (b.in_pos == b.in_size && fill != NULL) {
-				if (in_used != NULL)
-					*in_used += b.in_pos;
+    if ( fill == NULL && flush == NULL )
+    {
+        ret = xz_dec_run(s, &b);
+    }
+    else
+    {
+        do
+        {
+            if ( b.in_pos == b.in_size && fill != NULL )
+            {
+                if ( in_used != NULL )
+                    *in_used += b.in_pos;
 
-				b.in_pos = 0;
+                b.in_pos = 0;
 
-				in_size = fill(in, XZ_IOBUF_SIZE);
-				if ((int) in_size < 0) {
-					/*
+                in_size = fill(in, XZ_IOBUF_SIZE);
+                if ( (int)in_size < 0 )
+                {
+                    /*
 					 * This isn't an optimal error code
 					 * but it probably isn't worth making
 					 * a new one either.
 					 */
-					ret = XZ_BUF_ERROR;
-					break;
-				}
+                    ret = XZ_BUF_ERROR;
+                    break;
+                }
 
-				b.in_size = in_size;
-			}
+                b.in_size = in_size;
+            }
 
-			ret = xz_dec_run(s, &b);
+            ret = xz_dec_run(s, &b);
 
-			if (flush != NULL && (b.out_pos == b.out_size
-					|| (ret != XZ_OK && b.out_pos > 0))) {
-				/*
+            if ( flush != NULL &&
+                 (b.out_pos == b.out_size || (ret != XZ_OK && b.out_pos > 0)) )
+            {
+                /*
 				 * Setting ret here may hide an error
 				 * returned by xz_dec_run(), but probably
 				 * it's not too bad.
 				 */
-				if (flush(b.out, b.out_pos) != (int)b.out_pos)
-					ret = XZ_BUF_ERROR;
+                if ( flush(b.out, b.out_pos) != (int)b.out_pos )
+                    ret = XZ_BUF_ERROR;
 
-				b.out_pos = 0;
-			}
-		} while (ret == XZ_OK);
+                b.out_pos = 0;
+            }
+        } while ( ret == XZ_OK );
 
-		if (must_free_in)
-			free(in);
+        if ( must_free_in )
+            free(in);
 
-		if (flush != NULL)
-			free(b.out);
-	}
+        if ( flush != NULL )
+            free(b.out);
+    }
 
-	if (in_used != NULL)
-		*in_used += b.in_pos;
+    if ( in_used != NULL )
+        *in_used += b.in_pos;
 
-	xz_dec_end(s);
+    xz_dec_end(s);
 
-	switch (ret) {
-	case XZ_STREAM_END:
-		return 0;
+    switch ( ret )
+    {
+    case XZ_STREAM_END:
+        return 0;
 
-	case XZ_MEM_ERROR:
-		/* This can occur only in multi-call mode. */
-		error("XZ decompressor ran out of memory");
-		break;
+    case XZ_MEM_ERROR:
+        /* This can occur only in multi-call mode. */
+        error("XZ decompressor ran out of memory");
+        break;
 
-	case XZ_FORMAT_ERROR:
-		error("Input is not in the XZ format (wrong magic bytes)");
-		break;
+    case XZ_FORMAT_ERROR:
+        error("Input is not in the XZ format (wrong magic bytes)");
+        break;
 
-	case XZ_OPTIONS_ERROR:
-		error("Input was encoded with settings that are not "
-				"supported by this XZ decoder");
-		break;
+    case XZ_OPTIONS_ERROR:
+        error(
+            "Input was encoded with settings that are not " "supported by this XZ decoder");
+        break;
 
-	case XZ_DATA_ERROR:
-	case XZ_BUF_ERROR:
-		error("XZ-compressed data is corrupt");
-		break;
+    case XZ_DATA_ERROR:
+    case XZ_BUF_ERROR:
+        error("XZ-compressed data is corrupt");
+        break;
 
-	default:
-		error("Bug in the XZ decompressor");
-		break;
-	}
+    default:
+        error("Bug in the XZ decompressor");
+        break;
+    }
 
-	return -1;
+    return -1;
 
 error_alloc_in:
-	if (flush != NULL)
-		free(b.out);
+    if ( flush != NULL )
+        free(b.out);
 
 error_alloc_out:
-	xz_dec_end(s);
+    xz_dec_end(s);
 
 error_alloc_state:
-	error("XZ decompressor ran out of memory");
-	return -1;
+    error("XZ decompressor ran out of memory");
+    return -1;
 }
 
 /*

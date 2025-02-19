@@ -62,9 +62,8 @@
  */
 #define KIMAGE_LAST_ENTRY (PAGE_SIZE/sizeof(kimage_entry_t) - 1)
 
-
-static int kimage_is_destination_range(struct kexec_image *image,
-                                       paddr_t start, paddr_t end);
+static int kimage_is_destination_range(struct kexec_image *image, paddr_t start,
+                                       paddr_t end);
 static struct page_info *kimage_alloc_page(struct kexec_image *image,
                                            paddr_t dest);
 
@@ -124,7 +123,7 @@ static int do_kimage_alloc(struct kexec_image **rimage, paddr_t entry,
         paddr_t mstart, mend;
 
         mstart = image->segments[i].dest_maddr;
-        mend   = mstart + image->segments[i].dest_size;
+        mend = mstart + image->segments[i].dest_size;
         if ( (mstart & ~PAGE_MASK) || (mend & ~PAGE_MASK) )
             goto out;
     }
@@ -142,12 +141,12 @@ static int do_kimage_alloc(struct kexec_image **rimage, paddr_t entry,
         unsigned long j;
 
         mstart = image->segments[i].dest_maddr;
-        mend   = mstart + image->segments[i].dest_size;
-        for (j = 0; j < i; j++ )
+        mend = mstart + image->segments[i].dest_size;
+        for ( j = 0; j < i; j++ )
         {
             paddr_t pstart, pend;
             pstart = image->segments[j].dest_maddr;
-            pend   = pstart + image->segments[j].dest_size;
+            pend = pstart + image->segments[j].dest_size;
             /* Do the segments overlap? */
             if ( (mend > pstart) && (mstart < pend) )
                 goto out;
@@ -185,7 +184,8 @@ static int do_kimage_alloc(struct kexec_image **rimage, paddr_t entry,
     image->entry_page = kimage_alloc_control_page(image, 0);
     if ( !image->entry_page )
         goto out;
-    result = machine_kexec_add_page(image, page_to_maddr(image->entry_page),
+    result = machine_kexec_add_page(image,
+                                    page_to_maddr(image->entry_page),
                                     page_to_maddr(image->entry_page));
     if ( result < 0 )
         goto out;
@@ -203,14 +203,16 @@ out:
     }
 
     return result;
-
 }
 
 static int kimage_normal_alloc(struct kexec_image **rimage, paddr_t entry,
                                unsigned long nr_segments,
                                xen_kexec_segment_t *segments)
 {
-    return do_kimage_alloc(rimage, entry, nr_segments, segments,
+    return do_kimage_alloc(rimage,
+                           entry,
+                           nr_segments,
+                           segments,
                            KEXEC_TYPE_DEFAULT);
 }
 
@@ -221,8 +223,8 @@ static int kimage_crash_alloc(struct kexec_image **rimage, paddr_t entry,
     unsigned long i;
 
     /* Verify we have a valid entry point */
-    if ( (entry < kexec_crash_area.start)
-         || (entry > kexec_crash_area.start + kexec_crash_area.size))
+    if ( (entry < kexec_crash_area.start) ||
+         (entry > kexec_crash_area.start + kexec_crash_area.size) )
         return -EADDRNOTAVAIL;
 
     /*
@@ -244,18 +246,20 @@ static int kimage_crash_alloc(struct kexec_image **rimage, paddr_t entry,
         mstart = segments[i].dest_maddr;
         mend = mstart + segments[i].dest_size;
         /* Ensure we are within the crash kernel limits. */
-        if ( (mstart < kexec_crash_area.start )
-             || (mend > kexec_crash_area.start + kexec_crash_area.size))
+        if ( (mstart < kexec_crash_area.start) ||
+             (mend > kexec_crash_area.start + kexec_crash_area.size) )
             return -EADDRNOTAVAIL;
     }
 
     /* Allocate and initialize a controlling structure. */
-    return do_kimage_alloc(rimage, entry, nr_segments, segments,
+    return do_kimage_alloc(rimage,
+                           entry,
+                           nr_segments,
+                           segments,
                            KEXEC_TYPE_CRASH);
 }
 
-static int kimage_is_destination_range(struct kexec_image *image,
-                                       paddr_t start,
+static int kimage_is_destination_range(struct kexec_image *image, paddr_t start,
                                        paddr_t end)
 {
     unsigned long i;
@@ -284,8 +288,8 @@ static void kimage_free_page_list(struct page_list_head *list)
     }
 }
 
-static struct page_info *kimage_alloc_normal_control_page(
-    struct kexec_image *image, unsigned memflags)
+static struct page_info *
+kimage_alloc_normal_control_page(struct kexec_image *image, unsigned memflags)
 {
     /*
      * Control pages are special, they are the intermediaries that are
@@ -309,13 +313,14 @@ static struct page_info *kimage_alloc_normal_control_page(
      * Loop while I can allocate a page and the page allocated is a
      * destination page.
      */
-    do {
+    do
+    {
         paddr_t addr, eaddr;
 
         page = kimage_alloc_zeroed_page(memflags);
         if ( !page )
             break;
-        addr  = page_to_maddr(page);
+        addr = page_to_maddr(page);
         eaddr = addr + PAGE_SIZE;
         if ( kimage_is_destination_range(image, addr, eaddr) )
         {
@@ -349,7 +354,8 @@ static struct page_info *kimage_alloc_normal_control_page(
     return page;
 }
 
-static struct page_info *kimage_alloc_crash_control_page(struct kexec_image *image)
+static struct page_info *
+kimage_alloc_crash_control_page(struct kexec_image *image)
 {
     /*
      * Control pages are special, they are the intermediaries that are
@@ -375,7 +381,7 @@ static struct page_info *kimage_alloc_crash_control_page(struct kexec_image *ima
     struct page_info *page = NULL;
 
     hole_start = PAGE_ALIGN(image->next_crash_page);
-    hole_end   = hole_start + PAGE_SIZE;
+    hole_end = hole_start + PAGE_SIZE;
     while ( hole_end <= kexec_crash_area.start + kexec_crash_area.size )
     {
         unsigned long i;
@@ -386,12 +392,12 @@ static struct page_info *kimage_alloc_crash_control_page(struct kexec_image *ima
             paddr_t mstart, mend;
 
             mstart = image->segments[i].dest_maddr;
-            mend   = mstart + image->segments[i].dest_size;
+            mend = mstart + image->segments[i].dest_size;
             if ( (hole_end > mstart) && (hole_start < mend) )
             {
                 /* Advance the hole to the end of the segment. */
                 hole_start = PAGE_ALIGN(mend);
-                hole_end   = hole_start + PAGE_SIZE;
+                hole_end = hole_start + PAGE_SIZE;
                 break;
             }
         }
@@ -410,7 +416,6 @@ static struct page_info *kimage_alloc_crash_control_page(struct kexec_image *ima
 
     return page;
 }
-
 
 struct page_info *kimage_alloc_control_page(struct kexec_image *image,
                                             unsigned memflags)
@@ -463,12 +468,10 @@ static int kimage_set_destination(struct kexec_image *image,
     return kimage_add_entry(image, (destination & PAGE_MASK) | IND_DESTINATION);
 }
 
-
 static int kimage_add_page(struct kexec_image *image, paddr_t maddr)
 {
     return kimage_add_entry(image, (maddr & PAGE_MASK) | IND_SOURCE);
 }
-
 
 static void kimage_free_extra_pages(struct kexec_image *image)
 {
@@ -545,8 +548,7 @@ void kimage_free(struct kexec_image *image)
     xfree(image);
 }
 
-static kimage_entry_t *kimage_dst_used(struct kexec_image *image,
-                                       paddr_t maddr)
+static kimage_entry_t *kimage_dst_used(struct kexec_image *image, paddr_t maddr)
 {
     kimage_entry_t *ptr, entry;
     unsigned long destination = 0;
@@ -605,7 +607,7 @@ static struct page_info *kimage_alloc_page(struct kexec_image *image,
         }
     }
     page = NULL;
-    for (;;)
+    for ( ;; )
     {
         kimage_entry_t *old;
 
@@ -620,8 +622,7 @@ static struct page_info *kimage_alloc_page(struct kexec_image *image,
             break;
 
         /* If the page is not a destination page use it. */
-        if ( !kimage_is_destination_range(image, addr,
-                                          addr + PAGE_SIZE) )
+        if ( !kimage_is_destination_range(image, addr, addr + PAGE_SIZE) )
             break;
 
         /*
@@ -654,8 +655,8 @@ static struct page_info *kimage_alloc_page(struct kexec_image *image,
         }
     }
 found:
-    ret = machine_kexec_add_page(image, page_to_maddr(page),
-                                 page_to_maddr(page));
+    ret =
+        machine_kexec_add_page(image, page_to_maddr(page), page_to_maddr(page));
     if ( ret < 0 )
     {
         free_domheap_page(page);
@@ -748,7 +749,8 @@ static int kimage_load_crash_segment(struct kexec_image *image,
         if ( !dest_va )
             return -EINVAL;
 
-        ret = copy_from_guest_offset(dest_va, segment->buf.h, src_offset, schunk);
+        ret =
+            copy_from_guest_offset(dest_va, segment->buf.h, src_offset, schunk);
         memset(dest_va + schunk, 0, dchunk - schunk);
 
         unmap_domain_page(dest_va);
@@ -764,7 +766,8 @@ static int kimage_load_crash_segment(struct kexec_image *image,
     return 0;
 }
 
-static int kimage_load_segment(struct kexec_image *image, xen_kexec_segment_t *segment)
+static int kimage_load_segment(struct kexec_image *image,
+                               xen_kexec_segment_t *segment)
 {
     int result = -ENOMEM;
     paddr_t addr;
@@ -783,7 +786,8 @@ static int kimage_load_segment(struct kexec_image *image, xen_kexec_segment_t *s
     }
 
     for ( addr = segment->dest_maddr & PAGE_MASK;
-          addr < segment->dest_maddr + segment->dest_size; addr += PAGE_SIZE )
+          addr < segment->dest_maddr + segment->dest_size;
+          addr += PAGE_SIZE )
     {
         result = machine_kexec_add_page(image, addr, addr);
         if ( result < 0 )
@@ -794,12 +798,12 @@ static int kimage_load_segment(struct kexec_image *image, xen_kexec_segment_t *s
 }
 
 int kimage_alloc(struct kexec_image **rimage, uint8_t type, uint16_t arch,
-                 uint64_t entry_maddr,
-                 uint32_t nr_segments, xen_kexec_segment_t *segment)
+                 uint64_t entry_maddr, uint32_t nr_segments,
+                 xen_kexec_segment_t *segment)
 {
     int result;
 
-    switch( type )
+    switch ( type )
     {
     case KEXEC_TYPE_DEFAULT:
         result = kimage_normal_alloc(rimage, entry_maddr, nr_segments, segment);
@@ -824,7 +828,8 @@ int kimage_load_segments(struct kexec_image *image)
     int s;
     int result;
 
-    for ( s = 0; s < image->nr_segments; s++ ) {
+    for ( s = 0; s < image->nr_segments; s++ )
+    {
         result = kimage_load_segment(image, &image->segments[s]);
         if ( result < 0 )
             return result;
@@ -854,8 +859,7 @@ unsigned long kimage_entry_ind(kimage_entry_t *entry, bool compat)
     return *entry & 0xf;
 }
 
-int kimage_build_ind(struct kexec_image *image, mfn_t ind_mfn,
-                     bool compat)
+int kimage_build_ind(struct kexec_image *image, mfn_t ind_mfn, bool compat)
 {
     void *page;
     kimage_entry_t *entry;
@@ -870,7 +874,7 @@ int kimage_build_ind(struct kexec_image *image, mfn_t ind_mfn,
      * Walk the guest-supplied indirection pages, adding entries to
      * the image's indirection pages.
      */
-    for ( entry = page; ;  )
+    for ( entry = page;; )
     {
         unsigned long ind;
         mfn_t mfn;

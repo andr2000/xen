@@ -152,7 +152,6 @@ const char *gcov_info_filename(const struct gcov_info *info)
     return info->filename;
 }
 
-
 /**
  * gcov_info_to_gcda - convert profiling data set to gcda file format
  * @buffer: the buffer to store file data or %NULL if no data should be stored
@@ -185,7 +184,9 @@ size_t gcov_info_to_gcda(char *buffer, const struct gcov_info *info)
 
         /* Function record. */
         pos += gcov_store_uint32(buffer, pos, GCOV_TAG_FUNCTION);
-        pos += gcov_store_uint32(buffer, pos, GCOV_TAG_FUNCTION_LENGTH * GCOV_UNIT_SIZE);
+        pos += gcov_store_uint32(buffer,
+                                 pos,
+                                 GCOV_TAG_FUNCTION_LENGTH * GCOV_UNIT_SIZE);
         pos += gcov_store_uint32(buffer, pos, fi_ptr->ident);
         pos += gcov_store_uint32(buffer, pos, fi_ptr->lineno_checksum);
         pos += gcov_store_uint32(buffer, pos, fi_ptr->cfg_checksum);
@@ -194,13 +195,14 @@ size_t gcov_info_to_gcda(char *buffer, const struct gcov_info *info)
 
         for ( ct_idx = 0; ct_idx < GCOV_COUNTERS; ct_idx++ )
         {
-            if (! counter_active(info, ct_idx) )
+            if ( !counter_active(info, ct_idx) )
                 continue;
 
             /* Counter record. */
-            pos += gcov_store_uint32(buffer, pos,
-                                     GCOV_TAG_FOR_COUNTER(ct_idx));
-            pos += gcov_store_uint32(buffer, pos, ci_ptr->num * 2 * GCOV_UNIT_SIZE);
+            pos += gcov_store_uint32(buffer, pos, GCOV_TAG_FOR_COUNTER(ct_idx));
+            pos += gcov_store_uint32(buffer,
+                                     pos,
+                                     ci_ptr->num * 2 * GCOV_UNIT_SIZE);
 
             for ( cv_idx = 0; cv_idx < ci_ptr->num; cv_idx++ )
                 pos += gcov_store_uint64(buffer, pos, ci_ptr->values[cv_idx]);

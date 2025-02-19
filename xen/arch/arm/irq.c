@@ -25,8 +25,7 @@ static unsigned int local_irqs_type[NR_LOCAL_IRQS];
 static DEFINE_SPINLOCK(local_irqs_type_lock);
 
 /* Describe an IRQ assigned to a guest */
-struct irq_guest
-{
+struct irq_guest {
     struct domain *d;
     unsigned int virq;
 };
@@ -53,7 +52,7 @@ struct irq_desc *__irq_to_desc(unsigned int irq)
     if ( irq < NR_LOCAL_IRQS )
         return &this_cpu(local_irq_desc)[irq];
 
-    return &irq_desc[irq-NR_LOCAL_IRQS];
+    return &irq_desc[irq - NR_LOCAL_IRQS];
 }
 
 int arch_init_one_irq_desc(struct irq_desc *desc)
@@ -61,7 +60,6 @@ int arch_init_one_irq_desc(struct irq_desc *desc)
     desc->arch.type = IRQ_TYPE_INVALID;
     return 0;
 }
-
 
 static int __init init_irq_data(void)
 {
@@ -76,7 +74,7 @@ static int __init init_irq_data(void)
             return rc;
 
         desc->irq = irq;
-        desc->action  = NULL;
+        desc->action = NULL;
     }
 
     return 0;
@@ -97,7 +95,7 @@ static int init_local_irq_data(unsigned int cpu)
             return rc;
 
         desc->irq = irq;
-        desc->action  = NULL;
+        desc->action = NULL;
 
         /* PPIs are included in local_irqs, we copy the IRQ type from
          * local_irqs_type when bringing up local IRQ for this CPU in
@@ -124,8 +122,7 @@ static int cpu_callback(struct notifier_block *nfb, unsigned long action,
     case CPU_UP_PREPARE:
         rc = init_local_irq_data(cpu);
         if ( rc )
-            printk(XENLOG_ERR "Unable to allocate local IRQ for CPU%u\n",
-                   cpu);
+            printk(XENLOG_ERR "Unable to allocate local IRQ for CPU%u\n", cpu);
         break;
     }
 
@@ -178,8 +175,8 @@ void irq_set_affinity(struct irq_desc *desc, const cpumask_t *mask)
 }
 
 int request_irq(unsigned int irq, unsigned int irqflags,
-                void (*handler)(int irq, void *dev_id),
-                const char *devname, void *dev_id)
+                void (*handler)(int irq, void *dev_id), const char *devname,
+                void *dev_id)
 {
     struct irqaction *action;
     int retval;
@@ -240,8 +237,7 @@ void do_IRQ(struct cpu_user_regs *regs, unsigned int irq, int is_fiq)
 #ifndef NDEBUG
     if ( !desc->action )
     {
-        printk("Unknown %s %#3.3x\n",
-               is_fiq ? "FIQ" : "IRQ", irq);
+        printk("Unknown %s %#3.3x\n", is_fiq ? "FIQ" : "IRQ", irq);
         goto out;
     }
 #endif
@@ -299,7 +295,7 @@ void release_irq(unsigned int irq, const void *dev_id)
 
     desc = irq_to_desc(irq);
 
-    spin_lock_irqsave(&desc->lock,flags);
+    spin_lock_irqsave(&desc->lock, flags);
 
     action_ptr = &desc->action;
     for ( ;; )
@@ -328,10 +324,13 @@ void release_irq(unsigned int irq, const void *dev_id)
         clear_bit(_IRQ_GUEST, &desc->status);
     }
 
-    spin_unlock_irqrestore(&desc->lock,flags);
+    spin_unlock_irqrestore(&desc->lock, flags);
 
     /* Wait to make sure it's not being used on another CPU */
-    do { smp_mb(); } while ( test_bit(_IRQ_INPROGRESS, &desc->status) );
+    do
+    {
+        smp_mb();
+    } while ( test_bit(_IRQ_INPROGRESS, &desc->status) );
 
     if ( action->free_on_release )
         xfree(action);
@@ -348,7 +347,8 @@ static int __setup_irq(struct irq_desc *desc, unsigned int irqflags,
      *  - if the IRQ is marked as shared
      *  - dev_id is not NULL when IRQF_SHARED is set
      */
-    if ( desc->action != NULL && (!test_bit(_IRQF_SHARED, &desc->status) || !shared) )
+    if ( desc->action != NULL &&
+         (!test_bit(_IRQF_SHARED, &desc->status) || !shared) )
         return -EINVAL;
     if ( shared && new->dev_id == NULL )
         return -EINVAL;
@@ -381,7 +381,8 @@ int setup_irq(unsigned int irq, unsigned int irqflags, struct irqaction *new)
 
         spin_unlock_irqrestore(&desc->lock, flags);
         printk(XENLOG_ERR "ERROR: IRQ %u is already in use by the domain %u\n",
-               irq, d->domain_id);
+               irq,
+               d->domain_id);
         return -EBUSY;
     }
 
@@ -433,8 +434,8 @@ bool irq_type_set_by_domain(const struct domain *d)
  * Route an IRQ to a specific guest.
  * For now only SPIs are assignable to the guest.
  */
-int route_irq_to_guest(struct domain *d, unsigned int virq,
-                       unsigned int irq, const char * devname)
+int route_irq_to_guest(struct domain *d, unsigned int virq, unsigned int irq,
+                       const char *devname)
 {
     struct irqaction *action;
     struct irq_guest *info;
@@ -446,7 +447,9 @@ int route_irq_to_guest(struct domain *d, unsigned int virq,
     {
         printk(XENLOG_G_ERR
                "the vIRQ number %u is too high for domain %u (max = %u)\n",
-               irq, d->domain_id, vgic_num_irqs(d));
+               irq,
+               d->domain_id,
+               vgic_num_irqs(d));
         return -EINVAL;
     }
 
@@ -508,14 +511,17 @@ int route_irq_to_guest(struct domain *d, unsigned int virq,
             if ( d != ad )
             {
                 printk(XENLOG_G_ERR "IRQ %u is already used by domain %u\n",
-                       irq, ad->domain_id);
+                       irq,
+                       ad->domain_id);
                 retval = -EBUSY;
             }
             else if ( irq_get_guest_info(desc)->virq != virq )
             {
                 printk(XENLOG_G_ERR
                        "d%u: IRQ %u is already assigned to vIRQ %u\n",
-                       d->domain_id, irq, irq_get_guest_info(desc)->virq);
+                       d->domain_id,
+                       irq,
+                       irq_get_guest_info(desc)->virq);
                 retval = -EBUSY;
             }
         }
@@ -626,7 +632,7 @@ void pirq_set_affinity(struct domain *d, int pirq, const cpumask_t *mask)
 
 static bool irq_validate_new_type(unsigned int curr, unsigned int new)
 {
-    return (curr == IRQ_TYPE_INVALID || curr == new );
+    return (curr == IRQ_TYPE_INVALID || curr == new);
 }
 
 int irq_set_spi_type(unsigned int spi, unsigned int type)
@@ -677,7 +683,7 @@ static int irq_local_set_type(unsigned int irq, unsigned int type)
 
     local_irqs_type[irq] = type;
 
-    for_each_cpu( cpu, &cpu_online_map )
+    for_each_cpu(cpu, &cpu_online_map)
     {
         desc = &per_cpu(local_irq_desc, cpu)[irq];
         spin_lock_irqsave(&desc->lock, flags);
@@ -722,16 +728,16 @@ int platform_get_irq(const struct dt_device_node *device, int index)
 
 int platform_get_irq_byname(const struct dt_device_node *np, const char *name)
 {
-	int index;
+    int index;
 
-	if ( unlikely(!name) )
-		return -EINVAL;
+    if ( unlikely(!name) )
+        return -EINVAL;
 
-	index = dt_property_match_string(np, "interrupt-names", name);
-	if ( index < 0 )
-		return index;
+    index = dt_property_match_string(np, "interrupt-names", name);
+    if ( index < 0 )
+        return index;
 
-	return platform_get_irq(np, index);
+    return platform_get_irq(np, index);
 }
 
 /*

@@ -86,36 +86,39 @@ static void __init test_fls(void)
 
 static void __init test_for_each_set_bit(void)
 {
-    unsigned int  ui,  ui_res = 0, tmp;
-    unsigned long ul,  ul_res = 0;
-    uint64_t      ull, ull_res = 0;
+    unsigned int ui, ui_res = 0, tmp;
+    unsigned long ul, ul_res = 0;
+    uint64_t ull, ull_res = 0;
 
     ui = HIDE(0x80008001U);
-    for_each_set_bit ( i, ui )
+    for_each_set_bit(i, ui)
         ui_res |= 1U << i;
 
     if ( ui != ui_res )
         panic("for_each_set_bit(uint) expected %#x, got %#x\n", ui, ui_res);
 
     ul = HIDE(1UL << (BITS_PER_LONG - 1) | 1);
-    for_each_set_bit ( i, ul )
+    for_each_set_bit(i, ul)
         ul_res |= 1UL << i;
 
     if ( ul != ul_res )
         panic("for_each_set_bit(ulong) expected %#lx, got %#lx\n", ul, ul_res);
 
     ull = HIDE(0x8000000180000001ULL);
-    for_each_set_bit ( i, ull )
+    for_each_set_bit(i, ull)
         ull_res |= 1ULL << i;
 
     if ( ull != ull_res )
-        panic("for_each_set_bit(uint64) expected %#"PRIx64", got %#"PRIx64"\n", ull, ull_res);
+        panic("for_each_set_bit(uint64) expected %#" PRIx64 ", got %#" PRIx64
+              "\n",
+              ull,
+              ull_res);
 
     /* Check that we can break from the middle of the loop. */
     ui = HIDE(0x80001008U);
     tmp = 0;
     ui_res = 0;
-    for_each_set_bit ( i, ui )
+    for_each_set_bit(i, ui)
     {
         if ( tmp++ > 1 )
             break;

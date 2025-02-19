@@ -124,15 +124,15 @@ struct xen_dm_op_ioreq_server_range {
     uint16_t pad;
     /* IN - type of range */
     uint32_t type;
-# define XEN_DMOP_IO_RANGE_PORT   0 /* I/O port range */
-# define XEN_DMOP_IO_RANGE_MEMORY 1 /* MMIO range */
-# define XEN_DMOP_IO_RANGE_PCI    2 /* PCI segment/bus/dev/func range */
+#define XEN_DMOP_IO_RANGE_PORT   0 /* I/O port range */
+#define XEN_DMOP_IO_RANGE_MEMORY 1 /* MMIO range */
+#define XEN_DMOP_IO_RANGE_PCI    2 /* PCI segment/bus/dev/func range */
     /* IN - inclusive start and end of range */
     uint64_aligned_t start, end;
 };
 typedef struct xen_dm_op_ioreq_server_range xen_dm_op_ioreq_server_range_t;
 
-#define XEN_DMOP_PCI_SBDF(s,b,d,f) \
+#define XEN_DMOP_PCI_SBDF(s, b, d, f) \
 	((((s) & 0xffff) << 16) |  \
 	 (((b) & 0xff) << 8) |     \
 	 (((d) & 0x1f) << 3) |     \
@@ -156,7 +156,8 @@ struct xen_dm_op_set_ioreq_server_state {
     uint8_t enabled;
     uint8_t pad;
 };
-typedef struct xen_dm_op_set_ioreq_server_state xen_dm_op_set_ioreq_server_state_t;
+typedef struct xen_dm_op_set_ioreq_server_state
+    xen_dm_op_set_ioreq_server_state_t;
 
 /*
  * XEN_DMOP_destroy_ioreq_server: Destroy the IOREQ Server <id>.
@@ -201,7 +202,7 @@ struct xen_dm_op_set_pci_intx_level {
     uint16_t domain;
     uint8_t bus, device, intx;
     /* IN - Level: 0 -> deasserted, 1 -> asserted */
-    uint8_t  level;
+    uint8_t level;
 };
 typedef struct xen_dm_op_set_pci_intx_level xen_dm_op_set_pci_intx_level_t;
 
@@ -213,9 +214,9 @@ typedef struct xen_dm_op_set_pci_intx_level xen_dm_op_set_pci_intx_level_t;
 
 struct xen_dm_op_set_isa_irq_level {
     /* IN - ISA IRQ (0-15) */
-    uint8_t  isa_irq;
+    uint8_t isa_irq;
     /* IN - Level: 0 -> deasserted, 1 -> asserted */
-    uint8_t  level;
+    uint8_t level;
 };
 typedef struct xen_dm_op_set_isa_irq_level xen_dm_op_set_isa_irq_level_t;
 
@@ -226,9 +227,9 @@ typedef struct xen_dm_op_set_isa_irq_level xen_dm_op_set_isa_irq_level_t;
 
 struct xen_dm_op_set_pci_link_route {
     /* PCI INTx line (0-3) */
-    uint8_t  link;
+    uint8_t link;
     /* ISA IRQ (1-15) or 0 -> disable link */
-    uint8_t  isa_irq;
+    uint8_t isa_irq;
 };
 typedef struct xen_dm_op_set_pci_link_route xen_dm_op_set_pci_link_route_t;
 
@@ -303,12 +304,12 @@ struct xen_dm_op_inject_event {
     /* IN - event type (DMOP_EVENT_* ) */
     uint8_t type;
 /* NB. This enumeration precisely matches x86-defns.h:X86_ET_* */
-# define XEN_DMOP_EVENT_ext_int    0 /* external interrupt */
-# define XEN_DMOP_EVENT_nmi        2 /* nmi */
-# define XEN_DMOP_EVENT_hw_exc     3 /* hardware exception */
-# define XEN_DMOP_EVENT_sw_int     4 /* software interrupt (CD nn) */
-# define XEN_DMOP_EVENT_pri_sw_exc 5 /* ICEBP (F1) */
-# define XEN_DMOP_EVENT_sw_exc     6 /* INT3 (CC), INTO (CE) */
+#define XEN_DMOP_EVENT_ext_int    0 /* external interrupt */
+#define XEN_DMOP_EVENT_nmi        2 /* nmi */
+#define XEN_DMOP_EVENT_hw_exc     3 /* hardware exception */
+#define XEN_DMOP_EVENT_sw_int     4 /* software interrupt (CD nn) */
+#define XEN_DMOP_EVENT_pri_sw_exc 5 /* ICEBP (F1) */
+#define XEN_DMOP_EVENT_sw_exc     6 /* INT3 (CC), INTO (CE) */
     /* IN - instruction length */
     uint8_t insn_len;
     uint8_t pad0;
@@ -347,19 +348,20 @@ typedef struct xen_dm_op_inject_msi xen_dm_op_inject_msi_t;
 #define XEN_DMOP_map_mem_type_to_ioreq_server 15
 
 struct xen_dm_op_map_mem_type_to_ioreq_server {
-    ioservid_t id;      /* IN - ioreq server id */
-    uint16_t type;      /* IN - memory type */
-    uint32_t flags;     /* IN - types of accesses to be forwarded to the
+    ioservid_t id; /* IN - ioreq server id */
+    uint16_t type; /* IN - memory type */
+    uint32_t flags; /* IN - types of accesses to be forwarded to the
                            ioreq server. flags with 0 means to unmap the
                            ioreq server */
 
 #define XEN_DMOP_IOREQ_MEM_ACCESS_READ (1u << 0)
 #define XEN_DMOP_IOREQ_MEM_ACCESS_WRITE (1u << 1)
 
-    uint64_t opaque;    /* IN/OUT - only used for hypercall continuation,
+    uint64_t opaque; /* IN/OUT - only used for hypercall continuation,
                            has to be set to zero by the caller */
 };
-typedef struct xen_dm_op_map_mem_type_to_ioreq_server xen_dm_op_map_mem_type_to_ioreq_server_t;
+typedef struct xen_dm_op_map_mem_type_to_ioreq_server
+    xen_dm_op_map_mem_type_to_ioreq_server_t;
 
 /*
  * XEN_DMOP_remote_shutdown : Declare a shutdown for another domain
@@ -368,8 +370,8 @@ typedef struct xen_dm_op_map_mem_type_to_ioreq_server xen_dm_op_map_mem_type_to_
 #define XEN_DMOP_remote_shutdown 16
 
 struct xen_dm_op_remote_shutdown {
-    uint32_t reason;       /* SHUTDOWN_* => enum sched_shutdown_reason */
-                           /* (Other reason values are not blocked) */
+    uint32_t reason; /* SHUTDOWN_* => enum sched_shutdown_reason */
+    /* (Other reason values are not blocked) */
 };
 typedef struct xen_dm_op_remote_shutdown xen_dm_op_remote_shutdown_t;
 
@@ -400,7 +402,7 @@ typedef struct xen_dm_op_relocate_memory xen_dm_op_relocate_memory_t;
 
 struct xen_dm_op_pin_memory_cacheattr {
     uint64_aligned_t start; /* Start gfn. */
-    uint64_aligned_t end;   /* End gfn. */
+    uint64_aligned_t end; /* End gfn. */
 /* Caching types: these happen to be the same as x86 MTRR/PAT type codes. */
 #define XEN_DMOP_MEM_CACHEATTR_UC  0
 #define XEN_DMOP_MEM_CACHEATTR_WC  1
@@ -409,7 +411,7 @@ struct xen_dm_op_pin_memory_cacheattr {
 #define XEN_DMOP_MEM_CACHEATTR_WB  6
 #define XEN_DMOP_MEM_CACHEATTR_UCM 7
 #define XEN_DMOP_DELETE_MEM_CACHEATTR (~(uint32_t)0)
-    uint32_t type;          /* XEN_DMOP_MEM_CACHEATTR_* */
+    uint32_t type; /* XEN_DMOP_MEM_CACHEATTR_* */
     uint32_t pad;
 };
 typedef struct xen_dm_op_pin_memory_cacheattr xen_dm_op_pin_memory_cacheattr_t;
@@ -447,6 +449,7 @@ typedef struct xen_dm_op_nr_vcpus xen_dm_op_nr_vcpus_t;
 struct xen_dm_op {
     uint32_t op;
     uint32_t pad;
+
     union {
         xen_dm_op_create_ioreq_server_t create_ioreq_server;
         xen_dm_op_get_ioreq_server_info_t get_ioreq_server_info;

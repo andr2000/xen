@@ -80,4 +80,4 @@
 #define ACPI_NS_ROOT_PATH       "\\"
 #define ACPI_NS_SYSTEM_BUS      "_SB_"
 
-#endif				/* __ACNAMES_H__  */
+#endif /* __ACNAMES_H__  */

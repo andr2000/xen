@@ -11,7 +11,8 @@
 #include <asm/nops.h>
 #include <asm/uaccess.h>
 
-static unsigned long *non_canonical_addr = (unsigned long *)0xdead000000000000ULL;
+static unsigned long *non_canonical_addr =
+    (unsigned long *)0xdead000000000000ULL;
 #endif
 
 /* Our replacement function for xen_extra_version. */

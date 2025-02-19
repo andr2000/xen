@@ -75,7 +75,8 @@
 #define GET_CC6_RES(val)  GET_HW_RES_IN_NS(0x3FD, val)
 #define GET_CC7_RES(val)  GET_HW_RES_IN_NS(0x3FE, val) /* SNB onwards */
 
-static void cf_check lapic_timer_nop(void) { }
+static void cf_check lapic_timer_nop(void) {}
+
 void (*__read_mostly lapic_timer_off)(void);
 void (*__read_mostly lapic_timer_on)(void);
 
@@ -113,6 +114,7 @@ static int __init cf_check parse_cstate(const char *s)
         max_csubstate = simple_strtoul(s + 1, NULL, 0);
     return 0;
 }
+
 custom_param("max_cstate", parse_cstate);
 
 static bool __read_mostly local_apic_timer_c2_ok;
@@ -127,8 +129,7 @@ struct acpi_processor_power *__read_mostly processor_powers[NR_CPUS];
  */
 static int8_t __read_mostly vendor_override;
 
-struct hw_residencies
-{
+struct hw_residencies {
     uint64_t mc0;
     uint64_t mc6;
     uint64_t pc2;
@@ -276,27 +277,30 @@ static void print_hw_residencies(uint32_t cpu)
     get_hw_residencies(cpu, &hw_res);
 
     if ( hw_res.mc0 | hw_res.mc6 )
-        printk("MC0[%"PRIu64"] MC6[%"PRIu64"]\n",
-               hw_res.mc0, hw_res.mc6);
-    printk("PC2[%"PRIu64"] PC%d[%"PRIu64"] PC6[%"PRIu64"] PC7[%"PRIu64"]\n",
+        printk("MC0[%" PRIu64 "] MC6[%" PRIu64 "]\n", hw_res.mc0, hw_res.mc6);
+    printk("PC2[%" PRIu64 "] PC%d[%" PRIu64 "] PC6[%" PRIu64 "] PC7[%" PRIu64
+           "]\n",
            hw_res.pc2,
-           hw_res.pc4 ? 4 : 3, hw_res.pc4 ?: hw_res.pc3,
-           hw_res.pc6, hw_res.pc7);
+           hw_res.pc4 ? 4 : 3,
+           hw_res.pc4 ?: hw_res.pc3,
+           hw_res.pc6,
+           hw_res.pc7);
     if ( hw_res.pc8 | hw_res.pc9 | hw_res.pc10 )
-        printk("PC8[%"PRIu64"] PC9[%"PRIu64"] PC10[%"PRIu64"]\n",
-               hw_res.pc8, hw_res.pc9, hw_res.pc10);
-    printk("CC%d[%"PRIu64"] CC6[%"PRIu64"] CC7[%"PRIu64"]\n",
-           hw_res.cc1 ? 1 : 3, hw_res.cc1 ?: hw_res.cc3,
-           hw_res.cc6, hw_res.cc7);
+        printk("PC8[%" PRIu64 "] PC9[%" PRIu64 "] PC10[%" PRIu64 "]\n",
+               hw_res.pc8,
+               hw_res.pc9,
+               hw_res.pc10);
+    printk("CC%d[%" PRIu64 "] CC6[%" PRIu64 "] CC7[%" PRIu64 "]\n",
+           hw_res.cc1 ? 1 : 3,
+           hw_res.cc1 ?: hw_res.cc3,
+           hw_res.cc6,
+           hw_res.cc7);
 }
 
-static const char *const acpi_cstate_method_name[] =
-{
-    "NONE",
-    "SYSIO",
-    "FFH",
-    "HALT"
-};
+static const char *const acpi_cstate_method_name[] = { "NONE",
+                                                       "SYSIO",
+                                                       "FFH",
+                                                       "HALT" };
 
 static uint64_t cf_check get_stime_tick(void)
 {
@@ -325,7 +329,7 @@ static uint64_t cf_check acpi_pm_ticks_elapsed(uint64_t t1, uint64_t t2)
     else if ( !(acpi_gbl_FADT.flags & ACPI_FADT_32BIT_TIMER) )
         return (((0x00FFFFFF - t1) + t2 + 1) & 0x00FFFFFF);
     else
-        return ((0xFFFFFFFF - t1) + t2 +1);
+        return ((0xFFFFFFFF - t1) + t2 + 1);
 }
 
 uint64_t (*__read_mostly cpuidle_get_tick)(void);
@@ -367,15 +371,20 @@ static void print_acpi_power(uint32_t cpu, struct acpi_processor_power *power)
         idle_usage += usage[i];
         idle_res += tick_to_ns(res_tick[i]);
 
-        printk("   %cC%u:\ttype[C%d] latency[%3u] usage[%8"PRIu64"] method[%5s] duration[%"PRIu64"]\n",
-               (last_state_idx == i) ? '*' : ' ', i,
-               power->states[i].type, power->states[i].latency, usage[i],
+        printk("   %cC%u:\ttype[C%d] latency[%3u] usage[%8" PRIu64
+               "] method[%5s] duration[%" PRIu64 "]\n",
+               (last_state_idx == i) ? '*' : ' ',
+               i,
+               power->states[i].type,
+               power->states[i].latency,
+               usage[i],
                acpi_cstate_method_name[power->states[i].entry_method],
                tick_to_ns(res_tick[i]));
     }
-    printk("   %cC0:\tusage[%8"PRIu64"] duration[%"PRIu64"]\n",
+    printk("   %cC0:\tusage[%8" PRIu64 "] duration[%" PRIu64 "]\n",
            (last_state_idx == 0) ? '*' : ' ',
-           usage[0] + idle_usage, current_stime - idle_res);
+           usage[0] + idle_usage,
+           current_stime - idle_res);
 
     print_hw_residencies(cpu);
 }
@@ -395,7 +404,7 @@ static void cf_check dump_cx(unsigned char key)
     }
     else
         printk("max state: unlimited\n");
-    for_each_present_cpu ( cpu )
+    for_each_present_cpu(cpu)
     {
         struct acpi_processor_power *power = processor_powers[cpu];
 
@@ -405,7 +414,8 @@ static void cf_check dump_cx(unsigned char key)
         if ( cpu_online(cpu) )
             print_acpi_power(cpu, power);
         else if ( park_offline_cpus )
-            printk("CPU%u parked in state %u (C%u)\n", cpu,
+            printk("CPU%u parked in state %u (C%u)\n",
+                   cpu,
                    power->last_state ? power->last_state->idx : 1,
                    power->last_state ? power->last_state->type : 1);
 
@@ -418,6 +428,7 @@ static int __init cf_check cpu_idle_key_init(void)
     register_keyhandler('c', dump_cx, "dump ACPI Cx structures", 1);
     return 0;
 }
+
 __initcall(cpu_idle_key_init);
 
 /*
@@ -557,7 +568,9 @@ void trace_exit_reason(u32 *irq_traced)
         while ( i < 4 && curbit < 256 )
         {
             irq_traced[i++] = curbit;
-            curbit = find_next_bit((const unsigned long *)irr_status, 256, curbit + 1);
+            curbit = find_next_bit((const unsigned long *)irr_status,
+                                   256,
+                                   curbit + 1);
         }
     }
 }
@@ -578,15 +591,13 @@ bool errata_c6_workaround(void)
          * interrupt service routine. So we don't enter deep Cx state if
          * there is an EOI pending.
          */
-        static const struct x86_cpu_id eoi_errata[] = {
-            INTEL_FAM6_MODEL(0x1a),
-            INTEL_FAM6_MODEL(0x1e),
-            INTEL_FAM6_MODEL(0x1f),
-            INTEL_FAM6_MODEL(0x25),
-            INTEL_FAM6_MODEL(0x2c),
-            INTEL_FAM6_MODEL(0x2f),
-            { }
-        };
+        static const struct x86_cpu_id eoi_errata[] = { INTEL_FAM6_MODEL(0x1a),
+                                                        INTEL_FAM6_MODEL(0x1e),
+                                                        INTEL_FAM6_MODEL(0x1f),
+                                                        INTEL_FAM6_MODEL(0x25),
+                                                        INTEL_FAM6_MODEL(0x2c),
+                                                        INTEL_FAM6_MODEL(0x2f),
+                                                        {} };
         /*
          * Errata BDX99, CLX30, SKX100, CFW125, BDF104, BDH85, BDM135, KWB131:
          * A Pending Fixed Interrupt May Be Dispatched Before an Interrupt of
@@ -622,7 +633,7 @@ bool errata_c6_workaround(void)
             INTEL_FAM6_MODEL(0x8e),
             /* Cannon Lake */
             INTEL_FAM6_MODEL(0x66),
-            { }
+            {}
         };
 #undef INTEL_FAM6_MODEL
 
@@ -646,8 +657,8 @@ void update_last_cx_stat(struct acpi_processor_power *power,
 }
 
 void update_idle_stats(struct acpi_processor_power *power,
-                       struct acpi_processor_cx *cx,
-                       uint64_t before, uint64_t after)
+                       struct acpi_processor_cx *cx, uint64_t before,
+                       uint64_t after)
 {
     int64_t sleep_ticks = alternative_call(ticks_elapsed, before, after);
     /* Interrupts are disabled */
@@ -683,7 +694,8 @@ static void cf_check acpi_processor_idle(void)
         unsigned int max_state = sched_has_urgent_vcpu() ? ACPI_STATE_C1
                                                          : max_cstate;
 
-        do {
+        do
+        {
             cx = &power->states[next_state];
         } while ( (cx->type > max_state ||
                    cx->entry_method == ACPI_CSTATE_EM_NONE ||
@@ -740,7 +752,6 @@ static void cf_check acpi_processor_idle(void)
     if ( (cx->type >= ACPI_STATE_C3) && errata_c6_workaround() )
         cx = power->safe_state;
 
-
     /*
      * Sleep:
      * ------
@@ -765,8 +776,13 @@ static void cf_check acpi_processor_idle(void)
             t2 = alternative_call(cpuidle_get_tick);
             trace_exit_reason(irq_traced);
             /* Trace cpu idle exit */
-            TRACE_TIME(TRC_PM_IDLE_EXIT, cx->idx, t2,
-                       irq_traced[0], irq_traced[1], irq_traced[2], irq_traced[3]);
+            TRACE_TIME(TRC_PM_IDLE_EXIT,
+                       cx->idx,
+                       t2,
+                       irq_traced[0],
+                       irq_traced[1],
+                       irq_traced[2],
+                       irq_traced[3]);
             /* Update statistics */
             update_idle_stats(power, cx, t1, t2);
             /* Re-enable interrupts */
@@ -824,8 +840,8 @@ static void cf_check acpi_processor_idle(void)
         /* Invoke C3 */
         acpi_idle_do_entry(cx);
 
-        if ( (cx->type == ACPI_STATE_C3) &&
-             power->flags.bm_check && power->flags.bm_control )
+        if ( (cx->type == ACPI_STATE_C3) && power->flags.bm_check &&
+             power->flags.bm_control )
         {
             /* Enable bus master arbitration */
             spin_lock(&c3_cpu_status.lock);
@@ -841,8 +857,13 @@ static void cf_check acpi_processor_idle(void)
         cstate_restore_tsc();
         trace_exit_reason(irq_traced);
         /* Trace cpu idle exit */
-        TRACE_TIME(TRC_PM_IDLE_EXIT, cx->idx, t2,
-                   irq_traced[0], irq_traced[1], irq_traced[2], irq_traced[3]);
+        TRACE_TIME(TRC_PM_IDLE_EXIT,
+                   cx->idx,
+                   t2,
+                   irq_traced[0],
+                   irq_traced[1],
+                   irq_traced[2],
+                   irq_traced[3]);
 
         /* Update statistics */
         update_idle_stats(power, cx, t1, t2);
@@ -1004,7 +1025,10 @@ static int acpi_processor_ffh_cstate_probe(xen_processor_cx_t *cx)
     cpuid(CPUID_MWAIT_LEAF, &eax, &ebx, &ecx, &edx);
     if ( opt_cpu_info )
         printk(XENLOG_DEBUG "cpuid.MWAIT[eax=%x ebx=%x ecx=%x edx=%x]\n",
-               eax, ebx, ecx, edx);
+               eax,
+               ebx,
+               ecx,
+               edx);
 
     /* Check whether this particular cx_type (in CST) is supported or not */
     cstate_type = (cx->reg.address >> MWAIT_SUBSTATE_SIZE) + 1;
@@ -1034,7 +1058,8 @@ static int acpi_processor_ffh_cstate_probe(xen_processor_cx_t *cx)
  *
  * This routine is called only after all the CPUs are online
  */
-static void acpi_processor_power_init_bm_check(struct acpi_processor_flags *flags)
+static void
+acpi_processor_power_init_bm_check(struct acpi_processor_flags *flags)
 {
     struct cpuinfo_x86 *c = &current_cpu_data;
 
@@ -1059,8 +1084,8 @@ static void acpi_processor_power_init_bm_check(struct acpi_processor_flags *flag
      * P4, Core and beyond CPUs
      */
     if ( c->x86_vendor == X86_VENDOR_INTEL &&
-        (c->x86 > 0x6 || (c->x86 == 6 && c->x86_model >= 14)) )
-            flags->bm_control = 0;
+         (c->x86 > 0x6 || (c->x86 == 6 && c->x86_model >= 14)) )
+        flags->bm_control = 0;
 }
 
 #define VENDOR_INTEL                   (1)
@@ -1079,7 +1104,7 @@ static int check_cx(struct acpi_processor_power *power, xen_processor_cx_t *cx)
         break;
 
     case ACPI_ADR_SPACE_FIXED_HARDWARE:
-        if ( cx->reg.bit_width != VENDOR_INTEL || 
+        if ( cx->reg.bit_width != VENDOR_INTEL ||
              cx->reg.bit_offset != NATIVE_CSTATE_BEYOND_HALT )
             return -EINVAL;
 
@@ -1121,14 +1146,14 @@ static int check_cx(struct acpi_processor_power *power, xen_processor_cx_t *cx)
                 {
                     /* bus mastering control is necessary */
                     ACPI_DEBUG_PRINT((ACPI_DB_INFO,
-                        "C3 support requires BM control\n"));
+                                      "C3 support requires BM control\n"));
                     return -EINVAL;
                 }
                 else
                 {
                     /* Here we enter C3 without bus mastering */
                     ACPI_DEBUG_PRINT((ACPI_DB_INFO,
-                        "C3 support without BM control\n"));
+                                      "C3 support without BM control\n"));
                 }
             }
             /*
@@ -1148,9 +1173,9 @@ static int check_cx(struct acpi_processor_power *power, xen_processor_cx_t *cx)
              */
             if ( !(acpi_gbl_FADT.flags & ACPI_FADT_WBINVD) )
             {
-                ACPI_DEBUG_PRINT((ACPI_DB_INFO,
-                          "Cache invalidation should work properly"
-                          " for C3 to be enabled on SMP systems\n"));
+                ACPI_DEBUG_PRINT((
+                    ACPI_DB_INFO,
+                    "Cache invalidation should work properly" " for C3 to be enabled on SMP systems\n"));
                 return -EINVAL;
             }
         }
@@ -1171,9 +1196,8 @@ static int check_cx(struct acpi_processor_power *power, xen_processor_cx_t *cx)
 static unsigned int latency_factor = 2;
 integer_param("idle_latency_factor", latency_factor);
 
-static void set_cx(
-    struct acpi_processor_power *acpi_power,
-    xen_processor_cx_t *xen_cx)
+static void set_cx(struct acpi_processor_power *acpi_power,
+                   xen_processor_cx_t *xen_cx)
 {
     struct acpi_processor_cx *cx;
 
@@ -1188,9 +1212,10 @@ static void set_cx(
     default:
         if ( acpi_power->count >= ACPI_PROCESSOR_MAX_POWER )
         {
-    case ACPI_STATE_C0:
+        case ACPI_STATE_C0:
             printk(XENLOG_WARNING "CPU%u: C%d data ignored\n",
-                   acpi_power->cpu, xen_cx->type);
+                   acpi_power->cpu,
+                   xen_cx->type);
             return;
         }
         cx = &acpi_power->states[acpi_power->count];
@@ -1255,38 +1280,41 @@ int get_cpu_id(u32 acpi_id)
 static void print_cx_pminfo(uint32_t cpu, struct xen_processor_power *power)
 {
     XEN_GUEST_HANDLE(xen_processor_cx_t) states;
-    xen_processor_cx_t  state;
+    xen_processor_cx_t state;
     XEN_GUEST_HANDLE(xen_processor_csd_t) csd;
     xen_processor_csd_t dp;
     uint32_t i;
 
     printk("cpu%d cx acpi info:\n", cpu);
     printk("\tcount = %d\n", power->count);
-    printk("\tflags: bm_cntl[%d], bm_chk[%d], has_cst[%d],\n"
-           "\t       pwr_setup_done[%d], bm_rld_set[%d]\n",
-           power->flags.bm_control, power->flags.bm_check, power->flags.has_cst,
-           power->flags.power_setup_done, power->flags.bm_rld_set);
-    
+    printk(
+        "\tflags: bm_cntl[%d], bm_chk[%d], has_cst[%d],\n" "\t       pwr_setup_done[%d], bm_rld_set[%d]\n",
+        power->flags.bm_control,
+        power->flags.bm_check,
+        power->flags.has_cst,
+        power->flags.power_setup_done,
+        power->flags.bm_rld_set);
+
     states = power->states;
-    
+
     for ( i = 0; i < power->count; i++ )
     {
         if ( unlikely(copy_from_guest_offset(&state, states, i, 1)) )
             return;
-        
+
         printk("\tstates[%d]:\n", i);
         printk("\t\treg.space_id = %#x\n", state.reg.space_id);
         printk("\t\treg.bit_width = %#x\n", state.reg.bit_width);
         printk("\t\treg.bit_offset = %#x\n", state.reg.bit_offset);
         printk("\t\treg.access_size = %#x\n", state.reg.access_size);
-        printk("\t\treg.address = %#"PRIx64"\n", state.reg.address);
+        printk("\t\treg.address = %#" PRIx64 "\n", state.reg.address);
         printk("\t\ttype    = %d\n", state.type);
         printk("\t\tlatency = %d\n", state.latency);
         printk("\t\tpower   = %d\n", state.power);
 
         csd = state.dp;
         printk("\t\tdp(@0x%p)\n", csd.p);
-        
+
         if ( csd.p != NULL )
         {
             if ( unlikely(copy_from_guest(&dp, csd, 1)) )
@@ -1385,7 +1413,7 @@ long set_cx_pminfo(uint32_t acpi_id, struct xen_processor_power *power)
 
         dead_idle = acpi_dead_idle;
     }
- 
+
     return 0;
 }
 
@@ -1398,15 +1426,15 @@ static void amd_cpuidle_init(struct acpi_processor_power *power)
     const struct acpi_processor_cx *cx = NULL;
     static const struct acpi_processor_cx fam17[] = {
         {
-            .type = ACPI_STATE_C1,
-            .entry_method = ACPI_CSTATE_EM_FFH,
-            .latency = 1,
-        },
+         .type = ACPI_STATE_C1,
+         .entry_method = ACPI_CSTATE_EM_FFH,
+         .latency = 1,
+         },
         {
-            .type = ACPI_STATE_C2,
-            .entry_method = ACPI_CSTATE_EM_HALT,
-            .latency = 400,
-        },
+         .type = ACPI_STATE_C2,
+         .entry_method = ACPI_CSTATE_EM_HALT,
+         .latency = 400,
+         },
     };
 
     if ( pm_idle_save && pm_idle != acpi_processor_idle )
@@ -1422,7 +1450,7 @@ static void amd_cpuidle_init(struct acpi_processor_power *power)
     case 0x18:
         if ( boot_cpu_data.x86_vendor != X86_VENDOR_HYGON )
         {
-    default:
+        default:
             vendor_override = -1;
             return;
         }
@@ -1626,8 +1654,8 @@ bool cpuidle_using_deep_cstate(void)
                                                                : ACPI_STATE_C1);
 }
 
-static int cf_check cpu_callback(
-    struct notifier_block *nfb, unsigned long action, void *hcpu)
+static int cf_check cpu_callback(struct notifier_block *nfb,
+                                 unsigned long action, void *hcpu)
 {
     unsigned int cpu = (unsigned long)hcpu;
     int rc = 0;
@@ -1645,8 +1673,7 @@ static int cf_check cpu_callback(
         break;
 
     case CPU_ONLINE:
-        if ( (boot_cpu_data.x86_vendor &
-              (X86_VENDOR_AMD | X86_VENDOR_HYGON)) &&
+        if ( (boot_cpu_data.x86_vendor & (X86_VENDOR_AMD | X86_VENDOR_HYGON)) &&
              processor_powers[cpu] )
             amd_cpuidle_init(processor_powers[cpu]);
         break;
@@ -1655,9 +1682,7 @@ static int cf_check cpu_callback(
     return notifier_from_errno(rc);
 }
 
-static struct notifier_block cpu_nfb = {
-    .notifier_call = cpu_callback
-};
+static struct notifier_block cpu_nfb = { .notifier_call = cpu_callback };
 
 static int __init cf_check cpuidle_presmp_init(void)
 {
@@ -1672,5 +1697,5 @@ static int __init cf_check cpuidle_presmp_init(void)
     register_cpu_notifier(&cpu_nfb);
     return 0;
 }
-presmp_initcall(cpuidle_presmp_init);
 
+presmp_initcall(cpuidle_presmp_init);

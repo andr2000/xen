@@ -40,10 +40,12 @@ typedef struct xenoprof_buf xenoprof_buf_t;
 #else
 #include <compat/xenoprof.h>
 #define XENOPROF_COMPAT(x) ((x)->is_compat)
+
 typedef union {
     struct xenoprof_buf native;
     struct compat_oprof_buf compat;
 } xenoprof_buf_t;
+
 #define xenoprof_buf(d, b, field) ACCESS_ONCE(*(!(d)->xenoprof->is_compat \
                                                 ? &(b)->native.field \
                                                 : &(b)->compat.field))
@@ -111,7 +113,7 @@ int acquire_pmu_ownership(int pmu_ownership)
 
     spin_unlock(&pmu_owner_lock);
     return 0;
- out:
+out:
     if ( pmu_owner == PMU_OWNER_HVM )
         pmu_hvm_refcount++;
     spin_unlock(&pmu_owner_lock);
@@ -164,8 +166,8 @@ static void xenoprof_reset_buf(struct domain *d)
 
     if ( d->xenoprof == NULL )
     {
-        printk("xenoprof_reset_buf: ERROR - Unexpected "
-               "Xenoprof NULL pointer \n");
+        printk(
+            "xenoprof_reset_buf: ERROR - Unexpected " "Xenoprof NULL pointer \n");
         return;
     }
 
@@ -180,8 +182,8 @@ static void xenoprof_reset_buf(struct domain *d)
     }
 }
 
-static int
-share_xenoprof_page_with_guest(struct domain *d, mfn_t mfn, int npages)
+static int share_xenoprof_page_with_guest(struct domain *d, mfn_t mfn,
+                                          int npages)
 {
     int i;
 
@@ -190,10 +192,12 @@ share_xenoprof_page_with_guest(struct domain *d, mfn_t mfn, int npages)
     {
         struct page_info *page = mfn_to_page(mfn_add(mfn, i));
 
-        if ( (page->count_info & (PGC_allocated|PGC_count_mask)) != 0 )
+        if ( (page->count_info & (PGC_allocated | PGC_count_mask)) != 0 )
         {
             printk(XENLOG_G_INFO "dom%d mfn %#lx page->count_info %#lx\n",
-                   d->domain_id, mfn_x(mfn_add(mfn, i)), page->count_info);
+                   d->domain_id,
+                   mfn_x(mfn_add(mfn, i)),
+                   page->count_info);
             return -EBUSY;
         }
         page_set_owner(page, NULL);
@@ -205,8 +209,7 @@ share_xenoprof_page_with_guest(struct domain *d, mfn_t mfn, int npages)
     return 0;
 }
 
-static void
-unshare_xenoprof_page_with_guest(struct xenoprof *x)
+static void unshare_xenoprof_page_with_guest(struct xenoprof *x)
 {
     int i, npages = x->npages;
     mfn_t mfn = virt_to_mfn(x->rawbuf);
@@ -220,9 +223,9 @@ unshare_xenoprof_page_with_guest(struct xenoprof *x)
     }
 }
 
-static void
-xenoprof_shared_gmfn_with_guest(
-    struct domain *d, unsigned long maddr, unsigned long gmaddr, int npages)
+static void xenoprof_shared_gmfn_with_guest(struct domain *d,
+                                            unsigned long maddr,
+                                            unsigned long gmaddr, int npages)
 {
     int i;
 
@@ -232,12 +235,11 @@ xenoprof_shared_gmfn_with_guest(
         if ( i == 0 )
             gdprintk(XENLOG_WARNING,
                      "xenoprof unsupported with autotranslated guests\n");
-
     }
 }
 
-static int alloc_xenoprof_struct(
-    struct domain *d, int max_samples, int is_passive)
+static int alloc_xenoprof_struct(struct domain *d, int max_samples,
+                                 int is_passive)
 {
     struct vcpu *v;
     int nvcpu, npages, bufsize, max_bufsize;
@@ -245,7 +247,7 @@ static int alloc_xenoprof_struct(
     int i;
 
     nvcpu = 0;
-    for_each_vcpu ( d, v )
+    for_each_vcpu(d, v)
         nvcpu++;
 
     if ( !nvcpu )
@@ -270,7 +272,8 @@ static int alloc_xenoprof_struct(
     bufsize = sizeof(struct xenoprof_buf);
     i = sizeof(struct event_log);
 #ifdef CONFIG_COMPAT
-    d->xenoprof->is_compat = is_pv_32bit_domain(is_passive ? hardware_domain : d);
+    d->xenoprof->is_compat = is_pv_32bit_domain(is_passive ? hardware_domain
+                                                           : d);
     if ( XENOPROF_COMPAT(d->xenoprof) )
     {
         bufsize = sizeof(struct compat_oprof_buf);
@@ -280,7 +283,7 @@ static int alloc_xenoprof_struct(
 
     /* reduce max_samples if necessary to limit pages allocated */
     max_bufsize = (MAX_OPROF_SHARED_PAGES * PAGE_SIZE) / nvcpu;
-    max_max_samples = ( (max_bufsize - bufsize) / i ) + 1;
+    max_max_samples = ((max_bufsize - bufsize) / i) + 1;
     if ( (unsigned)max_samples > max_max_samples )
         max_samples = max_max_samples;
 
@@ -306,10 +309,10 @@ static int alloc_xenoprof_struct(
 
     /* Update buffer pointers for active vcpus */
     i = 0;
-    for_each_vcpu ( d, v )
+    for_each_vcpu(d, v)
     {
-        xenoprof_buf_t *buf = (xenoprof_buf_t *)
-            &d->xenoprof->rawbuf[i * bufsize];
+        xenoprof_buf_t *buf =
+            (xenoprof_buf_t *)&d->xenoprof->rawbuf[i * bufsize];
 
         d->xenoprof->vcpu[v->vcpu_id].event_size = max_samples;
         d->xenoprof->vcpu[v->vcpu_id].buffer = buf;
@@ -321,7 +324,7 @@ static int alloc_xenoprof_struct(
         if ( i >= nvcpu )
             break;
     }
-    
+
     return 0;
 }
 
@@ -486,9 +489,9 @@ static int add_passive_list(XEN_GUEST_HANDLE_PARAM(void) arg)
         }
     }
 
-    ret = share_xenoprof_page_with_guest(
-        current->domain, virt_to_mfn(d->xenoprof->rawbuf),
-        d->xenoprof->npages);
+    ret = share_xenoprof_page_with_guest(current->domain,
+                                         virt_to_mfn(d->xenoprof->rawbuf),
+                                         d->xenoprof->npages);
     if ( ret < 0 )
     {
         put_domain(d);
@@ -501,22 +504,22 @@ static int add_passive_list(XEN_GUEST_HANDLE_PARAM(void) arg)
     if ( !paging_mode_translate(current->domain) )
         passive.buf_gmaddr = __pa(d->xenoprof->rawbuf);
     else
-        xenoprof_shared_gmfn_with_guest(
-            current->domain, __pa(d->xenoprof->rawbuf),
-            passive.buf_gmaddr, d->xenoprof->npages);
+        xenoprof_shared_gmfn_with_guest(current->domain,
+                                        __pa(d->xenoprof->rawbuf),
+                                        passive.buf_gmaddr,
+                                        d->xenoprof->npages);
 
     if ( __copy_to_guest(arg, &passive, 1) )
     {
         put_domain(d);
         return -EFAULT;
     }
-    
+
     passive_domains[pdomains] = d;
     pdomains++;
 
     return ret;
 }
-
 
 /* Get space in the buffer */
 static int xenoprof_buf_space(int head, int tail, int size)
@@ -526,8 +529,8 @@ static int xenoprof_buf_space(int head, int tail, int size)
 
 /* Check for space and add a sample. Return 1 if successful, 0 otherwise. */
 static int xenoprof_add_sample(const struct domain *d,
-                               const struct xenoprof_vcpu *v,
-                               uint64_t eip, int mode, int event)
+                               const struct xenoprof_vcpu *v, uint64_t eip,
+                               int mode, int event)
 {
     xenoprof_buf_t *buf = v->buffer;
     int head, tail, size;
@@ -535,7 +538,7 @@ static int xenoprof_add_sample(const struct domain *d,
     head = xenoprof_buf(d, buf, event_head);
     tail = xenoprof_buf(d, buf, event_tail);
     size = v->event_size;
-    
+
     /* make sure indexes in shared buffer are sane */
     if ( (head < 0) || (head >= size) || (tail < 0) || (tail >= size) )
     {
@@ -551,7 +554,7 @@ static int xenoprof_add_sample(const struct domain *d,
         head++;
         if ( head >= size )
             head = 0;
-        
+
         xenoprof_buf(d, buf, event_head) = head;
     }
     else
@@ -575,8 +578,11 @@ int xenoprof_add_trace(struct vcpu *vcpu, uint64_t pc, int mode)
         return 0;
     }
 
-    return xenoprof_add_sample(d, &d->xenoprof->vcpu[vcpu->vcpu_id],
-                               pc, mode, 0);
+    return xenoprof_add_sample(d,
+                               &d->xenoprof->vcpu[vcpu->vcpu_id],
+                               pc,
+                               mode,
+                               0);
 }
 
 void xenoprof_log_event(struct vcpu *vcpu, const struct cpu_user_regs *regs,
@@ -601,7 +607,7 @@ void xenoprof_log_event(struct vcpu *vcpu, const struct cpu_user_regs *regs,
         invalid_buffer_samples++;
         return;
     }
-    
+
     buf = v->buffer;
 
     /* Provide backtrace if requested. */
@@ -617,7 +623,10 @@ void xenoprof_log_event(struct vcpu *vcpu, const struct cpu_user_regs *regs,
         }
 
         /* xenoprof_add_sample() will increment lost_samples on failure */
-        if ( !xenoprof_add_sample(d, v, XENOPROF_ESCAPE_CODE, mode,
+        if ( !xenoprof_add_sample(d,
+                                  v,
+                                  XENOPROF_ESCAPE_CODE,
+                                  mode,
                                   XENOPROF_TRACE_BEGIN) )
             return;
     }
@@ -634,14 +643,11 @@ void xenoprof_log_event(struct vcpu *vcpu, const struct cpu_user_regs *regs,
             xenoprof_buf(d, buf, kernel_samples)++;
         else
             xenoprof_buf(d, buf, xen_samples)++;
-    
     }
 
     if ( backtrace_depth > 0 )
         xenoprof_backtrace(vcpu, regs, backtrace_depth, mode);
 }
-
-
 
 static int xenoprof_op_init(XEN_GUEST_HANDLE_PARAM(void) arg)
 {
@@ -662,7 +668,7 @@ static int xenoprof_op_init(XEN_GUEST_HANDLE_PARAM(void) arg)
      * crashes.  Once a better cleanup method is present, it will be possible to
      * allow another domain to be the primary profiler.
      */
-    xenoprof_init.is_primary = 
+    xenoprof_init.is_primary =
         ((xenoprof_primary_profiler == d) ||
          ((xenoprof_primary_profiler == NULL) && is_hardware_domain(d)));
     if ( xenoprof_init.is_primary )
@@ -697,8 +703,9 @@ static int xenoprof_op_get_buffer(XEN_GUEST_HANDLE_PARAM(void) arg)
     else
         d->xenoprof->domain_type = XENOPROF_DOMAIN_IGNORED;
 
-    ret = share_xenoprof_page_with_guest(
-        d, virt_to_mfn(d->xenoprof->rawbuf), d->xenoprof->npages);
+    ret = share_xenoprof_page_with_guest(d,
+                                         virt_to_mfn(d->xenoprof->rawbuf),
+                                         d->xenoprof->npages);
     if ( ret < 0 )
         return ret;
 
@@ -709,9 +716,10 @@ static int xenoprof_op_get_buffer(XEN_GUEST_HANDLE_PARAM(void) arg)
     if ( !paging_mode_translate(d) )
         xenoprof_get_buffer.buf_gmaddr = __pa(d->xenoprof->rawbuf);
     else
-        xenoprof_shared_gmfn_with_guest(
-            d, __pa(d->xenoprof->rawbuf), xenoprof_get_buffer.buf_gmaddr,
-            d->xenoprof->npages);
+        xenoprof_shared_gmfn_with_guest(d,
+                                        __pa(d->xenoprof->rawbuf),
+                                        xenoprof_get_buffer.buf_gmaddr,
+                                        d->xenoprof->npages);
 
     return __copy_to_guest(arg, &xenoprof_get_buffer, 1) ? -EFAULT : 0;
 }
@@ -720,11 +728,11 @@ static int xenoprof_op_get_buffer(XEN_GUEST_HANDLE_PARAM(void) arg)
                       || (op == XENOPROF_enable_virq)   \
                       || (op == XENOPROF_disable_virq)  \
                       || (op == XENOPROF_get_buffer))
- 
+
 ret_t do_xenoprof_op(int op, XEN_GUEST_HANDLE_PARAM(void) arg)
 {
     int ret = 0;
-    
+
     if ( (op < 0) || (op > XENOPROF_last_op) )
     {
         gdprintk(XENLOG_DEBUG, "invalid operation %d\n", op);
@@ -742,13 +750,12 @@ ret_t do_xenoprof_op(int op, XEN_GUEST_HANDLE_PARAM(void) arg)
         return ret;
 
     spin_lock(&xenoprof_lock);
-    
+
     switch ( op )
     {
     case XENOPROF_init:
         ret = xenoprof_op_init(arg);
-        if ( (ret == 0) &&
-             (current->domain == xenoprof_primary_profiler) )
+        if ( (ret == 0) && (current->domain == xenoprof_primary_profiler) )
             xenoprof_state = XENOPROF_INITIALIZED;
         break;
 
@@ -809,8 +816,7 @@ ret_t do_xenoprof_op(int op, XEN_GUEST_HANDLE_PARAM(void) arg)
         break;
 
     case XENOPROF_counter:
-        if ( (xenoprof_state != XENOPROF_COUNTERS_RESERVED) ||
-             (adomains == 0) )
+        if ( (xenoprof_state != XENOPROF_COUNTERS_RESERVED) || (adomains == 0) )
         {
             ret = -EPERM;
             break;
@@ -852,8 +858,7 @@ ret_t do_xenoprof_op(int op, XEN_GUEST_HANDLE_PARAM(void) arg)
 
     case XENOPROF_start:
         ret = -EPERM;
-        if ( (xenoprof_state == XENOPROF_READY) &&
-             (activated == adomains) )
+        if ( (xenoprof_state == XENOPROF_READY) && (activated == adomains) )
             ret = xenoprof_arch_start();
         if ( ret == 0 )
             xenoprof_state = XENOPROF_PROFILING;
@@ -888,7 +893,7 @@ ret_t do_xenoprof_op(int op, XEN_GUEST_HANDLE_PARAM(void) arg)
     case XENOPROF_disable_virq:
     {
         struct xenoprof *x;
-        if ( (xenoprof_state == XENOPROF_PROFILING) && 
+        if ( (xenoprof_state == XENOPROF_PROFILING) &&
              (is_active(current->domain)) )
         {
             ret = -EPERM;
@@ -920,13 +925,13 @@ ret_t do_xenoprof_op(int op, XEN_GUEST_HANDLE_PARAM(void) arg)
         if ( xenoprof_state == XENOPROF_INITIALIZED )
         {
             activated = 0;
-            adomains=0;
+            adomains = 0;
             xenoprof_primary_profiler = NULL;
-            backtrace_depth=0;
+            backtrace_depth = 0;
             ret = 0;
         }
         break;
-                
+
     case XENOPROF_set_backtrace:
         ret = 0;
         if ( !xenoprof_backtrace_supported() )
@@ -936,8 +941,7 @@ ret_t do_xenoprof_op(int op, XEN_GUEST_HANDLE_PARAM(void) arg)
         break;
 
     case XENOPROF_ibs_counter:
-        if ( (xenoprof_state != XENOPROF_COUNTERS_RESERVED) ||
-             (adomains == 0) )
+        if ( (xenoprof_state != XENOPROF_COUNTERS_RESERVED) || (adomains == 0) )
         {
             ret = -EPERM;
             break;

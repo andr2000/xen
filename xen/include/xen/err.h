@@ -18,27 +18,27 @@
 
 static inline void *__must_check ERR_PTR(long error)
 {
-	return (void *)error;
+    return (void *)error;
 }
 
 static inline long __must_check PTR_ERR(const void *ptr)
 {
-	return (long)ptr;
+    return (long)ptr;
 }
 
 static inline long __must_check IS_ERR(const void *ptr)
 {
-	return IS_ERR_VALUE((unsigned long)ptr);
+    return IS_ERR_VALUE((unsigned long)ptr);
 }
 
 static inline long __must_check IS_ERR_OR_NULL(const void *ptr)
 {
-	return !ptr || IS_ERR_VALUE((unsigned long)ptr);
+    return !ptr || IS_ERR_VALUE((unsigned long)ptr);
 }
 
 static inline int __must_check PTR_RET(const void *ptr)
 {
-	return IS_ERR(ptr) ? PTR_ERR(ptr) : 0;
+    return IS_ERR(ptr) ? PTR_ERR(ptr) : 0;
 }
 
 #endif /* __XEN_ERR_H__ */

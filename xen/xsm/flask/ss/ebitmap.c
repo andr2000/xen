@@ -31,7 +31,7 @@ int ebitmap_cmp(struct ebitmap *e1, struct ebitmap *e2)
     n1 = e1->node;
     n2 = e2->node;
     while ( n1 && n2 && (n1->startbit == n2->startbit) &&
-            !memcmp(n1->maps, n2->maps, EBITMAP_SIZE / 8))
+            !memcmp(n1->maps, n2->maps, EBITMAP_SIZE / 8) )
     {
         n1 = n1->next;
         n2 = n2->next;
@@ -242,9 +242,12 @@ int ebitmap_read(struct ebitmap *e, void *fp)
 
     if ( mapunit != sizeof(u64) * 8 )
     {
-        printk(KERN_ERR "Flask: ebitmap: map size %u does not "
-               "match my size %zd (high bit was %d)\n", mapunit,
-               sizeof(u64) * 8, e->highbit);
+        printk(
+            KERN_ERR
+            "Flask: ebitmap: map size %u does not " "match my size %zd (high bit was %d)\n",
+            mapunit,
+            sizeof(u64) * 8,
+            e->highbit);
         goto bad;
     }
 
@@ -269,16 +272,20 @@ int ebitmap_read(struct ebitmap *e, void *fp)
         startbit = le32_to_cpu(startbit);
         if ( startbit & (mapunit - 1) )
         {
-            printk(KERN_ERR "Flask: ebitmap start bit (%d) is "
-                   "not a multiple of the map unit size (%u)\n",
-                   startbit, mapunit);
+            printk(
+                KERN_ERR
+                "Flask: ebitmap start bit (%d) is " "not a multiple of the map unit size (%u)\n",
+                startbit,
+                mapunit);
             goto bad;
         }
         if ( startbit > e->highbit - mapunit )
         {
-            printk(KERN_ERR "Flask: ebitmap start bit (%d) is "
-                   "beyond the end of the bitmap (%u)\n",
-                   startbit, (e->highbit - mapunit));
+            printk(
+                KERN_ERR
+                "Flask: ebitmap start bit (%d) is " "beyond the end of the bitmap (%u)\n",
+                startbit,
+                (e->highbit - mapunit));
             goto bad;
         }
 
@@ -288,8 +295,7 @@ int ebitmap_read(struct ebitmap *e, void *fp)
 
             if ( !tmp )
             {
-                printk(KERN_ERR
-                       "Flask: ebitmap: out of memory\n");
+                printk(KERN_ERR "Flask: ebitmap: out of memory\n");
                 rc = -ENOMEM;
                 goto bad;
             }
@@ -303,9 +309,10 @@ int ebitmap_read(struct ebitmap *e, void *fp)
         }
         else if ( startbit <= n->startbit )
         {
-            printk(KERN_ERR "Flask: ebitmap: start bit %d"
-                   " comes after start bit %d\n",
-                   startbit, n->startbit);
+            printk(KERN_ERR
+                   "Flask: ebitmap: start bit %d" " comes after start bit %d\n",
+                   startbit,
+                   n->startbit);
             goto bad;
         }
 

@@ -25,10 +25,8 @@ size_param("serial_tx_buffer", serial_txbufsz);
 #define mask_serial_txbuf_idx(_i) ((_i)&(serial_txbufsz-1))
 
 static struct serial_port com[SERHND_IDX + 1] = {
-    [0 ... SERHND_IDX] = {
-        .rx_lock = SPIN_LOCK_UNLOCKED,
-        .tx_lock = SPIN_LOCK_UNLOCKED
-    }
+    [0 ... SERHND_IDX] = { .rx_lock = SPIN_LOCK_UNLOCKED,
+                          .tx_lock = SPIN_LOCK_UNLOCKED }
 };
 
 static bool __read_mostly post_irq;
@@ -62,7 +60,7 @@ void serial_rx_interrupt(struct serial_port *port)
         else if ( !(c & 0x80) && (port->rx_lo != NULL) )
             fn = port->rx_lo;
         else if ( (port->rxbufp - port->rxbufc) != serial_rxbufsz )
-            port->rxbuf[mask_serial_rxbuf_idx(port->rxbufp++)] = c;            
+            port->rxbuf[mask_serial_rxbuf_idx(port->rxbufp++)] = c;
     }
 
     spin_unlock_irqrestore(&port->rx_lock, flags);
@@ -106,15 +104,15 @@ void serial_tx_interrupt(struct serial_port *port)
     {
         if ( port->txbufc == port->txbufp )
             break;
-        port->driver->putc(
-            port, port->txbuf[mask_serial_txbuf_idx(port->txbufc++)]);
+        port->driver->putc(port,
+                           port->txbuf[mask_serial_txbuf_idx(port->txbufc++)]);
     }
     if ( i && port->driver->flush )
         port->driver->flush(port);
 
     spin_unlock(&port->tx_lock);
 
- out:
+out:
     local_irq_restore(flags);
 }
 
@@ -279,7 +277,7 @@ int __init serial_parse_handle(const char *conf)
     else if ( conf[4] == 'L' )
         flags |= SERHND_LO;
 
- common:
+common:
     if ( !com[handle].driver )
         goto fail;
 
@@ -294,7 +292,7 @@ int __init serial_parse_handle(const char *conf)
 
     return handle | flags | SERHND_COOKED;
 
- fail:
+fail:
     return -1;
 }
 
@@ -317,7 +315,7 @@ void __init serial_set_rx_handler(int handle, serial_rx_fn fn)
     {
         if ( port->rx_lo != NULL )
             goto fail;
-        port->rx_lo = fn;        
+        port->rx_lo = fn;
     }
     else if ( handle & SERHND_HI )
     {
@@ -335,9 +333,9 @@ void __init serial_set_rx_handler(int handle, serial_rx_fn fn)
     spin_unlock_irqrestore(&port->rx_lock, flags);
     return;
 
- fail:
+fail:
     spin_unlock_irqrestore(&port->rx_lock, flags);
-    printk("ERROR: Conflicting receive handlers for COM%d\n", 
+    printk("ERROR: Conflicting receive handlers for COM%d\n",
            handle & SERHND_IDX);
 }
 
@@ -363,7 +361,7 @@ void serial_start_sync(int handle)
 
     if ( handle == -1 )
         return;
-    
+
     port = &com[handle & SERHND_IDX];
 
     spin_lock_irqsave(&port->tx_lock, flags);
@@ -382,7 +380,8 @@ void serial_start_sync(int handle)
                 break;
             serial_start_tx(port);
             port->driver->putc(
-                port, port->txbuf[mask_serial_txbuf_idx(port->txbufc++)]);
+                port,
+                port->txbuf[mask_serial_txbuf_idx(port->txbufc++)]);
         }
         if ( port->driver->flush )
             port->driver->flush(port);
@@ -398,7 +397,7 @@ void serial_end_sync(int handle)
 
     if ( handle == -1 )
         return;
-    
+
     port = &com[handle & SERHND_IDX];
 
     spin_lock_irqsave(&port->tx_lock, flags);
@@ -415,7 +414,7 @@ void serial_start_log_everything(int handle)
 
     if ( handle == -1 )
         return;
-    
+
     port = &com[handle & SERHND_IDX];
 
     spin_lock_irqsave(&port->tx_lock, flags);
@@ -431,7 +430,7 @@ void serial_end_log_everything(int handle)
 
     if ( handle == -1 )
         return;
-    
+
     port = &com[handle & SERHND_IDX];
 
     spin_lock_irqsave(&port->tx_lock, flags);
@@ -479,8 +478,8 @@ void __init serial_endboot(void)
 
 int __init serial_irq(int idx)
 {
-    if ( (idx >= 0) && (idx < ARRAY_SIZE(com)) &&
-         com[idx].driver && com[idx].driver->irq )
+    if ( (idx >= 0) && (idx < ARRAY_SIZE(com)) && com[idx].driver &&
+         com[idx].driver->irq )
         return com[idx].driver->irq(&com[idx]);
 
     return -1;
@@ -488,8 +487,8 @@ int __init serial_irq(int idx)
 
 const struct vuart_info *serial_vuart_info(int idx)
 {
-    if ( (idx >= 0) && (idx < ARRAY_SIZE(com)) &&
-         com[idx].driver && com[idx].driver->vuart_info )
+    if ( (idx >= 0) && (idx < ARRAY_SIZE(com)) && com[idx].driver &&
+         com[idx].driver->vuart_info )
         return com[idx].driver->vuart_info(&com[idx]);
 
     return NULL;
@@ -516,7 +515,7 @@ void __init serial_register_uart(int idx, struct uart_driver *driver,
 {
     /* Store UART-specific info. */
     com[idx].driver = driver;
-    com[idx].uart   = uart;
+    com[idx].uart = uart;
 }
 
 void __init serial_async_transmit(struct serial_port *port)
@@ -528,8 +527,7 @@ void __init serial_async_transmit(struct serial_port *port)
         serial_txbufsz = PAGE_SIZE;
     while ( serial_txbufsz & (serial_txbufsz - 1) )
         serial_txbufsz &= serial_txbufsz - 1;
-    port->txbuf = alloc_xenheap_pages(
-        get_order_from_bytes(serial_txbufsz), 0);
+    port->txbuf = alloc_xenheap_pages(get_order_from_bytes(serial_txbufsz), 0);
 }
 
 /*

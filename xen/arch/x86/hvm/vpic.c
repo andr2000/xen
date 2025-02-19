@@ -45,6 +45,7 @@
 
 /* Return the highest priority found in mask. Return 8 if none. */
 #define VPIC_PRIO_NONE 8
+
 static int vpic_get_priority(struct hvm_hw_vpic *vpic, uint8_t mask)
 {
     int prio;
@@ -55,8 +56,9 @@ static int vpic_get_priority(struct hvm_hw_vpic *vpic, uint8_t mask)
         return VPIC_PRIO_NONE;
 
     /* prio = ffs(mask ROR vpic->priority_add); */
-    asm ( "ror %%cl,%b1 ; rep; bsf %1,%0"
-          : "=r" (prio) : "q" ((uint32_t)mask), "c" (vpic->priority_add) );
+    asm("ror %%cl,%b1 ; rep; bsf %1,%0"
+        : "=r"(prio)
+        : "q"((uint32_t)mask), "c"(vpic->priority_add));
     return prio;
 }
 
@@ -99,7 +101,10 @@ static void vpic_update_int_output(struct hvm_hw_vpic *vpic)
     ASSERT(vpic_is_locked(vpic));
 
     irq = vpic_get_highest_priority_irq(vpic);
-    TRACE_TIME(TRC_HVM_EMUL_PIC_INT_OUTPUT, vpic->int_output, vpic->is_master, irq);
+    TRACE_TIME(TRC_HVM_EMUL_PIC_INT_OUTPUT,
+               vpic->int_output,
+               vpic->is_master,
+               irq);
     if ( vpic->int_output == (!vpic->init_state && irq >= 0) )
         return;
 
@@ -178,13 +183,13 @@ static int vpic_intack(struct hvm_hw_vpic *vpic)
         irq += 8;
     }
 
- out:
+out:
     vpic_unlock(vpic);
     return irq;
 }
 
-static void vpic_ioport_write(
-    struct hvm_hw_vpic *vpic, uint32_t addr, uint32_t val)
+static void vpic_ioport_write(struct hvm_hw_vpic *vpic, uint32_t addr,
+                              uint32_t val)
 {
     int priority, cmd;
     uint8_t mask;
@@ -351,8 +356,8 @@ static uint32_t vpic_ioport_read(struct hvm_hw_vpic *vpic, uint32_t addr)
     return vpic->imr;
 }
 
-static int cf_check vpic_intercept_pic_io(
-    int dir, unsigned int port, unsigned int bytes, uint32_t *val)
+static int cf_check vpic_intercept_pic_io(int dir, unsigned int port,
+                                          unsigned int bytes, uint32_t *val)
 {
     struct hvm_hw_vpic *vpic;
 
@@ -373,8 +378,8 @@ static int cf_check vpic_intercept_pic_io(
     return X86EMUL_OKAY;
 }
 
-static int cf_check vpic_intercept_elcr_io(
-    int dir, unsigned int port, unsigned int bytes, uint32_t *val)
+static int cf_check vpic_intercept_elcr_io(int dir, unsigned int port,
+                                           unsigned int bytes, uint32_t *val)
 {
     struct hvm_hw_vpic *vpic;
     unsigned int data, shift = 0;
@@ -383,7 +388,8 @@ static int cf_check vpic_intercept_elcr_io(
 
     vpic = &current->domain->arch.hvm.vpic[port & 1];
 
-    do {
+    do
+    {
         if ( dir == IOREQ_WRITE )
         {
             /* Some IRs are always edge trig. Slave IR is always level trig. */
@@ -419,7 +425,7 @@ static int cf_check vpic_save(struct vcpu *v, hvm_domain_context_t *h)
         return 0;
 
     /* Save the state of both PICs */
-    for ( i = 0; i < 2 ; i++ )
+    for ( i = 0; i < 2; i++ )
     {
         s = &d->arch.hvm.vpic[i];
         if ( hvm_save_entry(PIC, i, h, s) )
@@ -453,8 +459,7 @@ static int cf_check vpic_check(const struct domain *d, hvm_domain_context_t *h)
     if ( s->int_output > 1 )
         return -EDOM;
 
-    if ( s->is_master != !inst ||
-         (s->int_output && s->init_state) ||
+    if ( s->is_master != !inst || (s->int_output && s->init_state) ||
          (s->elcr & ~vpic_elcr_mask(s, 1)) )
         return -EINVAL;
 
@@ -497,7 +502,7 @@ void vpic_reset(struct domain *d)
     vpic = &d->arch.hvm.vpic[0];
     memset(vpic, 0, sizeof(*vpic));
     vpic->is_master = 1;
-    vpic->elcr      = 1 << 2;
+    vpic->elcr = 1 << 2;
 
     /* Slave PIC. */
     vpic++;

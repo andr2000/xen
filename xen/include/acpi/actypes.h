@@ -156,7 +156,7 @@ typedef u64 acpi_physical_address;
 #define ACPI_MAX_PTR                    ACPI_UINT64_MAX
 #define ACPI_SIZE_MAX                   ACPI_UINT64_MAX
 
-#define ACPI_USE_NATIVE_DIVIDE	/* Has native 64-bit integer support */
+#define ACPI_USE_NATIVE_DIVIDE /* Has native 64-bit integer support */
 
 /*
  * In the case of the Itanium Processor Family (IPF), the hardware does not
@@ -167,7 +167,7 @@ typedef u64 acpi_physical_address;
  * Note: Em64_t and other X86-64 processors support misaligned transfers,
  * so there is no need to define this flag.
  */
-#if defined (__IA64__) || defined (__ia64__)
+#if defined(__IA64__) || defined(__ia64__)
 #define ACPI_MISALIGNMENT_NOT_SUPPORTED
 #endif
 
@@ -279,23 +279,23 @@ typedef acpi_native_uint acpi_size;
 /*
  * Mescellaneous types
  */
-typedef u32 acpi_status;	/* All ACPI Exceptions */
-typedef u32 acpi_name;		/* 4-byte ACPI name */
-typedef void *acpi_handle;	/* Actually a ptr to a NS Node */
+typedef u32 acpi_status; /* All ACPI Exceptions */
+typedef u32 acpi_name; /* 4-byte ACPI name */
+typedef void *acpi_handle; /* Actually a ptr to a NS Node */
 
 struct uint64_struct {
-	u32 lo;
-	u32 hi;
+    u32 lo;
+    u32 hi;
 };
 
 union uint64_overlay {
-	u64 full;
-	struct uint64_struct part;
+    u64 full;
+    struct uint64_struct part;
 };
 
 struct uint32_struct {
-	u32 lo;
-	u32 hi;
+    u32 lo;
+    u32 hi;
 };
 
 /* Synchronization objects */
@@ -319,7 +319,7 @@ typedef u32 acpi_integer;
 #define ACPI_INTEGER_BIT_SIZE           32
 #define ACPI_MAX_DECIMAL_DIGITS         10	/* 2^32 = 4,294,967,296 */
 
-#define ACPI_USE_NATIVE_DIVIDE	/* Use compiler native 32-bit divide */
+#define ACPI_USE_NATIVE_DIVIDE /* Use compiler native 32-bit divide */
 
 #else
 
@@ -331,7 +331,7 @@ typedef unsigned long long acpi_integer;
 #define ACPI_MAX_DECIMAL_DIGITS         20	/* 2^64 = 18,446,744,073,709,551,616 */
 
 #if ACPI_MACHINE_WIDTH == 64
-#define ACPI_USE_NATIVE_DIVIDE	/* Use compiler native 64-bit divide */
+#define ACPI_USE_NATIVE_DIVIDE /* Use compiler native 64-bit divide */
 #endif
 #endif
 
@@ -580,56 +580,57 @@ typedef u8 acpi_adr_space_type;
  * External ACPI object definition
  */
 union acpi_object {
-	acpi_object_type type;	/* See definition of acpi_ns_type for values */
-	struct {
-		acpi_object_type type;
-		acpi_integer value;	/* The actual number */
-	} integer;
+    acpi_object_type type; /* See definition of acpi_ns_type for values */
 
-	struct {
-		acpi_object_type type;
-		u32 length;	/* # of bytes in string, excluding trailing null */
-		char *pointer;	/* points to the string value */
-	} string;
+    struct {
+        acpi_object_type type;
+        acpi_integer value; /* The actual number */
+    } integer;
 
-	struct {
-		acpi_object_type type;
-		u32 length;	/* # of bytes in buffer */
-		u8 *pointer;	/* points to the buffer */
-	} buffer;
+    struct {
+        acpi_object_type type;
+        u32 length; /* # of bytes in string, excluding trailing null */
+        char *pointer; /* points to the string value */
+    } string;
 
-	struct {
-		acpi_object_type type;
-		u32 fill1;
-		acpi_handle handle;	/* object reference */
-	} reference;
+    struct {
+        acpi_object_type type;
+        u32 length; /* # of bytes in buffer */
+        u8 *pointer; /* points to the buffer */
+    } buffer;
 
-	struct {
-		acpi_object_type type;
-		u32 count;	/* # of elements in package */
-		union acpi_object *elements;	/* Pointer to an array of ACPI_OBJECTs */
-	} package;
+    struct {
+        acpi_object_type type;
+        u32 fill1;
+        acpi_handle handle; /* object reference */
+    } reference;
 
-	struct {
-		acpi_object_type type;
-		u32 proc_id;
-		acpi_io_address pblk_address;
-		u32 pblk_length;
-	} processor;
+    struct {
+        acpi_object_type type;
+        u32 count; /* # of elements in package */
+        union acpi_object *elements; /* Pointer to an array of ACPI_OBJECTs */
+    } package;
 
-	struct {
-		acpi_object_type type;
-		u32 system_level;
-		u32 resource_order;
-	} power_resource;
+    struct {
+        acpi_object_type type;
+        u32 proc_id;
+        acpi_io_address pblk_address;
+        u32 pblk_length;
+    } processor;
+
+    struct {
+        acpi_object_type type;
+        u32 system_level;
+        u32 resource_order;
+    } power_resource;
 };
 
 /*
  * List of objects, used as a parameter list for control method evaluation
  */
 struct acpi_object_list {
-	u32 count;
-	union acpi_object *pointer;
+    u32 count;
+    union acpi_object *pointer;
 };
 
 /*
@@ -640,8 +641,8 @@ struct acpi_object_list {
 #define ACPI_ALLOCATE_LOCAL_BUFFER  (acpi_size) (-2)
 
 struct acpi_buffer {
-	acpi_size length;	/* Length in bytes of the buffer */
-	void *pointer;		/* pointer to buffer */
+    acpi_size length; /* Length in bytes of the buffer */
+    void *pointer; /* pointer to buffer */
 };
 
 /*
@@ -724,4 +725,4 @@ struct acpi_buffer {
 #define ACPI_PRODUCER                   (u8) 0x00
 #define ACPI_CONSUMER                   (u8) 0x01
 
-#endif				/* __ACTYPES_H__ */
+#endif /* __ACTYPES_H__ */

@@ -4,7 +4,6 @@
  * Debugtrace for Xen
  */
 
-
 #include <xen/console.h>
 #include <xen/cpu.h>
 #include <xen/init.h>
@@ -25,9 +24,9 @@
 static volatile bool debugtrace_send_to_console;
 
 struct debugtrace_data {
-    unsigned long prd;   /* Producer index. */
+    unsigned long prd; /* Producer index. */
     unsigned long wrap_cnt;
-    char          buf[];
+    char buf[];
 };
 
 static struct debugtrace_data *dt_data;
@@ -61,6 +60,7 @@ static int __init cf_check debugtrace_parse_param(const char *s)
 
     return 0;
 }
+
 custom_param("debugtrace", debugtrace_parse_param);
 
 static void debugtrace_dump_buffer(struct debugtrace_data *data,
@@ -96,7 +96,7 @@ static void debugtrace_dump_worker(void)
 
     debugtrace_dump_buffer(dt_data, "global");
 
-    for_each_online_cpu ( cpu )
+    for_each_online_cpu(cpu)
     {
         char buf[16];
 
@@ -119,7 +119,7 @@ static void debugtrace_toggle(void)
      * buffer itself causes more printk() invocations.
      */
     printk("debugtrace_printk now writing to %s.\n",
-           !debugtrace_send_to_console ? "console": "buffer");
+           !debugtrace_send_to_console ? "console" : "buffer");
     if ( !debugtrace_send_to_console )
         debugtrace_dump_worker();
 
@@ -163,8 +163,8 @@ void debugtrace_printk(const char *fmt, ...)
     static unsigned int count, last_count, last_cpu;
     static unsigned long last_prd, wrap_cnt;
 
-    char          cntbuf[50];
-    va_list       args;
+    char cntbuf[50];
+    va_list args;
     unsigned long flags;
     unsigned int nr;
     struct debugtrace_data *data;
@@ -210,8 +210,11 @@ void debugtrace_printk(const char *fmt, ...)
         {
             if ( wrap_cnt != data->wrap_cnt )
             {
-                snprintf(cntbuf, sizeof(cntbuf), "wrap: %lu->%lu\n",
-                         data->wrap_cnt, wrap_cnt);
+                snprintf(cntbuf,
+                         sizeof(cntbuf),
+                         "wrap: %lu->%lu\n",
+                         data->wrap_cnt,
+                         wrap_cnt);
                 debugtrace_add_to_buf(cntbuf);
                 data->wrap_cnt = wrap_cnt;
             }
@@ -264,8 +267,8 @@ static void debugtrace_alloc_buffer(struct debugtrace_data **ptr,
     *ptr = data;
 }
 
-static int cf_check debugtrace_cpu_callback(
-    struct notifier_block *nfb, unsigned long action, void *hcpu)
+static int cf_check debugtrace_cpu_callback(struct notifier_block *nfb,
+                                            unsigned long action, void *hcpu)
 {
     unsigned int cpu = (unsigned long)hcpu;
 
@@ -276,9 +279,8 @@ static int cf_check debugtrace_cpu_callback(
     return 0;
 }
 
-static struct notifier_block debugtrace_nfb = {
-    .notifier_call = debugtrace_cpu_callback
-};
+static struct notifier_block debugtrace_nfb = { .notifier_call =
+                                                    debugtrace_cpu_callback };
 
 static int __init cf_check debugtrace_init(void)
 {
@@ -287,14 +289,16 @@ static int __init cf_check debugtrace_init(void)
     if ( !debugtrace_bytes )
         return 0;
 
-    register_keyhandler('T', debugtrace_key,
-                        "toggle debugtrace to console/buffer", 0);
+    register_keyhandler('T',
+                        debugtrace_key,
+                        "toggle debugtrace to console/buffer",
+                        0);
 
     debugtrace_bytes -= sizeof(struct debugtrace_data);
 
     if ( debugtrace_per_cpu )
     {
-        for_each_online_cpu ( cpu )
+        for_each_online_cpu(cpu)
             debugtrace_alloc_buffer(&per_cpu(dt_cpu_data, cpu), cpu);
         register_cpu_notifier(&debugtrace_nfb);
     }
@@ -303,4 +307,5 @@ static int __init cf_check debugtrace_init(void)
 
     return 0;
 }
+
 __initcall(debugtrace_init);

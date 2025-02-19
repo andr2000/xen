@@ -21,18 +21,26 @@
 
 struct bootinfo __initdata bootinfo = BOOTINFO_INIT;
 
-const char * __init boot_module_kind_as_string(bootmodule_kind kind)
+const char *__init boot_module_kind_as_string(bootmodule_kind kind)
 {
     switch ( kind )
     {
-    case BOOTMOD_XEN:     return "Xen";
-    case BOOTMOD_FDT:     return "Device Tree";
-    case BOOTMOD_KERNEL:  return "Kernel";
-    case BOOTMOD_RAMDISK: return "Ramdisk";
-    case BOOTMOD_XSM:     return "XSM";
-    case BOOTMOD_GUEST_DTB:     return "DTB";
-    case BOOTMOD_UNKNOWN: return "Unknown";
-    default: BUG();
+    case BOOTMOD_XEN:
+        return "Xen";
+    case BOOTMOD_FDT:
+        return "Device Tree";
+    case BOOTMOD_KERNEL:
+        return "Kernel";
+    case BOOTMOD_RAMDISK:
+        return "Ramdisk";
+    case BOOTMOD_XSM:
+        return "XSM";
+    case BOOTMOD_GUEST_DTB:
+        return "DTB";
+    case BOOTMOD_UNKNOWN:
+        return "Unknown";
+    default:
+        BUG();
     }
 }
 
@@ -130,8 +138,14 @@ static bool __init meminfo_overlap_check(const struct membanks *mem,
              mem->bank[i].type == MEMBANK_FDT_RESVMEM )
             continue;
 
-        printk("Region: [%#"PRIpaddr", %#"PRIpaddr") overlapping with bank[%u]: [%#"PRIpaddr", %#"PRIpaddr")\n",
-                region_start, region_end, i, bank_start, bank_end);
+        printk("Region: [%#" PRIpaddr ", %#" PRIpaddr
+               ") overlapping with bank[%u]: [%#" PRIpaddr ", %#" PRIpaddr
+               ")\n",
+               region_start,
+               region_end,
+               i,
+               bank_start,
+               bank_end);
         return true;
     }
 
@@ -159,8 +173,14 @@ static bool __init bootmodules_overlap_check(struct bootmodules *bootmodules,
             continue;
         else
         {
-            printk("Region: [%#"PRIpaddr", %#"PRIpaddr") overlapping with mod[%u]: [%#"PRIpaddr", %#"PRIpaddr")\n",
-                   region_start, region_end, i, mod_start, mod_end);
+            printk("Region: [%#" PRIpaddr ", %#" PRIpaddr
+                   ") overlapping with mod[%u]: [%#" PRIpaddr ", %#" PRIpaddr
+                   ")\n",
+                   region_start,
+                   region_end,
+                   i,
+                   mod_start,
+                   mod_end);
             return true;
         }
     }
@@ -205,21 +225,23 @@ bool __init check_reserved_regions_overlap(paddr_t region_start,
      * shared memory banks (when static shared memory feature is enabled)
      */
     for ( i = 0; i < ARRAY_SIZE(mem_banks); i++ )
-        if ( meminfo_overlap_check(mem_banks[i], region_start, region_size,
+        if ( meminfo_overlap_check(mem_banks[i],
+                                   region_start,
+                                   region_size,
                                    allow_memreserve_overlap) )
             return true;
 
     /* Check if input region is overlapping with bootmodules */
     if ( bootmodules_overlap_check(&bootinfo.modules,
-                                   region_start, region_size) )
+                                   region_start,
+                                   region_size) )
         return true;
 
     return false;
 }
 
-struct bootmodule __init *add_boot_module(bootmodule_kind kind,
-                                          paddr_t start, paddr_t size,
-                                          bool domU)
+struct bootmodule __init *add_boot_module(bootmodule_kind kind, paddr_t start,
+                                          paddr_t size, bool domU)
 {
     struct bootmodules *mods = &bootinfo.modules;
     struct bootmodule *mod;
@@ -227,8 +249,11 @@ struct bootmodule __init *add_boot_module(bootmodule_kind kind,
 
     if ( mods->nr_mods == MAX_MODULES )
     {
-        printk("Ignoring %s boot module at %"PRIpaddr"-%"PRIpaddr" (too many)\n",
-               boot_module_kind_as_string(kind), start, start + size);
+        printk("Ignoring %s boot module at %" PRIpaddr "-%" PRIpaddr
+               " (too many)\n",
+               boot_module_kind_as_string(kind),
+               start,
+               start + size);
         return NULL;
     }
 
@@ -240,7 +265,7 @@ struct bootmodule __init *add_boot_module(bootmodule_kind kind,
     if ( check_reserved_regions_overlap(start, size, true) )
         return NULL;
 
-    for ( i = 0 ; i < mods->nr_mods ; i++ )
+    for ( i = 0; i < mods->nr_mods; i++ )
     {
         mod = &mods->module[i];
         if ( mod->kind == kind && mod->start == start )
@@ -265,12 +290,12 @@ struct bootmodule __init *add_boot_module(bootmodule_kind kind,
  * XSM, DTB) or Dom0 modules. This is not suitable for looking up guest
  * modules.
  */
-struct bootmodule * __init boot_module_find_by_kind(bootmodule_kind kind)
+struct bootmodule *__init boot_module_find_by_kind(bootmodule_kind kind)
 {
     struct bootmodules *mods = &bootinfo.modules;
     struct bootmodule *mod;
     int i;
-    for (i = 0 ; i < mods->nr_mods ; i++ )
+    for ( i = 0; i < mods->nr_mods; i++ )
     {
         mod = &mods->module[i];
         if ( mod->kind == kind && !mod->domU )
@@ -309,13 +334,13 @@ void __init add_boot_cmdline(const char *name, const char *cmdline,
  * XSM, DTB) or Dom0 modules. This is not suitable for looking up guest
  * modules.
  */
-struct bootcmdline * __init boot_cmdline_find_by_kind(bootmodule_kind kind)
+struct bootcmdline *__init boot_cmdline_find_by_kind(bootmodule_kind kind)
 {
     struct bootcmdlines *cmds = &bootinfo.cmdlines;
     struct bootcmdline *cmd;
     int i;
 
-    for ( i = 0 ; i < cmds->nr_mods ; i++ )
+    for ( i = 0; i < cmds->nr_mods; i++ )
     {
         cmd = &cmds->cmdline[i];
         if ( cmd->kind == kind && !cmd->domU )
@@ -324,13 +349,13 @@ struct bootcmdline * __init boot_cmdline_find_by_kind(bootmodule_kind kind)
     return NULL;
 }
 
-struct bootcmdline * __init boot_cmdline_find_by_name(const char *name)
+struct bootcmdline *__init boot_cmdline_find_by_name(const char *name)
 {
     struct bootcmdlines *mods = &bootinfo.cmdlines;
     struct bootcmdline *mod;
     unsigned int i;
 
-    for (i = 0 ; i < mods->nr_mods ; i++ )
+    for ( i = 0; i < mods->nr_mods; i++ )
     {
         mod = &mods->cmdline[i];
         if ( strcmp(mod->dt_name, name) == 0 )
@@ -339,14 +364,14 @@ struct bootcmdline * __init boot_cmdline_find_by_name(const char *name)
     return NULL;
 }
 
-struct bootmodule * __init boot_module_find_by_addr_and_kind(bootmodule_kind kind,
-                                                             paddr_t start)
+struct bootmodule *__init
+boot_module_find_by_addr_and_kind(bootmodule_kind kind, paddr_t start)
 {
     struct bootmodules *mods = &bootinfo.modules;
     struct bootmodule *mod;
     unsigned int i;
 
-    for (i = 0 ; i < mods->nr_mods ; i++ )
+    for ( i = 0; i < mods->nr_mods; i++ )
     {
         mod = &mods->module[i];
         if ( mod->kind == kind && mod->start == start )
@@ -409,7 +434,7 @@ void __init populate_boot_allocator(void)
 
     if ( using_static_heap )
     {
-        for ( i = 0 ; i < reserved_mem->nr_banks; i++ )
+        for ( i = 0; i < reserved_mem->nr_banks; i++ )
         {
             if ( reserved_mem->bank[i].type != MEMBANK_STATIC_HEAP )
                 continue;

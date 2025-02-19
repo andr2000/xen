@@ -161,8 +161,7 @@ typedef struct {
     multiboot2_memory_map_t entries[];
 } multiboot2_tag_mmap_t;
 
-typedef struct
-{
+typedef struct {
     uint32_t type;
     uint32_t size;
     uint16_t vbe_mode;
@@ -173,15 +172,13 @@ typedef struct
     uint8_t vbe_mode_info[256];
 } multiboot2_tag_vbe_t;
 
-typedef struct
-{
+typedef struct {
     uint8_t red;
     uint8_t green;
     uint8_t blue;
 } multiboot2_color_t;
 
-typedef struct
-{
+typedef struct {
     uint32_t type;
     uint32_t size;
     uint64_t framebuffer_addr;
@@ -195,15 +192,13 @@ typedef struct
     uint8_t framebuffer_type;
     uint16_t reserved;
 
-    union
-    {
-        struct
-        {
+    union {
+        struct {
             uint16_t framebuffer_palette_num_colors;
             multiboot2_color_t framebuffer_palette[];
         };
-        struct
-        {
+
+        struct {
             uint8_t framebuffer_red_field_position;
             uint8_t framebuffer_red_mask_size;
             uint8_t framebuffer_green_field_position;

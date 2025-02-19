@@ -66,24 +66,24 @@ do {                                   \
 #endif
 
 struct avc_entry {
-    u32            ssid;
-    u32            tsid;
-    u16            tclass;
-    struct av_decision    avd;
+    u32 ssid;
+    u32 tsid;
+    u16 tclass;
+    struct av_decision avd;
 };
 
 struct avc_node {
-    struct avc_entry    ae;
-    struct hlist_node   list; /* anchored in avc_cache->slots[i] */
-    struct rcu_head     rhead;
+    struct avc_entry ae;
+    struct hlist_node list; /* anchored in avc_cache->slots[i] */
+    struct rcu_head rhead;
 };
 
 struct avc_cache {
-    struct hlist_head    slots[AVC_CACHE_SLOTS]; /* head for avc_node->list */
-    spinlock_t        slots_lock[AVC_CACHE_SLOTS]; /* lock for writes */
-    atomic_t        lru_hint;    /* LRU hint for reclaim scan */
-    atomic_t        active_nodes;
-    u32            latest_notif;    /* latest revocation notification */
+    struct hlist_head slots[AVC_CACHE_SLOTS]; /* head for avc_node->list */
+    spinlock_t slots_lock[AVC_CACHE_SLOTS]; /* lock for writes */
+    atomic_t lru_hint; /* LRU hint for reclaim scan */
+    atomic_t active_nodes;
+    u32 latest_notif; /* latest revocation notification */
 };
 
 /* Exported via Flask hypercall */
@@ -99,7 +99,7 @@ static DEFINE_RCU_READ_LOCK(avc_rcu_lock);
 
 static inline int avc_hash(u32 ssid, u32 tsid, u16 tclass)
 {
-    return (ssid ^ (tsid<<2) ^ (tclass<<4)) & (AVC_CACHE_SLOTS - 1);
+    return (ssid ^ (tsid << 2) ^ (tclass << 4)) & (AVC_CACHE_SLOTS - 1);
 }
 
 /* no use making this larger than the printk buffer */
@@ -113,13 +113,13 @@ struct avc_dump_buf {
     u32 free;
 };
 
-static void __attribute__ ((format (printf, 2, 3)))
-    avc_printk(struct avc_dump_buf *buf, const char *fmt, ...)
+static void __attribute__((format(printf, 2, 3)))
+avc_printk(struct avc_dump_buf *buf, const char *fmt, ...)
 {
     int i;
     va_list args;
 
- again:
+again:
     va_start(args, fmt);
     i = vsnprintf(buf->pos, buf->free, fmt, args);
     va_end(args);
@@ -196,7 +196,8 @@ static void avc_dump_av(struct avc_dump_buf *buf, u16 tclass, u32 av)
  * @tsid: target security identifier
  * @tclass: target security class
  */
-static void avc_dump_query(struct avc_dump_buf *buf, u32 ssid, u32 tsid, u16 tclass)
+static void avc_dump_query(struct avc_dump_buf *buf, u32 ssid, u32 tsid,
+                           u16 tclass)
 {
     int rc;
     char *scontext;
@@ -317,7 +318,7 @@ static inline int avc_reclaim_node(void)
     for ( try = 0, ecx = 0; try < AVC_CACHE_SLOTS; try++ )
     {
         atomic_inc(&avc_cache.lru_hint);
-        hvalue =  atomic_read(&avc_cache.lru_hint) & (AVC_CACHE_SLOTS - 1);
+        hvalue = atomic_read(&avc_cache.lru_hint) & (AVC_CACHE_SLOTS - 1);
         head = &avc_cache.slots[hvalue];
         lock = &avc_cache.slots_lock[hvalue];
 
@@ -338,7 +339,7 @@ static inline int avc_reclaim_node(void)
         rcu_read_unlock(&avc_rcu_lock);
         spin_unlock_irqrestore(lock, flags);
     }
- out:
+out:
     return ecx;
 }
 
@@ -347,7 +348,7 @@ static struct avc_node *avc_alloc_node(void)
     struct avc_node *node;
 
     node = xzalloc(struct avc_node);
-    if (!node)
+    if ( !node )
         goto out;
 
     INIT_RCU_HEAD(&node->rhead);
@@ -358,7 +359,7 @@ static struct avc_node *avc_alloc_node(void)
     if ( atomic_read(&avc_cache.active_nodes) > avc_cache_threshold )
         avc_reclaim_node();
 
- out:
+out:
     return node;
 }
 
@@ -382,8 +383,7 @@ static inline struct avc_node *avc_search_node(u32 ssid, u32 tsid, u16 tclass)
     head = &avc_cache.slots[hvalue];
     hlist_for_each_entry_rcu(node, next, head, list)
     {
-        if ( ssid == node->ae.ssid &&
-             tclass == node->ae.tclass &&
+        if ( ssid == node->ae.ssid && tclass == node->ae.tclass &&
              tsid == node->ae.tsid )
         {
             ret = node;
@@ -435,7 +435,8 @@ static int avc_latest_notif_update(int seqno, int is_insert)
         if ( seqno < avc_cache.latest_notif )
         {
             printk(KERN_WARNING "avc:  seqno %d < latest_notif %d\n",
-                   seqno, avc_cache.latest_notif);
+                   seqno,
+                   avc_cache.latest_notif);
             ret = -EAGAIN;
         }
     }
@@ -492,8 +493,7 @@ static struct avc_node *avc_insert(u32 ssid, u32 tsid, u16 tclass,
         spin_lock_irqsave(lock, flag);
         hlist_for_each_entry(pos, next, head, list)
         {
-            if ( pos->ae.ssid == ssid &&
-                 pos->ae.tsid == tsid &&
+            if ( pos->ae.ssid == ssid && pos->ae.tsid == tsid &&
                  pos->ae.tclass == tclass )
             {
                 avc_node_replace(node, pos);
@@ -504,7 +504,7 @@ static struct avc_node *avc_insert(u32 ssid, u32 tsid, u16 tclass,
     found:
         spin_unlock_irqrestore(lock, flag);
     }
- out:
+out:
     return node;
 }
 
@@ -574,7 +574,8 @@ void avc_audit(u32 ssid, u32 tsid, u16 tclass, u32 requested,
     else if ( cdom )
         avc_printk(&buf, "current=%pd ", cdom);
 
-    switch ( a ? a->type : 0 ) {
+    switch ( a ? a->type : 0 )
+    {
     case AVC_AUDIT_DATA_DEV:
         avc_printk(&buf, "device=%#lx ", a->device);
         break;
@@ -613,8 +614,7 @@ void avc_audit(u32 ssid, u32 tsid, u16 tclass, u32 requested,
  * otherwise, this function update the AVC entry. The original AVC-entry object
  * will release later by RCU.
  */
-static int avc_update_node(u32 perms, u32 ssid, u32 tsid, u16 tclass,
-                           u32 seqno)
+static int avc_update_node(u32 perms, u32 ssid, u32 tsid, u16 tclass, u32 seqno)
 {
     int hvalue, rc = 0;
     unsigned long flag;
@@ -639,10 +639,8 @@ static int avc_update_node(u32 perms, u32 ssid, u32 tsid, u16 tclass,
 
     hlist_for_each_entry(pos, next, head, list)
     {
-        if ( ssid == pos->ae.ssid &&
-             tsid == pos->ae.tsid &&
-             tclass == pos->ae.tclass &&
-             seqno == pos->ae.avd.seqno )
+        if ( ssid == pos->ae.ssid && tsid == pos->ae.tsid &&
+             tclass == pos->ae.tclass && seqno == pos->ae.avd.seqno )
         {
             orig = pos;
             break;
@@ -664,9 +662,9 @@ static int avc_update_node(u32 perms, u32 ssid, u32 tsid, u16 tclass,
 
     node->ae.avd.allowed |= perms;
     avc_node_replace(node, orig);
- out_unlock:
+out_unlock:
     spin_unlock_irqrestore(lock, flag);
- out:
+out:
     return rc;
 }
 
@@ -741,12 +739,14 @@ int avc_has_perm_noaudit(u32 ssid, u32 tsid, u16 tclass, u32 requested,
         else
             avd = &avd_entry;
 
-        rc = security_compute_av(ssid,tsid,tclass,requested,avd);
+        rc = security_compute_av(ssid, tsid, tclass, requested, avd);
         if ( rc )
             goto out;
         rcu_read_lock(&avc_rcu_lock);
-        node = avc_insert(ssid,tsid,tclass,avd);
-    } else {
+        node = avc_insert(ssid, tsid, tclass, avd);
+    }
+    else
+    {
         if ( in_avd )
             memcpy(in_avd, &node->ae.avd, sizeof(*in_avd));
         avd = &node->ae.avd;
@@ -757,13 +757,13 @@ int avc_has_perm_noaudit(u32 ssid, u32 tsid, u16 tclass, u32 requested,
     if ( denied )
     {
         if ( !flask_enforcing || (avd->flags & AVD_FLAGS_PERMISSIVE) )
-            avc_update_node(requested, ssid,tsid,tclass,avd->seqno);
+            avc_update_node(requested, ssid, tsid, tclass, avd->seqno);
         else
             rc = -EACCES;
     }
 
     rcu_read_unlock(&avc_rcu_lock);
- out:
+out:
     return rc;
 }
 
@@ -783,8 +783,8 @@ int avc_has_perm_noaudit(u32 ssid, u32 tsid, u16 tclass, u32 requested,
  * permissions are granted, -%EACCES if any permissions are denied, or
  * another -errno upon other errors.
  */
-int avc_has_perm(u32 ssid, u32 tsid, u16 tclass,
-                 u32 requested, struct avc_audit_data *auditdata)
+int avc_has_perm(u32 ssid, u32 tsid, u16 tclass, u32 requested,
+                 struct avc_audit_data *auditdata)
 {
     struct av_decision avd;
     int rc;

@@ -56,10 +56,9 @@ void acpi_tb_create_local_fadt(struct acpi_table_header *table, u32 length);
 /*
  * tbfind - find ACPI table
  */
-acpi_status
-acpi_tb_find_table(char *signature,
-		   char *oem_id,
-		   char *oem_table_id, acpi_native_uint * table_index);
+acpi_status acpi_tb_find_table(char *signature, char *oem_id,
+                               char *oem_table_id,
+                               acpi_native_uint *table_index);
 
 /*
  * tbinstal - Table removal and deletion
@@ -68,14 +67,12 @@ acpi_status acpi_tb_resize_root_table_list(void);
 
 acpi_status acpi_tb_verify_table(struct acpi_table_desc *table_desc);
 
-acpi_status
-acpi_tb_add_table(struct acpi_table_desc *table_desc,
-		  acpi_native_uint * table_index);
+acpi_status acpi_tb_add_table(struct acpi_table_desc *table_desc,
+                              acpi_native_uint *table_index);
 
-acpi_status
-acpi_tb_store_table(acpi_physical_address address,
-		    struct acpi_table_header *table,
-		    u32 length, u8 flags, acpi_native_uint * table_index);
+acpi_status acpi_tb_store_table(acpi_physical_address address,
+                                struct acpi_table_header *table, u32 length,
+                                u8 flags, acpi_native_uint *table_index);
 
 void acpi_tb_delete_table(struct acpi_table_desc *table_desc);
 
@@ -88,20 +85,18 @@ void acpi_tb_set_table_loaded_flag(acpi_native_uint table_index, u8 is_loaded);
 /*
  * tbutils - table manager utilities
  */
-void
-acpi_tb_print_table_header(acpi_physical_address address,
-			   struct acpi_table_header *header);
+void acpi_tb_print_table_header(acpi_physical_address address,
+                                struct acpi_table_header *header);
 
-u8 acpi_tb_checksum(u8 * buffer, acpi_native_uint length);
+u8 acpi_tb_checksum(u8 *buffer, acpi_native_uint length);
 
-acpi_status
-acpi_tb_verify_checksum(struct acpi_table_header *table, u32 length);
+acpi_status acpi_tb_verify_checksum(struct acpi_table_header *table,
+                                    u32 length);
 
-void
-acpi_tb_install_table(acpi_physical_address address,
-		      u8 flags, const char *signature, acpi_native_uint table_index);
+void acpi_tb_install_table(acpi_physical_address address, u8 flags,
+                           const char *signature, acpi_native_uint table_index);
 
-acpi_status
-acpi_tb_parse_root_table(acpi_physical_address rsdp_address, u8 flags);
+acpi_status acpi_tb_parse_root_table(acpi_physical_address rsdp_address,
+                                     u8 flags);
 
-#endif				/* __ACTABLES_H__ */
+#endif /* __ACTABLES_H__ */

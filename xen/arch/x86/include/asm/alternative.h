@@ -10,16 +10,16 @@
 #include <asm/cpufeatureset.h>
 
 struct __packed alt_instr {
-    int32_t  orig_offset;   /* original instruction */
-    int32_t  repl_offset;   /* offset to replacement instruction */
-    uint16_t cpuid;         /* cpuid bit set for replacement */
-    uint8_t  orig_len;      /* length of original instruction */
-    uint8_t  repl_len;      /* length of new instruction */
-    uint8_t  pad_len;       /* length of build-time padding */
-    uint8_t  priv;          /* Private, for use by apply_alternatives() */
+    int32_t orig_offset; /* original instruction */
+    int32_t repl_offset; /* offset to replacement instruction */
+    uint16_t cpuid; /* cpuid bit set for replacement */
+    uint8_t orig_len; /* length of original instruction */
+    uint8_t repl_len; /* length of new instruction */
+    uint8_t pad_len; /* length of build-time padding */
+    uint8_t priv; /* Private, for use by apply_alternatives() */
 };
 
-#define __ALT_PTR(a,f)      ((uint8_t *)((void *)&(a)->f + (a)->f))
+#define __ALT_PTR(a, f)      ((uint8_t *)((void *)&(a)->f + (a)->f))
 #define ALT_ORIG_PTR(a)     __ALT_PTR(a, orig_offset)
 #define ALT_REPL_PTR(a)     __ALT_PTR(a, repl_offset)
 
@@ -71,10 +71,10 @@ extern void alternative_branches(void);
         " .byte " alt_pad_len "\n"                /* padding len     */ \
         " .byte 0\n"                              /* priv            */
 
-#define DISCARD_ENTRY(num)                        /* repl <= total */   \
+#define DISCARD_ENTRY(num) /* repl <= total */   \
         " .byte 0xff + (" alt_repl_len(num) ") - (" alt_total_len ")\n"
 
-#define ALTINSTR_REPLACEMENT(newinstr, num)       /* replacement */     \
+#define ALTINSTR_REPLACEMENT(newinstr, num) /* replacement */     \
         alt_repl_s(num)":\n\t" newinstr "\n" alt_repl_e(num) ":\n\t"
 
 /* alternative assembly primitive: */
@@ -150,8 +150,13 @@ extern void alternative_branches(void);
  * Otherwise, if CPU has feature1, newinstr1 is used.
  * Otherwise, oldinstr is used.
  */
-#define alternative_io_2(oldinstr, newinstr1, feature1, newinstr2,	\
-			 feature2, output, input...)			\
+#define alternative_io_2(oldinstr,                                             \
+                         newinstr1,                                            \
+                         feature1,                                             \
+                         newinstr2,                                            \
+                         feature2,                                             \
+                         output,                                               \
+                         input...)			\
 	asm volatile(ALTERNATIVE_2(oldinstr, newinstr1, feature1,	\
 				   newinstr2, feature2)			\
 		     : output : input)

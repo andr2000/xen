@@ -19,17 +19,17 @@ struct mpc_config_bus;
 struct mp_config_table;
 struct mpc_config_processor;
 
-struct genapic { 
-	const char *name;
-	int (*probe)(void);
+struct genapic {
+    const char *name;
+    int (*probe)(void);
 
-	/* Interrupt delivery parameters ('physical' vs. 'logical flat'). */
-	int int_delivery_mode;
-	int int_dest_mode;
-	void (*init_apic_ldr)(void);
-	const cpumask_t *(*vector_allocation_cpumask)(int cpu);
-	unsigned int (*cpu_mask_to_apicid)(const cpumask_t *cpumask);
-	void (*send_IPI_mask)(const cpumask_t *mask, int vector);
+    /* Interrupt delivery parameters ('physical' vs. 'logical flat'). */
+    int int_delivery_mode;
+    int int_dest_mode;
+    void (*init_apic_ldr)(void);
+    const cpumask_t *(*vector_allocation_cpumask)(int cpu);
+    unsigned int (*cpu_mask_to_apicid)(const cpumask_t *cpumask);
+    void (*send_IPI_mask)(const cpumask_t *mask, int vector);
     void (*send_IPI_self)(uint8_t vector);
 };
 

@@ -35,15 +35,16 @@
 #define mce_pending            mce_state.pending
 
 struct trap_bounce {
-    uint32_t      error_code;
-    uint8_t       flags; /* TBF_ */
-    uint16_t      cs;
+    uint32_t error_code;
+    uint8_t flags; /* TBF_ */
+    uint16_t cs;
     unsigned long eip;
 };
 
 #define MAPHASH_ENTRIES 8
 #define MAPHASH_HASHFN(pfn) ((pfn) & (MAPHASH_ENTRIES-1))
 #define MAPHASHENT_NOTINUSE ((u32)~0U)
+
 struct mapcache_vcpu {
     /* Shadow of mapcache_domain.epoch. */
     unsigned int shadow_epoch;
@@ -51,8 +52,8 @@ struct mapcache_vcpu {
     /* Lock-free per-VCPU hash of recently-used mappings. */
     struct vcpu_maphash_entry {
         unsigned long mfn;
-        uint32_t      idx;
-        uint32_t      refcnt;
+        uint32_t idx;
+        uint32_t refcnt;
     } hash[MAPHASH_ENTRIES];
 };
 
@@ -93,7 +94,7 @@ void init_hypercall_page(struct domain *d, void *ptr);
 /************************************************/
 struct shadow_domain {
 #ifdef CONFIG_SHADOW_PAGING
-    unsigned int      opt_flags;    /* runtime tunable optimizations on/off */
+    unsigned int opt_flags; /* runtime tunable optimizations on/off */
     struct page_list_head pinned_shadows;
 
     /* 1-to-1 map for use when HVM vcpus have paging disabled */
@@ -105,7 +106,7 @@ struct shadow_domain {
 
     /* Shadow hashtable */
     struct page_info **hash_table;
-    bool hash_walking;  /* Some function is walking the hash table */
+    bool hash_walking; /* Some function is walking the hash table */
 
     /* Fast MMIO path heuristic */
     bool has_fast_mmio_entries;
@@ -153,6 +154,7 @@ struct shadow_vcpu {
     /* Shadow out-of-sync: pages that this vcpu has let go out of sync */
     mfn_t oos[SHADOW_OOS_PAGES];
     mfn_t oos_snapshot[SHADOW_OOS_PAGES];
+
     struct oos_fixup {
         int next;
         mfn_t smfn[SHADOW_OOS_FIXUPS];
@@ -167,27 +169,26 @@ struct shadow_vcpu {
 /************************************************/
 /*            hardware assisted paging          */
 /************************************************/
-struct hap_domain {
-};
+struct hap_domain {};
 
 /************************************************/
 /*       common paging data structure           */
 /************************************************/
 struct log_dirty_domain {
     /* log-dirty radix tree to record dirty pages */
-    mfn_t          top;
-    unsigned int   allocs;
-    unsigned int   failed_allocs;
+    mfn_t top;
+    unsigned int allocs;
+    unsigned int failed_allocs;
 
     /* log-dirty mode stats */
-    unsigned long  fault_count;
-    unsigned long  dirty_count;
+    unsigned long fault_count;
+    unsigned long dirty_count;
 
     /* functions which are paging mode specific */
     const struct log_dirty_ops {
-        int        (*enable  )(struct domain *d);
-        int        (*disable )(struct domain *d);
-        void       (*clean   )(struct domain *d);
+        int (*enable)(struct domain *d);
+        int (*disable)(struct domain *d);
+        void (*clean)(struct domain *d);
     } *ops;
 };
 
@@ -196,19 +197,19 @@ struct paging_domain {
     mm_lock_t lock;
 
     /* flags to control paging operation */
-    u32                     mode;
+    u32 mode;
     /* Has that pool ever run out of memory? */
-    bool                    p2m_alloc_failed;
+    bool p2m_alloc_failed;
     /* extension for shadow paging support */
-    struct shadow_domain    shadow;
+    struct shadow_domain shadow;
     /* extension for hardware-assited paging */
-    struct hap_domain       hap;
+    struct hap_domain hap;
 
     /* Memory allocation (common to shadow and HAP) */
-    struct page_list_head   freelist;
-    unsigned int            total_pages;  /* number of pages allocated */
-    unsigned int            free_pages;   /* number of pages on freelists */
-    unsigned int            p2m_pages;    /* number of pages allocated to p2m */
+    struct page_list_head freelist;
+    unsigned int total_pages; /* number of pages allocated */
+    unsigned int free_pages; /* number of pages on freelists */
+    unsigned int p2m_pages; /* number of pages allocated to p2m */
 
     /* log dirty support */
     struct log_dirty_domain log_dirty;
@@ -217,18 +218,19 @@ struct paging_domain {
     struct {
         const struct domain *dom;
         unsigned int op;
+
         union {
             struct {
-                unsigned long done:PADDR_BITS - PAGE_SHIFT;
-                unsigned long i4:PAGETABLE_ORDER;
-                unsigned long i3:PAGETABLE_ORDER;
+                unsigned long done : PADDR_BITS - PAGE_SHIFT;
+                unsigned long i4 : PAGETABLE_ORDER;
+                unsigned long i3 : PAGETABLE_ORDER;
             } log_dirty;
         };
     } preempt;
 
     /* alloc/free pages from the pool for paging-assistance structures
      * (used by p2m and log-dirty code for their tries) */
-    struct page_info * (*alloc_page)(struct domain *d);
+    struct page_info *(*alloc_page)(struct domain *d);
     void (*free_page)(struct domain *d, struct page_info *pg);
 
     void (*update_paging_modes)(struct vcpu *v);
@@ -252,7 +254,7 @@ struct paging_vcpu {
 #endif
     /* Translated guest: virtual TLB */
     struct shadow_vtlb *vtlb;
-    spinlock_t          vtlb_lock;
+    spinlock_t vtlb_lock;
 
     /* paging support extension */
     struct shadow_vcpu shadow;
@@ -264,13 +266,13 @@ struct paging_vcpu {
 #define INVALID_ALTP2M  0xffff
 #define MAX_EPTP        (PAGE_SIZE / sizeof(uint64_t))
 struct p2m_domain;
+
 struct time_scale {
     int shift;
     u32 mul_frac;
 };
 
-struct pv_domain
-{
+struct pv_domain {
     l1_pgentry_t **gdt_ldt_l1tab;
 
     atomic_t nr_l4_pages;
@@ -292,10 +294,10 @@ struct pv_domain
 
 struct monitor_write_data {
     struct {
-        unsigned int msr : 1;
-        unsigned int cr0 : 1;
-        unsigned int cr3 : 1;
-        unsigned int cr4 : 1;
+        unsigned int msr:1;
+        unsigned int cr0:1;
+        unsigned int cr3:1;
+        unsigned int cr4:1;
     } do_write;
 
     bool cr3_noflush;
@@ -307,8 +309,7 @@ struct monitor_write_data {
     uint64_t cr4;
 };
 
-struct arch_domain
-{
+struct arch_domain {
     struct page_info *perdomain_l3_pg;
 
 #ifdef CONFIG_PV32
@@ -397,17 +398,17 @@ struct arch_domain
     struct PITState vpit;
 
     /* TSC management (emulation, pv, scaling, stats) */
-    int tsc_mode;            /* see asm/time.h */
-    bool vtsc;               /* tsc is emulated (may change after migrate) */
-    s_time_t vtsc_last;      /* previous TSC value (guarantee monotonicity) */
-    uint64_t vtsc_offset;    /* adjustment for save/restore/migrate */
-    uint32_t tsc_khz;        /* cached guest khz for certain emulated or
+    int tsc_mode; /* see asm/time.h */
+    bool vtsc; /* tsc is emulated (may change after migrate) */
+    s_time_t vtsc_last; /* previous TSC value (guarantee monotonicity) */
+    uint64_t vtsc_offset; /* adjustment for save/restore/migrate */
+    uint32_t tsc_khz; /* cached guest khz for certain emulated or
                                 hardware TSC scaling cases */
     struct time_scale vtsc_to_ns; /* scaling for certain emulated or
                                      hardware TSC scaling cases */
     struct time_scale ns_to_vtsc; /* scaling for certain emulated or
                                      hardware TSC scaling cases */
-    uint32_t incarnation;    /* incremented every restore or live migrate
+    uint32_t incarnation; /* incremented every restore or live migrate
                                 (possibly other cases in the future */
 
     /* Pseudophysical e820 map (XENMEM_memory_map).  */
@@ -426,26 +427,26 @@ struct arch_domain
 
     /* Arch-specific monitor options */
     struct {
-        unsigned int write_ctrlreg_enabled                                 : 4;
-        unsigned int write_ctrlreg_sync                                    : 4;
-        unsigned int write_ctrlreg_onchangeonly                            : 4;
-        unsigned int singlestep_enabled                                    : 1;
-        unsigned int software_breakpoint_enabled                           : 1;
-        unsigned int debug_exception_enabled                               : 1;
-        unsigned int debug_exception_sync                                  : 1;
-        unsigned int cpuid_enabled                                         : 1;
-        unsigned int descriptor_access_enabled                             : 1;
-        unsigned int guest_request_userspace_enabled                       : 1;
-        unsigned int emul_unimplemented_enabled                            : 1;
-        unsigned int io_enabled                                            : 1;
+        unsigned int write_ctrlreg_enabled:4;
+        unsigned int write_ctrlreg_sync:4;
+        unsigned int write_ctrlreg_onchangeonly:4;
+        unsigned int singlestep_enabled:1;
+        unsigned int software_breakpoint_enabled:1;
+        unsigned int debug_exception_enabled:1;
+        unsigned int debug_exception_sync:1;
+        unsigned int cpuid_enabled:1;
+        unsigned int descriptor_access_enabled:1;
+        unsigned int guest_request_userspace_enabled:1;
+        unsigned int emul_unimplemented_enabled:1;
+        unsigned int io_enabled:1;
         /*
          * By default all events are sent.
          * This is used to filter out pagefaults.
          */
-        unsigned int inguest_pagefault_disabled                            : 1;
-        unsigned int control_register_values                               : 1;
-        unsigned int vmexit_enabled                                        : 1;
-        unsigned int vmexit_sync                                           : 1;
+        unsigned int inguest_pagefault_disabled:1;
+        unsigned int control_register_values:1;
+        unsigned int vmexit_enabled:1;
+        unsigned int vmexit_sync:1;
         struct monitor_msr_bitmap *msr_bitmap;
         uint64_t write_ctrlreg_mask[4];
     } monitor;
@@ -513,8 +514,7 @@ struct arch_domain
      (((v)->vcpu_id << GDT_LDT_VCPU_SHIFT) & (L1_PAGETABLE_ENTRIES - 1)))
 #define pv_ldt_ptes(v) (pv_gdt_ptes(v) + 16)
 
-struct pv_vcpu
-{
+struct pv_vcpu {
     /* map_domain_page() mapping cache. */
     struct mapcache_vcpu mapcache;
 
@@ -531,8 +531,10 @@ struct pv_vcpu
 
     unsigned long event_callback_eip;
     unsigned long failsafe_callback_eip;
+
     union {
         unsigned long syscall_callback_eip;
+
         struct {
             unsigned int event_callback_cs;
             unsigned int failsafe_callback_cs;
@@ -573,9 +575,9 @@ struct pv_vcpu
 
     /* I/O-port access bitmap. */
     XEN_GUEST_HANDLE(uint8) iobmp; /* Guest kernel vaddr of the bitmap. */
-    unsigned int iobmp_nr;    /* Number of ports represented in the bitmap. */
+    unsigned int iobmp_nr; /* Number of ports represented in the bitmap. */
 #define IOPL(val) MASK_INSR(val, X86_EFLAGS_IOPL)
-    unsigned int iopl;        /* Current IOPL for this VCPU, shifted left by
+    unsigned int iopl; /* Current IOPL for this VCPU, shifted left by
                                * 12 to match the eflags register. */
 
     /*
@@ -589,8 +591,7 @@ struct pv_vcpu
     struct vcpu_time_info pending_system_time;
 };
 
-struct arch_vcpu
-{
+struct arch_vcpu {
     struct cpu_user_regs user_regs;
 
     /* Debug registers. */
@@ -600,14 +601,15 @@ struct arch_vcpu
 
     /* other state */
 
-    unsigned long      flags; /* TF_ */
+    unsigned long flags; /* TF_ */
 
     struct vpmu_struct vpmu;
 
     struct {
-        bool    pending;
+        bool pending;
         uint8_t old_mask;
     } async_exception_state[VCPU_TRAP_LAST];
+
 #define async_exception_state(t) async_exception_state[(t)-1]
     uint8_t async_exception_mask;
 
@@ -621,15 +623,15 @@ struct arch_vcpu
      * guest_table{,_user} hold a ref to the page, and also a type-count
      * unless shadow refcounts are in use
      */
-    pagetable_t guest_table_user;       /* (MFN) x86/64 user-space pagetable */
-    pagetable_t guest_table;            /* (MFN) guest notion of cr3 */
-    struct page_info *old_guest_table;  /* partially destructed pagetable */
-    struct page_info *old_guest_ptpg;   /* containing page table of the */
-                                        /* former, if any */
-    bool old_guest_table_partial;       /* Are we dropping a type ref, or just
+    pagetable_t guest_table_user; /* (MFN) x86/64 user-space pagetable */
+    pagetable_t guest_table; /* (MFN) guest notion of cr3 */
+    struct page_info *old_guest_table; /* partially destructed pagetable */
+    struct page_info *old_guest_ptpg; /* containing page table of the */
+    /* former, if any */
+    bool old_guest_table_partial; /* Are we dropping a type ref, or just
                                          * finishing up a partial de-validation? */
 
-    unsigned long cr3;                  /* (MA) value to install in HW CR3 */
+    unsigned long cr3; /* (MA) value to install in HW CR3 */
 
     /*
      * The save area for Processor Extended States and the bitmask of the
@@ -673,8 +675,7 @@ struct arch_vcpu
     } monitor;
 };
 
-struct guest_memory_policy
-{
+struct guest_memory_policy {
     bool nested_guest_mode;
 };
 
@@ -683,8 +684,7 @@ void update_guest_memory_policy(struct vcpu *v,
 
 void domain_cpu_policy_changed(struct domain *d);
 
-bool update_secondary_system_time(struct vcpu *v,
-                                  struct vcpu_time_info *u);
+bool update_secondary_system_time(struct vcpu *v, struct vcpu_time_info *u);
 void force_update_secondary_system_time(struct vcpu *v,
                                         struct vcpu_time_info *map);
 
@@ -728,9 +728,9 @@ static inline void pv_inject_hw_exception(unsigned int vector, int errcode)
 static inline void pv_inject_DB(unsigned long pending_dbg)
 {
     struct x86_event event = {
-        .vector      = X86_EXC_DB,
-        .type        = X86_ET_HW_EXC,
-        .error_code  = X86_EVENT_NO_EC,
+        .vector = X86_EXC_DB,
+        .type = X86_ET_HW_EXC,
+        .error_code = X86_EVENT_NO_EC,
     };
 
     event.pending_dbg = pending_dbg;
@@ -781,8 +781,7 @@ static inline void pv_inject_sw_interrupt(unsigned int vector)
                       : is_pv_32bit_domain(d) ? PV32_VM_ASSIST_MASK \
                                               : PV64_VM_ASSIST_MASK)
 
-struct arch_vcpu_io {
-};
+struct arch_vcpu_io {};
 
 /* Maxphysaddr supportable by the paging infrastructure. */
 unsigned int domain_max_paddr_bits(const struct domain *d);

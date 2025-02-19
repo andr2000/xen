@@ -21,8 +21,7 @@
 #include <asm/traps.h>
 
 /* Xen stack for bringing up the first CPU. */
-unsigned char __initdata cpu0_boot_stack[STACK_SIZE]
-    __aligned(STACK_SIZE);
+unsigned char __initdata cpu0_boot_stack[STACK_SIZE] __aligned(STACK_SIZE);
 
 /**
  * copy_from_paddr - copy data from a physical address
@@ -50,7 +49,7 @@ void __init copy_from_paddr(void *dst, paddr_t paddr, unsigned long len)
 }
 
 /* Relocate the FDT in Xen heap */
-static void * __init relocate_fdt(paddr_t dtb_paddr, size_t dtb_size)
+static void *__init relocate_fdt(paddr_t dtb_paddr, size_t dtb_size)
 {
     void *fdt = xvmalloc_array(uint8_t, dtb_size);
 
@@ -62,8 +61,7 @@ static void * __init relocate_fdt(paddr_t dtb_paddr, size_t dtb_size)
     return fdt;
 }
 
-void __init noreturn start_xen(unsigned long bootcpu_id,
-                               paddr_t dtb_addr)
+void __init noreturn start_xen(unsigned long bootcpu_id, paddr_t dtb_addr)
 {
     const char *cmdline;
     size_t fdt_size;
@@ -82,13 +80,16 @@ void __init noreturn start_xen(unsigned long bootcpu_id,
 
     device_tree_flattened = early_fdt_map(dtb_addr);
     if ( !device_tree_flattened )
-        panic("Invalid device tree blob at physical address %#lx. The DTB must be 8-byte aligned and must not exceed %lld bytes in size.\n\n"
-              "Please check your bootloader.\n",
-              dtb_addr, BOOT_FDT_VIRT_SIZE);
+        panic(
+            "Invalid device tree blob at physical address %#lx. The DTB must be 8-byte aligned and must not exceed %lld bytes in size.\n\n" "Please check your bootloader.\n",
+            dtb_addr,
+            BOOT_FDT_VIRT_SIZE);
 
     /* Register Xen's load address as a boot module. */
-    if ( !add_boot_module(BOOTMOD_XEN, virt_to_maddr(_start),
-                          _end - _start, false) )
+    if ( !add_boot_module(BOOTMOD_XEN,
+                          virt_to_maddr(_start),
+                          _end - _start,
+                          false) )
         panic("Failed to add BOOTMOD_XEN\n");
 
     fdt_size = boot_fdt_info(device_tree_flattened, dtb_addr);

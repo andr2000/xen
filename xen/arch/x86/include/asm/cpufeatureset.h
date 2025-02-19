@@ -6,10 +6,12 @@
 #include <xen/stringify.h>
 
 #define XEN_CPUFEATURE(name, value) X86_FEATURE_##name = (value),
+
 enum {
 #include <public/arch-x86/cpufeatureset.h>
 #include <asm/cpufeatures.h>
 };
+
 #undef XEN_CPUFEATURE
 
 #define XEN_CPUFEATURE(name, value) asm (".equ X86_FEATURE_" #name ", " \

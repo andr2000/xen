@@ -272,15 +272,17 @@
 /* This structure represents a single trace buffer record. */
 struct t_rec {
     uint32_t event:28;
-    uint32_t extra_u32:3;         /* # entries in trailing extra_u32[] array */
-    uint32_t cycles_included:1;   /* u.cycles or u.no_cycles? */
+    uint32_t extra_u32:3; /* # entries in trailing extra_u32[] array */
+    uint32_t cycles_included:1; /* u.cycles or u.no_cycles? */
+
     union {
         struct {
             uint32_t cycles_lo, cycles_hi; /* cycle counter timestamp */
-            uint32_t extra_u32[7];         /* event data items */
+            uint32_t extra_u32[7]; /* event data items */
         } cycles;
+
         struct {
-            uint32_t extra_u32[7];         /* event data items */
+            uint32_t extra_u32[7]; /* event data items */
         } nocycles;
     } u;
 };
@@ -298,8 +300,8 @@ struct t_buf {
      * power of 2:
      *     (((2^32 - 1) % X) + 1) % X != (2^32) % X
      */
-    uint32_t cons;   /* Offset of next item to be consumed by control tools. */
-    uint32_t prod;   /* Offset of next item to be produced by Xen.           */
+    uint32_t cons; /* Offset of next item to be consumed by control tools. */
+    uint32_t prod; /* Offset of next item to be produced by Xen.           */
     /*  Records follow immediately after the meta-data header.    */
 };
 
@@ -309,7 +311,8 @@ struct t_buf {
  */
 struct t_info {
     uint16_t tbuf_size; /* Size in pages of each trace buffer */
-    uint16_t mfn_offset[];  /* Offset within t_info structure of the page list per cpu */
+    uint16_t
+        mfn_offset[]; /* Offset within t_info structure of the page list per cpu */
     /* MFN lists immediately after the header */
 };
 

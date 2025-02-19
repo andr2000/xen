@@ -12,8 +12,7 @@
 CHECK_vcpu_get_physid;
 #undef xen_vcpu_get_physid
 
-static void cf_check
-runstate_area_populate(void *map, struct vcpu *v)
+static void cf_check runstate_area_populate(void *map, struct vcpu *v)
 {
     if ( is_pv_vcpu(v) )
         v->arch.pv.need_update_runstate_area = false;
@@ -28,8 +27,8 @@ runstate_area_populate(void *map, struct vcpu *v)
     }
 }
 
-int
-compat_vcpu_op(int cmd, unsigned int vcpuid, XEN_GUEST_HANDLE_PARAM(void) arg)
+int compat_vcpu_op(int cmd, unsigned int vcpuid,
+                   XEN_GUEST_HANDLE_PARAM(void) arg)
 {
     int rc;
     struct domain *d = current->domain;
@@ -82,13 +81,17 @@ compat_vcpu_op(int cmd, unsigned int vcpuid, XEN_GUEST_HANDLE_PARAM(void) arg)
         if ( copy_from_guest(&area.addr.p, arg, 1) )
             break;
 
-        rc = map_guest_area(v, area.addr.p,
+        rc = map_guest_area(v,
+                            area.addr.p,
                             sizeof(struct compat_vcpu_runstate_info),
                             &v->runstate_guest_area,
                             runstate_area_populate);
         if ( rc == -ERESTART )
-            rc = hypercall_create_continuation(__HYPERVISOR_vcpu_op, "iih",
-                                               cmd, vcpuid, arg);
+            rc = hypercall_create_continuation(__HYPERVISOR_vcpu_op,
+                                               "iih",
+                                               cmd,
+                                               vcpuid,
+                                               arg);
 
         break;
     }

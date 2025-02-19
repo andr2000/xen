@@ -52,7 +52,7 @@ static bool nept_rsv_bits_check(ept_entry_t e, uint32_t level)
         break;
     case 2 ... 3:
         if ( e.sp )
-            rsv_bits |=  ((1ull << (9 * (level - 1))) - 1) << PAGE_SHIFT;
+            rsv_bits |= ((1ull << (9 * (level - 1))) - 1) << PAGE_SHIFT;
         else
             rsv_bits |= EPTE_EMT_MASK | EPTE_IGMT_MASK;
         break;
@@ -60,7 +60,7 @@ static bool nept_rsv_bits_check(ept_entry_t e, uint32_t level)
         rsv_bits |= EPTE_EMT_MASK | EPTE_IGMT_MASK | EPTE_SUPER_PAGE_MASK;
         break;
     default:
-        gdprintk(XENLOG_ERR,"Unsupported EPT paging level: %d\n", level);
+        gdprintk(XENLOG_ERR, "Unsupported EPT paging level: %d\n", level);
         BUG();
         break;
     }
@@ -124,19 +124,18 @@ static bool nept_rwx_bits_check(ept_entry_t e)
 /* nept's misconfiguration check */
 static bool nept_misconfiguration_check(ept_entry_t e, uint32_t level)
 {
-    return nept_rsv_bits_check(e, level) ||
-           nept_emt_bits_check(e, level) ||
+    return nept_rsv_bits_check(e, level) || nept_emt_bits_check(e, level) ||
            nept_rwx_bits_check(e);
 }
 
 static int ept_lvl_table_offset(unsigned long gpa, int lvl)
 {
-    return (gpa >> (EPT_L4_PAGETABLE_SHIFT -(4 - lvl) * 9)) &
+    return (gpa >> (EPT_L4_PAGETABLE_SHIFT - (4 - lvl) * 9)) &
            (EPT_PAGETABLE_ENTRIES - 1);
 }
 
-static uint32_t
-nept_walk_tables(struct vcpu *v, unsigned long l2ga, ept_walk_t *gw)
+static uint32_t nept_walk_tables(struct vcpu *v, unsigned long l2ga,
+                                 ept_walk_t *gw)
 {
     int lvl;
     uint32_t rc = 0, ret = 0, gflags;
@@ -148,7 +147,7 @@ nept_walk_tables(struct vcpu *v, unsigned long l2ga, ept_walk_t *gw)
 
     memset(gw, 0, sizeof(*gw));
 
-    for (lvl = 4; lvl > 0; lvl--)
+    for ( lvl = 4; lvl > 0; lvl-- )
     {
         lxp = map_domain_gfn(p2m, base_gfn, &lxmfn, P2M_ALLOC, &rc);
         if ( !lxp )
@@ -167,13 +166,13 @@ nept_walk_tables(struct vcpu *v, unsigned long l2ga, ept_walk_t *gw)
         {
             /* Generate a fake l1 table entry so callers don't all
              * have to understand superpages. */
-            unsigned long gfn_lvl_mask =  (1ull << ((lvl - 1) * 9)) - 1;
+            unsigned long gfn_lvl_mask = (1ull << ((lvl - 1) * 9)) - 1;
             gfn_t start = _gfn(gw->lxe[lvl].mfn);
             /* Increment the pfn by the right number of 4k pages. */
             start = _gfn((gfn_x(start) & ~gfn_lvl_mask) +
-                     ((l2ga >> PAGE_SHIFT) & gfn_lvl_mask));
+                         ((l2ga >> PAGE_SHIFT) & gfn_lvl_mask));
             gflags = (gw->lxe[lvl].epte & EPTE_FLAG_MASK) |
-                     (lvl == 3 ? NEPT_1G_ENTRY_FLAG: NEPT_2M_ENTRY_FLAG);
+                     (lvl == 3 ? NEPT_1G_ENTRY_FLAG : NEPT_2M_ENTRY_FLAG);
             gw->lxe[0].epte = (gfn_x(start) << PAGE_SHIFT) | gflags;
             goto done;
         }
@@ -197,7 +196,7 @@ map_err:
     }
     /* fall through to misconfig error */
 misconfig_err:
-    ret =  EPT_TRANSLATE_MISCONFIG;
+    ret = EPT_TRANSLATE_MISCONFIG;
     goto out;
 
 non_present:
@@ -209,10 +208,10 @@ out:
 
 /* Translate a L2 guest address to L1 gpa via L1 EPT paging structure */
 
-int nept_translate_l2ga(struct vcpu *v, paddr_t l2ga,
-                        unsigned int *page_order, uint32_t rwx_acc,
-                        unsigned long *l1gfn, uint8_t *p2m_acc,
-                        uint64_t *exit_qual, uint32_t *exit_reason)
+int nept_translate_l2ga(struct vcpu *v, paddr_t l2ga, unsigned int *page_order,
+                        uint32_t rwx_acc, unsigned long *l1gfn,
+                        uint8_t *p2m_acc, uint64_t *exit_qual,
+                        uint32_t *exit_reason)
 {
     uint32_t rc, rwx_bits = 0;
     ept_walk_t gw;
@@ -236,9 +235,9 @@ int nept_translate_l2ga(struct vcpu *v, paddr_t l2ga,
                        gw.lxe[1].epte & EPTE_RWX_MASK;
             *page_order = 0;
         }
-        else if ( gw.lxe[0].epte & NEPT_1G_ENTRY_FLAG  )
+        else if ( gw.lxe[0].epte & NEPT_1G_ENTRY_FLAG )
         {
-            rwx_bits = gw.lxe[4].epte & gw.lxe[3].epte  & EPTE_RWX_MASK;
+            rwx_bits = gw.lxe[4].epte & gw.lxe[3].epte & EPTE_RWX_MASK;
             *page_order = 18;
         }
         else

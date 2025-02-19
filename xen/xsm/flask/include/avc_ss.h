@@ -26,4 +26,3 @@ struct selinux_class_perm {
 extern const struct selinux_class_perm selinux_class_perm;
 
 #endif /* _FLASK_AVC_SS_H_ */
-

@@ -376,8 +376,8 @@
 	((typeof(_mask))(((_reg) & (_mask)) >> (ffs64(_mask) - 1)))
 
 /* Linux compatibility functions. */
-typedef paddr_t		dma_addr_t;
-typedef unsigned int		gfp_t;
+typedef paddr_t dma_addr_t;
+typedef unsigned int gfp_t;
 
 /* Alias to Xen lock functions */
 #define mutex spinlock
@@ -387,43 +387,43 @@ typedef unsigned int		gfp_t;
 
 /* SMMU private data for an IOMMU domain */
 enum arm_smmu_domain_stage {
-	ARM_SMMU_DOMAIN_S1 = 0,
-	ARM_SMMU_DOMAIN_S2,
-	ARM_SMMU_DOMAIN_NESTED,
-	ARM_SMMU_DOMAIN_BYPASS,
+    ARM_SMMU_DOMAIN_S1 = 0,
+    ARM_SMMU_DOMAIN_S2,
+    ARM_SMMU_DOMAIN_NESTED,
+    ARM_SMMU_DOMAIN_BYPASS,
 };
 
 /* Xen specific code. */
 struct iommu_domain {
-	/* Runtime SMMU configuration for this iommu_domain */
-	atomic_t		ref;
-	/*
+    /* Runtime SMMU configuration for this iommu_domain */
+    atomic_t ref;
+    /*
 	 * Used to link iommu_domain contexts for a same domain.
 	 * There is at least one per-SMMU to used by the domain.
 	 */
-	struct list_head		list;
+    struct list_head list;
 };
 
 /* Describes information required for a Xen domain */
 struct arm_smmu_xen_domain {
-	spinlock_t		lock;
+    spinlock_t lock;
 
-	/* List of iommu domains associated to this domain */
-	struct list_head	contexts;
+    /* List of iommu domains associated to this domain */
+    struct list_head contexts;
 };
 
 enum pri_resp {
-	PRI_RESP_DENY = 0,
-	PRI_RESP_FAIL = 1,
-	PRI_RESP_SUCC = 2,
+    PRI_RESP_DENY = 0,
+    PRI_RESP_FAIL = 1,
+    PRI_RESP_SUCC = 2,
 };
 
 #ifdef CONFIG_MSI
 enum arm_smmu_msi_index {
-	EVTQ_MSI_INDEX,
-	GERROR_MSI_INDEX,
-	PRIQ_MSI_INDEX,
-	ARM_SMMU_MAX_MSIS,
+    EVTQ_MSI_INDEX,
+    GERROR_MSI_INDEX,
+    PRIQ_MSI_INDEX,
+    ARM_SMMU_MAX_MSIS,
 };
 
 static phys_addr_t arm_smmu_msi_cfg[ARM_SMMU_MAX_MSIS][3] = {
@@ -446,140 +446,148 @@ static phys_addr_t arm_smmu_msi_cfg[ARM_SMMU_MAX_MSIS][3] = {
 #endif /* CONFIG_MSI */
 
 struct arm_smmu_cmdq_ent {
-	/* Common fields */
-	u8				opcode;
-	bool				substream_valid;
+    /* Common fields */
+    u8 opcode;
+    bool substream_valid;
 
-	/* Command-specific fields */
-	union {
-		#define CMDQ_OP_PREFETCH_CFG	0x1
-		struct {
-			u32			sid;
-		} prefetch;
+    /* Command-specific fields */
+    union {
+#define CMDQ_OP_PREFETCH_CFG	0x1
 
-		#define CMDQ_OP_CFGI_STE	0x3
-		#define CMDQ_OP_CFGI_ALL	0x4
-		struct {
-			u32			sid;
-			union {
-				bool		leaf;
-				u8		span;
-			};
-		} cfgi;
+        struct {
+            u32 sid;
+        } prefetch;
 
-		#define CMDQ_OP_TLBI_EL2_ALL	0x20
-		#define CMDQ_OP_TLBI_S12_VMALL	0x28
-		#define CMDQ_OP_TLBI_S2_IPA	0x2a
-		#define CMDQ_OP_TLBI_NSNH_ALL	0x30
-		struct {
-			u16			asid;
-			u16			vmid;
-			bool			leaf;
-			u64			addr;
-		} tlbi;
+#define CMDQ_OP_CFGI_STE	0x3
+#define CMDQ_OP_CFGI_ALL	0x4
 
-		#define CMDQ_OP_ATC_INV		0x40
-		#define ATC_INV_SIZE_ALL	52
-		struct {
-			u32			sid;
-			u32			ssid;
-			u64			addr;
-			u8			size;
-			bool			global;
-		} atc;
+        struct {
+            u32 sid;
 
-		#define CMDQ_OP_PRI_RESP	0x41
-		struct {
-			u32			sid;
-			u32			ssid;
-			u16			grpid;
-			enum pri_resp		resp;
-		} pri;
+            union {
+                bool leaf;
+                u8 span;
+            };
+        } cfgi;
 
-		#define CMDQ_OP_CMD_SYNC	0x46
-		struct {
-			u32			msidata;
-			u64			msiaddr;
-		} sync;
-	};
+#define CMDQ_OP_TLBI_EL2_ALL	0x20
+#define CMDQ_OP_TLBI_S12_VMALL	0x28
+#define CMDQ_OP_TLBI_S2_IPA	0x2a
+#define CMDQ_OP_TLBI_NSNH_ALL	0x30
+
+        struct {
+            u16 asid;
+            u16 vmid;
+            bool leaf;
+            u64 addr;
+        } tlbi;
+
+#define CMDQ_OP_ATC_INV		0x40
+#define ATC_INV_SIZE_ALL	52
+
+        struct {
+            u32 sid;
+            u32 ssid;
+            u64 addr;
+            u8 size;
+            bool global;
+        } atc;
+
+#define CMDQ_OP_PRI_RESP	0x41
+
+        struct {
+            u32 sid;
+            u32 ssid;
+            u16 grpid;
+            enum pri_resp resp;
+        } pri;
+
+#define CMDQ_OP_CMD_SYNC	0x46
+
+        struct {
+            u32 msidata;
+            u64 msiaddr;
+        } sync;
+    };
 };
 
 struct arm_smmu_ll_queue {
-	u32				prod;
-	u32				cons;
-	u32				max_n_shift;
+    u32 prod;
+    u32 cons;
+    u32 max_n_shift;
 };
 
 struct arm_smmu_queue {
-	struct arm_smmu_ll_queue	llq;
-	int				irq; /* Wired interrupt */
+    struct arm_smmu_ll_queue llq;
+    int irq; /* Wired interrupt */
 
-	__le64				*base;
-	dma_addr_t			base_dma;
-	u64				q_base;
+    __le64 *base;
+    dma_addr_t base_dma;
+    u64 q_base;
 
-	size_t				ent_dwords;
+    size_t ent_dwords;
 
-	u32 __iomem			*prod_reg;
-	u32 __iomem			*cons_reg;
+    u32 __iomem *prod_reg;
+    u32 __iomem *cons_reg;
 };
 
 struct arm_smmu_cmdq {
-	struct arm_smmu_queue		q;
-	spinlock_t			lock;
+    struct arm_smmu_queue q;
+    spinlock_t lock;
 };
 
 struct arm_smmu_evtq {
-	struct arm_smmu_queue		q;
-	u32				max_stalls;
+    struct arm_smmu_queue q;
+    u32 max_stalls;
 };
 
 struct arm_smmu_priq {
-	struct arm_smmu_queue		q;
+    struct arm_smmu_queue q;
 };
 
 /* High-level stream table and context descriptor structures */
 struct arm_smmu_strtab_l1_desc {
-	u8				span;
+    u8 span;
 
-	__le64				*l2ptr;
-	dma_addr_t			l2ptr_dma;
+    __le64 *l2ptr;
+    dma_addr_t l2ptr_dma;
 };
 
 struct arm_smmu_s2_cfg {
-	u16				vmid;
-	u64				vttbr;
-	u64				vtcr;
+    u16 vmid;
+    u64 vttbr;
+    u64 vtcr;
 };
 
 struct arm_smmu_strtab_cfg {
-	__le64				*strtab;
-	dma_addr_t			strtab_dma;
-	struct arm_smmu_strtab_l1_desc	*l1_desc;
-	unsigned int			num_l1_ents;
+    __le64 *strtab;
+    dma_addr_t strtab_dma;
+    struct arm_smmu_strtab_l1_desc *l1_desc;
+    unsigned int num_l1_ents;
 
-	u64				strtab_base;
-	u32				strtab_base_cfg;
+    u64 strtab_base;
+    u32 strtab_base_cfg;
 };
 
 struct arm_lpae_s2_cfg {
-	u64			vttbr;
-	struct {
-		u32			ps:3;
-		u32			tg:2;
-		u32			sh:2;
-		u32			orgn:2;
-		u32			irgn:2;
-		u32			sl:2;
-		u32			tsz:6;
-	} vtcr;
+    u64 vttbr;
+
+    struct {
+        u32 ps:3;
+        u32 tg:2;
+        u32 sh:2;
+        u32 orgn:2;
+        u32 irgn:2;
+        u32 sl:2;
+        u32 tsz:6;
+    } vtcr;
 };
 
 /* An SMMUv3 instance */
 struct arm_smmu_device {
-	struct device			*dev;
-	void __iomem			*base;
-	void __iomem			*page1;
+    struct device *dev;
+    void __iomem *base;
+    void __iomem *page1;
 
 #define ARM_SMMU_FEAT_2_LVL_STRTAB	(1 << 0)
 #define ARM_SMMU_FEAT_2_LVL_CDTAB	(1 << 1)
@@ -596,76 +604,76 @@ struct arm_smmu_device {
 #define ARM_SMMU_FEAT_HYP		(1 << 12)
 #define ARM_SMMU_FEAT_STALL_FORCE	(1 << 13)
 #define ARM_SMMU_FEAT_VAX		(1 << 14)
-	u32				features;
+    u32 features;
 
 #define ARM_SMMU_OPT_SKIP_PREFETCH	(1 << 0)
 #define ARM_SMMU_OPT_PAGE0_REGS_ONLY	(1 << 1)
-	u32				options;
+    u32 options;
 
-	struct arm_smmu_cmdq		cmdq;
-	struct arm_smmu_evtq		evtq;
-	struct arm_smmu_priq		priq;
+    struct arm_smmu_cmdq cmdq;
+    struct arm_smmu_evtq evtq;
+    struct arm_smmu_priq priq;
 
-	int				gerr_irq;
-	int				combined_irq;
-	u32				sync_nr;
-	u8				prev_cmd_opcode;
+    int gerr_irq;
+    int combined_irq;
+    u32 sync_nr;
+    u8 prev_cmd_opcode;
 
-	unsigned long			ias; /* IPA */
-	unsigned long			oas; /* PA */
-	unsigned long			pgsize_bitmap;
+    unsigned long ias; /* IPA */
+    unsigned long oas; /* PA */
+    unsigned long pgsize_bitmap;
 
 #define ARM_SMMU_MAX_VMIDS		(1 << 16)
-	unsigned int			vmid_bits;
-	DECLARE_BITMAP(vmid_map, ARM_SMMU_MAX_VMIDS);
+    unsigned int vmid_bits;
+    DECLARE_BITMAP(vmid_map, ARM_SMMU_MAX_VMIDS);
 
-	unsigned int			sid_bits;
+    unsigned int sid_bits;
 
-	struct arm_smmu_strtab_cfg	strtab_cfg;
+    struct arm_smmu_strtab_cfg strtab_cfg;
 
-	/* Hi16xx adds an extra 32 bits of goodness to its MSI payload */
-	union {
-		u32			sync_count;
-		u64			padding;
-	};
+    /* Hi16xx adds an extra 32 bits of goodness to its MSI payload */
+    union {
+        u32 sync_count;
+        u64 padding;
+    };
 
-	/* Need to keep a list of SMMU devices */
-	struct list_head		devices;
+    /* Need to keep a list of SMMU devices */
+    struct list_head devices;
 
-	/* Tasklets for handling evts/faults and pci page request IRQs*/
-	struct tasklet		evtq_irq_tasklet;
-	struct tasklet		priq_irq_tasklet;
-	struct tasklet		combined_irq_tasklet;
+    /* Tasklets for handling evts/faults and pci page request IRQs*/
+    struct tasklet evtq_irq_tasklet;
+    struct tasklet priq_irq_tasklet;
+    struct tasklet combined_irq_tasklet;
 };
 
 /* SMMU private data for each master */
 struct arm_smmu_master {
-	struct arm_smmu_device		*smmu;
-	struct device			*dev;
-	struct arm_smmu_domain		*domain;
-	struct list_head		domain_head;
-	u32				*sids;
-	unsigned int			num_sids;
-	bool				ats_enabled;
+    struct arm_smmu_device *smmu;
+    struct device *dev;
+    struct arm_smmu_domain *domain;
+    struct list_head domain_head;
+    u32 *sids;
+    unsigned int num_sids;
+    bool ats_enabled;
 };
 
 struct arm_smmu_domain {
-	struct arm_smmu_device		*smmu;
-	struct mutex			init_mutex; /* Protects smmu pointer */
+    struct arm_smmu_device *smmu;
+    struct mutex init_mutex; /* Protects smmu pointer */
 
-	bool				non_strict;
-	atomic_t			nr_ats_masters;
+    bool non_strict;
+    atomic_t nr_ats_masters;
 
-	enum arm_smmu_domain_stage	stage;
-	struct arm_smmu_s2_cfg	s2_cfg;
+    enum arm_smmu_domain_stage stage;
+    struct arm_smmu_s2_cfg s2_cfg;
 
-	/* Xen domain associated with this SMMU domain */
-	struct domain		*d;
+    /* Xen domain associated with this SMMU domain */
+    struct domain *d;
 
-	struct iommu_domain		domain;
+    struct iommu_domain domain;
 
-	struct list_head		devices;
-	spinlock_t			devices_lock;
+    struct list_head devices;
+    spinlock_t devices_lock;
 };
 
 #endif /* _ARM_SMMU_V3_H */

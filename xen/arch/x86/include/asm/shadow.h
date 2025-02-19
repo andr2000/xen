@@ -62,16 +62,14 @@ void shadow_vcpu_init(struct vcpu *v);
 int shadow_enable(struct domain *d, u32 mode);
 
 /* Enable VRAM dirty bit tracking. */
-int shadow_track_dirty_vram(struct domain *d,
-                            unsigned long first_pfn,
+int shadow_track_dirty_vram(struct domain *d, unsigned long first_pfn,
                             unsigned int nr_frames,
                             XEN_GUEST_HANDLE(void) guest_dirty_bitmap);
 
 /* Handler for shadow control ops: operations from user-space to enable
  * and disable ephemeral shadow modes (test mode and log-dirty mode) and
  * manipulate the log-dirty bitmap. */
-int shadow_domctl(struct domain *d, 
-                  struct xen_domctl_shadow_op *sc,
+int shadow_domctl(struct domain *d, struct xen_domctl_shadow_op *sc,
                   XEN_GUEST_HANDLE_PARAM(xen_domctl_t) u_domctl);
 
 /* Call when destroying a vcpu/domain */
@@ -109,11 +107,13 @@ void shadow_put_top_level(struct domain *d, pagetable_t old);
 #define shadow_set_allocation(d, pages, preempted) \
     ({ ASSERT_UNREACHABLE(); -EOPNOTSUPP; })
 
-static inline void sh_remove_shadows(struct domain *d, mfn_t gmfn,
-                                     int fast, int all) {}
+static inline void sh_remove_shadows(struct domain *d, mfn_t gmfn, int fast,
+                                     int all)
+{}
 
 static inline void shadow_prepare_page_type_change(struct domain *d,
-                                                   const struct page_info *page) {}
+                                                   const struct page_info *page)
+{}
 
 static inline void shadow_blow_tables_per_domain(struct domain *d) {}
 
@@ -192,9 +192,11 @@ static inline bool pv_l1tf_check_pte(struct domain *d, unsigned int level,
 #ifdef CONFIG_SHADOW_PAGING
         struct tasklet *t = &d->arch.paging.shadow.pv_l1tf_tasklet;
 
-        printk(XENLOG_G_WARNING
-               "d%d L1TF-vulnerable L%ue %016"PRIx64" - Shadowing\n",
-               d->domain_id, level, pte);
+        printk(XENLOG_G_WARNING "d%d L1TF-vulnerable L%ue %016" PRIx64
+                                " - Shadowing\n",
+               d->domain_id,
+               level,
+               pte);
         /*
          * Safety consideration for accessing tasklet.scheduled_on without the
          * tasklet lock.  This is a singleshot tasklet with the side effect of
@@ -206,9 +208,11 @@ static inline bool pv_l1tf_check_pte(struct domain *d, unsigned int level,
         if ( !tasklet_is_scheduled(t) )
             tasklet_schedule(t);
 #else
-        printk(XENLOG_G_ERR
-               "d%d L1TF-vulnerable L%ue %016"PRIx64" - Crashing\n",
-               d->domain_id, level, pte);
+        printk(XENLOG_G_ERR "d%d L1TF-vulnerable L%ue %016" PRIx64
+                            " - Crashing\n",
+               d->domain_id,
+               level,
+               pte);
         domain_crash(d);
 #endif
         return true;
@@ -257,10 +261,10 @@ static inline void pv_l1tf_domain_destroy(struct domain *d)
 }
 
 /* Functions that atomically write PV guest PT entries */
-void shadow_write_guest_entry(
-    struct vcpu *v, intpte_t *p, intpte_t new, mfn_t gmfn);
-intpte_t shadow_cmpxchg_guest_entry(
-    struct vcpu *v, intpte_t *p, intpte_t old, intpte_t new, mfn_t gmfn);
+void shadow_write_guest_entry(struct vcpu *v, intpte_t *p, intpte_t new,
+                              mfn_t gmfn);
+intpte_t shadow_cmpxchg_guest_entry(struct vcpu *v, intpte_t *p, intpte_t old,
+                                    intpte_t new, mfn_t gmfn);
 
 #endif /* CONFIG_PV */
 

@@ -19,7 +19,6 @@
  * along with this program; If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <xen/sched.h>
 #include <xen/event.h>
 #include <xen/wait.h>
@@ -41,13 +40,10 @@
 #define xen_rmb()  smp_rmb()
 #define xen_wmb()  smp_wmb()
 
-static int vm_event_enable(
-    struct domain *d,
-    struct xen_domctl_vm_event_op *vec,
-    struct vm_event_domain **p_ved,
-    int pause_flag,
-    int param,
-    xen_event_channel_notification_t notification_fn)
+static int vm_event_enable(struct domain *d, struct xen_domctl_vm_event_op *vec,
+                           struct vm_event_domain **p_ved, int pause_flag,
+                           int param,
+                           xen_event_channel_notification_t notification_fn)
 {
     int rc;
     unsigned long ring_gfn = d->arch.hvm.params[param];
@@ -77,7 +73,9 @@ static int vm_event_enable(
     if ( rc < 0 )
         goto err;
 
-    rc = prepare_ring_for_helper(d, ring_gfn, &ved->ring_pg_struct,
+    rc = prepare_ring_for_helper(d,
+                                 ring_gfn,
+                                 &ved->ring_pg_struct,
                                  &ved->ring_page);
     if ( rc < 0 )
         goto err;
@@ -86,7 +84,9 @@ static int vm_event_enable(
                     (vm_event_sring_t *)ved->ring_page,
                     PAGE_SIZE);
 
-    rc = alloc_unbound_xen_event_channel(d, 0, current->domain->domain_id,
+    rc = alloc_unbound_xen_event_channel(d,
+                                         0,
+                                         current->domain->domain_id,
                                          notification_fn);
     if ( rc < 0 )
         goto err;
@@ -98,7 +98,7 @@ static int vm_event_enable(
 
     return 0;
 
- err:
+err:
     destroy_ring_for_helper(&ved->ring_page, ved->ring_pg_struct);
     xfree(ved);
 
@@ -201,7 +201,7 @@ static int vm_event_disable(struct domain *d, struct vm_event_domain **p_ved)
         free_xen_event_channel(d, ved->xen_port);
 
         /* Unblock all vCPUs */
-        for_each_vcpu ( d, v )
+        for_each_vcpu(d, v)
         {
             if ( test_and_clear_bit(ved->pause_flag, &v->pause_flags) )
             {
@@ -223,8 +223,7 @@ static int vm_event_disable(struct domain *d, struct vm_event_domain **p_ved)
     return 0;
 }
 
-static void vm_event_release_slot(struct domain *d,
-                                  struct vm_event_domain *ved)
+static void vm_event_release_slot(struct domain *d, struct vm_event_domain *ved)
 {
     /* Update the accounting */
     if ( current->domain == d )
@@ -255,8 +254,7 @@ static void vm_event_mark_and_pause(struct vcpu *v, struct vm_event_domain *ved)
  * overly full and its continued execution would cause stalling and excessive
  * waiting.  The vCPU will be automatically unpaused when the ring clears.
  */
-void vm_event_put_request(struct domain *d,
-                          struct vm_event_domain *ved,
+void vm_event_put_request(struct domain *d, struct vm_event_domain *ved,
                           vm_event_request_t *req)
 {
     vm_event_front_ring_t *front_ring;
@@ -265,7 +263,7 @@ void vm_event_put_request(struct domain *d,
     RING_IDX req_prod;
     struct vcpu *curr = current;
 
-    if( !vm_event_check_ring(ved) )
+    if ( !vm_event_check_ring(ved) )
         return;
 
     if ( curr->domain != d )
@@ -273,8 +271,10 @@ void vm_event_put_request(struct domain *d,
         req->flags |= VM_EVENT_FLAG_FOREIGN;
 
         if ( !(req->flags & VM_EVENT_FLAG_VCPU_PAUSED) )
-            gdprintk(XENLOG_WARNING, "d%dv%d was not paused.\n",
-                     d->domain_id, req->vcpu_id);
+            gdprintk(XENLOG_WARNING,
+                     "d%dv%d was not paused.\n",
+                     d->domain_id,
+                     req->vcpu_id);
     }
 
     req->version = VM_EVENT_INTERFACE_VERSION;
@@ -302,8 +302,8 @@ void vm_event_put_request(struct domain *d,
      * See the comments above wake_blocked() for more information
      * on how this mechanism works to avoid waiting. */
     avail_req = vm_event_ring_available(ved);
-    if( curr->domain == d && avail_req < d->max_vcpus &&
-        !atomic_read(&curr->vm_event_pause_count) )
+    if ( curr->domain == d && avail_req < d->max_vcpus &&
+         !atomic_read(&curr->vm_event_pause_count) )
         vm_event_mark_and_pause(curr, ved);
 
     spin_unlock(&ved->lock);
@@ -340,7 +340,7 @@ static int vm_event_get_response(struct domain *d, struct vm_event_domain *ved,
 
     rc = 1;
 
- out:
+out:
     spin_unlock(&ved->lock);
 
     return rc;
@@ -369,7 +369,7 @@ static int vm_event_resume(struct domain *d, struct vm_event_domain *ved)
     ASSERT(d != current->domain);
 
     if ( unlikely(!vm_event_check_ring(ved)) )
-         return -ENODEV;
+        return -ENODEV;
 
     /* Pull all responses off the ring. */
     while ( vm_event_get_response(d, ved, &rsp) )
@@ -453,7 +453,7 @@ static int vm_event_resume(struct domain *d, struct vm_event_domain *ved)
 
 void vm_event_cancel_slot(struct domain *d, struct vm_event_domain *ved)
 {
-    if( !vm_event_check_ring(ved) )
+    if ( !vm_event_check_ring(ved) )
         return;
 
     spin_lock(&ved->lock);
@@ -484,7 +484,7 @@ static int vm_event_grab_slot(struct vm_event_domain *ved, int foreign)
 
     rc = 0;
 
- out:
+out:
     spin_unlock(&ved->lock);
 
     return rc;
@@ -612,7 +612,8 @@ int vm_event_domctl(struct domain *d, struct xen_domctl_vm_event_op *vec)
 
     if ( unlikely(d->is_dying) )
     {
-        gdprintk(XENLOG_INFO, "Ignoring memory event op on dying domain %u\n",
+        gdprintk(XENLOG_INFO,
+                 "Ignoring memory event op on dying domain %u\n",
                  d->domain_id);
         return 0;
     }
@@ -634,7 +635,7 @@ int vm_event_domctl(struct domain *d, struct xen_domctl_vm_event_op *vec)
     {
         rc = -EINVAL;
 
-        switch( vec->op )
+        switch ( vec->op )
         {
         case XEN_VM_EVENT_ENABLE:
         {
@@ -659,7 +660,10 @@ int vm_event_domctl(struct domain *d, struct xen_domctl_vm_event_op *vec)
                 break;
 
             /* domain_pause() not required here, see XSA-99 */
-            rc = vm_event_enable(d, vec, &d->vm_event_paging, _VPF_mem_paging,
+            rc = vm_event_enable(d,
+                                 vec,
+                                 &d->vm_event_paging,
+                                 _VPF_mem_paging,
                                  HVM_PARAM_PAGING_RING_PFN,
                                  mem_paging_notification);
         }
@@ -690,14 +694,17 @@ int vm_event_domctl(struct domain *d, struct xen_domctl_vm_event_op *vec)
     {
         rc = -EINVAL;
 
-        switch( vec->op )
+        switch ( vec->op )
         {
         case XEN_VM_EVENT_ENABLE:
             /* domain_pause() not required here, see XSA-99 */
             rc = arch_monitor_init_domain(d);
             if ( rc )
                 break;
-            rc = vm_event_enable(d, vec, &d->vm_event_monitor, _VPF_mem_access,
+            rc = vm_event_enable(d,
+                                 vec,
+                                 &d->vm_event_monitor,
+                                 _VPF_mem_access,
                                  HVM_PARAM_MONITOR_RING_PFN,
                                  monitor_notification);
             break;
@@ -728,7 +735,7 @@ int vm_event_domctl(struct domain *d, struct xen_domctl_vm_event_op *vec)
     {
         rc = -EINVAL;
 
-        switch( vec->op )
+        switch ( vec->op )
         {
         case XEN_VM_EVENT_ENABLE:
             rc = -EOPNOTSUPP;
@@ -742,7 +749,10 @@ int vm_event_domctl(struct domain *d, struct xen_domctl_vm_event_op *vec)
                 break;
 
             /* domain_pause() not required here, see XSA-99 */
-            rc = vm_event_enable(d, vec, &d->vm_event_share, _VPF_mem_sharing,
+            rc = vm_event_enable(d,
+                                 vec,
+                                 &d->vm_event_share,
+                                 _VPF_mem_sharing,
                                  HVM_PARAM_SHARING_RING_PFN,
                                  mem_sharing_notification);
             break;
@@ -799,8 +809,8 @@ void vm_event_vcpu_unpause(struct vcpu *v)
 
         if ( new < 0 )
         {
-            printk(XENLOG_G_WARNING
-                   "%pv vm_event: Too many unpause attempts\n", v);
+            printk(XENLOG_G_WARNING "%pv vm_event: Too many unpause attempts\n",
+                   v);
             return;
         }
 

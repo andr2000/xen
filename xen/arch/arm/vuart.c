@@ -33,19 +33,19 @@
 
 #define domain_has_vuart(d) ((d)->arch.vuart.info != NULL)
 
-static int vuart_mmio_read(struct vcpu *v, mmio_info_t *info,
-                           register_t *r, void *priv);
-static int vuart_mmio_write(struct vcpu *v, mmio_info_t *info,
-                            register_t r, void *priv);
+static int vuart_mmio_read(struct vcpu *v, mmio_info_t *info, register_t *r,
+                           void *priv);
+static int vuart_mmio_write(struct vcpu *v, mmio_info_t *info, register_t r,
+                            void *priv);
 
 static const struct mmio_handler_ops vuart_mmio_handler = {
-    .read  = vuart_mmio_read,
+    .read = vuart_mmio_read,
     .write = vuart_mmio_write,
 };
 
 int domain_vuart_init(struct domain *d)
 {
-    ASSERT( is_hardware_domain(d) );
+    ASSERT(is_hardware_domain(d));
 
     d->arch.vuart.info = serial_vuart_info(SERHND_DTUART);
     if ( !d->arch.vuart.info )
@@ -58,7 +58,8 @@ int domain_vuart_init(struct domain *d)
     if ( !d->arch.vuart.buf )
         return -ENOMEM;
 
-    register_mmio_handler(d, &vuart_mmio_handler,
+    register_mmio_handler(d,
+                          &vuart_mmio_handler,
                           d->arch.vuart.info->base_addr,
                           d->arch.vuart.info->size,
                           NULL);
@@ -81,7 +82,7 @@ static void vuart_print_char(struct vcpu *v, char c)
 
     /* Accept only printable characters, newline, and horizontal tab. */
     if ( !isprint(c) && (c != '\n') && (c != '\t') )
-        return ;
+        return;
 
     spin_lock(&uart->lock);
     uart->buf[uart->idx++] = c;
@@ -96,8 +97,8 @@ static void vuart_print_char(struct vcpu *v, char c)
     spin_unlock(&uart->lock);
 }
 
-static int vuart_mmio_read(struct vcpu *v, mmio_info_t *info,
-                           register_t *r, void *priv)
+static int vuart_mmio_read(struct vcpu *v, mmio_info_t *info, register_t *r,
+                           void *priv)
 {
     struct domain *d = v->domain;
     paddr_t offset = info->gpa - d->arch.vuart.info->base_addr;
@@ -114,8 +115,8 @@ static int vuart_mmio_read(struct vcpu *v, mmio_info_t *info,
     return 1;
 }
 
-static int vuart_mmio_write(struct vcpu *v, mmio_info_t *info,
-                            register_t r, void *priv)
+static int vuart_mmio_write(struct vcpu *v, mmio_info_t *info, register_t r,
+                            void *priv)
 {
     struct domain *d = v->domain;
     paddr_t offset = info->gpa - d->arch.vuart.info->base_addr;
@@ -137,4 +138,3 @@ static int vuart_mmio_write(struct vcpu *v, mmio_info_t *info,
  * indent-tabs-mode: nil
  * End:
  */
-

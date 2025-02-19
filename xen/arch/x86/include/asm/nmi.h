@@ -14,9 +14,9 @@ extern bool watchdog_force;
 
 /* CPU to handle platform NMI */
 extern const unsigned int nmi_cpu;
- 
+
 typedef int nmi_callback_t(const struct cpu_user_regs *regs, int cpu);
- 
+
 /** 
  * set_nmi_callback
  *
@@ -24,7 +24,7 @@ typedef int nmi_callback_t(const struct cpu_user_regs *regs, int cpu);
  * set. Return the old nmi callback handler.
  */
 nmi_callback_t *set_nmi_callback(nmi_callback_t *callback);
- 
+
 /** 
  * unset_nmi_callback
  *

@@ -32,14 +32,14 @@ struct monitor_msr_bitmap {
     DECLARE_BITMAP(high, 8192);
 };
 
-static inline
-void arch_monitor_allow_userspace(struct domain *d, bool allow_userspace)
+static inline void arch_monitor_allow_userspace(struct domain *d,
+                                                bool allow_userspace)
 {
     d->arch.monitor.guest_request_userspace_enabled = allow_userspace;
 }
 
-static inline
-int arch_monitor_domctl_op(struct domain *d, struct xen_domctl_monitor_op *mop)
+static inline int arch_monitor_domctl_op(struct domain *d,
+                                         struct xen_domctl_monitor_op *mop)
 {
     int rc = 0;
 

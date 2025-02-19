@@ -34,6 +34,7 @@ static int __init cf_check parse_tsx(const char *s)
 
     return rc;
 }
+
 custom_param("tsx", parse_tsx);
 
 void tsx_init(void)
@@ -84,7 +85,8 @@ void tsx_init(void)
                      * enabled, and there is nothing we can do.  Override with
                      * tsx=0 so all other logic takes sensible actions.
                      */
-                    printk(XENLOG_WARNING "TSX locked by firmware - disabling\n");
+                    printk(XENLOG_WARNING
+                           "TSX locked by firmware - disabling\n");
                     opt_tsx = 0;
                 }
                 else
@@ -99,8 +101,9 @@ void tsx_init(void)
                     val |= MCU_OPT_CTRL_RTM_ALLOW;
                 }
 
-                set_in_mcu_opt_ctrl(
-                    MCU_OPT_CTRL_RTM_LOCKED | MCU_OPT_CTRL_RTM_ALLOW, val);
+                set_in_mcu_opt_ctrl(MCU_OPT_CTRL_RTM_LOCKED |
+                                        MCU_OPT_CTRL_RTM_ALLOW,
+                                    val);
 
                 /*
                  * If no explicit tsx= option is provided, pick a default.
@@ -146,10 +149,13 @@ void tsx_init(void)
              */
             if ( val == 0 && cpu_has_rtm_always_abort && !cpu_has_rtm )
             {
-                printk(XENLOG_ERR
-                       "FIRMWARE BUG: CPU %02x-%02x-%02x, ucode 0x%08x: RTM_ALWAYS_ABORT vs RTM mismatch\n",
-                       boot_cpu_data.x86, boot_cpu_data.x86_model,
-                       boot_cpu_data.x86_mask, this_cpu(cpu_sig).rev);
+                printk(
+                    XENLOG_ERR
+                    "FIRMWARE BUG: CPU %02x-%02x-%02x, ucode 0x%08x: RTM_ALWAYS_ABORT vs RTM mismatch\n",
+                    boot_cpu_data.x86,
+                    boot_cpu_data.x86_model,
+                    boot_cpu_data.x86_mask,
+                    this_cpu(cpu_sig).rev);
 
                 setup_clear_cpu_cap(X86_FEATURE_RTM_ALWAYS_ABORT);
                 setup_clear_cpu_cap(X86_FEATURE_TSX_FORCE_ABORT);
@@ -225,7 +231,7 @@ void tsx_init(void)
             setup_force_cpu_cap(X86_FEATURE_RTM);
         }
     }
- done_probe:
+done_probe:
 
     /*
      * Note: MSR_TSX_CTRL is enumerated on TSX-enabled MDS_NO and later parts.

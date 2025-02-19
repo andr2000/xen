@@ -7,23 +7,18 @@
 
 #include "private.h"
 
-#if !defined(X86EMUL_NO_FPU) || !defined(X86EMUL_NO_MMX) || \
+#if !defined(X86EMUL_NO_FPU) || !defined(X86EMUL_NO_MMX) ||                    \
     !defined(X86EMUL_NO_SIMD)
-# ifdef __XEN__
-#  include <asm/xstate.h>
-#  define FXSAVE_AREA ((void *)&current->arch.xsave_area->fpu_sse)
-# else
-#  define FXSAVE_AREA get_fpu_save_area()
-# endif
+#ifdef __XEN__
+#include <asm/xstate.h>
+#define FXSAVE_AREA ((void *)&current->arch.xsave_area->fpu_sse)
+#else
+#define FXSAVE_AREA get_fpu_save_area()
+#endif
 #endif
 
-int x86_emul_blk(
-    void *ptr,
-    void *data,
-    unsigned int bytes,
-    uint32_t *eflags,
-    struct x86_emulate_state *s,
-    struct x86_emulate_ctxt *ctxt)
+int x86_emul_blk(void *ptr, void *data, unsigned int bytes, uint32_t *eflags,
+                 struct x86_emulate_state *s, struct x86_emulate_ctxt *ctxt)
 {
     int rc = X86EMUL_OKAY;
 
@@ -33,8 +28,9 @@ int x86_emul_blk(
 #ifndef X86EMUL_NO_FPU
         struct {
             struct x87_env32 env;
+
             struct {
-               uint8_t bytes[10];
+                uint8_t bytes[10];
             } freg[8];
         } fpstate;
 #endif
@@ -53,15 +49,16 @@ int x86_emul_blk(
         }
         *eflags &= ~EFLAGS_MASK;
 #ifdef HAVE_AS_ENQCMD
-        asm ( "enqcmds (%[src]), %[dst]" ASM_FLAG_OUT(, "; setz %[zf]")
-              : [zf] ASM_FLAG_OUT("=@ccz", "=qm") (zf)
-              : [src] "r" (data), [dst] "r" (ptr) : "memory" );
+        asm("enqcmds (%[src]), %[dst]" ASM_FLAG_OUT(, "; setz %[zf]")
+            : [zf] ASM_FLAG_OUT("=@ccz", "=qm")(zf)
+            : [src] "r"(data), [dst] "r"(ptr)
+            : "memory");
 #else
         /* enqcmds (%rsi), %rdi */
-        asm ( ".byte 0xf3, 0x0f, 0x38, 0xf8, 0x3e"
-              ASM_FLAG_OUT(, "; setz %[zf]")
-              : [zf] ASM_FLAG_OUT("=@ccz", "=qm") (zf)
-              : "S" (data), "D" (ptr) : "memory" );
+        asm(".byte 0xf3, 0x0f, 0x38, 0xf8, 0x3e" ASM_FLAG_OUT(, "; setz %[zf]")
+            : [zf] ASM_FLAG_OUT("=@ccz", "=qm")(zf)
+            : "S"(data), "D"(ptr)
+            : "memory");
 #endif
         if ( zf )
             *eflags |= X86_EFLAGS_ZF;
@@ -76,7 +73,7 @@ int x86_emul_blk(
         switch ( bytes )
         {
         case sizeof(fpstate.env): /* 32-bit FLDENV */
-        case sizeof(fpstate):     /* 32-bit FRSTOR */
+        case sizeof(fpstate): /* 32-bit FRSTOR */
             memcpy(&fpstate.env, ptr, sizeof(fpstate.env));
             if ( !s->rex_prefix )
             {
@@ -100,8 +97,9 @@ int x86_emul_blk(
                 ptr += sizeof(fpstate.env);
             break;
 
-        case sizeof(struct x87_env16):                        /* 16-bit FLDENV */
-        case sizeof(struct x87_env16) + sizeof(fpstate.freg): /* 16-bit FRSTOR */
+        case sizeof(struct x87_env16): /* 16-bit FLDENV */
+        case sizeof(struct x87_env16) +
+            sizeof(fpstate.freg): /* 16-bit FRSTOR */
         {
             const struct x87_env16 *env = ptr;
 
@@ -149,10 +147,10 @@ int x86_emul_blk(
         if ( ptr )
         {
             memcpy(fpstate.freg, ptr, sizeof(fpstate.freg));
-            asm volatile ( "frstor %0" :: "m" (fpstate) );
+            asm volatile("frstor %0" ::"m"(fpstate));
         }
         else
-            asm volatile ( "fldenv %0" :: "m" (fpstate.env) );
+            asm volatile("fldenv %0" ::"m"(fpstate.env));
         break;
 
     case blk_fst:
@@ -161,15 +159,15 @@ int x86_emul_blk(
         /* Don't chance consuming uninitialized data. */
         memset(&fpstate, 0, sizeof(fpstate));
         if ( bytes > sizeof(fpstate.env) )
-            asm ( "fnsave %0" : "+m" (fpstate) );
+            asm("fnsave %0" : "+m"(fpstate));
         else
-            asm ( "fnstenv %0" : "+m" (fpstate.env) );
+            asm("fnstenv %0" : "+m"(fpstate.env));
 
         /* s->rex_prefix carries CR0.PE && !EFLAGS.VM setting */
         switch ( bytes )
         {
         case sizeof(fpstate.env): /* 32-bit FNSTENV */
-        case sizeof(fpstate):     /* 32-bit FNSAVE */
+        case sizeof(fpstate): /* 32-bit FNSAVE */
             if ( !s->rex_prefix )
             {
                 /* Convert 32-bit prot to 32-bit real/vm86 format. */
@@ -193,8 +191,9 @@ int x86_emul_blk(
                 ptr += sizeof(fpstate.env);
             break;
 
-        case sizeof(struct x87_env16):                        /* 16-bit FNSTENV */
-        case sizeof(struct x87_env16) + sizeof(fpstate.freg): /* 16-bit FNSAVE */
+        case sizeof(struct x87_env16): /* 16-bit FNSTENV */
+        case sizeof(struct x87_env16) +
+            sizeof(fpstate.freg): /* 16-bit FNSAVE */
             if ( s->rex_prefix )
             {
                 /* Convert 32-bit prot to 16-bit prot format. */
@@ -215,16 +214,15 @@ int x86_emul_blk(
                                    (fpstate.env.mode.prot.fcs << 4);
                 unsigned int fdp = fpstate.env.mode.prot.fdp +
                                    (fpstate.env.mode.prot.fds << 4);
-                struct x87_env16 env = {
-                    .fcw = fpstate.env.fcw,
-                    .fsw = fpstate.env.fsw,
-                    .ftw = fpstate.env.ftw,
-                    .mode.real.fip_lo = fip,
-                    .mode.real.fip_hi = fip >> 16,
-                    .mode.real.fop = fpstate.env.mode.prot.fop,
-                    .mode.real.fdp_lo = fdp,
-                    .mode.real.fdp_hi = fdp >> 16
-                };
+                struct x87_env16 env = { .fcw = fpstate.env.fcw,
+                                         .fsw = fpstate.env.fsw,
+                                         .ftw = fpstate.env.ftw,
+                                         .mode.real.fip_lo = fip,
+                                         .mode.real.fip_hi = fip >> 16,
+                                         .mode.real.fop =
+                                             fpstate.env.mode.prot.fop,
+                                         .mode.real.fdp_lo = fdp,
+                                         .mode.real.fdp_hi = fdp >> 16 };
 
                 memcpy(ptr, &env, sizeof(env));
             }
@@ -245,7 +243,7 @@ int x86_emul_blk(
 
 #endif /* X86EMUL_NO_FPU */
 
-#if !defined(X86EMUL_NO_FPU) || !defined(X86EMUL_NO_MMX) || \
+#if !defined(X86EMUL_NO_FPU) || !defined(X86EMUL_NO_MMX) ||                    \
     !defined(X86EMUL_NO_SIMD)
 
     case blk_fxrstor:
@@ -266,11 +264,12 @@ int x86_emul_blk(
                  * we force an addressing mode that doesn't require extended
                  * registers.
                  */
-                asm volatile ( ".byte 0x48; fxsave (%1)"
-                               : "=m" (*fxsr) : "R" (fxsr) );
+                asm volatile(".byte 0x48; fxsave (%1)"
+                             : "=m"(*fxsr)
+                             : "R"(fxsr));
             }
             else
-                asm volatile ( "fxsave %0" : "=m" (*fxsr) );
+                asm volatile("fxsave %0" : "=m"(*fxsr));
         }
 
         /*
@@ -278,8 +277,9 @@ int x86_emul_blk(
          * data FXRSTOR may actually consume in some way: Copy only the
          * defined portion, and zero the rest.
          */
-        memcpy(fxsr, ptr, min(s->op_bytes,
-                              (unsigned int)offsetof(struct x86_fxsr, rsvd)));
+        memcpy(fxsr,
+               ptr,
+               min(s->op_bytes, (unsigned int)offsetof(struct x86_fxsr, rsvd)));
         memset(fxsr->rsvd, 0, sizeof(*fxsr) - offsetof(struct x86_fxsr, rsvd));
 
         generate_exception_if(fxsr->mxcsr & ~mxcsr_mask, X86_EXC_GP, 0);
@@ -287,11 +287,10 @@ int x86_emul_blk(
         if ( s->rex_prefix & REX_W )
         {
             /* See above for why operand/constraints are this way. */
-            asm volatile ( ".byte 0x48; fxrstor (%1)"
-                           :: "m" (*fxsr), "R" (fxsr) );
+            asm volatile(".byte 0x48; fxrstor (%1)" ::"m"(*fxsr), "R"(fxsr));
         }
         else
-            asm volatile ( "fxrstor %0" :: "m" (*fxsr) );
+            asm volatile("fxrstor %0" ::"m"(*fxsr));
         break;
     }
 
@@ -312,11 +311,10 @@ int x86_emul_blk(
         if ( s->rex_prefix & REX_W )
         {
             /* See above for why operand/constraints are this way. */
-            asm volatile ( ".byte 0x48; fxsave (%1)"
-                           : "=m" (*fxsr) : "R" (fxsr) );
+            asm volatile(".byte 0x48; fxsave (%1)" : "=m"(*fxsr) : "R"(fxsr));
         }
         else
-            asm volatile ( "fxsave %0" : "=m" (*fxsr) );
+            asm volatile("fxsave %0" : "=m"(*fxsr));
 
         if ( fxsr != ptr ) /* i.e. s->op_bytes < sizeof(*fxsr) */
             memcpy(ptr, fxsr, s->op_bytes);
@@ -330,25 +328,28 @@ int x86_emul_blk(
         {
 #ifdef __x86_64__
         case sizeof(uint32_t):
-# ifdef HAVE_AS_MOVDIR
-            asm ( "movdiri %0, (%1)"
-                  :: "r" (*(uint32_t *)data), "r" (ptr) : "memory" );
-# else
+#ifdef HAVE_AS_MOVDIR
+            asm("movdiri %0, (%1)" ::"r"(*(uint32_t *)data), "r"(ptr)
+                : "memory");
+#else
             /* movdiri %esi, (%rdi) */
-            asm ( ".byte 0x0f, 0x38, 0xf9, 0x37"
-                  :: "S" (*(uint32_t *)data), "D" (ptr) : "memory" );
-# endif
+            asm(".byte 0x0f, 0x38, 0xf9, 0x37" ::"S"(*(uint32_t *)data),
+                "D"(ptr)
+                : "memory");
+#endif
             break;
 #endif
 
         case sizeof(unsigned long):
 #ifdef HAVE_AS_MOVDIR
-            asm ( "movdiri %0, (%1)"
-                  :: "r" (*(unsigned long *)data), "r" (ptr) : "memory" );
+            asm("movdiri %0, (%1)" ::"r"(*(unsigned long *)data), "r"(ptr)
+                : "memory");
 #else
             /* movdiri %rsi, (%rdi) */
-            asm ( ".byte 0x48, 0x0f, 0x38, 0xf9, 0x37"
-                  :: "S" (*(unsigned long *)data), "D" (ptr) : "memory" );
+            asm(".byte 0x48, 0x0f, 0x38, 0xf9, 0x37" ::"S"(*(unsigned long *)
+                                                               data),
+                "D"(ptr)
+                : "memory");
 #endif
             break;
 
@@ -359,11 +360,11 @@ int x86_emul_blk(
                 return X86EMUL_UNHANDLEABLE;
             }
 #ifdef HAVE_AS_MOVDIR
-            asm ( "movdir64b (%0), %1" :: "r" (data), "r" (ptr) : "memory" );
+            asm("movdir64b (%0), %1" ::"r"(data), "r"(ptr) : "memory");
 #else
             /* movdir64b (%rsi), %rdi */
-            asm ( ".byte 0x66, 0x0f, 0x38, 0xf8, 0x3e"
-                  :: "S" (data), "D" (ptr) : "memory" );
+            asm(".byte 0x66, 0x0f, 0x38, 0xf8, 0x3e" ::"S"(data), "D"(ptr)
+                : "memory");
 #endif
             break;
 
@@ -378,7 +379,7 @@ int x86_emul_blk(
         return X86EMUL_UNHANDLEABLE;
     }
 
- done: __maybe_unused;
+done:
+    __maybe_unused;
     return rc;
-
 }

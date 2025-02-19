@@ -46,30 +46,28 @@ static int construct_vmcb(struct vcpu *v)
     struct vmcb_struct *vmcb = svm->vmcb;
 
     vmcb->_general1_intercepts =
-        GENERAL1_INTERCEPT_INTR        | GENERAL1_INTERCEPT_NMI         |
-        GENERAL1_INTERCEPT_SMI         | GENERAL1_INTERCEPT_INIT        |
-        GENERAL1_INTERCEPT_CPUID       | GENERAL1_INTERCEPT_INVD        |
-        GENERAL1_INTERCEPT_HLT         | GENERAL1_INTERCEPT_INVLPG      |
-        GENERAL1_INTERCEPT_INVLPGA     | GENERAL1_INTERCEPT_IOIO_PROT   |
-        GENERAL1_INTERCEPT_MSR_PROT    | GENERAL1_INTERCEPT_SHUTDOWN_EVT|
+        GENERAL1_INTERCEPT_INTR | GENERAL1_INTERCEPT_NMI |
+        GENERAL1_INTERCEPT_SMI | GENERAL1_INTERCEPT_INIT |
+        GENERAL1_INTERCEPT_CPUID | GENERAL1_INTERCEPT_INVD |
+        GENERAL1_INTERCEPT_HLT | GENERAL1_INTERCEPT_INVLPG |
+        GENERAL1_INTERCEPT_INVLPGA | GENERAL1_INTERCEPT_IOIO_PROT |
+        GENERAL1_INTERCEPT_MSR_PROT | GENERAL1_INTERCEPT_SHUTDOWN_EVT |
         GENERAL1_INTERCEPT_TASK_SWITCH;
     vmcb->_general2_intercepts =
-        GENERAL2_INTERCEPT_VMRUN       | GENERAL2_INTERCEPT_VMMCALL     |
-        GENERAL2_INTERCEPT_VMLOAD      | GENERAL2_INTERCEPT_VMSAVE      |
-        GENERAL2_INTERCEPT_STGI        | GENERAL2_INTERCEPT_CLGI        |
-        GENERAL2_INTERCEPT_SKINIT      | GENERAL2_INTERCEPT_MWAIT       |
-        GENERAL2_INTERCEPT_WBINVD      | GENERAL2_INTERCEPT_MONITOR     |
-        GENERAL2_INTERCEPT_XSETBV      | GENERAL2_INTERCEPT_ICEBP       |
+        GENERAL2_INTERCEPT_VMRUN | GENERAL2_INTERCEPT_VMMCALL |
+        GENERAL2_INTERCEPT_VMLOAD | GENERAL2_INTERCEPT_VMSAVE |
+        GENERAL2_INTERCEPT_STGI | GENERAL2_INTERCEPT_CLGI |
+        GENERAL2_INTERCEPT_SKINIT | GENERAL2_INTERCEPT_MWAIT |
+        GENERAL2_INTERCEPT_WBINVD | GENERAL2_INTERCEPT_MONITOR |
+        GENERAL2_INTERCEPT_XSETBV | GENERAL2_INTERCEPT_ICEBP |
         GENERAL2_INTERCEPT_RDPRU;
 
     /* Intercept all debug-register writes. */
     vmcb->_dr_intercepts = ~0u;
 
     /* Intercept all control-register accesses except for CR2 and CR8. */
-    vmcb->_cr_intercepts = ~(CR_INTERCEPT_CR2_READ |
-                             CR_INTERCEPT_CR2_WRITE |
-                             CR_INTERCEPT_CR8_READ |
-                             CR_INTERCEPT_CR8_WRITE);
+    vmcb->_cr_intercepts = ~(CR_INTERCEPT_CR2_READ | CR_INTERCEPT_CR2_WRITE |
+                             CR_INTERCEPT_CR8_READ | CR_INTERCEPT_CR8_WRITE);
 
     svm->vmcb_sync_state = vmcb_needs_vmload;
 
@@ -128,19 +126,18 @@ static int construct_vmcb(struct vcpu *v)
     paging_update_paging_modes(v);
 
     vmcb->_exception_intercepts =
-        HVM_TRAP_MASK |
-        (v->arch.fully_eager_fpu ? 0 : (1U << X86_EXC_NM));
+        HVM_TRAP_MASK | (v->arch.fully_eager_fpu ? 0 : (1U << X86_EXC_NM));
 
     if ( paging_mode_hap(v->domain) )
     {
         vmcb_set_np(vmcb, true); /* enable nested paging */
         vmcb->_g_pat = MSR_IA32_CR_PAT_RESET; /* guest PAT */
-        vmcb->_h_cr3 = pagetable_get_paddr(
-            p2m_get_pagetable(p2m_get_hostp2m(v->domain)));
+        vmcb->_h_cr3 =
+            pagetable_get_paddr(p2m_get_pagetable(p2m_get_hostp2m(v->domain)));
 
         /* No point in intercepting CR3 reads/writes. */
-        vmcb->_cr_intercepts &=
-            ~(CR_INTERCEPT_CR3_READ|CR_INTERCEPT_CR3_WRITE);
+        vmcb->_cr_intercepts &= ~(CR_INTERCEPT_CR3_READ |
+                                  CR_INTERCEPT_CR3_WRITE);
 
         /*
          * No point in intercepting INVLPG if we don't have shadow pagetables
@@ -182,8 +179,7 @@ int svm_create_vmcb(struct vcpu *v)
     struct svm_vcpu *svm = &v->arch.hvm.svm;
     int rc;
 
-    if ( (nv->nv_n1vmcx == NULL) &&
-         (nv->nv_n1vmcx = alloc_vmcb()) == NULL )
+    if ( (nv->nv_n1vmcx == NULL) && (nv->nv_n1vmcx = alloc_vmcb()) == NULL )
     {
         printk("Failed to create a new VMCB\n");
         return -ENOMEM;
@@ -213,8 +209,7 @@ void svm_destroy_vmcb(struct vcpu *v)
 
     if ( svm->msrpm != NULL )
     {
-        free_xenheap_pages(
-            svm->msrpm, get_order_from_bytes(MSRPM_SIZE));
+        free_xenheap_pages(svm->msrpm, get_order_from_bytes(MSRPM_SIZE));
         svm->msrpm = NULL;
     }
 
@@ -232,12 +227,12 @@ static void cf_check vmcb_dump(unsigned char ch)
 
     rcu_read_lock(&domlist_read_lock);
 
-    for_each_domain ( d )
+    for_each_domain(d)
     {
         if ( !is_hvm_domain(d) )
             continue;
         printk("\n>>> Domain %d <<<\n", d->domain_id);
-        for_each_vcpu ( d, v )
+        for_each_vcpu(d, v)
         {
             if ( !v->is_initialised )
             {
@@ -266,26 +261,26 @@ static void __init __maybe_unused build_assertions(void)
     /* Build-time check of the VMCB layout. */
     BUILD_BUG_ON(sizeof(vmcb) != PAGE_SIZE);
     BUILD_BUG_ON(offsetof(typeof(vmcb), _pause_filter_thresh) != 0x03c);
-    BUILD_BUG_ON(offsetof(typeof(vmcb), _vintr)               != 0x060);
-    BUILD_BUG_ON(offsetof(typeof(vmcb), event_inj)            != 0x0a8);
-    BUILD_BUG_ON(offsetof(typeof(vmcb), es)                   != 0x400);
-    BUILD_BUG_ON(offsetof(typeof(vmcb), _cpl)                 != 0x4cb);
-    BUILD_BUG_ON(offsetof(typeof(vmcb), _cr4)                 != 0x548);
-    BUILD_BUG_ON(offsetof(typeof(vmcb), rsp)                  != 0x5d8);
-    BUILD_BUG_ON(offsetof(typeof(vmcb), rax)                  != 0x5f8);
-    BUILD_BUG_ON(offsetof(typeof(vmcb), _g_pat)               != 0x668);
-    BUILD_BUG_ON(offsetof(typeof(vmcb), spec_ctrl)            != 0x6e0);
+    BUILD_BUG_ON(offsetof(typeof(vmcb), _vintr) != 0x060);
+    BUILD_BUG_ON(offsetof(typeof(vmcb), event_inj) != 0x0a8);
+    BUILD_BUG_ON(offsetof(typeof(vmcb), es) != 0x400);
+    BUILD_BUG_ON(offsetof(typeof(vmcb), _cpl) != 0x4cb);
+    BUILD_BUG_ON(offsetof(typeof(vmcb), _cr4) != 0x548);
+    BUILD_BUG_ON(offsetof(typeof(vmcb), rsp) != 0x5d8);
+    BUILD_BUG_ON(offsetof(typeof(vmcb), rax) != 0x5f8);
+    BUILD_BUG_ON(offsetof(typeof(vmcb), _g_pat) != 0x668);
+    BUILD_BUG_ON(offsetof(typeof(vmcb), spec_ctrl) != 0x6e0);
 
     /* Check struct segment_register against the VMCB segment layout. */
-    BUILD_BUG_ON(sizeof(vmcb.es)       != 16);
-    BUILD_BUG_ON(sizeof(vmcb.es.sel)   != 2);
-    BUILD_BUG_ON(sizeof(vmcb.es.attr)  != 2);
+    BUILD_BUG_ON(sizeof(vmcb.es) != 16);
+    BUILD_BUG_ON(sizeof(vmcb.es.sel) != 2);
+    BUILD_BUG_ON(sizeof(vmcb.es.attr) != 2);
     BUILD_BUG_ON(sizeof(vmcb.es.limit) != 4);
-    BUILD_BUG_ON(sizeof(vmcb.es.base)  != 8);
-    BUILD_BUG_ON(offsetof(typeof(vmcb.es), sel)   != 0);
-    BUILD_BUG_ON(offsetof(typeof(vmcb.es), attr)  != 2);
+    BUILD_BUG_ON(sizeof(vmcb.es.base) != 8);
+    BUILD_BUG_ON(offsetof(typeof(vmcb.es), sel) != 0);
+    BUILD_BUG_ON(offsetof(typeof(vmcb.es), attr) != 2);
     BUILD_BUG_ON(offsetof(typeof(vmcb.es), limit) != 4);
-    BUILD_BUG_ON(offsetof(typeof(vmcb.es), base)  != 8);
+    BUILD_BUG_ON(offsetof(typeof(vmcb.es), base) != 8);
 }
 
 /*

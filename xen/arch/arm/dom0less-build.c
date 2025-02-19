@@ -26,7 +26,7 @@ bool __init is_dom0less_mode(void)
     bool domUfound = false;
 
     /* Look into the bootmodules */
-    for ( i = 0 ; i < mods->nr_mods ; i++ )
+    for ( i = 0; i < mods->nr_mods; i++ )
     {
         mod = &mods->module[i];
         /* Find if dom0 and domU kernels are present */
@@ -46,7 +46,7 @@ bool __init is_dom0less_mode(void)
      * If there is no dom0 kernel but at least one domU, then we are in
      * dom0less mode
      */
-    return ( !dom0found && domUfound );
+    return (!dom0found && domUfound);
 }
 
 #ifdef CONFIG_VGICV2
@@ -58,7 +58,8 @@ static int __init make_gicv2_domU_node(struct kernel_info *kinfo)
     __be32 *cells;
     const struct domain *d = kinfo->d;
 
-    res = domain_fdt_begin_node(fdt, "interrupt-controller",
+    res = domain_fdt_begin_node(fdt,
+                                "interrupt-controller",
                                 vgic_dist_base(&d->arch.vgic));
     if ( res )
         return res;
@@ -80,21 +81,27 @@ static int __init make_gicv2_domU_node(struct kernel_info *kinfo)
         return res;
 
     cells = &reg[0];
-    dt_child_set_range(&cells, GUEST_ROOT_ADDRESS_CELLS, GUEST_ROOT_SIZE_CELLS,
-                       vgic_dist_base(&d->arch.vgic), GUEST_GICD_SIZE);
-    dt_child_set_range(&cells, GUEST_ROOT_ADDRESS_CELLS, GUEST_ROOT_SIZE_CELLS,
-                       vgic_cpu_base(&d->arch.vgic), GUEST_GICC_SIZE);
+    dt_child_set_range(&cells,
+                       GUEST_ROOT_ADDRESS_CELLS,
+                       GUEST_ROOT_SIZE_CELLS,
+                       vgic_dist_base(&d->arch.vgic),
+                       GUEST_GICD_SIZE);
+    dt_child_set_range(&cells,
+                       GUEST_ROOT_ADDRESS_CELLS,
+                       GUEST_ROOT_SIZE_CELLS,
+                       vgic_cpu_base(&d->arch.vgic),
+                       GUEST_GICC_SIZE);
 
     res = fdt_property(fdt, "reg", reg, sizeof(reg));
-    if (res)
+    if ( res )
         return res;
 
     res = fdt_property_cell(fdt, "linux,phandle", kinfo->phandle_gic);
-    if (res)
+    if ( res )
         return res;
 
     res = fdt_property_cell(fdt, "phandle", kinfo->phandle_gic);
-    if (res)
+    if ( res )
         return res;
 
     res = fdt_end_node(fdt);
@@ -112,7 +119,8 @@ static int __init make_gicv3_domU_node(struct kernel_info *kinfo)
     const struct domain *d = kinfo->d;
     unsigned int i, len = 0;
 
-    res = domain_fdt_begin_node(fdt, "interrupt-controller",
+    res = domain_fdt_begin_node(fdt,
+                                "interrupt-controller",
                                 vgic_dist_base(&d->arch.vgic));
     if ( res )
         return res;
@@ -133,7 +141,8 @@ static int __init make_gicv3_domU_node(struct kernel_info *kinfo)
     if ( res )
         return res;
 
-    res = fdt_property_cell(fdt, "#redistributor-regions",
+    res = fdt_property_cell(fdt,
+                            "#redistributor-regions",
                             d->arch.vgic.nr_regions);
     if ( res )
         return res;
@@ -146,26 +155,30 @@ static int __init make_gicv3_domU_node(struct kernel_info *kinfo)
         return -ENOMEM;
     cells = reg;
 
-    dt_child_set_range(&cells, GUEST_ROOT_ADDRESS_CELLS, GUEST_ROOT_SIZE_CELLS,
-                       vgic_dist_base(&d->arch.vgic), GUEST_GICV3_GICD_SIZE);
+    dt_child_set_range(&cells,
+                       GUEST_ROOT_ADDRESS_CELLS,
+                       GUEST_ROOT_SIZE_CELLS,
+                       vgic_dist_base(&d->arch.vgic),
+                       GUEST_GICV3_GICD_SIZE);
 
     for ( i = 0; i < d->arch.vgic.nr_regions; i++ )
         dt_child_set_range(&cells,
-                           GUEST_ROOT_ADDRESS_CELLS, GUEST_ROOT_SIZE_CELLS,
+                           GUEST_ROOT_ADDRESS_CELLS,
+                           GUEST_ROOT_SIZE_CELLS,
                            d->arch.vgic.rdist_regions[i].base,
                            d->arch.vgic.rdist_regions[i].size);
 
     res = fdt_property(fdt, "reg", reg, len);
     xfree(reg);
-    if (res)
+    if ( res )
         return res;
 
     res = fdt_property_cell(fdt, "linux,phandle", kinfo->phandle_gic);
-    if (res)
+    if ( res )
         return res;
 
     res = fdt_property_cell(fdt, "phandle", kinfo->phandle_gic);
-    if (res)
+    if ( res )
         return res;
 
     res = fdt_end_node(fdt);
@@ -210,8 +223,10 @@ static int __init make_vpl011_uart_node(struct kernel_info *kinfo)
         return res;
 
     cells = &reg[0];
-    dt_child_set_range(&cells, GUEST_ROOT_ADDRESS_CELLS,
-                       GUEST_ROOT_SIZE_CELLS, d->arch.vpl011.base_addr,
+    dt_child_set_range(&cells,
+                       GUEST_ROOT_ADDRESS_CELLS,
+                       GUEST_ROOT_SIZE_CELLS,
+                       d->arch.vpl011.base_addr,
                        GUEST_PL011_SIZE);
 
     res = fdt_property(fdt, "reg", reg, sizeof(reg));
@@ -220,12 +235,11 @@ static int __init make_vpl011_uart_node(struct kernel_info *kinfo)
 
     set_interrupt(intr, d->arch.vpl011.virq, 0xf, DT_IRQ_TYPE_LEVEL_HIGH);
 
-    res = fdt_property(fdt, "interrupts", intr, sizeof (intr));
+    res = fdt_property(fdt, "interrupts", intr, sizeof(intr));
     if ( res )
         return res;
 
-    res = fdt_property_cell(fdt, "interrupt-parent",
-                            kinfo->phandle_gic);
+    res = fdt_property_cell(fdt, "interrupt-parent", kinfo->phandle_gic);
     if ( res )
         return res;
 
@@ -260,30 +274,33 @@ static int __init handle_passthrough_prop(struct kernel_info *kinfo,
 
     /* xen,reg specifies where to map the MMIO region */
     cell = (const __be32 *)xen_reg->data;
-    len = fdt32_to_cpu(xen_reg->len) / ((address_cells * 2 + size_cells) *
-                                        sizeof(uint32_t));
+    len = fdt32_to_cpu(xen_reg->len) /
+          ((address_cells * 2 + size_cells) * sizeof(uint32_t));
 
     for ( i = 0; i < len; i++ )
     {
-        device_tree_get_reg(&cell, address_cells, size_cells,
-                            &mstart, &size);
+        device_tree_get_reg(&cell, address_cells, size_cells, &mstart, &size);
         gstart = dt_next_cell(address_cells, &cell);
 
         if ( gstart & ~PAGE_MASK || mstart & ~PAGE_MASK || size & ~PAGE_MASK )
         {
-            printk(XENLOG_ERR
-                   "DomU passthrough config has not page aligned addresses/sizes\n");
+            printk(
+                XENLOG_ERR
+                "DomU passthrough config has not page aligned addresses/sizes\n");
             return -EINVAL;
         }
 
-        res = iomem_permit_access(kinfo->d, paddr_to_pfn(mstart),
+        res = iomem_permit_access(kinfo->d,
+                                  paddr_to_pfn(mstart),
                                   paddr_to_pfn(PAGE_ALIGN(mstart + size - 1)));
         if ( res )
         {
-            printk(XENLOG_ERR "Unable to permit to dom%d access to"
-                   " 0x%"PRIpaddr" - 0x%"PRIpaddr"\n",
+            printk(XENLOG_ERR
+                   "Unable to permit to dom%d access to" " 0x%" PRIpaddr
+                   " - 0x%" PRIpaddr "\n",
                    kinfo->d->domain_id,
-                   mstart & PAGE_MASK, PAGE_ALIGN(mstart + size) - 1);
+                   mstart & PAGE_MASK,
+                   PAGE_ALIGN(mstart + size) - 1);
             return res;
         }
 
@@ -294,9 +311,10 @@ static int __init handle_passthrough_prop(struct kernel_info *kinfo,
                                p2m_mmio_direct_dev);
         if ( res < 0 )
         {
-            printk(XENLOG_ERR
-                   "Failed to map %"PRIpaddr" to the guest at%"PRIpaddr"\n",
-                   mstart, gstart);
+            printk(XENLOG_ERR "Failed to map %" PRIpaddr
+                              " to the guest at%" PRIpaddr "\n",
+                   mstart,
+                   gstart);
             return -EFAULT;
         }
     }
@@ -336,9 +354,9 @@ static int __init handle_passthrough_prop(struct kernel_info *kinfo,
     return iommu_assign_dt_device(kinfo->d, node);
 }
 
-static int __init handle_prop_pfdt(struct kernel_info *kinfo,
-                                   const void *pfdt, int nodeoff,
-                                   uint32_t address_cells, uint32_t size_cells,
+static int __init handle_prop_pfdt(struct kernel_info *kinfo, const void *pfdt,
+                                   int nodeoff, uint32_t address_cells,
+                                   uint32_t size_cells,
                                    bool scan_passthrough_prop)
 {
     void *fdt = kinfo->fdt;
@@ -347,8 +365,7 @@ static int __init handle_prop_pfdt(struct kernel_info *kinfo,
     const char *name;
     bool found, xen_force = false;
 
-    for ( propoff = fdt_first_property_offset(pfdt, nodeoff);
-          propoff >= 0;
+    for ( propoff = fdt_first_property_offset(pfdt, nodeoff); propoff >= 0;
           propoff = fdt_next_property_offset(pfdt, propoff) )
     {
         if ( !(prop = fdt_get_property_by_offset(pfdt, propoff, NULL)) )
@@ -370,8 +387,7 @@ static int __init handle_prop_pfdt(struct kernel_info *kinfo,
                 xen_path = prop;
                 found = true;
             }
-            else if ( dt_prop_cmp("xen,force-assign-without-iommu",
-                                  name) == 0 )
+            else if ( dt_prop_cmp("xen,force-assign-without-iommu", name) == 0 )
             {
                 xen_force = true;
                 found = true;
@@ -396,8 +412,12 @@ static int __init handle_prop_pfdt(struct kernel_info *kinfo,
      */
     if ( xen_reg != NULL && (xen_path != NULL || xen_force) )
     {
-        res = handle_passthrough_prop(kinfo, xen_reg, xen_path, xen_force,
-                                      address_cells, size_cells);
+        res = handle_passthrough_prop(kinfo,
+                                      xen_reg,
+                                      xen_path,
+                                      xen_force,
+                                      address_cells,
+                                      size_cells);
         if ( res < 0 )
         {
             printk(XENLOG_ERR "Failed to assign device to %pd\n", kinfo->d);
@@ -406,18 +426,17 @@ static int __init handle_prop_pfdt(struct kernel_info *kinfo,
     }
     else if ( (xen_path && !xen_reg) || (xen_reg && !xen_path && !xen_force) )
     {
-        printk(XENLOG_ERR "xen,reg or xen,path missing for %pd\n",
-               kinfo->d);
+        printk(XENLOG_ERR "xen,reg or xen,path missing for %pd\n", kinfo->d);
         return -EINVAL;
     }
 
     /* FDT_ERR_NOTFOUND => There is no more properties for this node */
-    return ( propoff != -FDT_ERR_NOTFOUND ) ? propoff : 0;
+    return (propoff != -FDT_ERR_NOTFOUND) ? propoff : 0;
 }
 
 static int __init scan_pfdt_node(struct kernel_info *kinfo, const void *pfdt,
-                                 int nodeoff,
-                                 uint32_t address_cells, uint32_t size_cells,
+                                 int nodeoff, uint32_t address_cells,
+                                 uint32_t size_cells,
                                  bool scan_passthrough_prop)
 {
     int rc = 0;
@@ -428,20 +447,32 @@ static int __init scan_pfdt_node(struct kernel_info *kinfo, const void *pfdt,
     if ( rc )
         return rc;
 
-    rc = handle_prop_pfdt(kinfo, pfdt, nodeoff, address_cells, size_cells,
+    rc = handle_prop_pfdt(kinfo,
+                          pfdt,
+                          nodeoff,
+                          address_cells,
+                          size_cells,
                           scan_passthrough_prop);
     if ( rc )
         return rc;
 
-    address_cells = device_tree_get_u32(pfdt, nodeoff, "#address-cells",
+    address_cells = device_tree_get_u32(pfdt,
+                                        nodeoff,
+                                        "#address-cells",
                                         DT_ROOT_NODE_ADDR_CELLS_DEFAULT);
-    size_cells = device_tree_get_u32(pfdt, nodeoff, "#size-cells",
+    size_cells = device_tree_get_u32(pfdt,
+                                     nodeoff,
+                                     "#size-cells",
                                      DT_ROOT_NODE_SIZE_CELLS_DEFAULT);
 
     node_next = fdt_first_subnode(pfdt, nodeoff);
     while ( node_next > 0 )
     {
-        rc = scan_pfdt_node(kinfo, pfdt, node_next, address_cells, size_cells,
+        rc = scan_pfdt_node(kinfo,
+                            pfdt,
+                            node_next,
+                            address_cells,
+                            size_cells,
                             scan_passthrough_prop);
         if ( rc )
             return rc;
@@ -493,8 +524,7 @@ static int __init domain_handle_dtb_bootmodule(struct domain *d,
     if ( res < 0 )
         goto out;
 
-    for ( node_next = fdt_first_subnode(pfdt, 0);
-          node_next > 0;
+    for ( node_next = fdt_first_subnode(pfdt, 0); node_next > 0;
           node_next = fdt_next_subnode(pfdt, node_next) )
     {
         const char *name = fdt_get_name(pfdt, node_next, NULL);
@@ -520,7 +550,9 @@ static int __init domain_handle_dtb_bootmodule(struct domain *d,
 
         if ( dt_node_cmp(name, "aliases") == 0 )
         {
-            res = scan_pfdt_node(kinfo, pfdt, node_next,
+            res = scan_pfdt_node(kinfo,
+                                 pfdt,
+                                 node_next,
                                  DT_ROOT_NODE_ADDR_CELLS_DEFAULT,
                                  DT_ROOT_NODE_SIZE_CELLS_DEFAULT,
                                  false);
@@ -530,7 +562,9 @@ static int __init domain_handle_dtb_bootmodule(struct domain *d,
         }
         if ( dt_node_cmp(name, "passthrough") == 0 )
         {
-            res = scan_pfdt_node(kinfo, pfdt, node_next,
+            res = scan_pfdt_node(kinfo,
+                                 pfdt,
+                                 node_next,
                                  DT_ROOT_NODE_ADDR_CELLS_DEFAULT,
                                  DT_ROOT_NODE_SIZE_CELLS_DEFAULT,
                                  true);
@@ -540,7 +574,7 @@ static int __init domain_handle_dtb_bootmodule(struct domain *d,
         }
     }
 
- out:
+out:
     iounmap(pfdt);
 
     return res;
@@ -552,6 +586,7 @@ static int __init domain_handle_dtb_bootmodule(struct domain *d,
  * for now, but we might have to increase it in the future.
  */
 #define DOMU_DTB_SIZE 4096
+
 static int __init prepare_dtb_domU(struct domain *d, struct kernel_info *kinfo)
 {
     int addrcells, sizecells;
@@ -607,7 +642,9 @@ static int __init prepare_dtb_domU(struct domain *d, struct kernel_info *kinfo)
     if ( ret )
         goto err;
 
-    ret = make_memory_node(kinfo, addrcells, sizecells,
+    ret = make_memory_node(kinfo,
+                           addrcells,
+                           sizecells,
                            kernel_info_get_mem(kinfo));
     if ( ret )
         goto err;
@@ -663,7 +700,7 @@ static int __init prepare_dtb_domU(struct domain *d, struct kernel_info *kinfo)
 
     return 0;
 
-  err:
+err:
     printk("Device tree generation failed (%d).\n", ret);
     xfree(kinfo->fdt);
 
@@ -724,9 +761,8 @@ static int __init construct_domU(struct domain *d,
 
     rc = dt_property_read_u32(node, "xen,domain-p2m-mem-mb", &p2m_mem_mb);
     /* If xen,domain-p2m-mem-mb is not specified, use the default value. */
-    p2m_pages = rc ?
-                p2m_mem_mb << (20 - PAGE_SHIFT) :
-                domain_p2m_pages(mem, d->max_vcpus);
+    p2m_pages = rc ? p2m_mem_mb << (20 - PAGE_SHIFT)
+                   : domain_p2m_pages(mem, d->max_vcpus);
 
     spin_lock(&d->arch.paging.lock);
     rc = p2m_set_allocation(d, p2m_pages, NULL);
@@ -734,20 +770,21 @@ static int __init construct_domU(struct domain *d,
     if ( rc != 0 )
         return rc;
 
-    printk("*** LOADING DOMU cpus=%u memory=%#"PRIx64"KB ***\n",
-           d->max_vcpus, mem);
+    printk("*** LOADING DOMU cpus=%u memory=%#" PRIx64 "KB ***\n",
+           d->max_vcpus,
+           mem);
 
     kinfo.vpl011 = dt_property_read_bool(node, "vpl011");
 
     rc = dt_property_read_string(node, "xen,enhanced", &dom0less_enhanced);
-    if ( rc == -EILSEQ ||
-         rc == -ENODATA ||
+    if ( rc == -EILSEQ || rc == -ENODATA ||
          (rc == 0 && !strcmp(dom0less_enhanced, "enabled")) )
     {
         if ( hardware_domain )
             kinfo.dom0less_feature = DOM0LESS_ENHANCED;
         else
-            panic("At the moment, Xenstore support requires dom0 to be present\n");
+            panic(
+                "At the moment, Xenstore support requires dom0 to be present\n");
     }
     else if ( rc == 0 && !strcmp(dom0less_enhanced, "no-xenstore") )
         kinfo.dom0less_feature = DOM0LESS_ENHANCED_NO_XS;
@@ -816,7 +853,7 @@ void __init create_domUs(void)
     const char *dom0less_iommu;
     bool iommu = false;
     const struct dt_device_node *cpupool_node,
-                                *chosen = dt_find_node_by_path("/chosen");
+        *chosen = dt_find_node_by_path("/chosen");
     const char *llc_colors_str = NULL;
 
     BUG_ON(chosen == NULL);
@@ -858,8 +895,9 @@ void __init create_domUs(void)
         if ( dt_property_read_bool(node, "direct-map") )
         {
             if ( !(flags & CDF_staticmem) )
-                panic("direct-map is not valid for domain %s without static allocation.\n",
-                      dt_node_name(node));
+                panic(
+                    "direct-map is not valid for domain %s without static allocation.\n",
+                    dt_node_name(node));
 
             flags |= CDF_directmap;
         }
@@ -873,8 +911,8 @@ void __init create_domUs(void)
             iommu = true;
 
         if ( iommu_enabled &&
-             (iommu || dt_find_compatible_node(node, NULL,
-                                               "multiboot,device-tree")) )
+             (iommu ||
+              dt_find_compatible_node(node, NULL, "multiboot,device-tree")) )
             d_cfg.flags |= XEN_DOMCTL_CDF_iommu;
 
         if ( !dt_property_read_u32(node, "nr_spis", &d_cfg.arch.nr_spis) )
@@ -927,14 +965,14 @@ void __init create_domUs(void)
         if ( dt_property_read_u32(node, "max_grant_frames", &val) )
         {
             if ( val > INT32_MAX )
-                panic("max_grant_frames (%"PRIu32") overflow\n", val);
+                panic("max_grant_frames (%" PRIu32 ") overflow\n", val);
             d_cfg.max_grant_frames = val;
         }
 
         if ( dt_property_read_u32(node, "max_maptrack_frames", &val) )
         {
             if ( val > INT32_MAX )
-                panic("max_maptrack_frames (%"PRIu32") overflow\n", val);
+                panic("max_maptrack_frames (%" PRIu32 ") overflow\n", val);
             d_cfg.max_maptrack_frames = val;
         }
 
@@ -978,12 +1016,14 @@ void __init create_domUs(void)
         d = domain_create(++max_init_domid, &d_cfg, flags);
         if ( IS_ERR(d) )
             panic("Error creating domain %s (rc = %ld)\n",
-                  dt_node_name(node), PTR_ERR(d));
+                  dt_node_name(node),
+                  PTR_ERR(d));
 
         if ( llc_coloring_enabled &&
              (rc = domain_set_llc_colors_from_str(d, llc_colors_str)) )
             panic("Error initializing LLC coloring for domain %s (rc = %d)\n",
-                  dt_node_name(node), rc);
+                  dt_node_name(node),
+                  rc);
 
         d->is_console = true;
         dt_device_set_used_by(node, d->domain_id);
@@ -991,7 +1031,8 @@ void __init create_domUs(void)
         rc = construct_domU(d, node);
         if ( rc )
             panic("Could not set up domain %s (rc = %d)\n",
-                  dt_node_name(node), rc);
+                  dt_node_name(node),
+                  rc);
     }
 }
 

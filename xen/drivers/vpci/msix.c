@@ -32,8 +32,8 @@
      PFN_DOWN(addr) <= PFN_DOWN(vmsix_table_addr(vpci, nr) +              \
                                 vmsix_table_size(vpci, nr) - 1))
 
-static uint32_t cf_check control_read(
-    const struct pci_dev *pdev, unsigned int reg, void *data)
+static uint32_t cf_check control_read(const struct pci_dev *pdev,
+                                      unsigned int reg, void *data)
 {
     const struct vpci_msix *msix = data;
 
@@ -52,17 +52,23 @@ static void update_entry(struct vpci_msix_entry *entry,
     {
         gprintk(XENLOG_WARNING,
                 "%pp: unable to disable entry %u for update: %d\n",
-                &pdev->sbdf, nr, rc);
+                &pdev->sbdf,
+                nr,
+                rc);
         return;
     }
 
-    rc = vpci_msix_arch_enable_entry(entry, pdev,
+    rc = vpci_msix_arch_enable_entry(entry,
+                                     pdev,
                                      vmsix_table_base(pdev->vpci,
                                                       VPCI_MSIX_TABLE));
     if ( rc )
     {
-        gprintk(XENLOG_WARNING, "%pp: unable to enable entry %u: %d\n",
-                &pdev->sbdf, nr, rc);
+        gprintk(XENLOG_WARNING,
+                "%pp: unable to enable entry %u: %d\n",
+                &pdev->sbdf,
+                nr,
+                rc);
         /* Entry is likely not properly configured. */
         return;
     }
@@ -70,8 +76,8 @@ static void update_entry(struct vpci_msix_entry *entry,
     entry->updated = false;
 }
 
-static void cf_check control_write(
-    const struct pci_dev *pdev, unsigned int reg, uint32_t val, void *data)
+static void cf_check control_write(const struct pci_dev *pdev, unsigned int reg,
+                                   uint32_t val, void *data)
 {
     struct vpci_msix *msix = data;
     bool new_masked = val & PCI_MSIX_FLAGS_MASKALL;
@@ -128,8 +134,11 @@ static void cf_check control_write(
                 /* Ignore non-present entry. */
                 break;
             default:
-                gprintk(XENLOG_WARNING, "%pp: unable to disable entry %u: %d\n",
-                        &pdev->sbdf, i, rc);
+                gprintk(XENLOG_WARNING,
+                        "%pp: unable to disable entry %u: %d\n",
+                        &pdev->sbdf,
+                        i,
+                        rc);
                 return;
             }
         }
@@ -156,7 +165,7 @@ static struct vpci_msix *msix_find(const struct domain *d, unsigned long addr)
 
     ASSERT_PDEV_LIST_IS_READ_LOCKED(d);
 
-    list_for_each_entry ( msix, &d->arch.hvm.msix_tables, next )
+    list_for_each_entry(msix, &d->arch.hvm.msix_tables, next)
     {
         const struct vpci_bar *bars = msix->pdev->vpci->header.bars;
         unsigned int i;
@@ -189,13 +198,13 @@ static bool access_allowed(const struct pci_dev *pdev, unsigned long addr,
         return true;
 
     gprintk(XENLOG_WARNING,
-            "%pp: unaligned or invalid size MSI-X table access\n", &pdev->sbdf);
+            "%pp: unaligned or invalid size MSI-X table access\n",
+            &pdev->sbdf);
 
     return false;
 }
 
-static struct vpci_msix_entry *get_entry(struct vpci_msix *msix,
-                                         paddr_t addr)
+static struct vpci_msix_entry *get_entry(struct vpci_msix *msix, paddr_t addr)
 {
     paddr_t start = vmsix_table_addr(msix->pdev->vpci, VPCI_MSIX_TABLE);
 
@@ -306,7 +315,8 @@ static int adjacent_read(const struct domain *d, const struct vpci_msix *msix,
     {
         unsigned int i;
 
-        gprintk(XENLOG_DEBUG, "%pp: unaligned read to MSI-X related page\n",
+        gprintk(XENLOG_DEBUG,
+                "%pp: unaligned read to MSI-X related page\n",
                 &msix->pdev->sbdf);
 
         /*
@@ -371,8 +381,8 @@ static int adjacent_read(const struct domain *d, const struct vpci_msix *msix,
     return X86EMUL_OKAY;
 }
 
-static int cf_check msix_read(
-    struct vcpu *v, unsigned long addr, unsigned int len, unsigned long *data)
+static int cf_check msix_read(struct vcpu *v, unsigned long addr,
+                              unsigned int len, unsigned long *data)
 {
     struct domain *d = v->domain;
     struct vpci_msix *msix;
@@ -421,8 +431,8 @@ static int cf_check msix_read(
     case PCI_MSIX_ENTRY_DATA_OFFSET:
         *data = entry->data;
         if ( len == 8 )
-            *data |=
-                (uint64_t)(entry->masked ? PCI_MSIX_VECTOR_BITMASK : 0) << 32;
+            *data |= (uint64_t)(entry->masked ? PCI_MSIX_VECTOR_BITMASK : 0)
+                     << 32;
         break;
 
     case PCI_MSIX_ENTRY_VECTOR_CTRL_OFFSET:
@@ -468,7 +478,8 @@ static int adjacent_write(const struct domain *d, const struct vpci_msix *msix,
     {
         unsigned int i;
 
-        gprintk(XENLOG_DEBUG, "%pp: unaligned write to MSI-X related page\n",
+        gprintk(XENLOG_DEBUG,
+                "%pp: unaligned write to MSI-X related page\n",
                 &msix->pdev->sbdf);
 
         for ( i = 0; i < len; i++ )
@@ -520,8 +531,8 @@ static int adjacent_write(const struct domain *d, const struct vpci_msix *msix,
     return X86EMUL_OKAY;
 }
 
-static int cf_check msix_write(
-    struct vcpu *v, unsigned long addr, unsigned int len, unsigned long data)
+static int cf_check msix_write(struct vcpu *v, unsigned long addr,
+                               unsigned int len, unsigned long data)
 {
     struct domain *d = v->domain;
     struct vpci_msix *msix;
@@ -577,7 +588,7 @@ static int cf_check msix_write(
 
     case PCI_MSIX_ENTRY_UPPER_ADDR_OFFSET:
         entry->updated = true;
-        entry->addr  = (uint32_t)entry->addr;
+        entry->addr = (uint32_t)entry->addr;
         entry->addr |= (uint64_t)data << 32;
         break;
 
@@ -673,7 +684,10 @@ int vpci_make_msix_hole(const struct pci_dev *pdev)
                 gprintk(XENLOG_WARNING,
                         "%pp: existing mapping (mfn: %" PRI_mfn
                         "type: %d) at %#lx clobbers MSIX MMIO area\n",
-                        &pdev->sbdf, mfn_x(mfn), t, start);
+                        &pdev->sbdf,
+                        mfn_x(mfn),
+                        t,
+                        start);
                 return -EEXIST;
             }
             put_gfn(d, start);
@@ -723,8 +737,12 @@ static int cf_check init_msix(struct pci_dev *pdev)
     if ( !msix )
         return -ENOMEM;
 
-    rc = vpci_add_register(pdev->vpci, control_read, control_write,
-                           msix_control_reg(msix_offset), 2, msix);
+    rc = vpci_add_register(pdev->vpci,
+                           control_read,
+                           control_write,
+                           msix_control_reg(msix_offset),
+                           2,
+                           msix);
     if ( rc )
     {
         xfree(msix);
@@ -739,7 +757,7 @@ static int cf_check init_msix(struct pci_dev *pdev)
     msix->tables[VPCI_MSIX_PBA] =
         pci_conf_read32(pdev->sbdf, msix_pba_offset_reg(msix_offset));
 
-    for ( i = 0; i < max_entries; i++)
+    for ( i = 0; i < max_entries; i++ )
     {
         msix->entries[i].masked = true;
         vpci_msix_arch_init_entry(&msix->entries[i]);
@@ -753,6 +771,7 @@ static int cf_check init_msix(struct pci_dev *pdev)
 
     return 0;
 }
+
 REGISTER_VPCI_INIT(init_msix, VPCI_PRIORITY_HIGH);
 
 /*

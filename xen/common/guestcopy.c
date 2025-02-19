@@ -6,8 +6,8 @@
  * The function copies a string from the guest and adds a NUL to
  * make sure the string is correctly terminated.
  */
-char *safe_copy_string_from_guest(XEN_GUEST_HANDLE(char) u_buf,
-                                  size_t size, size_t max_size)
+char *safe_copy_string_from_guest(XEN_GUEST_HANDLE(char) u_buf, size_t size,
+                                  size_t max_size)
 {
     char *tmp;
 

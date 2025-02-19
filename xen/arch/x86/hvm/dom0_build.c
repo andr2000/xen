@@ -65,9 +65,9 @@ static int __init modify_identity_mmio(struct domain *d, unsigned long pfn,
 {
     int rc;
 
-    for ( ; ; )
+    for ( ;; )
     {
-        rc = map ?   map_mmio_regions(d, _gfn(pfn), nr_pages, _mfn(pfn))
+        rc = map ? map_mmio_regions(d, _gfn(pfn), nr_pages, _mfn(pfn))
                  : unmap_mmio_regions(d, _gfn(pfn), nr_pages, _mfn(pfn));
         if ( rc == 0 )
             break;
@@ -75,7 +75,11 @@ static int __init modify_identity_mmio(struct domain *d, unsigned long pfn,
         {
             printk(XENLOG_WARNING
                    "Failed to identity %smap [%#lx,%#lx) for d%d: %d\n",
-                   map ? "" : "un", pfn, pfn + nr_pages, d->domain_id, rc);
+                   map ? "" : "un",
+                   pfn,
+                   pfn + nr_pages,
+                   d->domain_id,
+                   rc);
             break;
         }
         nr_pages -= rc;
@@ -100,6 +104,7 @@ static int __init pvh_populate_memory_range(struct domain *d,
         { .align = PFN_DOWN(MB(2)), .order = PAGE_ORDER_2M },
         { .align = PFN_DOWN(KB(4)), .order = PAGE_ORDER_4K },
     };
+
     unsigned int max_order = MAX_ORDER;
     struct page_info *page;
     int rc;
@@ -119,7 +124,8 @@ static int __init pvh_populate_memory_range(struct domain *d,
         {
         case ARRAY_SIZE(orders):
             printk("Unable to find allocation order for [%#lx,%#lx)\n",
-                   start, start + nr_pages);
+                   start,
+                   start + nr_pages);
             return -EINVAL;
 
         case 0:
@@ -164,7 +170,9 @@ static int __init pvh_populate_memory_range(struct domain *d,
         if ( rc != 0 )
         {
             printk("Failed to populate memory: [%#lx,%#lx): %d\n",
-                   start, start + (1UL << order), rc);
+                   start,
+                   start + (1UL << order),
+                   rc);
             return rc;
         }
         start += 1UL << order;
@@ -193,7 +201,7 @@ static int __init pvh_steal_ram(struct domain *d, unsigned long size,
      * Alignment 0 should be set to 1, so it doesn't wrap around in the
      * calculations below.
      */
-    align = align ? : 1;
+    align = align ?: 1;
     while ( i-- )
     {
         struct e820entry *entry = &d->arch.e820[i];
@@ -254,7 +262,8 @@ static int __init pvh_add_mem_range(struct domain *d, uint64_t s, uint64_t e,
     }
 
     memcpy(map, d->arch.e820, i * sizeof(*d->arch.e820));
-    memcpy(map + i + 1, d->arch.e820 + i,
+    memcpy(map + i + 1,
+           d->arch.e820 + i,
            (d->arch.nr_e820 - i) * sizeof(*d->arch.e820));
     map[i].addr = s;
     map[i].size = e - s;
@@ -286,7 +295,9 @@ static int __init pvh_setup_vmx_realmode_helpers(struct domain *d)
             printk("Unable to zero VM86 TSS area\n");
         d->arch.hvm.params[HVM_PARAM_VM86_TSS_SIZED] =
             VM86_TSS_UPDATED | ((uint64_t)HVM_VM86_TSS_SIZE << 32) | gaddr;
-        if ( pvh_add_mem_range(d, gaddr, gaddr + HVM_VM86_TSS_SIZE,
+        if ( pvh_add_mem_range(d,
+                               gaddr,
+                               gaddr + HVM_VM86_TSS_SIZE,
                                E820_RESERVED) )
             printk("Unable to set VM86 TSS as reserved in the memory map\n");
     }
@@ -305,8 +316,8 @@ static int __init pvh_setup_vmx_realmode_helpers(struct domain *d)
      * when using Intel EPT. Create a 32-bit non-PAE page directory of
      * superpages.
      */
-    ident_pt = map_domain_gfn(p2m_get_hostp2m(d), _gfn(PFN_DOWN(gaddr)),
-                              &mfn, 0, &rc);
+    ident_pt =
+        map_domain_gfn(p2m_get_hostp2m(d), _gfn(PFN_DOWN(gaddr)), &mfn, 0, &rc);
     if ( ident_pt == NULL )
     {
         printk("Unable to map identity page tables\n");
@@ -317,7 +328,8 @@ static int __init pvh_setup_vmx_realmode_helpers(struct domain *d)
     put_page(mfn_to_page(mfn));
     d->arch.hvm.params[HVM_PARAM_IDENT_PT] = gaddr;
     if ( pvh_add_mem_range(d, gaddr, gaddr + PAGE_SIZE, E820_RESERVED) )
-            printk("Unable to set identity page tables as reserved in the memory map\n");
+        printk(
+            "Unable to set identity page tables as reserved in the memory map\n");
 
     return 0;
 }
@@ -365,8 +377,7 @@ static __init void pvh_setup_e820(struct domain *d, unsigned long nr_pages)
          * order to prevent this code from getting out of sync.
          */
         start = ROUNDUP(entry->addr, PAGE_SIZE << PAGE_ORDER_4K);
-        end = (entry->addr + entry->size) &
-              ~((PAGE_SIZE << PAGE_ORDER_4K) - 1);
+        end = (entry->addr + entry->size) & ~((PAGE_SIZE << PAGE_ORDER_4K) - 1);
         if ( start >= end )
             continue;
 
@@ -390,7 +401,7 @@ static __init void pvh_setup_e820(struct domain *d, unsigned long nr_pages)
         {
             cur_pages += pages;
         }
- next:
+    next:
         d->arch.nr_e820++;
         entry_guest++;
         ASSERT(d->arch.nr_e820 <= e820.nr_map + 1);
@@ -404,10 +415,10 @@ static void __init pvh_init_p2m(struct domain *d)
     bool preempted;
 
     pvh_setup_e820(d, nr_pages);
-    do {
+    do
+    {
         preempted = false;
-        paging_set_allocation(d, dom0_paging_pages(d, nr_pages),
-                              &preempted);
+        paging_set_allocation(d, dom0_paging_pages(d, nr_pages), &preempted);
         process_pending_softirqs();
     } while ( preempted );
 }
@@ -436,17 +447,20 @@ static int __init pvh_populate_p2m(struct domain *d)
 
         if ( addr < MB1_PAGES )
         {
-            uint64_t end = min_t(uint64_t, MB(1),
+            uint64_t end = min_t(uint64_t,
+                                 MB(1),
                                  d->arch.e820[i].addr + d->arch.e820[i].size);
             enum hvm_translation_result res =
-                 hvm_copy_to_guest_phys(mfn_to_maddr(_mfn(addr)),
-                                        mfn_to_virt(addr),
-                                        end - d->arch.e820[i].addr,
-                                        v);
+                hvm_copy_to_guest_phys(mfn_to_maddr(_mfn(addr)),
+                                       mfn_to_virt(addr),
+                                       end - d->arch.e820[i].addr,
+                                       v);
 
             if ( res != HVMTRANS_okay )
                 printk("Failed to copy [%#lx, %#lx): %d\n",
-                       addr, addr + size, res);
+                       addr,
+                       addr + size,
+                       res);
         }
     }
 
@@ -492,8 +506,8 @@ static int __init pvh_populate_p2m(struct domain *d)
 #undef MB1_PAGES
 }
 
-static paddr_t __init find_memory(
-    const struct domain *d, const struct elf_binary *elf, size_t size)
+static paddr_t __init find_memory(const struct domain *d,
+                                  const struct elf_binary *elf, size_t size)
 {
     paddr_t kernel_start = (paddr_t)elf->dest_base & PAGE_MASK;
     paddr_t kernel_end = ROUNDUP((paddr_t)elf->dest_base + elf->dest_size,
@@ -538,8 +552,8 @@ static paddr_t __init find_memory(
     return INVALID_PADDR;
 }
 
-static bool __init check_load_address(
-    const struct domain *d, const struct elf_binary *elf)
+static bool __init check_load_address(const struct domain *d,
+                                      const struct elf_binary *elf)
 {
     paddr_t kernel_start = (uintptr_t)elf->dest_base;
     paddr_t kernel_end = kernel_start + elf->dest_size;
@@ -554,8 +568,7 @@ static bool __init check_load_address(
         if ( start >= kernel_end )
             return false;
 
-        if ( d->arch.e820[i].type == E820_RAM &&
-             start <= kernel_start &&
+        if ( d->arch.e820[i].type == E820_RAM && start <= kernel_start &&
              end >= kernel_end )
             return true;
     }
@@ -564,9 +577,9 @@ static bool __init check_load_address(
 }
 
 /* Find an e820 RAM region that fits the kernel at a suitable alignment. */
-static paddr_t __init find_kernel_memory(
-    const struct domain *d, struct elf_binary *elf,
-    const struct elf_dom_parms *parms)
+static paddr_t __init find_kernel_memory(const struct domain *d,
+                                         struct elf_binary *elf,
+                                         const struct elf_dom_parms *parms)
 {
     paddr_t kernel_size = elf->dest_size;
     unsigned int align;
@@ -610,8 +623,9 @@ static paddr_t __init find_kernel_memory(
 }
 
 /* Check the kernel load address, and adjust if necessary and possible. */
-static bool __init check_and_adjust_load_address(
-    const struct domain *d, struct elf_binary *elf, struct elf_dom_parms *parms)
+static bool __init check_and_adjust_load_address(const struct domain *d,
+                                                 struct elf_binary *elf,
+                                                 struct elf_dom_parms *parms)
 {
     paddr_t reloc_base;
 
@@ -632,20 +646,24 @@ static bool __init check_and_adjust_load_address(
     }
 
     if ( opt_dom0_verbose )
-        printk("%pd kernel: Moving [%p, %p] -> [%"PRIpaddr", %"PRIpaddr"]\n", d,
-               elf->dest_base, elf->dest_base + elf->dest_size - 1,
-               reloc_base, reloc_base + elf->dest_size - 1);
+        printk("%pd kernel: Moving [%p, %p] -> [%" PRIpaddr ", %" PRIpaddr
+               "]\n",
+               d,
+               elf->dest_base,
+               elf->dest_base + elf->dest_size - 1,
+               reloc_base,
+               reloc_base + elf->dest_size - 1);
 
-    parms->phys_entry =
-        reloc_base + (parms->phys_entry - (uintptr_t)elf->dest_base);
+    parms->phys_entry = reloc_base +
+                        (parms->phys_entry - (uintptr_t)elf->dest_base);
     elf->dest_base = (char *)reloc_base;
 
     return true;
 }
 
-static int __init pvh_load_kernel(
-    struct domain *d, struct boot_module *image, struct boot_module *initrd,
-    paddr_t *entry, paddr_t *start_info_addr)
+static int __init pvh_load_kernel(struct domain *d, struct boot_module *image,
+                                  struct boot_module *initrd, paddr_t *entry,
+                                  paddr_t *start_info_addr)
 {
     void *image_base = bootstrap_map_bm(image);
     void *image_start = image_base + image->headroom;
@@ -711,13 +729,13 @@ static int __init pvh_load_kernel(
      * split into smaller allocations, done as a single region in order to
      * simplify it.
      */
-    last_addr = find_memory(d, &elf, sizeof(start_info) +
-                            (initrd ? ROUNDUP(initrd_len, PAGE_SIZE) +
-                                      sizeof(mod)
-                                    : 0) +
-                            (cmdline ? ROUNDUP(strlen(cmdline) + 1,
-                                               elf_64bit(&elf) ? 8 : 4)
-                                     : 0));
+    last_addr = find_memory(
+        d,
+        &elf,
+        sizeof(start_info) +
+            (initrd ? ROUNDUP(initrd_len, PAGE_SIZE) + sizeof(mod) : 0) +
+            (cmdline ? ROUNDUP(strlen(cmdline) + 1, elf_64bit(&elf) ? 8 : 4)
+                     : 0));
     if ( last_addr == INVALID_PADDR )
     {
         printk("Unable to find a memory region to load initrd and metadata\n");
@@ -726,8 +744,10 @@ static int __init pvh_load_kernel(
 
     if ( initrd != NULL )
     {
-        rc = hvm_copy_to_guest_phys(last_addr, __va(initrd->start),
-                                    initrd_len, v);
+        rc = hvm_copy_to_guest_phys(last_addr,
+                                    __va(initrd->start),
+                                    initrd_len,
+                                    v);
         if ( rc )
         {
             printk("Unable to copy initrd to guest\n");
@@ -850,8 +870,8 @@ static int __init cf_check acpi_count_intr_ovr(
     return 0;
 }
 
-static int __init cf_check acpi_set_intr_ovr(
-    struct acpi_subtable_header *header, const unsigned long end)
+static int __init cf_check
+acpi_set_intr_ovr(struct acpi_subtable_header *header, const unsigned long end)
 {
     const struct acpi_madt_interrupt_override *intr =
         container_of(header, struct acpi_madt_interrupt_override, header);
@@ -875,7 +895,8 @@ static int __init pvh_setup_acpi_madt(struct domain *d, paddr_t *addr)
 
     /* Count number of interrupt overrides in the MADT. */
     acpi_table_parse_madt(ACPI_MADT_TYPE_INTERRUPT_OVERRIDE,
-                          acpi_count_intr_ovr, UINT_MAX);
+                          acpi_count_intr_ovr,
+                          UINT_MAX);
 
     max_vcpus = dom0_max_vcpus();
     /* Calculate the size of the crafted MADT. */
@@ -934,7 +955,8 @@ static int __init pvh_setup_acpi_madt(struct domain *d, paddr_t *addr)
 
     /* Setup interrupt overrides. */
     intsrcovr = (void *)x2apic;
-    acpi_table_parse_madt(ACPI_MADT_TYPE_INTERRUPT_OVERRIDE, acpi_set_intr_ovr,
+    acpi_table_parse_madt(ACPI_MADT_TYPE_INTERRUPT_OVERRIDE,
+                          acpi_set_intr_ovr,
                           acpi_intr_overrides);
 
     ASSERT(((void *)intsrcovr - (void *)madt) == size);
@@ -966,19 +988,18 @@ static int __init pvh_setup_acpi_madt(struct domain *d, paddr_t *addr)
 
     rc = 0;
 
- out:
+out:
     xfree(madt);
 
     return rc;
 }
 
-static bool __init acpi_memory_banned(unsigned long address,
-                                      unsigned long size)
+static bool __init acpi_memory_banned(unsigned long address, unsigned long size)
 {
     unsigned long mfn = PFN_DOWN(address);
     unsigned long nr_pages = PFN_UP((address & ~PAGE_MASK) + size), i;
 
-    for ( i = 0 ; i < nr_pages; i++ )
+    for ( i = 0; i < nr_pages; i++ )
         if ( !page_is_ram_type(mfn + i, RAM_TYPE_RESERVED) &&
              !page_is_ram_type(mfn + i, RAM_TYPE_ACPI) )
             return true;
@@ -998,7 +1019,7 @@ static bool __init pvh_acpi_table_allowed(const char *sig,
     };
     unsigned int i;
 
-    for ( i = 0 ; i < ARRAY_SIZE(allowed_tables); i++ )
+    for ( i = 0; i < ARRAY_SIZE(allowed_tables); i++ )
     {
         if ( strncmp(sig, allowed_tables[i], ACPI_NAME_SIZE) )
             continue;
@@ -1049,10 +1070,11 @@ static int __init pvh_setup_acpi_xsdt(struct domain *d, paddr_t madt_addr,
     acpi_dmar_reinstate();
 
     /* Count the number of tables that will be added to the XSDT. */
-    for( i = 0; i < acpi_gbl_root_table_list.count; i++ )
+    for ( i = 0; i < acpi_gbl_root_table_list.count; i++ )
     {
         if ( pvh_acpi_xsdt_table_allowed(tables[i].signature.ascii,
-                                         tables[i].address, tables[i].length) )
+                                         tables[i].address,
+                                         tables[i].length) )
             num_tables++;
     }
 
@@ -1110,10 +1132,11 @@ static int __init pvh_setup_acpi_xsdt(struct domain *d, paddr_t madt_addr,
     xsdt->table_offset_entry[0] = madt_addr;
 
     /* Copy the addresses of the rest of the allowed tables. */
-    for( i = 0, j = 1; i < acpi_gbl_root_table_list.count; i++ )
+    for ( i = 0, j = 1; i < acpi_gbl_root_table_list.count; i++ )
     {
         if ( pvh_acpi_xsdt_table_allowed(tables[i].signature.ascii,
-                                         tables[i].address, tables[i].length) )
+                                         tables[i].address,
+                                         tables[i].length) )
             xsdt->table_offset_entry[j++] = tables[i].address;
     }
 
@@ -1146,7 +1169,7 @@ static int __init pvh_setup_acpi_xsdt(struct domain *d, paddr_t madt_addr,
 
     rc = 0;
 
- out:
+out:
     xfree(xsdt);
 
     return rc;
@@ -1164,9 +1187,8 @@ static int __init pvh_setup_acpi(struct domain *d, paddr_t start_info)
         .length = sizeof(rsdp),
     };
 
-
     /* Scan top-level tables and add their regions to the guest memory map. */
-    for( i = 0; i < acpi_gbl_root_table_list.count; i++ )
+    for ( i = 0; i < acpi_gbl_root_table_list.count; i++ )
     {
         const char *sig = acpi_gbl_root_table_list.tables[i].signature.ascii;
         unsigned long addr = acpi_gbl_root_table_list.tables[i].address;
@@ -1178,9 +1200,9 @@ static int __init pvh_setup_acpi(struct domain *d, paddr_t start_info)
          * re-using MADT memory.
          */
         if ( strncmp(sig, ACPI_SIG_MADT, ACPI_NAME_SIZE)
-             ? pvh_acpi_table_allowed(sig, addr, size)
-             : !acpi_memory_banned(addr, size) )
-             pvh_add_mem_range(d, addr, addr + size, E820_ACPI);
+                 ? pvh_acpi_table_allowed(sig, addr, size)
+                 : !acpi_memory_banned(addr, size) )
+            pvh_add_mem_range(d, addr, addr + size, E820_ACPI);
     }
 
     /* Identity map ACPI e820 regions. */
@@ -1191,8 +1213,8 @@ static int __init pvh_setup_acpi(struct domain *d, paddr_t start_info)
             continue;
 
         pfn = PFN_DOWN(d->arch.e820[i].addr);
-        nr_pages = PFN_UP((d->arch.e820[i].addr & ~PAGE_MASK) +
-                          d->arch.e820[i].size);
+        nr_pages =
+            PFN_UP((d->arch.e820[i].addr & ~PAGE_MASK) + d->arch.e820[i].size);
 
         /* Memory below 1MB has been dealt with by pvh_populate_p2m(). */
         if ( pfn < PFN_DOWN(MB(1)) )
@@ -1208,8 +1230,10 @@ static int __init pvh_setup_acpi(struct domain *d, paddr_t start_info)
         rc = modify_identity_mmio(d, pfn, nr_pages, true);
         if ( rc )
         {
-            printk("Failed to map ACPI region [%#lx, %#lx) into Dom0 memory map\n",
-                   pfn, pfn + nr_pages);
+            printk(
+                "Failed to map ACPI region [%#lx, %#lx) into Dom0 memory map\n",
+                pfn,
+                pfn + nr_pages);
             return rc;
         }
     }
@@ -1256,8 +1280,7 @@ static int __init pvh_setup_acpi(struct domain *d, paddr_t start_info)
     }
 
     /* Mark this region as E820_ACPI. */
-    if ( pvh_add_mem_range(d, rsdp_paddr, rsdp_paddr + sizeof(rsdp),
-                           E820_ACPI) )
+    if ( pvh_add_mem_range(d, rsdp_paddr, rsdp_paddr + sizeof(rsdp), E820_ACPI) )
         printk("Unable to add RSDP region to memory map\n");
 
     /* Copy RSDP into guest memory. */
@@ -1270,7 +1293,7 @@ static int __init pvh_setup_acpi(struct domain *d, paddr_t start_info)
 
     /* Copy RSDP address to start_info. */
     rc = hvm_copy_to_guest_phys(start_info +
-                                offsetof(struct hvm_start_info, rsdp_paddr),
+                                    offsetof(struct hvm_start_info, rsdp_paddr),
                                 &rsdp_paddr,
                                 sizeof_field(struct hvm_start_info, rsdp_paddr),
                                 d->vcpu[0]);
@@ -1290,7 +1313,8 @@ static void __hwdom_init pvh_setup_mmcfg(struct domain *d)
 
     for ( i = 0; i < pci_mmcfg_config_num; i++ )
     {
-        rc = register_vpci_mmcfg_handler(d, pci_mmcfg_config[i].address,
+        rc = register_vpci_mmcfg_handler(d,
+                                         pci_mmcfg_config[i].address,
                                          pci_mmcfg_config[i].start_bus_number,
                                          pci_mmcfg_config[i].end_bus_number,
                                          pci_mmcfg_config[i].pci_segment);

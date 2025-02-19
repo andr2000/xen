@@ -21,20 +21,20 @@
 #include "vgic.h"
 #include "vgic-mmio.h"
 
-unsigned long vgic_mmio_read_raz(struct vcpu *vcpu,
-                                 paddr_t addr, unsigned int len)
+unsigned long vgic_mmio_read_raz(struct vcpu *vcpu, paddr_t addr,
+                                 unsigned int len)
 {
     return 0;
 }
 
-unsigned long vgic_mmio_read_rao(struct vcpu *vcpu,
-                                 paddr_t addr, unsigned int len)
+unsigned long vgic_mmio_read_rao(struct vcpu *vcpu, paddr_t addr,
+                                 unsigned int len)
 {
     return -1UL;
 }
 
-void vgic_mmio_write_wi(struct vcpu *vcpu, paddr_t addr,
-                        unsigned int len, unsigned long val)
+void vgic_mmio_write_wi(struct vcpu *vcpu, paddr_t addr, unsigned int len,
+                        unsigned long val)
 {
     /* Ignore */
 }
@@ -43,8 +43,8 @@ void vgic_mmio_write_wi(struct vcpu *vcpu, paddr_t addr,
  * Read accesses to both GICD_ICENABLER and GICD_ISENABLER return the value
  * of the enabled bit, so there is only one function for both here.
  */
-unsigned long vgic_mmio_read_enable(struct vcpu *vcpu,
-                                    paddr_t addr, unsigned int len)
+unsigned long vgic_mmio_read_enable(struct vcpu *vcpu, paddr_t addr,
+                                    unsigned int len)
 {
     uint32_t intid = VGIC_ADDR_TO_INTID(addr, 1);
     uint32_t value = 0;
@@ -64,14 +64,13 @@ unsigned long vgic_mmio_read_enable(struct vcpu *vcpu,
     return value;
 }
 
-void vgic_mmio_write_senable(struct vcpu *vcpu,
-                             paddr_t addr, unsigned int len,
+void vgic_mmio_write_senable(struct vcpu *vcpu, paddr_t addr, unsigned int len,
                              unsigned long val)
 {
     uint32_t intid = VGIC_ADDR_TO_INTID(addr, 1);
     unsigned int i;
 
-    bitmap_for_each ( i, &val, len * 8 )
+    bitmap_for_each(i, &val, len * 8)
     {
         struct vgic_irq *irq = vgic_get_irq(vcpu->domain, vcpu, intid + i);
         unsigned long flags;
@@ -79,7 +78,7 @@ void vgic_mmio_write_senable(struct vcpu *vcpu,
 
         spin_lock_irqsave(&irq->irq_lock, flags);
 
-        if ( irq->enabled )            /* skip already enabled IRQs */
+        if ( irq->enabled ) /* skip already enabled IRQs */
         {
             spin_unlock_irqrestore(&irq->irq_lock, flags);
             vgic_put_irq(vcpu->domain, irq);
@@ -109,14 +108,13 @@ void vgic_mmio_write_senable(struct vcpu *vcpu,
     }
 }
 
-void vgic_mmio_write_cenable(struct vcpu *vcpu,
-                             paddr_t addr, unsigned int len,
+void vgic_mmio_write_cenable(struct vcpu *vcpu, paddr_t addr, unsigned int len,
                              unsigned long val)
 {
     uint32_t intid = VGIC_ADDR_TO_INTID(addr, 1);
     unsigned int i;
 
-    bitmap_for_each ( i, &val, len * 8 )
+    bitmap_for_each(i, &val, len * 8)
     {
         struct vgic_irq *irq;
         unsigned long flags;
@@ -125,7 +123,7 @@ void vgic_mmio_write_cenable(struct vcpu *vcpu,
         irq = vgic_get_irq(vcpu->domain, vcpu, intid + i);
         spin_lock_irqsave(&irq->irq_lock, flags);
 
-        if ( !irq->enabled )            /* skip already disabled IRQs */
+        if ( !irq->enabled ) /* skip already disabled IRQs */
         {
             spin_unlock_irqrestore(&irq->irq_lock, flags);
             vgic_put_irq(vcpu->domain, irq);
@@ -156,8 +154,8 @@ void vgic_mmio_write_cenable(struct vcpu *vcpu,
     }
 }
 
-unsigned long vgic_mmio_read_pending(struct vcpu *vcpu,
-                                     paddr_t addr, unsigned int len)
+unsigned long vgic_mmio_read_pending(struct vcpu *vcpu, paddr_t addr,
+                                     unsigned int len)
 {
     uint32_t intid = VGIC_ADDR_TO_INTID(addr, 1);
     uint32_t value = 0;
@@ -177,8 +175,7 @@ unsigned long vgic_mmio_read_pending(struct vcpu *vcpu,
     return value;
 }
 
-void vgic_mmio_write_spending(struct vcpu *vcpu,
-                              paddr_t addr, unsigned int len,
+void vgic_mmio_write_spending(struct vcpu *vcpu, paddr_t addr, unsigned int len,
                               unsigned long val)
 {
     uint32_t intid = VGIC_ADDR_TO_INTID(addr, 1);
@@ -186,7 +183,7 @@ void vgic_mmio_write_spending(struct vcpu *vcpu,
     unsigned long flags;
     irq_desc_t *desc;
 
-    bitmap_for_each ( i, &val, len * 8 )
+    bitmap_for_each(i, &val, len * 8)
     {
         struct vgic_irq *irq = vgic_get_irq(vcpu->domain, vcpu, intid + i);
 
@@ -225,8 +222,7 @@ void vgic_mmio_write_spending(struct vcpu *vcpu,
     }
 }
 
-void vgic_mmio_write_cpending(struct vcpu *vcpu,
-                              paddr_t addr, unsigned int len,
+void vgic_mmio_write_cpending(struct vcpu *vcpu, paddr_t addr, unsigned int len,
                               unsigned long val)
 {
     uint32_t intid = VGIC_ADDR_TO_INTID(addr, 1);
@@ -234,7 +230,7 @@ void vgic_mmio_write_cpending(struct vcpu *vcpu,
     unsigned long flags;
     irq_desc_t *desc;
 
-    bitmap_for_each ( i, &val, len * 8 )
+    bitmap_for_each(i, &val, len * 8)
     {
         struct vgic_irq *irq = vgic_get_irq(vcpu->domain, vcpu, intid + i);
 
@@ -280,7 +276,6 @@ void vgic_mmio_write_cpending(struct vcpu *vcpu,
             spin_unlock_irqrestore(&desc->lock, flags);
         }
 
-
         vgic_put_irq(vcpu->domain, irq);
     }
 }
@@ -293,8 +288,8 @@ void vgic_mmio_write_cpending(struct vcpu *vcpu,
  * VCPUs processing any affected vIRQs), so we use a simple implementation
  * to get the best possible answer.
  */
-unsigned long vgic_mmio_read_active(struct vcpu *vcpu,
-                                    paddr_t addr, unsigned int len)
+unsigned long vgic_mmio_read_active(struct vcpu *vcpu, paddr_t addr,
+                                    unsigned int len)
 {
     uint32_t intid = VGIC_ADDR_TO_INTID(addr, 1);
     uint32_t value = 0;
@@ -321,14 +316,13 @@ unsigned long vgic_mmio_read_active(struct vcpu *vcpu,
  * and only print our warning in this case. So clearing already non-active
  * IRQs would not be moaned about in the logs.
  */
-void vgic_mmio_write_cactive(struct vcpu *vcpu,
-                             paddr_t addr, unsigned int len,
+void vgic_mmio_write_cactive(struct vcpu *vcpu, paddr_t addr, unsigned int len,
                              unsigned long val)
 {
     uint32_t intid = VGIC_ADDR_TO_INTID(addr, 1);
     unsigned int i;
 
-    bitmap_for_each ( i, &val, len * 8 )
+    bitmap_for_each(i, &val, len * 8)
     {
         struct vgic_irq *irq = vgic_get_irq(vcpu->domain, vcpu, intid + i);
 
@@ -340,7 +334,8 @@ void vgic_mmio_write_cactive(struct vcpu *vcpu,
         if ( irq->active || irq->vcpu )
             printk(XENLOG_G_ERR
                    "%pv: vGICD: IRQ%u: clearing active state not supported\n",
-                   vcpu, irq->intid);
+                   vcpu,
+                   irq->intid);
 
         vgic_put_irq(vcpu->domain, irq);
     }
@@ -351,14 +346,13 @@ void vgic_mmio_write_cactive(struct vcpu *vcpu,
  * We check whether this MMIO access would actually affect any non-active IRQ,
  * and only print our warning in this case.
  */
-void vgic_mmio_write_sactive(struct vcpu *vcpu,
-                             paddr_t addr, unsigned int len,
+void vgic_mmio_write_sactive(struct vcpu *vcpu, paddr_t addr, unsigned int len,
                              unsigned long val)
 {
     uint32_t intid = VGIC_ADDR_TO_INTID(addr, 1);
     unsigned int i;
 
-    bitmap_for_each ( i, &val, len * 8 )
+    bitmap_for_each(i, &val, len * 8)
     {
         struct vgic_irq *irq = vgic_get_irq(vcpu->domain, vcpu, intid + i);
 
@@ -370,14 +364,15 @@ void vgic_mmio_write_sactive(struct vcpu *vcpu,
         if ( !irq->active || irq->vcpu )
             printk(XENLOG_G_ERR
                    "%pv: vGICD: IRQ%u: setting active state not supported\n",
-                   vcpu, irq->intid);
+                   vcpu,
+                   irq->intid);
 
         vgic_put_irq(vcpu->domain, irq);
     }
 }
 
-unsigned long vgic_mmio_read_priority(struct vcpu *vcpu,
-                                      paddr_t addr, unsigned int len)
+unsigned long vgic_mmio_read_priority(struct vcpu *vcpu, paddr_t addr,
+                                      unsigned int len)
 {
     uint32_t intid = VGIC_ADDR_TO_INTID(addr, 8);
     unsigned int i;
@@ -402,8 +397,7 @@ unsigned long vgic_mmio_read_priority(struct vcpu *vcpu,
  * leading to this interrupt getting presented now to the guest (if it has
  * been masked by the priority mask before).
  */
-void vgic_mmio_write_priority(struct vcpu *vcpu,
-                              paddr_t addr, unsigned int len,
+void vgic_mmio_write_priority(struct vcpu *vcpu, paddr_t addr, unsigned int len,
                               unsigned long val)
 {
     uint32_t intid = VGIC_ADDR_TO_INTID(addr, 8);
@@ -423,8 +417,8 @@ void vgic_mmio_write_priority(struct vcpu *vcpu,
     }
 }
 
-unsigned long vgic_mmio_read_config(struct vcpu *vcpu,
-                                    paddr_t addr, unsigned int len)
+unsigned long vgic_mmio_read_config(struct vcpu *vcpu, paddr_t addr,
+                                    unsigned int len)
 {
     uint32_t intid = VGIC_ADDR_TO_INTID(addr, 2);
     uint32_t value = 0;
@@ -443,8 +437,7 @@ unsigned long vgic_mmio_read_config(struct vcpu *vcpu,
     return value;
 }
 
-void vgic_mmio_write_config(struct vcpu *vcpu,
-                            paddr_t addr, unsigned int len,
+void vgic_mmio_write_config(struct vcpu *vcpu, paddr_t addr, unsigned int len,
                             unsigned long val)
 {
     uint32_t intid = VGIC_ADDR_TO_INTID(addr, 2);
@@ -495,8 +488,11 @@ static const struct vgic_register_region *
 vgic_find_mmio_region(const struct vgic_register_region *regions,
                       int nr_regions, unsigned int offset)
 {
-    return bsearch((void *)(uintptr_t)offset, regions, nr_regions,
-                   sizeof(regions[0]), match_region);
+    return bsearch((void *)(uintptr_t)offset,
+                   regions,
+                   nr_regions,
+                   sizeof(regions[0]),
+                   match_region);
 }
 
 static bool check_region(const struct domain *d,
@@ -538,7 +534,8 @@ vgic_get_mmio_region(struct vcpu *vcpu, struct vgic_io_device *iodev,
 {
     const struct vgic_register_region *region;
 
-    region = vgic_find_mmio_region(iodev->regions, iodev->nr_regions,
+    region = vgic_find_mmio_region(iodev->regions,
+                                   iodev->nr_regions,
                                    addr - gfn_to_gaddr(iodev->base_fn));
     if ( !region || !check_region(vcpu->domain, region, addr, len) )
         return NULL;
@@ -562,7 +559,7 @@ static int dispatch_mmio_read(struct vcpu *vcpu, mmio_info_t *info,
         return 0;
     }
 
-    switch (iodev->iodev_type)
+    switch ( iodev->iodev_type )
     {
     case IODEV_DIST:
         data = region->read(vcpu, addr, len);
@@ -590,7 +587,7 @@ static int dispatch_mmio_write(struct vcpu *vcpu, mmio_info_t *info,
     if ( !region )
         return 0;
 
-    switch (iodev->iodev_type)
+    switch ( iodev->iodev_type )
     {
     case IODEV_DIST:
         region->write(vcpu, addr, len, data);
@@ -627,7 +624,10 @@ int vgic_register_dist_iodev(struct domain *d, gfn_t dist_base_fn,
     io_device->iodev_type = IODEV_DIST;
     io_device->redist_vcpu = NULL;
 
-    register_mmio_handler(d, &vgic_io_ops, gfn_to_gaddr(dist_base_fn), len,
+    register_mmio_handler(d,
+                          &vgic_io_ops,
+                          gfn_to_gaddr(dist_base_fn),
+                          len,
                           io_device);
 
     return 0;

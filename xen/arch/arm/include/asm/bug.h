@@ -4,21 +4,21 @@
 #include <xen/types.h>
 
 #if defined(CONFIG_ARM_32)
-# include <asm/arm32/bug.h>
+#include <asm/arm32/bug.h>
 #elif defined(CONFIG_ARM_64)
-# include <asm/arm64/bug.h>
+#include <asm/arm64/bug.h>
 #else
-# error "unknown ARM variant"
+#error "unknown ARM variant"
 #endif
 
 #define BUG_FRAME_STRUCT
 
 struct bug_frame {
-    signed int loc_disp;    /* Relative address to the bug address */
-    signed int file_disp;   /* Relative address to the filename */
-    signed int msg_disp;    /* Relative address to the predicate (for ASSERT) */
-    uint16_t line;          /* Line number */
-    uint32_t pad0:16;       /* Padding for 8-bytes align */
+    signed int loc_disp; /* Relative address to the bug address */
+    signed int file_disp; /* Relative address to the filename */
+    signed int msg_disp; /* Relative address to the predicate (for ASSERT) */
+    uint16_t line; /* Line number */
+    uint32_t pad0:16; /* Padding for 8-bytes align */
 };
 
 #define bug_loc(b) ((const void *)(b) + (b)->loc_disp)
@@ -58,7 +58,7 @@ struct bug_frame {
  * easiest way to implement run_in_exception_handler() is to pass the to
  * be called function in a fixed register.
  */
-#define  run_in_exception_handler(fn) do {                                  \
+#define run_in_exception_handler(fn) do {                                  \
     asm ("mov " __stringify(BUG_FN_REG) ", %0\n"                            \
          "1:"BUG_INSTR"\n"                                                  \
          ".pushsection .bug_frames." __stringify(BUGFRAME_run_fn) ","       \

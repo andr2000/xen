@@ -32,6 +32,7 @@ static inline uint32_t fold_pse36(uint64_t val)
 {
     return (val & ~(0x1ffUL << 13)) | ((val & (0x1ffUL << 32)) >> (32 - 13));
 }
+
 static inline uint64_t unfold_pse36(uint32_t val)
 {
     return (val & ~(0x1ffUL << 13)) | ((val & (0x1ffUL << 13)) << (32 - 13));
@@ -51,30 +52,56 @@ static inline uint64_t unfold_pse36(uint32_t val)
 #define GUEST_L2_PAGETABLE_RSVD           0
 
 typedef uint32_t guest_intpte_t;
-typedef struct { guest_intpte_t l1; } guest_l1e_t;
-typedef struct { guest_intpte_t l2; } guest_l2e_t;
+
+typedef struct {
+    guest_intpte_t l1;
+} guest_l1e_t;
+
+typedef struct {
+    guest_intpte_t l2;
+} guest_l2e_t;
 
 #define PRI_gpte "08x"
 
 static inline gfn_t guest_l1e_get_gfn(guest_l1e_t gl1e)
-{ return _gfn(gl1e.l1 >> PAGE_SHIFT); }
+{
+    return _gfn(gl1e.l1 >> PAGE_SHIFT);
+}
+
 static inline gfn_t guest_l2e_get_gfn(guest_l2e_t gl2e)
-{ return _gfn(gl2e.l2 >> PAGE_SHIFT); }
+{
+    return _gfn(gl2e.l2 >> PAGE_SHIFT);
+}
 
 static inline u32 guest_l1e_get_flags(guest_l1e_t gl1e)
-{ return gl1e.l1 & 0xfff; }
+{
+    return gl1e.l1 & 0xfff;
+}
+
 static inline u32 guest_l2e_get_flags(guest_l2e_t gl2e)
-{ return gl2e.l2 & 0xfff; }
+{
+    return gl2e.l2 & 0xfff;
+}
 
 static inline u32 guest_l1e_get_pkey(guest_l1e_t gl1e)
-{ return 0; }
+{
+    return 0;
+}
+
 static inline u32 guest_l2e_get_pkey(guest_l2e_t gl2e)
-{ return 0; }
+{
+    return 0;
+}
 
 static inline guest_l1e_t guest_l1e_from_gfn(gfn_t gfn, u32 flags)
-{ return (guest_l1e_t) { (gfn_x(gfn) << PAGE_SHIFT) | flags }; }
+{
+    return (guest_l1e_t){ (gfn_x(gfn) << PAGE_SHIFT) | flags };
+}
+
 static inline guest_l2e_t guest_l2e_from_gfn(gfn_t gfn, u32 flags)
-{ return (guest_l2e_t) { (gfn_x(gfn) << PAGE_SHIFT) | flags }; }
+{
+    return (guest_l2e_t){ (gfn_x(gfn) << PAGE_SHIFT) | flags };
+}
 
 #define guest_l1_table_offset(_va)                                           \
     (((_va) >> GUEST_L1_PAGETABLE_SHIFT) & (GUEST_L1_PAGETABLE_ENTRIES - 1))
@@ -130,43 +157,81 @@ typedef intpte_t guest_intpte_t;
 #define PRI_gpte "016"PRIx64
 
 static inline gfn_t guest_l1e_get_gfn(guest_l1e_t gl1e)
-{ return _gfn(l1e_get_paddr(gl1e) >> PAGE_SHIFT); }
+{
+    return _gfn(l1e_get_paddr(gl1e) >> PAGE_SHIFT);
+}
+
 static inline gfn_t guest_l2e_get_gfn(guest_l2e_t gl2e)
-{ return _gfn(l2e_get_paddr(gl2e) >> PAGE_SHIFT); }
+{
+    return _gfn(l2e_get_paddr(gl2e) >> PAGE_SHIFT);
+}
+
 static inline gfn_t guest_l3e_get_gfn(guest_l3e_t gl3e)
-{ return _gfn(l3e_get_paddr(gl3e) >> PAGE_SHIFT); }
+{
+    return _gfn(l3e_get_paddr(gl3e) >> PAGE_SHIFT);
+}
 #if GUEST_PAGING_LEVELS >= 4
 static inline gfn_t guest_l4e_get_gfn(guest_l4e_t gl4e)
-{ return _gfn(l4e_get_paddr(gl4e) >> PAGE_SHIFT); }
+{
+    return _gfn(l4e_get_paddr(gl4e) >> PAGE_SHIFT);
+}
 #endif
 
 static inline u32 guest_l1e_get_flags(guest_l1e_t gl1e)
-{ return l1e_get_flags(gl1e); }
+{
+    return l1e_get_flags(gl1e);
+}
+
 static inline u32 guest_l2e_get_flags(guest_l2e_t gl2e)
-{ return l2e_get_flags(gl2e); }
+{
+    return l2e_get_flags(gl2e);
+}
+
 static inline u32 guest_l3e_get_flags(guest_l3e_t gl3e)
-{ return l3e_get_flags(gl3e); }
+{
+    return l3e_get_flags(gl3e);
+}
 #if GUEST_PAGING_LEVELS >= 4
 static inline u32 guest_l4e_get_flags(guest_l4e_t gl4e)
-{ return l4e_get_flags(gl4e); }
+{
+    return l4e_get_flags(gl4e);
+}
 #endif
 
 static inline u32 guest_l1e_get_pkey(guest_l1e_t gl1e)
-{ return l1e_get_pkey(gl1e); }
+{
+    return l1e_get_pkey(gl1e);
+}
+
 static inline u32 guest_l2e_get_pkey(guest_l2e_t gl2e)
-{ return l2e_get_pkey(gl2e); }
+{
+    return l2e_get_pkey(gl2e);
+}
+
 static inline u32 guest_l3e_get_pkey(guest_l3e_t gl3e)
-{ return l3e_get_pkey(gl3e); }
+{
+    return l3e_get_pkey(gl3e);
+}
 
 static inline guest_l1e_t guest_l1e_from_gfn(gfn_t gfn, u32 flags)
-{ return l1e_from_pfn(gfn_x(gfn), flags); }
+{
+    return l1e_from_pfn(gfn_x(gfn), flags);
+}
+
 static inline guest_l2e_t guest_l2e_from_gfn(gfn_t gfn, u32 flags)
-{ return l2e_from_pfn(gfn_x(gfn), flags); }
+{
+    return l2e_from_pfn(gfn_x(gfn), flags);
+}
+
 static inline guest_l3e_t guest_l3e_from_gfn(gfn_t gfn, u32 flags)
-{ return l3e_from_pfn(gfn_x(gfn), flags); }
+{
+    return l3e_from_pfn(gfn_x(gfn), flags);
+}
 #if GUEST_PAGING_LEVELS >= 4
 static inline guest_l4e_t guest_l4e_from_gfn(gfn_t gfn, u32 flags)
-{ return l4e_from_pfn(gfn_x(gfn), flags); }
+{
+    return l4e_from_pfn(gfn_x(gfn), flags);
+}
 #endif
 
 #define guest_l1_table_offset(a) l1_table_offset(a)
@@ -181,7 +246,6 @@ static inline guest_l4e_t guest_l4e_from_gfn(gfn_t gfn, u32 flags)
 #define GUEST_L3_GFN_MASK \
     ((GUEST_L2_PAGETABLE_ENTRIES * GUEST_L1_PAGETABLE_ENTRIES) - 1)
 
-
 /* Which pagetable features are supported on this vcpu? */
 
 static always_inline bool guest_can_use_l2_superpages(const struct vcpu *v)
@@ -194,10 +258,8 @@ static always_inline bool guest_can_use_l2_superpages(const struct vcpu *v)
      * CR4.PSE is set or the guest is in PAE or long mode.
      * It's also used in the dummy PT for vcpus with CR0.PG cleared.
      */
-    return (is_pv_vcpu(v) ||
-            GUEST_PAGING_LEVELS != 2 ||
-            !hvm_paging_enabled(v) ||
-            (v->arch.hvm.guest_cr[4] & X86_CR4_PSE));
+    return (is_pv_vcpu(v) || GUEST_PAGING_LEVELS != 2 ||
+            !hvm_paging_enabled(v) || (v->arch.hvm.guest_cr[4] & X86_CR4_PSE));
 }
 
 static always_inline bool guest_can_use_l3_superpages(const struct domain *d)
@@ -293,18 +355,20 @@ static always_inline bool guest_l2e_rsvd_bits(const struct vcpu *v,
     return ((l2e.l2 & (rsvd_bits | GUEST_L2_PAGETABLE_RSVD |
                        (guest_can_use_l2_superpages(v) ? 0 : _PAGE_PSE))) ||
             ((l2e.l2 & _PAGE_PSE) &&
-             (l2e.l2 & ((GUEST_PAGING_LEVELS == 2 && guest_can_use_pse36(v->domain))
-                          /* PSE36 tops out at 40 bits of address width. */
-                        ? (fold_pse36(rsvd_bits | (1UL << 40)))
-                        : SUPERPAGE_RSVD(GUEST_L2_PAGETABLE_SHIFT)))));
+             (l2e.l2 &
+              ((GUEST_PAGING_LEVELS == 2 && guest_can_use_pse36(v->domain))
+                   /* PSE36 tops out at 40 bits of address width. */
+                   ? (fold_pse36(rsvd_bits | (1UL << 40)))
+                   : SUPERPAGE_RSVD(GUEST_L2_PAGETABLE_SHIFT)))));
 }
 
 #if GUEST_PAGING_LEVELS >= 3
 static always_inline bool guest_l3e_rsvd_bits(const struct vcpu *v,
                                               guest_l3e_t l3e)
 {
-    return ((l3e.l3 & (guest_rsvd_bits(v) | GUEST_L3_PAGETABLE_RSVD |
-                       (guest_can_use_l3_superpages(v->domain) ? 0 : _PAGE_PSE))) ||
+    return ((l3e.l3 &
+             (guest_rsvd_bits(v) | GUEST_L3_PAGETABLE_RSVD |
+              (guest_can_use_l3_superpages(v->domain) ? 0 : _PAGE_PSE))) ||
             ((l3e.l3 & _PAGE_PSE) &&
              (l3e.l3 & SUPERPAGE_RSVD(GUEST_L3_PAGETABLE_SHIFT))));
 }
@@ -315,7 +379,8 @@ static always_inline bool guest_l4e_rsvd_bits(const struct vcpu *v,
 {
     return l4e.l4 & (guest_rsvd_bits(v) | GUEST_L4_PAGETABLE_RSVD |
                      ((v->domain->arch.cpuid->x86_vendor == X86_VENDOR_AMD)
-                      ? _PAGE_GLOBAL : 0));
+                          ? _PAGE_GLOBAL
+                          : 0));
 }
 #endif /* GUEST_PAGING_LEVELS >= 4 */
 #endif /* GUEST_PAGING_LEVELS >= 3 */
@@ -326,29 +391,29 @@ static always_inline bool guest_l4e_rsvd_bits(const struct vcpu *v,
  * l1e for propagation to the shadow (for splintering guest superpages
  * into many shadow l1 entries).  */
 typedef struct guest_pagetable_walk walk_t;
-struct guest_pagetable_walk
-{
-    unsigned long va;           /* Address we were looking for */
+
+struct guest_pagetable_walk {
+    unsigned long va; /* Address we were looking for */
 #if GUEST_PAGING_LEVELS >= 3
 #if GUEST_PAGING_LEVELS >= 4
-    guest_l4e_t l4e;            /* Guest's level 4 entry */
+    guest_l4e_t l4e; /* Guest's level 4 entry */
 #endif
-    guest_l3e_t l3e;            /* Guest's level 3 entry */
+    guest_l3e_t l3e; /* Guest's level 3 entry */
 #endif
-    guest_l2e_t l2e;            /* Guest's level 2 entry */
-    union
-    {
-        guest_l1e_t l1e;        /* Guest's level 1 entry (or fabrication). */
-        uint64_t   el1e;        /* L2 PSE36 superpages wider than 32 bits. */
+    guest_l2e_t l2e; /* Guest's level 2 entry */
+
+    union {
+        guest_l1e_t l1e; /* Guest's level 1 entry (or fabrication). */
+        uint64_t el1e; /* L2 PSE36 superpages wider than 32 bits. */
     };
 #if GUEST_PAGING_LEVELS >= 4
-    mfn_t l4mfn;                /* MFN that the level 4 entry was in */
-    mfn_t l3mfn;                /* MFN that the level 3 entry was in */
+    mfn_t l4mfn; /* MFN that the level 4 entry was in */
+    mfn_t l3mfn; /* MFN that the level 3 entry was in */
 #endif
-    mfn_t l2mfn;                /* MFN that the level 2 entry was in */
-    mfn_t l1mfn;                /* MFN that the level 1 entry was in */
+    mfn_t l2mfn; /* MFN that the level 2 entry was in */
+    mfn_t l1mfn; /* MFN that the level 1 entry was in */
 
-    uint32_t pfec;              /* Accumulated PFEC_* error code from walk. */
+    uint32_t pfec; /* Accumulated PFEC_* error code from walk. */
 };
 
 /* Given a walk_t, translate the gw->va into the guest's notion of the
@@ -357,9 +422,8 @@ static inline gfn_t guest_walk_to_gfn(const walk_t *gw)
 {
     if ( !(guest_l1e_get_flags(gw->l1e) & _PAGE_PRESENT) )
         return INVALID_GFN;
-    return (GUEST_PAGING_LEVELS == 2
-            ? _gfn(gw->el1e >> PAGE_SHIFT)
-            : guest_l1e_get_gfn(gw->l1e));
+    return (GUEST_PAGING_LEVELS == 2 ? _gfn(gw->el1e >> PAGE_SHIFT)
+                                     : guest_l1e_get_gfn(gw->l1e));
 }
 
 /* Given a walk_t, translate the gw->va into the guest's notion of the
@@ -390,7 +454,6 @@ static inline unsigned int guest_walk_to_page_order(const walk_t *gw)
     return GUEST_L1_PAGETABLE_SHIFT - PAGE_SHIFT;
 }
 
-
 /*
  * Walk the guest pagetables, after the manner of a hardware walker.
  *
@@ -414,10 +477,9 @@ static inline unsigned int guest_walk_to_page_order(const walk_t *gw)
 #define GPT_RENAME(_n, _l) GPT_RENAME2(_n, _l)
 #define guest_walk_tables GPT_RENAME(guest_walk_tables, GUEST_PAGING_LEVELS)
 
-bool
-guest_walk_tables(const struct vcpu *v, struct p2m_domain *p2m,
-                  unsigned long va, walk_t *gw, uint32_t walk,
-                  gfn_t top_gfn, mfn_t top_mfn, void *top_map);
+bool guest_walk_tables(const struct vcpu *v, struct p2m_domain *p2m,
+                       unsigned long va, walk_t *gw, uint32_t walk,
+                       gfn_t top_gfn, mfn_t top_mfn, void *top_map);
 
 /* Pretty-print the contents of a guest-walk */
 static inline void print_gw(const walk_t *gw)
@@ -425,31 +487,42 @@ static inline void print_gw(const walk_t *gw)
     gprintk(XENLOG_INFO, "GUEST WALK TO %p\n", _p(gw->va));
 #if GUEST_PAGING_LEVELS >= 3 /* PAE or 64... */
 #if GUEST_PAGING_LEVELS >= 4 /* 64-bit only... */
-    gprintk(XENLOG_INFO, "   l4e=%" PRI_gpte " l4mfn=%" PRI_mfn "\n",
-            gw->l4e.l4, mfn_x(gw->l4mfn));
-    gprintk(XENLOG_INFO, "   l3e=%" PRI_gpte " l3mfn=%" PRI_mfn "\n",
-            gw->l3e.l3, mfn_x(gw->l3mfn));
-#else  /* PAE only... */
+    gprintk(XENLOG_INFO,
+            "   l4e=%" PRI_gpte " l4mfn=%" PRI_mfn "\n",
+            gw->l4e.l4,
+            mfn_x(gw->l4mfn));
+    gprintk(XENLOG_INFO,
+            "   l3e=%" PRI_gpte " l3mfn=%" PRI_mfn "\n",
+            gw->l3e.l3,
+            mfn_x(gw->l3mfn));
+#else /* PAE only... */
     gprintk(XENLOG_INFO, "   l3e=%" PRI_gpte "\n", gw->l3e.l3);
 #endif /* PAE or 64... */
 #endif /* All levels... */
-    gprintk(XENLOG_INFO, "   l2e=%" PRI_gpte " l2mfn=%" PRI_mfn "\n",
-            gw->l2e.l2, mfn_x(gw->l2mfn));
+    gprintk(XENLOG_INFO,
+            "   l2e=%" PRI_gpte " l2mfn=%" PRI_mfn "\n",
+            gw->l2e.l2,
+            mfn_x(gw->l2mfn));
 #if GUEST_PAGING_LEVELS == 2
-    gprintk(XENLOG_INFO, "  el1e=%08" PRIx64 " l1mfn=%" PRI_mfn "\n",
-            gw->el1e, mfn_x(gw->l1mfn));
+    gprintk(XENLOG_INFO,
+            "  el1e=%08" PRIx64 " l1mfn=%" PRI_mfn "\n",
+            gw->el1e,
+            mfn_x(gw->l1mfn));
 #else
-    gprintk(XENLOG_INFO, "   l1e=%" PRI_gpte " l1mfn=%" PRI_mfn "\n",
-            gw->l1e.l1, mfn_x(gw->l1mfn));
+    gprintk(XENLOG_INFO,
+            "   l1e=%" PRI_gpte " l1mfn=%" PRI_mfn "\n",
+            gw->l1e.l1,
+            mfn_x(gw->l1mfn));
 #endif
-    gprintk(XENLOG_INFO, "   pfec=%02x[%c%c%c%c%c%c]\n", gw->pfec,
-            gw->pfec & PFEC_prot_key     ? 'K' : '-',
-            gw->pfec & PFEC_insn_fetch   ? 'I' : 'd',
+    gprintk(XENLOG_INFO,
+            "   pfec=%02x[%c%c%c%c%c%c]\n",
+            gw->pfec,
+            gw->pfec & PFEC_prot_key ? 'K' : '-',
+            gw->pfec & PFEC_insn_fetch ? 'I' : 'd',
             gw->pfec & PFEC_reserved_bit ? 'R' : '-',
-            gw->pfec & PFEC_user_mode    ? 'U' : 's',
+            gw->pfec & PFEC_user_mode ? 'U' : 's',
             gw->pfec & PFEC_write_access ? 'W' : 'r',
-            gw->pfec & PFEC_page_present ? 'P' : '-'
-        );
+            gw->pfec & PFEC_page_present ? 'P' : '-');
 }
 
 #endif /* _XEN_ASM_GUEST_PT_H */

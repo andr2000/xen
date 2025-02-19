@@ -203,4 +203,4 @@
 #define ACPI_DEBUGGER_COMMAND_PROMPT    '-'
 #define ACPI_DEBUGGER_EXECUTE_PROMPT    '%'
 
-#endif				/* _ACCONFIG_H */
+#endif /* _ACCONFIG_H */

@@ -17,7 +17,6 @@
 
 #include "private.h"
 
-
 static void __init __maybe_unused build_assertions(void)
 {
     BUILD_BUG_ON(sizeof(struct hv_message) != HV_MESSAGE_SIZE);
@@ -150,8 +149,7 @@ int viridian_synic_wrmsr(struct vcpu *v, uint32_t idx, uint64_t val)
     case HV_X64_MSR_SINT0 ... HV_X64_MSR_SINT15:
     {
         unsigned int sintx = idx - HV_X64_MSR_SINT0;
-        union hv_synic_sint new, *vs =
-            &array_access_nospec(vv->sint, sintx);
+        union hv_synic_sint new, *vs = &array_access_nospec(vv->sint, sintx);
         uint8_t vector;
 
         if ( !(viridian_feature_mask(d) & HVMPV_synic) )
@@ -172,7 +170,9 @@ int viridian_synic_wrmsr(struct vcpu *v, uint32_t idx, uint64_t val)
         vector = new.vector;
         vv->vector_to_sintx[vector] = sintx;
 
-        printk(XENLOG_G_INFO "%pv: VIRIDIAN SINT%u: vector: %#x\n", v, sintx,
+        printk(XENLOG_G_INFO "%pv: VIRIDIAN SINT%u: vector: %#x\n",
+               v,
+               sintx,
                vector);
 
         *vs = new;
@@ -180,8 +180,11 @@ int viridian_synic_wrmsr(struct vcpu *v, uint32_t idx, uint64_t val)
     }
 
     default:
-        gdprintk(XENLOG_INFO, "%s: unimplemented MSR %#x (%016"PRIx64")\n",
-                 __func__, idx, val);
+        gdprintk(XENLOG_INFO,
+                 "%s: unimplemented MSR %#x (%016" PRIx64 ")\n",
+                 __func__,
+                 idx,
+                 val);
         return X86EMUL_EXCEPTION;
     }
 
@@ -260,8 +263,7 @@ int viridian_synic_rdmsr(const struct vcpu *v, uint32_t idx, uint64_t *val)
     case HV_X64_MSR_SINT0 ... HV_X64_MSR_SINT15:
     {
         unsigned int sintx = idx - HV_X64_MSR_SINT0;
-        const union hv_synic_sint *vs =
-            &array_access_nospec(vv->sint, sintx);
+        const union hv_synic_sint *vs = &array_access_nospec(vv->sint, sintx);
 
         if ( !(viridian_feature_mask(d) & HVMPV_synic) )
             return X86EMUL_EXCEPTION;
@@ -310,9 +312,7 @@ void viridian_synic_vcpu_deinit(const struct vcpu *v)
     viridian_unmap_guest_page(&vv->simp);
 }
 
-void viridian_synic_domain_deinit(const struct domain *d)
-{
-}
+void viridian_synic_domain_deinit(const struct domain *d) {}
 
 void viridian_synic_poll(struct vcpu *v)
 {
@@ -320,13 +320,13 @@ void viridian_synic_poll(struct vcpu *v)
 }
 
 bool viridian_synic_deliver_timer_msg(struct vcpu *v, unsigned int sintx,
-                                      unsigned int index,
-                                      uint64_t expiration,
+                                      unsigned int index, uint64_t expiration,
                                       uint64_t delivery)
 {
     struct viridian_vcpu *vv = v->arch.hvm.viridian;
     const union hv_synic_sint *vs = &vv->sint[sintx];
     struct hv_message *msg = vv->simp.ptr;
+
     struct {
         uint32_t TimerIndex;
         uint32_t Reserved;
@@ -364,13 +364,11 @@ bool viridian_synic_deliver_timer_msg(struct vcpu *v, unsigned int sintx,
     return true;
 }
 
-bool viridian_synic_is_auto_eoi_sint(const struct vcpu *v,
-                                     unsigned int vector)
+bool viridian_synic_is_auto_eoi_sint(const struct vcpu *v, unsigned int vector)
 {
     const struct viridian_vcpu *vv = v->arch.hvm.viridian;
     unsigned int sintx = vv->vector_to_sintx[vector];
-    const union hv_synic_sint *vs =
-        &array_access_nospec(vv->sint, sintx);
+    const union hv_synic_sint *vs = &array_access_nospec(vv->sint, sintx);
 
     if ( sintx >= ARRAY_SIZE(vv->sint) )
         return false;
@@ -395,8 +393,8 @@ void viridian_synic_save_vcpu_ctxt(const struct vcpu *v,
     ctxt->vp_assist_msr = vv->vp_assist.msr.raw;
 }
 
-void viridian_synic_load_vcpu_ctxt(
-    struct vcpu *v, const struct hvm_viridian_vcpu_context *ctxt)
+void viridian_synic_load_vcpu_ctxt(struct vcpu *v,
+                                   const struct hvm_viridian_vcpu_context *ctxt)
 {
     struct viridian_vcpu *vv = v->arch.hvm.viridian;
     struct domain *d = v->domain;
@@ -426,15 +424,13 @@ void viridian_synic_load_vcpu_ctxt(
     }
 }
 
-void viridian_synic_save_domain_ctxt(
-    const struct domain *d, struct hvm_viridian_domain_context *ctxt)
-{
-}
+void viridian_synic_save_domain_ctxt(const struct domain *d,
+                                     struct hvm_viridian_domain_context *ctxt)
+{}
 
 void viridian_synic_load_domain_ctxt(
     struct domain *d, const struct hvm_viridian_domain_context *ctxt)
-{
-}
+{}
 
 /*
  * Local variables:

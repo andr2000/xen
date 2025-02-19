@@ -22,8 +22,8 @@
 
 #ifdef CONFIG_IOREQ_SERVER
 enum io_state handle_ioserv(struct cpu_user_regs *regs, struct vcpu *v);
-enum io_state try_fwd_ioserv(struct cpu_user_regs *regs,
-                             struct vcpu *v, mmio_info_t *info);
+enum io_state try_fwd_ioserv(struct cpu_user_regs *regs, struct vcpu *v,
+                             mmio_info_t *info);
 #else
 static inline enum io_state handle_ioserv(struct cpu_user_regs *regs,
                                           struct vcpu *v)
@@ -48,9 +48,7 @@ static inline bool handle_pio(uint16_t port, unsigned int size, int dir)
     return true;
 }
 
-static inline void msix_write_completion(struct vcpu *v)
-{
-}
+static inline void msix_write_completion(struct vcpu *v) {}
 
 /* This correlation must not be altered */
 #define IOREQ_STATUS_HANDLED     IO_HANDLED

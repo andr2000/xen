@@ -40,8 +40,8 @@ struct kexec_image {
 };
 
 int kimage_alloc(struct kexec_image **rimage, uint8_t type, uint16_t arch,
-                 uint64_t entry_maddr,
-                 uint32_t nr_segments, xen_kexec_segment_t *segment);
+                 uint64_t entry_maddr, uint32_t nr_segments,
+                 xen_kexec_segment_t *segment);
 void kimage_free(struct kexec_image *image);
 int kimage_load_segments(struct kexec_image *image);
 struct page_info *kimage_alloc_control_page(struct kexec_image *image,
@@ -50,8 +50,7 @@ struct page_info *kimage_alloc_control_page(struct kexec_image *image,
 kimage_entry_t *kimage_entry_next(kimage_entry_t *entry, bool compat);
 mfn_t kimage_entry_mfn(kimage_entry_t *entry, bool compat);
 unsigned long kimage_entry_ind(kimage_entry_t *entry, bool compat);
-int kimage_build_ind(struct kexec_image *image, mfn_t ind_mfn,
-                     bool compat);
+int kimage_build_ind(struct kexec_image *image, mfn_t ind_mfn, bool compat);
 
 #endif /* __ASSEMBLY__ */
 

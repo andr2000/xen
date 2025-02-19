@@ -68,35 +68,53 @@ void exception_handler(struct cpu_user_regs *regs)
 {
     /* TODO: this is currently only useful for debugging */
 
-    printk("UNRECOVERABLE EXCEPTION: %s (0x%04x)\n\n"
-           "GPR 0-3   : 0x%016lx 0x%016lx 0x%016lx 0x%016lx\n"
-           "GPR 4-7   : 0x%016lx 0x%016lx 0x%016lx 0x%016lx\n"
-           "GPR 8-11  : 0x%016lx 0x%016lx 0x%016lx 0x%016lx\n"
-           "GPR 12-15 : 0x%016lx 0x%016lx 0x%016lx 0x%016lx\n"
-           "GPR 16-19 : 0x%016lx 0x%016lx 0x%016lx 0x%016lx\n"
-           "GPR 20-23 : 0x%016lx 0x%016lx 0x%016lx 0x%016lx\n"
-           "GPR 24-27 : 0x%016lx 0x%016lx 0x%016lx 0x%016lx\n"
-           "GPR 28-31 : 0x%016lx 0x%016lx 0x%016lx 0x%016lx\n\n",
-           exception_name_from_vec(regs->entry_vector), regs->entry_vector,
-           regs->gprs[0], regs->gprs[1], regs->gprs[2], regs->gprs[3],
-           regs->gprs[4], regs->gprs[5], regs->gprs[6], regs->gprs[7],
-           regs->gprs[8], regs->gprs[9], regs->gprs[10], regs->gprs[11],
-           regs->gprs[12], regs->gprs[13], regs->gprs[14], regs->gprs[15],
-           regs->gprs[16], regs->gprs[17], regs->gprs[18], regs->gprs[19],
-           regs->gprs[20], regs->gprs[21], regs->gprs[22], regs->gprs[23],
-           regs->gprs[24], regs->gprs[25], regs->gprs[26], regs->gprs[27],
-           regs->gprs[28], regs->gprs[29], regs->gprs[30], regs->gprs[31]);
-    printk("LR        : 0x%016lx\n"
-           "CTR       : 0x%016lx\n"
-           "CR        : 0x%08x\n"
-           "PC        : 0x%016lx\n"
-           "MSR       : 0x%016lx\n"
-           "SRR0      : 0x%016lx\n"
-           "SRR1      : 0x%016lx\n"
-           "DAR       : 0x%016lx\n"
-           "DSISR     : 0x%08x\n",
-           regs->lr, regs->ctr, regs->cr, regs->pc, regs->msr, regs->srr0,
-           regs->srr1, regs->dar, regs->dsisr);
+    printk(
+        "UNRECOVERABLE EXCEPTION: %s (0x%04x)\n\n" "GPR 0-3   : 0x%016lx 0x%016lx 0x%016lx 0x%016lx\n" "GPR 4-7   : 0x%016lx 0x%016lx 0x%016lx 0x%016lx\n" "GPR 8-11  : 0x%016lx 0x%016lx 0x%016lx 0x%016lx\n" "GPR 12-15 : 0x%016lx 0x%016lx 0x%016lx 0x%016lx\n" "GPR 16-19 : 0x%016lx 0x%016lx 0x%016lx 0x%016lx\n" "GPR 20-23 : 0x%016lx 0x%016lx 0x%016lx 0x%016lx\n" "GPR 24-27 : 0x%016lx 0x%016lx 0x%016lx 0x%016lx\n" "GPR 28-31 : 0x%016lx 0x%016lx 0x%016lx 0x%016lx\n\n",
+        exception_name_from_vec(regs->entry_vector),
+        regs->entry_vector,
+        regs->gprs[0],
+        regs->gprs[1],
+        regs->gprs[2],
+        regs->gprs[3],
+        regs->gprs[4],
+        regs->gprs[5],
+        regs->gprs[6],
+        regs->gprs[7],
+        regs->gprs[8],
+        regs->gprs[9],
+        regs->gprs[10],
+        regs->gprs[11],
+        regs->gprs[12],
+        regs->gprs[13],
+        regs->gprs[14],
+        regs->gprs[15],
+        regs->gprs[16],
+        regs->gprs[17],
+        regs->gprs[18],
+        regs->gprs[19],
+        regs->gprs[20],
+        regs->gprs[21],
+        regs->gprs[22],
+        regs->gprs[23],
+        regs->gprs[24],
+        regs->gprs[25],
+        regs->gprs[26],
+        regs->gprs[27],
+        regs->gprs[28],
+        regs->gprs[29],
+        regs->gprs[30],
+        regs->gprs[31]);
+    printk(
+        "LR        : 0x%016lx\n" "CTR       : 0x%016lx\n" "CR        : 0x%08x\n" "PC        : 0x%016lx\n" "MSR       : 0x%016lx\n" "SRR0      : 0x%016lx\n" "SRR1      : 0x%016lx\n" "DAR       : 0x%016lx\n" "DSISR     : 0x%08x\n",
+        regs->lr,
+        regs->ctr,
+        regs->cr,
+        regs->pc,
+        regs->msr,
+        regs->srr0,
+        regs->srr1,
+        regs->dar,
+        regs->dsisr);
 
     die();
 }

@@ -15,7 +15,6 @@
  * So we define them here rather in <asm/msr.h>.
  */
 
-
 /* Bitfield of the MSR_IA32_MCG_CAP register */
 #define MCG_CAP_COUNT           0x00000000000000ffULL
 #define MCG_CTL_P               (1ULL<<8)
@@ -86,29 +85,28 @@
 
 #include <asm/domain.h>
 
-struct mca_banks
-{
+struct mca_banks {
     int num;
     unsigned long *bank_map;
 };
 
 static inline void mcabanks_clear(int bit, struct mca_banks *banks)
 {
-    if (!banks || !banks->bank_map || bit >= banks->num)
-        return ;
+    if ( !banks || !banks->bank_map || bit >= banks->num )
+        return;
     clear_bit(bit, banks->bank_map);
 }
 
-static inline void mcabanks_set(int bit, struct mca_banks* banks)
+static inline void mcabanks_set(int bit, struct mca_banks *banks)
 {
-    if (!banks || !banks->bank_map || bit >= banks->num)
+    if ( !banks || !banks->bank_map || bit >= banks->num )
         return;
     set_bit(bit, banks->bank_map);
 }
 
-static inline int mcabanks_test(int bit, struct mca_banks* banks)
+static inline int mcabanks_test(int bit, struct mca_banks *banks)
 {
-    if (!banks || !banks->bank_map || bit >= banks->num)
+    if ( !banks || !banks->bank_map || bit >= banks->num )
         return 0;
     return test_bit(bit, banks->bank_map);
 }
@@ -126,8 +124,7 @@ struct mca_binfo {
     struct cpu_user_regs *regs;
 };
 
-enum mce_result
-{
+enum mce_result {
     MCER_NOERROR,
     MCER_RECOVERED,
     /* Not recovered, but can continue */
@@ -135,16 +132,15 @@ enum mce_result
     MCER_RESET,
 };
 
-struct mca_error_handler
-{
+struct mca_error_handler {
     /* Assume corresponding recovery action could be uniquely
      * identified by mca_code. Otherwise, we might need to have
      * a seperate function to decode the corresponding actions
      * for the particular mca error later.
      */
     bool (*owned_error)(uint64_t status);
-    void (*recovery_handler)(struct mca_binfo *binfo,
-                    enum mce_result *result, const struct cpu_user_regs *regs);
+    void (*recovery_handler)(struct mca_binfo *binfo, enum mce_result *result,
+                             const struct cpu_user_regs *regs);
 };
 
 /* Global variables */

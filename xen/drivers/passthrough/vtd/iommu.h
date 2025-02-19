@@ -26,28 +26,28 @@
  * Intel IOMMU register specification per version 1.0 public spec.
  */
 
-#define    DMAR_VER_REG    0x0    /* Arch version supported by this IOMMU */
-#define    DMAR_CAP_REG    0x8    /* Hardware supported capabilities */
-#define    DMAR_ECAP_REG    0x10    /* Extended capabilities supported */
-#define    DMAR_GCMD_REG    0x18    /* Global command register */
-#define    DMAR_GSTS_REG    0x1c    /* Global status register */
-#define    DMAR_RTADDR_REG    0x20    /* Root entry table */
-#define    DMAR_CCMD_REG    0x28    /* Context command reg */
-#define    DMAR_FSTS_REG    0x34    /* Fault Status register */
-#define    DMAR_FECTL_REG    0x38    /* Fault control register */
-#define    DMAR_FEDATA_REG    0x3c    /* Fault event interrupt data register */
-#define    DMAR_FEADDR_REG    0x40    /* Fault event interrupt addr register */
-#define    DMAR_FEUADDR_REG 0x44    /* Upper address register */
-#define    DMAR_AFLOG_REG    0x58    /* Advanced Fault control */
-#define    DMAR_PMEN_REG    0x64    /* Enable Protected Memory Region */
-#define    DMAR_PLMBASE_REG 0x68    /* PMRR Low addr */
-#define    DMAR_PLMLIMIT_REG 0x6c    /* PMRR low limit */
-#define    DMAR_PHMBASE_REG 0x70    /* pmrr high base addr */
-#define    DMAR_PHMLIMIT_REG 0x78    /* pmrr high limit */
-#define    DMAR_IQH_REG    0x80    /* invalidation queue head */
-#define    DMAR_IQT_REG    0x88    /* invalidation queue tail */
-#define    DMAR_IQA_REG    0x90    /* invalidation queue addr */
-#define    DMAR_IRTA_REG   0xB8    /* intr remap */
+#define DMAR_VER_REG    0x0    /* Arch version supported by this IOMMU */
+#define DMAR_CAP_REG    0x8    /* Hardware supported capabilities */
+#define DMAR_ECAP_REG    0x10    /* Extended capabilities supported */
+#define DMAR_GCMD_REG    0x18    /* Global command register */
+#define DMAR_GSTS_REG    0x1c    /* Global status register */
+#define DMAR_RTADDR_REG    0x20    /* Root entry table */
+#define DMAR_CCMD_REG    0x28    /* Context command reg */
+#define DMAR_FSTS_REG    0x34    /* Fault Status register */
+#define DMAR_FECTL_REG    0x38    /* Fault control register */
+#define DMAR_FEDATA_REG    0x3c    /* Fault event interrupt data register */
+#define DMAR_FEADDR_REG    0x40    /* Fault event interrupt addr register */
+#define DMAR_FEUADDR_REG 0x44    /* Upper address register */
+#define DMAR_AFLOG_REG    0x58    /* Advanced Fault control */
+#define DMAR_PMEN_REG    0x64    /* Enable Protected Memory Region */
+#define DMAR_PLMBASE_REG 0x68    /* PMRR Low addr */
+#define DMAR_PLMLIMIT_REG 0x6c    /* PMRR low limit */
+#define DMAR_PHMBASE_REG 0x70    /* pmrr high base addr */
+#define DMAR_PHMLIMIT_REG 0x78    /* pmrr high limit */
+#define DMAR_IQH_REG    0x80    /* invalidation queue head */
+#define DMAR_IQT_REG    0x88    /* invalidation queue tail */
+#define DMAR_IQA_REG    0x90    /* invalidation queue addr */
+#define DMAR_IRTA_REG   0xB8    /* intr remap */
 
 #define OFFSET_STRIDE        (9)
 #define dmar_readl(dmar, reg) readl((dmar) + (reg))
@@ -104,7 +104,7 @@
 #define DMA_TLB_GLOBAL_FLUSH (((u64)1) << 60)
 #define DMA_TLB_DSI_FLUSH (((u64)2) << 60)
 #define DMA_TLB_PSI_FLUSH (((u64)3) << 60)
-#define DMA_TLB_IIRG(x) (((x) >> 60) & 7) 
+#define DMA_TLB_IIRG(x) (((x) >> 60) & 7)
 #define DMA_TLB_IAIG(val) (((val) >> 57) & 7)
 #define DMA_TLB_DID(x) (((uint64_t)((x) & 0xffff)) << 32)
 
@@ -187,9 +187,10 @@
  * 64-127: Reserved
  */
 struct root_entry {
-    u64    val;
-    u64    rsvd1;
+    u64 val;
+    u64 rsvd1;
 };
+
 #define root_present(root)    ((root).val & 1)
 #define set_root_present(root) do {(root).val |= 1;} while(0)
 #define get_context_addr(root) ((root).val & PAGE_MASK_4K)
@@ -201,9 +202,11 @@ struct context_entry {
         struct {
             uint64_t lo, hi;
         };
+
         __uint128_t full;
     };
 };
+
 #define context_present(c) ((c).lo & 1)
 #define context_fault_disable(c) (((c).lo >> 1) & 1)
 #define context_translation_type(c) (((c).lo >> 2) & 3)
@@ -261,6 +264,7 @@ struct context_entry {
 struct dma_pte {
     u64 val;
 };
+
 #define DMA_PTE_READ (1)
 #define DMA_PTE_WRITE (2)
 #define DMA_PTE_PROT (DMA_PTE_READ | DMA_PTE_WRITE)
@@ -286,47 +290,33 @@ struct dma_pte {
 
 /* interrupt remap entry */
 struct iremap_entry {
-  union {
-    __uint128_t val;
-    struct { u64 lo, hi; };
-    struct {
-        u16 p       : 1,
-            fpd     : 1,
-            dm      : 1,
-            rh      : 1,
-            tm      : 1,
-            dlm     : 3,
-            avail   : 4,
-            res_1   : 3,
-            im      : 1;
-        u8  vector;
-        u8  res_2;
-        u32 dst;
-        u16 sid;
-        u16 sq      : 2,
-            svt     : 2,
-            res_3   : 12;
-        u32 res_4;
-    } remap;
-    struct {
-        u16 p       : 1,
-            fpd     : 1,
-            res_1   : 6,
-            avail   : 4,
-            res_2   : 2,
-            urg     : 1,
-            im      : 1;
-        u8  vector;
-        u8  res_3;
-        u32 res_4   : 6,
-            pda_l   : 26;
-        u16 sid;
-        u16 sq      : 2,
-            svt     : 2,
-            res_5   : 12;
-        u32 pda_h;
-    } post;
-  };
+    union {
+        __uint128_t val;
+
+        struct {
+            u64 lo, hi;
+        };
+
+        struct {
+            u16 p:1, fpd:1, dm:1, rh:1, tm:1, dlm:3, avail:4, res_1:3, im:1;
+            u8 vector;
+            u8 res_2;
+            u32 dst;
+            u16 sid;
+            u16 sq:2, svt:2, res_3:12;
+            u32 res_4;
+        } remap;
+
+        struct {
+            u16 p:1, fpd:1, res_1:6, avail:4, res_2:2, urg:1, im:1;
+            u8 vector;
+            u8 res_3;
+            u32 res_4:6, pda_l:26;
+            u16 sid;
+            u16 sq:2, svt:2, res_5:12;
+            u32 pda_h;
+        } post;
+    };
 };
 
 /*
@@ -377,80 +367,59 @@ struct qinval_entry {
         struct {
             u64 lo;
             u64 hi;
-        }val;
+        } val;
+
         struct {
             struct {
-                u64 type    : 4,
-                    granu   : 2,
-                    res_1   : 10,
-                    did     : 16,
-                    sid     : 16,
-                    fm      : 2,
-                    res_2   : 14;
-            }lo;
+                u64 type:4, granu:2, res_1:10, did:16, sid:16, fm:2, res_2:14;
+            } lo;
+
             struct {
                 u64 res;
-            }hi;
-        }cc_inv_dsc;
+            } hi;
+        } cc_inv_dsc;
+
         struct {
             struct {
-                u64 type    : 4,
-                    granu   : 2,
-                    dw      : 1,
-                    dr      : 1,
-                    res_1   : 8,
-                    did     : 16,
-                    res_2   : 32;
-            }lo;
+                u64 type:4, granu:2, dw:1, dr:1, res_1:8, did:16, res_2:32;
+            } lo;
+
             struct {
-                u64 am      : 6,
-                    ih      : 1,
-                    res_1   : 5,
-                    addr    : 52;
-            }hi;
-        }iotlb_inv_dsc;
+                u64 am:6, ih:1, res_1:5, addr:52;
+            } hi;
+        } iotlb_inv_dsc;
+
         struct {
             struct {
-                u64 type    : 4,
-                    res_1   : 12,
-                    max_invs_pend: 5,
-                    res_2   : 11,
-                    sid     : 16,
-                    res_3   : 16;
-            }lo;
+                u64 type:4, res_1:12, max_invs_pend:5, res_2:11, sid:16,
+                    res_3:16;
+            } lo;
+
             struct {
-                u64 size    : 1,
-                    res_1   : 11,
-                    addr    : 52;
-            }hi;
-        }dev_iotlb_inv_dsc;
+                u64 size:1, res_1:11, addr:52;
+            } hi;
+        } dev_iotlb_inv_dsc;
+
         struct {
             struct {
-                u64 type    : 4,
-                    granu   : 1,
-                    res_1   : 22,
-                    im      : 5,
-                    iidx    : 16,
-                    res_2   : 16;
-            }lo;
+                u64 type:4, granu:1, res_1:22, im:5, iidx:16, res_2:16;
+            } lo;
+
             struct {
                 u64 res;
-            }hi;
-        }iec_inv_dsc;
+            } hi;
+        } iec_inv_dsc;
+
         struct {
             struct {
-                u64 type    : 4,
-                    iflag   : 1,
-                    sw      : 1,
-                    fn      : 1,
-                    res_1   : 25,
-                    sdata   : 32;
-            }lo;
+                u64 type:4, iflag:1, sw:1, fn:1, res_1:25, sdata:32;
+            } lo;
+
             struct {
                 u64 saddr;
-            }hi;
-        }inv_wait_dsc;
-    }q;
+            } hi;
+        } inv_wait_dsc;
+    } q;
 };
 
 #define TYPE_INVAL_CONTEXT      0x1
@@ -476,10 +445,10 @@ extern struct list_head acpi_ioapic_units;
 struct vtd_iommu {
     struct list_head list;
     void __iomem *reg; /* Pointer to hardware regs, virtual addr */
-    u32	index;         /* Sequence number of iommu */
+    u32 index; /* Sequence number of iommu */
     u32 nr_pt_levels;
-    u64	cap;
-    u64	ecap;
+    u64 cap;
+    u64 ecap;
     spinlock_t lock; /* protect context */
     spinlock_t register_lock; /* protect iommu register handling */
     u64 root_maddr; /* root entry machine address */
@@ -487,12 +456,12 @@ struct vtd_iommu {
     struct msi_desc msi;
     struct acpi_drhd_unit *drhd;
 
-    uint64_t qinval_maddr;   /* queue invalidation page machine address */
+    uint64_t qinval_maddr; /* queue invalidation page machine address */
 
     struct {
-        uint64_t maddr;   /* interrupt remap table machine address */
+        uint64_t maddr; /* interrupt remap table machine address */
         unsigned int num; /* total num of used interrupt remap entry */
-        spinlock_t lock;  /* lock for irq remapping table */
+        spinlock_t lock; /* lock for irq remapping table */
     } intremap;
 
     struct {
@@ -507,8 +476,8 @@ struct vtd_iommu {
 
     struct list_head ats_devices;
     unsigned long *pseudo_domid_map; /* "pseudo" domain id bitmap */
-    unsigned long *domid_bitmap;  /* domain id bitmap */
-    domid_t *domid_map;           /* domain id mapping array */
+    unsigned long *domid_bitmap; /* domain id bitmap */
+    domid_t *domid_map; /* domain id mapping array */
     uint32_t version;
 };
 

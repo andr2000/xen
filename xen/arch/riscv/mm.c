@@ -46,14 +46,14 @@ unsigned long __ro_after_init phys_offset; /* = load_start - XEN_VIRT_START */
  */
 #define PGTBL_INITIAL_COUNT ((CONFIG_PAGING_LEVELS - 1) * 2 + 1)
 
-pte_t __section(".bss.page_aligned") __aligned(PAGE_SIZE)
-stage1_pgtbl_root[PAGETABLE_ENTRIES];
+pte_t __section(".bss.page_aligned")
+    __aligned(PAGE_SIZE) stage1_pgtbl_root[PAGETABLE_ENTRIES];
 
 pte_t __section(".bss.page_aligned") __aligned(PAGE_SIZE)
-stage1_pgtbl_nonroot[PGTBL_INITIAL_COUNT * PAGETABLE_ENTRIES];
+    stage1_pgtbl_nonroot[PGTBL_INITIAL_COUNT * PAGETABLE_ENTRIES];
 
-pte_t __section(".bss.page_aligned") __aligned(PAGE_SIZE)
-xen_fixmap[PAGETABLE_ENTRIES];
+pte_t __section(".bss.page_aligned")
+    __aligned(PAGE_SIZE) xen_fixmap[PAGETABLE_ENTRIES];
 
 #define HANDLE_PGTBL(curr_lvl_num)                                          \
     index = pt_index(curr_lvl_num, page_addr);                              \
@@ -102,8 +102,7 @@ static void __init setup_initial_mapping(struct mmu_desc *mmu_desc,
         die();
     }
 
-    for ( page_addr = map_start;
-          page_addr < map_end;
+    for ( page_addr = map_start; page_addr < map_end;
           page_addr += XEN_PT_LEVEL_SIZE(0) )
     {
         pgtbl = mmu_desc->pgtbl_base;
@@ -117,41 +116,40 @@ static void __init setup_initial_mapping(struct mmu_desc *mmu_desc,
         case 2: /* Level 1 */
             HANDLE_PGTBL(1);
         case 1: /* Level 0 */
+        {
+            unsigned long paddr = (page_addr - map_start) + pa_start;
+            unsigned int permissions = PTE_LEAF_DEFAULT;
+            unsigned long addr = is_identity_mapping ? page_addr
+                                                     : virt_to_maddr(page_addr);
+            pte_t pte_to_be_written;
+
+            index = pt_index(0, page_addr);
+
+            if ( is_kernel_text(addr) || is_kernel_inittext(addr) )
+                permissions = PTE_EXECUTABLE | PTE_READABLE | PTE_VALID;
+
+            if ( is_kernel_rodata(addr) )
+                permissions = PTE_READABLE | PTE_VALID;
+
+            pte_to_be_written = paddr_to_pte(paddr, permissions);
+
+            if ( !pte_is_valid(pgtbl[index]) )
+                pgtbl[index] = pte_to_be_written;
+            else
             {
-                unsigned long paddr = (page_addr - map_start) + pa_start;
-                unsigned int permissions = PTE_LEAF_DEFAULT;
-                unsigned long addr = is_identity_mapping
-                                     ? page_addr : virt_to_maddr(page_addr);
-                pte_t pte_to_be_written;
-
-                index = pt_index(0, page_addr);
-
-                if ( is_kernel_text(addr) ||
-                     is_kernel_inittext(addr) )
-                        permissions =
-                            PTE_EXECUTABLE | PTE_READABLE | PTE_VALID;
-
-                if ( is_kernel_rodata(addr) )
-                    permissions = PTE_READABLE | PTE_VALID;
-
-                pte_to_be_written = paddr_to_pte(paddr, permissions);
-
-                if ( !pte_is_valid(pgtbl[index]) )
-                    pgtbl[index] = pte_to_be_written;
-                else
+                if ( (pgtbl[index].pte ^ pte_to_be_written.pte) &
+                     ~(PTE_DIRTY | PTE_ACCESSED) )
                 {
-                    if ( (pgtbl[index].pte ^ pte_to_be_written.pte) &
-                         ~(PTE_DIRTY | PTE_ACCESSED) )
-                    {
-                        early_printk("PTE overridden has occurred\n");
-                        /* panic(), <asm/bug.h> aren't ready now. */
-                        die();
-                    }
+                    early_printk("PTE overridden has occurred\n");
+                    /* panic(), <asm/bug.h> aren't ready now. */
+                    die();
                 }
             }
         }
+        }
     }
 }
+
 #undef HANDLE_PGTBL
 
 static bool __init check_pgtbl_mode_support(struct mmu_desc *mmu_desc,
@@ -168,10 +166,8 @@ static bool __init check_pgtbl_mode_support(struct mmu_desc *mmu_desc,
 
     if ( (load_start + xen_size) > (aligned_load_start + aligned_page_size) )
     {
-        early_printk("please place Xen to be in range of PAGE_SIZE "
-                     "where PAGE_SIZE is XEN_PT_LEVEL_SIZE( {L3 | L2 | L1} ) "
-                     "depending on expected SATP_MODE \n"
-                     "XEN_PT_LEVEL_SIZE is defined in <asm/page.h>\n");
+        early_printk(
+            "please place Xen to be in range of PAGE_SIZE " "where PAGE_SIZE is XEN_PT_LEVEL_SIZE( {L3 | L2 | L1} ) " "depending on expected SATP_MODE \n" "XEN_PT_LEVEL_SIZE is defined in <asm/page.h>\n");
         die();
     }
 
@@ -182,7 +178,7 @@ static bool __init check_pgtbl_mode_support(struct mmu_desc *mmu_desc,
     sfence_vma();
     csr_write(CSR_SATP,
               PFN_DOWN((unsigned long)stage1_pgtbl_root) |
-              RV_STAGE1_MODE << SATP_MODE_SHIFT);
+                  RV_STAGE1_MODE << SATP_MODE_SHIFT);
 
     if ( (csr_read(CSR_SATP) >> SATP_MODE_SHIFT) == RV_STAGE1_MODE )
         is_mode_supported = true;
@@ -259,10 +255,10 @@ void __init setup_initial_pagetables(void)
      * them we will get load adresses of start and end of Xen.
      * To get linker addresses LOAD_TO_LINK() is required to use.
      */
-    unsigned long load_start    = (unsigned long)_start;
-    unsigned long load_end      = (unsigned long)_end;
-    unsigned long linker_start  = LOAD_TO_LINK(load_start);
-    unsigned long linker_end    = LOAD_TO_LINK(load_end);
+    unsigned long load_start = (unsigned long)_start;
+    unsigned long load_end = (unsigned long)_end;
+    unsigned long linker_start = LOAD_TO_LINK(load_start);
+    unsigned long linker_end = LOAD_TO_LINK(load_end);
 
     unsigned long ident_start;
     unsigned long ident_end;
@@ -271,8 +267,8 @@ void __init setup_initial_pagetables(void)
      * If the overlapping check will be removed then remove_identity_mapping()
      * logic should be updated.
      */
-    if ( (linker_start != load_start) &&
-         (linker_start <= load_end) && (load_start <= linker_end) )
+    if ( (linker_start != load_start) && (linker_start <= load_end) &&
+         (load_start <= linker_end) )
     {
         early_printk("(XEN) linker and load address ranges overlap\n");
         die();
@@ -280,18 +276,15 @@ void __init setup_initial_pagetables(void)
 
     if ( !check_pgtbl_mode_support(&mmu_desc, load_start) )
     {
-        early_printk("requested MMU mode isn't supported by CPU\n"
-                     "Please choose different in <asm/config.h>\n");
+        early_printk(
+            "requested MMU mode isn't supported by CPU\n" "Please choose different in <asm/config.h>\n");
         die();
     }
 
     mmu_desc.pgtbl_base = stage1_pgtbl_root;
     mmu_desc.next_pgtbl = stage1_pgtbl_nonroot;
 
-    setup_initial_mapping(&mmu_desc,
-                          linker_start,
-                          linker_end,
-                          load_start);
+    setup_initial_mapping(&mmu_desc, linker_start, linker_end, load_start);
 
     if ( linker_start == load_start )
         return;
@@ -299,10 +292,7 @@ void __init setup_initial_pagetables(void)
     ident_start = (unsigned long)turn_on_mmu & XEN_PT_LEVEL_MAP_MASK(0);
     ident_end = ident_start + PAGE_SIZE;
 
-    setup_initial_mapping(&mmu_desc,
-                          ident_start,
-                          ident_end,
-                          ident_start);
+    setup_initial_mapping(&mmu_desc, ident_start, ident_end, ident_start);
 }
 
 void __init remove_identity_mapping(void)
@@ -310,8 +300,8 @@ void __init remove_identity_mapping(void)
     unsigned int i;
     pte_t *pgtbl;
     unsigned int index, xen_index;
-    unsigned long ident_start =
-        virt_to_maddr(turn_on_mmu) & XEN_PT_LEVEL_MAP_MASK(0);
+    unsigned long ident_start = virt_to_maddr(turn_on_mmu) &
+                                XEN_PT_LEVEL_MAP_MASK(0);
 
     for ( pgtbl = stage1_pgtbl_root, i = CONFIG_PAGING_LEVELS; i; i-- )
     {
@@ -366,7 +356,7 @@ void share_xen_page_with_guest(struct page_info *page, struct domain *d,
     BUG_ON("unimplemented");
 }
 
-void * __init early_fdt_map(paddr_t fdt_paddr)
+void *__init early_fdt_map(paddr_t fdt_paddr)
 {
     /* We are using 2MB superpage for mapping the FDT */
     paddr_t base_paddr = fdt_paddr & XEN_PT_LEVEL_MAP_MASK(1);
@@ -389,7 +379,8 @@ void * __init early_fdt_map(paddr_t fdt_paddr)
     /* The FDT is mapped using 2MB superpage */
     BUILD_BUG_ON(BOOT_FDT_VIRT_START % MB(2));
 
-    rc = map_pages_to_xen(BOOT_FDT_VIRT_START, maddr_to_mfn(base_paddr),
+    rc = map_pages_to_xen(BOOT_FDT_VIRT_START,
+                          maddr_to_mfn(base_paddr),
                           MB(2) >> PAGE_SHIFT,
                           PAGE_HYPERVISOR_RO);
     if ( rc )
@@ -439,8 +430,9 @@ static void __init setup_frametable_mappings(paddr_t ps, paddr_t pe)
     frametable_virt_start -= paddr_to_pfn(aligned_ps);
 
     if ( frametable_size > FRAMETABLE_SIZE )
-        panic("The frametable cannot cover [%#"PRIpaddr", %#"PRIpaddr")\n",
-              ps, pe);
+        panic("The frametable cannot cover [%#" PRIpaddr ", %#" PRIpaddr ")\n",
+              ps,
+              pe);
 
     /*
      * align base_mfn and frametable_size to MB(2) to have superpage mapping
@@ -449,14 +441,17 @@ static void __init setup_frametable_mappings(paddr_t ps, paddr_t pe)
     frametable_size = ROUNDUP(frametable_size, MB(2));
     base_mfn = alloc_boot_pages(PFN_DOWN(frametable_size), PFN_DOWN(MB(2)));
 
-    if ( map_pages_to_xen(FRAMETABLE_VIRT_START, base_mfn,
+    if ( map_pages_to_xen(FRAMETABLE_VIRT_START,
+                          base_mfn,
                           PFN_DOWN(frametable_size),
                           PAGE_HYPERVISOR_RW) )
         panic("frametable mappings failed: %#lx -> %#lx\n",
-              FRAMETABLE_VIRT_START, mfn_x(base_mfn));
+              FRAMETABLE_VIRT_START,
+              mfn_x(base_mfn));
 
     memset(&frame_table[0], 0, nr_mfns * sizeof(*frame_table));
-    memset(&frame_table[nr_mfns], -1,
+    memset(&frame_table[nr_mfns],
+           -1,
            frametable_size - (nr_mfns * sizeof(*frame_table)));
 }
 
@@ -476,7 +471,7 @@ static void __init setup_directmap_mappings(unsigned long base_mfn,
     {
         directmap_mfn_start = base_mfn_t;
 
-       /*
+        /*
         * The base address may not be aligned to the second level
         * size in case of Sv39 (e.g. 1GB when using 4KB pages).
         * This would prevent superpage mappings for all the regions
@@ -491,14 +486,18 @@ static void __init setup_directmap_mappings(unsigned long base_mfn,
 
     if ( base_mfn < mfn_x(directmap_mfn_start) )
         panic("can't add directmap mapping at %#lx below directmap start %#lx\n",
-              base_mfn, mfn_x(directmap_mfn_start));
+              base_mfn,
+              mfn_x(directmap_mfn_start));
 
     if ( (res = map_pages_to_xen((vaddr_t)mfn_to_virt(base_mfn),
-                          base_mfn_t, nr_mfns,
-                          PAGE_HYPERVISOR_RW)) )
-        panic("Directmap mappings for [%#"PRIpaddr", %#"PRIpaddr") failed: %d\n",
+                                 base_mfn_t,
+                                 nr_mfns,
+                                 PAGE_HYPERVISOR_RW)) )
+        panic("Directmap mappings for [%#" PRIpaddr ", %#" PRIpaddr
+              ") failed: %d\n",
               mfn_to_maddr(base_mfn_t),
-              mfn_to_maddr(mfn_add(base_mfn_t, nr_mfns)), res);
+              mfn_to_maddr(mfn_add(base_mfn_t, nr_mfns)),
+              res);
 }
 
 #else /* CONFIG_RISCV_32 */

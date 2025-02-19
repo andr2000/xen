@@ -33,7 +33,7 @@ static struct exynos4210_uart {
     void *regs;
     struct irqaction irqaction;
     struct vuart_info vuart;
-} exynos4210_com = {0};
+} exynos4210_com = { 0 };
 
 /* These parity settings can be ORed directly into the ULCON. */
 #define PARITY_NONE  (0)
@@ -76,7 +76,6 @@ static void exynos4210_uart_interrupt(int irq, void *data)
             /* Clear error pending interrupt */
             exynos4210_write(uart, UINTP, UINTM_ERROR);
         }
-
 
         if ( status & (UINTM_RXD | UINTM_ERROR) )
         {
@@ -149,7 +148,6 @@ static void __init exynos4210_uart_init_preirq(struct serial_port *port)
     ASSERT(uart->stop_bits >= 1 && uart->stop_bits <= 2);
     ulcon |= (uart->stop_bits - 1) << ULCON_STOPB_SHIFT;
 
-
     /* Parity */
     ulcon |= uart->parity << ULCON_PARITY_SHIFT;
 
@@ -184,9 +182,10 @@ static void __init exynos4210_uart_init_preirq(struct serial_port *port)
      *   - Interrupts are level trigger
      *   - Enable Rx timeout
      */
-    exynos4210_write(uart, UCON,
+    exynos4210_write(uart,
+                     UCON,
                      UCON_RX_IRQ_LEVEL | UCON_TX_IRQ_LEVEL | UCON_RX_IRQ |
-                     UCON_TX_IRQ | UCON_RX_TIMEOUT);
+                         UCON_TX_IRQ | UCON_RX_TIMEOUT);
 }
 
 static void __init exynos4210_uart_init_postirq(struct serial_port *port)
@@ -195,11 +194,12 @@ static void __init exynos4210_uart_init_postirq(struct serial_port *port)
     int rc;
 
     uart->irqaction.handler = exynos4210_uart_interrupt;
-    uart->irqaction.name    = "exynos4210_uart";
-    uart->irqaction.dev_id  = port;
+    uart->irqaction.name = "exynos4210_uart";
+    uart->irqaction.dev_id = port;
 
     if ( (rc = setup_irq(uart->irq, 0, &uart->irqaction)) != 0 )
-        dprintk(XENLOG_ERR, "Failed to allocated exynos4210_uart IRQ %d\n",
+        dprintk(XENLOG_ERR,
+                "Failed to allocated exynos4210_uart IRQ %d\n",
                 uart->irq);
 
     /* Unmask interrupts */
@@ -274,13 +274,13 @@ static const struct vuart_info *exynos4210_vuart_info(struct serial_port *port)
 }
 
 static struct uart_driver __read_mostly exynos4210_uart_driver = {
-    .init_preirq  = exynos4210_uart_init_preirq,
+    .init_preirq = exynos4210_uart_init_preirq,
     .init_postirq = exynos4210_uart_init_postirq,
-    .tx_ready     = exynos4210_uart_tx_ready,
-    .putc         = exynos4210_uart_putc,
-    .getc         = exynos4210_uart_getc,
-    .irq          = exynos4210_uart_irq,
-    .vuart_info   = exynos4210_vuart_info,
+    .tx_ready = exynos4210_uart_tx_ready,
+    .putc = exynos4210_uart_putc,
+    .getc = exynos4210_uart_getc,
+    .irq = exynos4210_uart_irq,
+    .vuart_info = exynos4210_vuart_info,
 };
 
 /* TODO: Parse UART config from the command line */
@@ -298,16 +298,16 @@ static int __init exynos4210_uart_init(struct dt_device_node *dev,
     uart = &exynos4210_com;
 
     /* uart->clock_hz  = 0x16e3600; */
-    uart->baud      = BAUD_AUTO;
+    uart->baud = BAUD_AUTO;
     uart->data_bits = 8;
-    uart->parity    = PARITY_NONE;
+    uart->parity = PARITY_NONE;
     uart->stop_bits = 1;
 
     res = dt_device_get_paddr(dev, 0, &addr, &size);
     if ( res )
     {
-        printk("exynos4210: Unable to retrieve the base"
-               " address of the UART\n");
+        printk(
+            "exynos4210: Unable to retrieve the base" " address of the UART\n");
         return res;
     }
 
@@ -340,15 +340,13 @@ static int __init exynos4210_uart_init(struct dt_device_node *dev,
     return 0;
 }
 
-static const struct dt_device_match exynos4210_dt_match[] __initconst =
-{
+static const struct dt_device_match exynos4210_dt_match[] __initconst = {
     DT_MATCH_COMPATIBLE("samsung,exynos4210-uart"),
     { /* sentinel */ },
 };
 
 DT_DEVICE_START(exynos4210, "Exynos 4210 UART", DEVICE_SERIAL)
-        .dt_match = exynos4210_dt_match,
-        .init = exynos4210_uart_init,
+    .dt_match = exynos4210_dt_match, .init = exynos4210_uart_init,
 DT_DEVICE_END
 
 /*

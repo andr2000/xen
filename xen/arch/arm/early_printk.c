@@ -18,7 +18,7 @@ void early_puts(const char *s, size_t nr)
 {
     while ( nr-- > 0 )
     {
-        if (*s == '\n')
+        if ( *s == '\n' )
             early_putch('\r');
         early_putch(*s);
         s++;

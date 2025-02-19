@@ -34,33 +34,36 @@ static inline void name(volatile type *addr, type val)                  \
                  : "ri" (val));                                         \
 }
 
-#if defined (CONFIG_ARM_32)
+#if defined(CONFIG_ARM_32)
 #define BYTE(n) #n
 #define WORD(n) #n
 #define DWORD(n) "" #n ",%H" #n
 #define PAIR     "d"
-#elif defined (CONFIG_ARM_64)
+#elif defined(CONFIG_ARM_64)
 #define BYTE(n)  "w" #n
 #define WORD(n)  "w" #n
 #define DWORD(n) "" #n
 #define PAIR     ""
 #endif
 
-build_atomic_read(read_u8_atomic,  "b", BYTE, uint8_t)
-build_atomic_read(read_u16_atomic, "h", WORD, uint16_t)
-build_atomic_read(read_u32_atomic, "",  WORD, uint32_t)
-build_atomic_read(read_u64_atomic, PAIR, DWORD, uint64_t)
-build_atomic_read(read_int_atomic, "",  WORD, int)
+build_atomic_read(read_u8_atomic, "b", BYTE, uint8_t) build_atomic_read(
+    read_u16_atomic, "h", WORD, uint16_t) build_atomic_read(read_u32_atomic, "",
+                                                            WORD, uint32_t)
+    build_atomic_read(read_u64_atomic, PAIR, DWORD, uint64_t)
+        build_atomic_read(read_int_atomic, "", WORD, int)
 
-build_atomic_write(write_u8_atomic,  "b", BYTE, uint8_t)
-build_atomic_write(write_u16_atomic, "h", WORD, uint16_t)
-build_atomic_write(write_u32_atomic, "",  WORD, uint32_t)
-build_atomic_write(write_u64_atomic, PAIR, DWORD, uint64_t)
-build_atomic_write(write_int_atomic, "",  WORD, int)
+            build_atomic_write(write_u8_atomic, "b", BYTE,
+                               uint8_t) build_atomic_write(write_u16_atomic,
+                                                           "h", WORD, uint16_t)
+                build_atomic_write(write_u32_atomic, "", WORD, uint32_t)
+                    build_atomic_write(write_u64_atomic, PAIR, DWORD, uint64_t)
+                        build_atomic_write(write_int_atomic, "", WORD, int)
 
-build_add_sized(add_u8_sized, "b", BYTE, uint8_t)
-build_add_sized(add_u16_sized, "h", WORD, uint16_t)
-build_add_sized(add_u32_sized, "", WORD, uint32_t)
+                            build_add_sized(add_u8_sized, "b", BYTE, uint8_t)
+                                build_add_sized(add_u16_sized, "h", WORD,
+                                                uint16_t)
+                                    build_add_sized(add_u32_sized, "", WORD,
+                                                    uint32_t)
 
 #undef BYTE
 #undef WORD
@@ -71,11 +74,11 @@ build_add_sized(add_u32_sized, "", WORD, uint32_t)
 #undef build_atomic_write
 #undef build_add_sized
 
-void __bad_atomic_read(const volatile void *p, void *res);
+                                        void __bad_atomic_read(
+                                            const volatile void *p, void *res);
 void __bad_atomic_size(void);
 
-static always_inline void read_atomic_size(const volatile void *p,
-                                           void *res,
+static always_inline void read_atomic_size(const volatile void *p, void *res,
                                            unsigned int size)
 {
     ASSERT(IS_ALIGNED((vaddr_t)p, size));
@@ -99,8 +102,7 @@ static always_inline void read_atomic_size(const volatile void *p,
     }
 }
 
-static always_inline void write_atomic_size(volatile void *p,
-                                            void *val,
+static always_inline void write_atomic_size(volatile void *p, void *val,
                                             unsigned int size)
 {
     ASSERT(IS_ALIGNED((vaddr_t)p, size));
@@ -173,11 +175,11 @@ static inline void _atomic_set(atomic_t *v, int i)
 }
 
 #if defined(CONFIG_ARM_32)
-# include <asm/arm32/atomic.h>
+#include <asm/arm32/atomic.h>
 #elif defined(CONFIG_ARM_64)
-# include <asm/arm64/atomic.h>
+#include <asm/arm64/atomic.h>
 #else
-# error "unknown ARM variant"
+#error "unknown ARM variant"
 #endif
 
 static inline int atomic_sub_and_test(int i, atomic_t *v)

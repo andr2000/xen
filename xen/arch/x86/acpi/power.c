@@ -43,7 +43,8 @@ static int __init cf_check parse_acpi_sleep(const char *s)
     unsigned int flag = 0;
     int rc = 0;
 
-    do {
+    do
+    {
         ss = strchr(s, ',');
         if ( !ss )
             ss = strchr(s, '\0');
@@ -62,6 +63,7 @@ static int __init cf_check parse_acpi_sleep(const char *s)
 
     return rc;
 }
+
 custom_param("acpi_sleep", parse_acpi_sleep);
 
 static DEFINE_SPINLOCK(pm_lock);
@@ -70,8 +72,7 @@ struct acpi_sleep_info acpi_sinfo;
 
 void do_suspend_lowlevel(void);
 
-enum dev_power_saved
-{
+enum dev_power_saved {
     SAVED_NONE,
     SAVED_CONSOLE,
     SAVED_TIME,
@@ -146,7 +147,7 @@ static void freeze_domains(void)
      * first which is required for correctness (as only dom0 can add domains to
      * the domain list). Otherwise we could miss concurrently-created domains.
      */
-    for_each_domain ( d )
+    for_each_domain(d)
         domain_pause(d);
     rcu_read_unlock(&domlist_read_lock);
 
@@ -160,7 +161,7 @@ static void thaw_domains(void)
     scheduler_enable();
 
     rcu_read_lock(&domlist_read_lock);
-    for_each_domain ( d )
+    for_each_domain(d)
         domain_unpause(d);
     rcu_read_unlock(&domlist_read_lock);
 }
@@ -314,7 +315,7 @@ static int enter_state(u32 state)
     /* (re)initialise SYSCALL/SYSENTER state, amongst other things. */
     percpu_traps_init();
 
- done:
+done:
     spin_debug_enable();
     local_irq_restore(flags);
     acpi_sleep_post(state);
@@ -322,7 +323,7 @@ static int enter_state(u32 state)
         BUG();
     cpufreq_add_cpu(0);
 
- enable_cpu:
+enable_cpu:
     mtrr_aps_sync_begin();
     enable_nonboot_cpus();
     mtrr_aps_sync_end();
@@ -445,21 +446,21 @@ static void tboot_sleep(u8 sleep_state)
     g_tboot_shared->acpi_sinfo.wakeup_vector = acpi_sinfo.wakeup_vector;
     g_tboot_shared->acpi_sinfo.vector_width = acpi_sinfo.vector_width;
     g_tboot_shared->acpi_sinfo.kernel_s3_resume_vector =
-                                              bootsym_phys(wakeup_start);
+        bootsym_phys(wakeup_start);
 
     switch ( sleep_state )
     {
-        case ACPI_STATE_S3:
-            shutdown_type = TB_SHUTDOWN_S3;
-            break;
-        case ACPI_STATE_S4:
-            shutdown_type = TB_SHUTDOWN_S4;
-            break;
-        case ACPI_STATE_S5:
-            shutdown_type = TB_SHUTDOWN_S5;
-            break;
-        default:
-            return;
+    case ACPI_STATE_S3:
+        shutdown_type = TB_SHUTDOWN_S3;
+        break;
+    case ACPI_STATE_S4:
+        shutdown_type = TB_SHUTDOWN_S4;
+        break;
+    case ACPI_STATE_S5:
+        shutdown_type = TB_SHUTDOWN_S5;
+        break;
+    default:
+        return;
     }
 
     tboot_shutdown(shutdown_type);
@@ -489,7 +490,8 @@ acpi_status acpi_enter_sleep_state(u8 sleep_state)
          */
         u8 sleep_type_value =
             ((acpi_sinfo.sleep_type_a << ACPI_X_SLEEP_TYPE_POSITION) &
-             ACPI_X_SLEEP_TYPE_MASK) | ACPI_X_SLEEP_ENABLE;
+             ACPI_X_SLEEP_TYPE_MASK) |
+            ACPI_X_SLEEP_ENABLE;
 
         status = acpi_hw_register_write(ACPI_REGISTER_SLEEP_CONTROL,
                                         sleep_type_value);

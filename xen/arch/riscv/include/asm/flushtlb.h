@@ -10,7 +10,7 @@
 /* Flush TLB of local processor for address va. */
 static inline void flush_tlb_one_local(vaddr_t va)
 {
-    asm volatile ( "sfence.vma %0" :: "r" (va) : "memory" );
+    asm volatile("sfence.vma %0" ::"r"(va) : "memory");
 }
 
 /* Flush a range of VA's hypervisor mappings from the TLB of all processors. */

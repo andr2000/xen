@@ -5,14 +5,14 @@
 #include <xen/types.h>
 
 typedef struct {
-	unsigned int __softirq_pending;
-	unsigned int __local_irq_count;
-	unsigned int nmi_count;
-	unsigned int mce_count;
-	bool __mwait_wakeup;
+    unsigned int __softirq_pending;
+    unsigned int __local_irq_count;
+    unsigned int nmi_count;
+    unsigned int mce_count;
+    bool __mwait_wakeup;
 } __cacheline_aligned irq_cpustat_t;
 
-#include <xen/irq_cpustat.h>	/* Standard mappings for irq_cpustat_t above */
+#include <xen/irq_cpustat.h> /* Standard mappings for irq_cpustat_t above */
 
 #define in_irq() (local_irq_count(smp_processor_id()) != 0)
 

@@ -22,7 +22,7 @@ static int pre_apply_hook(livepatch_payload_t *payload)
 
     printk(KERN_DEBUG "%s: Hook starting.\n", __func__);
 
-    for (i = 0; i < payload->nfuncs; i++)
+    for ( i = 0; i < payload->nfuncs; i++ )
     {
         const struct livepatch_func *func = &payload->funcs[i];
 
@@ -55,15 +55,15 @@ LIVEPATCH_POSTAPPLY_HOOK(unreachable_post_hook);
 LIVEPATCH_PREREVERT_HOOK(unreachable_pre_hook);
 LIVEPATCH_POSTREVERT_HOOK(unreachable_post_hook);
 
-const struct livepatch_func __section(".livepatch.funcs")
-livepatch_xen_hello_world = {
-    .version = LIVEPATCH_PAYLOAD_VERSION,
-    .name = hello_world_patch_this_fnc,
-    .new_addr = xen_hello_world,
-    .old_addr = xen_extra_version,
-    .new_size = NEW_CODE_SZ,
-    .old_size = OLD_CODE_SZ,
-};
+const struct livepatch_func
+    __section(".livepatch.funcs") livepatch_xen_hello_world = {
+        .version = LIVEPATCH_PAYLOAD_VERSION,
+        .name = hello_world_patch_this_fnc,
+        .new_addr = xen_hello_world,
+        .old_addr = xen_extra_version,
+        .new_size = NEW_CODE_SZ,
+        .old_size = OLD_CODE_SZ,
+    };
 
 /*
  * Local variables:

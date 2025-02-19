@@ -14,8 +14,7 @@
 #ifndef __ARCH_ARM_IOMMU_H__
 #define __ARCH_ARM_IOMMU_H__
 
-struct arch_iommu
-{
+struct arch_iommu {
     /* Private information for the IOMMU drivers */
     void *priv;
 };

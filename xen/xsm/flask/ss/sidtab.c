@@ -124,8 +124,9 @@ struct context *sidtab_search(struct sidtab *s, u32 sid)
     return &cur->context;
 }
 
-int sidtab_map(struct sidtab *s, 
-        int (*apply) (u32 sid, struct context *context, void *args), void *args)
+int sidtab_map(struct sidtab *s,
+               int (*apply)(u32 sid, struct context *context, void *args),
+               void *args)
 {
     int i, rc = 0;
     struct sidtab_node *cur;
@@ -149,7 +150,9 @@ out:
 }
 
 void sidtab_map_remove_on_error(struct sidtab *s,
-        int (*apply) (u32 sid, struct context *context, void *args), void *args)
+                                int (*apply)(u32 sid, struct context *context,
+                                             void *args),
+                                void *args)
 {
     int i, ret;
     struct sidtab_node *last, *cur, *temp;
@@ -193,7 +196,7 @@ void sidtab_map_remove_on_error(struct sidtab *s,
 }
 
 static inline u32 sidtab_search_context(struct sidtab *s,
-                                                        struct context *context)
+                                        struct context *context)
 {
     int i;
     struct sidtab_node *cur;
@@ -212,7 +215,7 @@ static inline u32 sidtab_search_context(struct sidtab *s,
 }
 
 int sidtab_context_to_sid(struct sidtab *s, struct context *context,
-                                                                u32 *out_sid)
+                          u32 *out_sid)
 {
     u32 sid;
     int ret = 0;
@@ -237,7 +240,7 @@ int sidtab_context_to_sid(struct sidtab *s, struct context *context,
         ret = sidtab_insert(s, sid, context);
         if ( ret )
             s->next_sid--;
-unlock_out:
+    unlock_out:
         SIDTAB_UNLOCK(s);
     }
 
@@ -273,9 +276,14 @@ void sidtab_hash_eval(struct sidtab *h, char *tag)
         }
     }
 
-    printk(KERN_INFO "%s:  %d entries and %d/%d buckets used, longest "
-           "chain length %d\n", tag, h->nel, slots_used, SIDTAB_SIZE,
-           max_chain_len);
+    printk(
+        KERN_INFO
+        "%s:  %d entries and %d/%d buckets used, longest " "chain length %d\n",
+        tag,
+        h->nel,
+        slots_used,
+        SIDTAB_SIZE,
+        max_chain_len);
 }
 
 void sidtab_destroy(struct sidtab *s)

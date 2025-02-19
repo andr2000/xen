@@ -244,18 +244,18 @@ typedef struct scsiif_request_segment vscsiif_segment_t;
 
 /* Size of one request is 252 bytes */
 struct vscsiif_request {
-    uint16_t rqid;          /* private guest value, echoed in resp  */
-    uint8_t act;            /* command between backend and frontend */
-    uint8_t cmd_len;        /* valid CDB bytes */
+    uint16_t rqid; /* private guest value, echoed in resp  */
+    uint8_t act; /* command between backend and frontend */
+    uint8_t cmd_len; /* valid CDB bytes */
 
     uint8_t cmnd[VSCSIIF_MAX_COMMAND_SIZE]; /* the CDB */
-    uint16_t timeout_per_command;   /* deprecated: timeout in secs, 0=default */
-    uint16_t channel, id, lun;      /* (virtual) device specification */
-    uint16_t ref_rqid;              /* command abort reference */
-    uint8_t sc_data_direction;      /* for DMA_TO_DEVICE(1)
+    uint16_t timeout_per_command; /* deprecated: timeout in secs, 0=default */
+    uint16_t channel, id, lun; /* (virtual) device specification */
+    uint16_t ref_rqid; /* command abort reference */
+    uint8_t sc_data_direction; /* for DMA_TO_DEVICE(1)
                                        DMA_FROM_DEVICE(2)
                                        DMA_NONE(3) requests  */
-    uint8_t nr_segments;            /* Number of pieces of scatter-gather */
+    uint8_t nr_segments; /* Number of pieces of scatter-gather */
 /*
  * flag in nr_segments: SG elements via grant page
  *
@@ -277,22 +277,23 @@ typedef struct vscsiif_request vscsiif_request_t;
 
 struct vscsiif_sg_list {
     /* First two fields must match struct vscsiif_request! */
-    uint16_t rqid;          /* private guest value, must match main req */
-    uint8_t act;            /* VSCSIIF_ACT_SCSI_SG_PRESET */
-    uint8_t nr_segments;    /* Number of pieces of scatter-gather */
+    uint16_t rqid; /* private guest value, must match main req */
+    uint8_t act; /* VSCSIIF_ACT_SCSI_SG_PRESET */
+    uint8_t nr_segments; /* Number of pieces of scatter-gather */
     vscsiif_segment_t seg[VSCSIIF_SG_LIST_SIZE];
 };
 typedef struct vscsiif_sg_list vscsiif_sg_list_t;
+
 /* End of deprecated interface */
 
 /* Size of one response is 252 bytes */
 struct vscsiif_response {
-    uint16_t rqid;          /* identifies request */
-    uint8_t act;            /* deprecated: valid only if SG_PRESET supported */
+    uint16_t rqid; /* identifies request */
+    uint8_t act; /* deprecated: valid only if SG_PRESET supported */
     uint8_t sense_len;
     uint8_t sense_buffer[VSCSIIF_SENSE_BUFFERSIZE];
     int32_t rslt;
-    uint32_t residual_len;     /* request bufflen -
+    uint32_t residual_len; /* request bufflen -
                                   return the value from physical device */
     uint32_t reserved[36];
 };
@@ -351,8 +352,7 @@ typedef struct vscsiif_response vscsiif_response_t;
 
 DEFINE_RING_TYPES(vscsiif, struct vscsiif_request, struct vscsiif_response);
 
-
-#endif  /*__XEN__PUBLIC_IO_SCSI_H__*/
+#endif /*__XEN__PUBLIC_IO_SCSI_H__*/
 /*
  * Local variables:
  * mode: C

@@ -40,13 +40,13 @@
 #error "Unexpected __SIZEOF_POINTER__"
 #endif
 
-#if (__SIZEOF_INT__ == 4)
+#if ( __SIZEOF_INT__ == 4 )
 #define RISCV_INT		__ASM_STR(.word)
 #else
 #error "Unexpected __SIZEOF_INT__"
 #endif
 
-#if (__SIZEOF_SHORT__ == 2)
+#if ( __SIZEOF_SHORT__ == 2 )
 #define RISCV_SHORT		__ASM_STR(.half)
 #else
 #error "Unexpected __SIZEOF_SHORT__"

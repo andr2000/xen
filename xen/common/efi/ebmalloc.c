@@ -20,8 +20,8 @@
 #define EBMALLOC_SIZE	MB(1)
 #endif
 
-static char __section(".bss.page_aligned") __aligned(PAGE_SIZE)
-    ebmalloc_mem[EBMALLOC_SIZE];
+static char __section(".bss.page_aligned")
+    __aligned(PAGE_SIZE) ebmalloc_mem[EBMALLOC_SIZE];
 static unsigned long __read_mostly ebmalloc_allocated;
 
 /* EFI boot allocator. */

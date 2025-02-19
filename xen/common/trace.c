@@ -75,8 +75,8 @@ static cpumask_t tb_cpu_mask;
 /* which tracing events are enabled */
 static u32 tb_event_mask = TRC_ALL;
 
-static int cf_check cpu_callback(
-    struct notifier_block *nfb, unsigned long action, void *hcpu)
+static int cf_check cpu_callback(struct notifier_block *nfb,
+                                 unsigned long action, void *hcpu)
 {
     unsigned int cpu = (unsigned long)hcpu;
 
@@ -86,9 +86,7 @@ static int cf_check cpu_callback(
     return NOTIFY_DONE;
 }
 
-static struct notifier_block cpu_nfb = {
-    .notifier_call = cpu_callback
-};
+static struct notifier_block cpu_nfb = { .notifier_call = cpu_callback };
 
 static uint32_t calc_tinfo_first_offset(void)
 {
@@ -138,9 +136,10 @@ static int calculate_tbuf_size(unsigned int pages, uint16_t t_info_first_offset)
 
     if ( pages > max_pages )
     {
-        printk(XENLOG_INFO "xentrace: requested number of %u pages "
-               "reduced to %u\n",
-               pages, max_pages);
+        printk(XENLOG_INFO
+               "xentrace: requested number of %u pages " "reduced to %u\n",
+               pages,
+               max_pages);
         pages = max_pages;
     }
 
@@ -150,9 +149,12 @@ static int calculate_tbuf_size(unsigned int pages, uint16_t t_info_first_offset)
      */
     t_info_words = nr_cpu_ids * pages + t_info_first_offset;
     t_info_pages = PFN_UP(t_info_words * sizeof(uint32_t));
-    printk(XENLOG_INFO "xentrace: requesting %u t_info pages "
-           "for %u trace pages on %u cpus\n",
-           t_info_pages, pages, nr_cpu_ids);
+    printk(
+        XENLOG_INFO
+        "xentrace: requesting %u t_info pages " "for %u trace pages on %u cpus\n",
+        t_info_pages,
+        pages,
+        nr_cpu_ids);
     return pages;
 }
 
@@ -189,7 +191,7 @@ static int alloc_trace_bufs(unsigned int pages)
     if ( t_info == NULL )
         goto out_fail;
 
-    memset(t_info, 0, t_info_pages*PAGE_SIZE);
+    memset(t_info, 0, t_info_pages * PAGE_SIZE);
 
     t_info_mfn_list = (uint32_t *)t_info;
 
@@ -209,8 +211,11 @@ static int alloc_trace_bufs(unsigned int pages)
             void *p = alloc_xenheap_pages(0, MEMF_bits(32 + PAGE_SHIFT));
             if ( !p )
             {
-                printk(XENLOG_INFO "xentrace: memory allocation failed "
-                       "on cpu %d after %d pages\n", cpu, i);
+                printk(
+                    XENLOG_INFO
+                    "xentrace: memory allocation failed " "on cpu %d after %d pages\n",
+                    cpu,
+                    i);
                 t_info_mfn_list[offset + i] = 0;
                 goto out_dealloc;
             }
@@ -234,20 +239,23 @@ static int alloc_trace_bufs(unsigned int pages)
         buf->cons = buf->prod = 0;
 
         printk(XENLOG_INFO "xentrace: p%d mfn %x offset %u\n",
-                   cpu, t_info_mfn_list[offset], offset);
+               cpu,
+               t_info_mfn_list[offset],
+               offset);
 
         /* Now share the trace pages */
         for ( i = 0; i < pages; i++ )
             share_xen_page_with_privileged_guests(
-                mfn_to_page(_mfn(t_info_mfn_list[offset + i])), SHARE_rw);
+                mfn_to_page(_mfn(t_info_mfn_list[offset + i])),
+                SHARE_rw);
     }
 
     /* Finally, share the t_info page */
-    for(i = 0; i < t_info_pages; i++)
-        share_xen_page_with_privileged_guests(
-            virt_to_page(t_info) + i, SHARE_ro);
+    for ( i = 0; i < t_info_pages; i++ )
+        share_xen_page_with_privileged_guests(virt_to_page(t_info) + i,
+                                              SHARE_ro);
 
-    data_size  = (pages * PAGE_SIZE - sizeof(struct t_buf));
+    data_size = (pages * PAGE_SIZE - sizeof(struct t_buf));
     t_buf_highwater = data_size >> 1; /* 50% high water */
     opt_tbuf_size = pages;
 
@@ -279,7 +287,6 @@ out_fail:
     return -ENOMEM;
 }
 
-
 /**
  * tb_set_size - handle the logic involved with dynamically allocating tbufs
  *
@@ -294,9 +301,10 @@ static int tb_set_size(unsigned int pages)
      */
     if ( opt_tbuf_size && pages != opt_tbuf_size )
     {
-        printk(XENLOG_INFO "xentrace: tb_set_size from %d to %d "
-               "not implemented\n",
-               opt_tbuf_size, pages);
+        printk(XENLOG_INFO
+               "xentrace: tb_set_size from %d to %d " "not implemented\n",
+               opt_tbuf_size,
+               pages);
         return -EINVAL;
     }
 
@@ -319,8 +327,8 @@ int trace_will_trace_event(u32 event)
         return 0;
 
     /* then match subclass */
-    if ( (((tb_event_mask >> TRC_SUBCLS_SHIFT) & 0xf )
-                & ((event >> TRC_SUBCLS_SHIFT) & 0xf )) == 0 )
+    if ( (((tb_event_mask >> TRC_SUBCLS_SHIFT) & 0xf) &
+          ((event >> TRC_SUBCLS_SHIFT) & 0xf)) == 0 )
         return 0;
 
     if ( !cpumask_test_cpu(smp_processor_id(), &tb_cpu_mask) )
@@ -354,7 +362,7 @@ void __init init_trace_bufs(void)
             printk("xentrace: Starting tracing, enabling mask %x\n",
                    opt_tevt_mask);
             tb_event_mask = opt_tevt_mask;
-            tb_init_done=1;
+            tb_init_done = 1;
         }
     }
 }
@@ -373,7 +381,7 @@ int tb_control(struct xen_sysctl_tbuf_op *tbc)
     switch ( tbc->cmd )
     {
     case XEN_SYSCTL_TBUFOP_get_info:
-        tbc->evt_mask   = tb_event_mask;
+        tbc->evt_mask = tb_event_mask;
         tbc->buffer_mfn = t_info ? virt_to_mfn(t_info) : 0;
         tbc->size = t_info_pages * PAGE_SIZE;
         break;
@@ -388,7 +396,7 @@ int tb_control(struct xen_sysctl_tbuf_op *tbc)
             free_cpumask_var(mask);
         }
     }
-        break;
+    break;
     case XEN_SYSCTL_TBUFOP_set_evt_mask:
         tb_event_mask = tbc->evt_mask;
         break;
@@ -419,11 +427,11 @@ int tb_control(struct xen_sysctl_tbuf_op *tbc)
         {
             unsigned long flags;
             spin_lock_irqsave(&per_cpu(t_lock, i), flags);
-            per_cpu(lost_records, i)=0;
+            per_cpu(lost_records, i) = 0;
             spin_unlock_irqrestore(&per_cpu(t_lock, i), flags);
         }
     }
-        break;
+    break;
     default:
         rc = -EINVAL;
         break;
@@ -451,7 +459,9 @@ static inline bool bogus(u32 prod, u32 cons)
     {
         tb_init_done = 0;
         printk(XENLOG_WARNING "trc#%u: bogus prod (%08x) and/or cons (%08x)\n",
-               smp_processor_id(), prod, cons);
+               smp_processor_id(),
+               prod,
+               cons);
         return 1;
     }
     return 0;
@@ -468,7 +478,7 @@ static inline u32 calc_unconsumed_bytes(const struct t_buf *buf)
 
     x = prod - cons;
     if ( x < 0 )
-        x += 2*data_size;
+        x += 2 * data_size;
 
     ASSERT(x >= 0);
     ASSERT(x <= data_size);
@@ -501,8 +511,8 @@ static inline u32 calc_bytes_avail(const struct t_buf *buf)
 }
 
 static unsigned char *next_record(const struct t_buf *buf, uint32_t *next,
-                                 unsigned char **next_page,
-                                 uint32_t *offset_in_page)
+                                  unsigned char **next_page,
+                                  uint32_t *offset_in_page)
 {
     u32 x = buf->prod, cons = buf->cons;
     uint16_t per_cpu_mfn_offset;
@@ -531,7 +541,7 @@ static unsigned char *next_record(const struct t_buf *buf, uint32_t *next,
     mfn_list = (uint32_t *)t_info;
     mfn = mfn_list[per_cpu_mfn_offset + per_cpu_mfn_nr];
     this_page = mfn_to_virt(mfn);
-    if (per_cpu_mfn_nr + 1 >= opt_tbuf_size)
+    if ( per_cpu_mfn_nr + 1 >= opt_tbuf_size )
     {
         /* reached end of buffer? */
         *next_page = NULL;
@@ -544,10 +554,8 @@ static unsigned char *next_record(const struct t_buf *buf, uint32_t *next,
     return this_page;
 }
 
-static inline void __insert_record(struct t_buf *buf,
-                                   unsigned long event,
-                                   unsigned int extra,
-                                   bool cycles,
+static inline void __insert_record(struct t_buf *buf, unsigned long event,
+                                   unsigned int extra, bool cycles,
                                    unsigned int rec_size,
                                    const void *extra_data)
 {
@@ -576,12 +584,19 @@ static inline void __insert_record(struct t_buf *buf,
             /* access beyond end of buffer */
             printk(XENLOG_WARNING
                    "%s: size=%08x prod=%08x cons=%08x rec=%u remaining=%u\n",
-                   __func__, data_size, next, buf->cons, rec_size, remaining);
+                   __func__,
+                   data_size,
+                   next,
+                   buf->cons,
+                   rec_size,
+                   remaining);
             return;
         }
         rec = &split_rec;
-    } else {
-        rec = (struct t_rec*)(this_page + offset);
+    }
+    else
+    {
+        rec = (struct t_rec *)(this_page + offset);
     }
 
     rec->event = event;
@@ -607,14 +622,13 @@ static inline void __insert_record(struct t_buf *buf,
     smp_wmb();
 
     next += rec_size;
-    if ( next >= 2*data_size )
-        next -= 2*data_size;
-    ASSERT(next < 2*data_size);
+    if ( next >= 2 * data_size )
+        next -= 2 * data_size;
+    ASSERT(next < 2 * data_size);
     buf->prod = next;
 }
 
-static inline void insert_wrap_record(struct t_buf *buf,
-                                      unsigned int size)
+static inline void insert_wrap_record(struct t_buf *buf, unsigned int size)
 {
     u32 space_left = calc_bytes_to_wrap(buf);
     unsigned int extra_space = space_left - sizeof(u32);
@@ -623,15 +637,19 @@ static inline void insert_wrap_record(struct t_buf *buf,
     BUG_ON(space_left > size);
 
     /* We may need to add cycles to take up enough space... */
-    if ( (extra_space/sizeof(u32)) > TRACE_EXTRA_MAX )
+    if ( (extra_space / sizeof(u32)) > TRACE_EXTRA_MAX )
     {
         cycles = 1;
         extra_space -= sizeof(u64);
-        ASSERT((extra_space/sizeof(u32)) <= TRACE_EXTRA_MAX);
+        ASSERT((extra_space / sizeof(u32)) <= TRACE_EXTRA_MAX);
     }
 
-    __insert_record(buf, TRC_TRACE_WRAP_BUFFER, extra_space, cycles,
-                    space_left, NULL);
+    __insert_record(buf,
+                    TRC_TRACE_WRAP_BUFFER,
+                    extra_space,
+                    cycles,
+                    space_left,
+                    NULL);
 }
 
 #define LOST_REC_SIZE (4 + 8 + 16) /* header + tsc + sizeof(struct ed) */
@@ -651,8 +669,12 @@ static inline void insert_lost_records(struct t_buf *buf)
 
     this_cpu(lost_records) = 0;
 
-    __insert_record(buf, TRC_LOST_RECORDS, sizeof(ed), 1 /* cycles */,
-                    LOST_REC_SIZE, &ed);
+    __insert_record(buf,
+                    TRC_LOST_RECORDS,
+                    sizeof(ed),
+                    1 /* cycles */,
+                    LOST_REC_SIZE,
+                    &ed);
 }
 
 /*
@@ -663,8 +685,9 @@ static void cf_check trace_notify_dom0(void *unused)
 {
     send_global_virq(VIRQ_TBUF);
 }
-static DECLARE_SOFTIRQ_TASKLET(trace_notify_dom0_tasklet,
-                               trace_notify_dom0, NULL);
+
+static DECLARE_SOFTIRQ_TASKLET(trace_notify_dom0_tasklet, trace_notify_dom0,
+                               NULL);
 
 /**
  * trace - Enters a trace tuple into the trace buffer for the current CPU.
@@ -683,7 +706,7 @@ void trace(uint32_t event, unsigned int extra, const void *extra_data)
     bool started_below_highwater;
     bool cycles = event & TRC_HD_CYCLE_FLAG;
 
-    if( !tb_init_done )
+    if ( !tb_init_done )
         return;
 
     /*
@@ -695,7 +718,8 @@ void trace(uint32_t event, unsigned int extra, const void *extra_data)
          extra / sizeof(uint32_t) > TRACE_EXTRA_MAX )
         return printk_once(XENLOG_WARNING
                            "Trace event %#x bad size %u, discarding\n",
-                           event, extra);
+                           event,
+                           extra);
 
     if ( (tb_event_mask & event) == 0 )
         return;
@@ -705,8 +729,8 @@ void trace(uint32_t event, unsigned int extra, const void *extra_data)
         return;
 
     /* then match subclass */
-    if ( (((tb_event_mask >> TRC_SUBCLS_SHIFT) & 0xf )
-                & ((event >> TRC_SUBCLS_SHIFT) & 0xf )) == 0 )
+    if ( (((tb_event_mask >> TRC_SUBCLS_SHIFT) & 0xf) &
+          ((event >> TRC_SUBCLS_SHIFT) & 0xf)) == 0 )
         return;
 
     if ( !cpumask_test_cpu(smp_processor_id(), &tb_cpu_mask) )
@@ -767,7 +791,7 @@ void trace(uint32_t event, unsigned int extra, const void *extra_data)
     if ( total_size > bytes_to_tail )
     {
         if ( ++this_cpu(lost_records) == 1 )
-            this_cpu(lost_records_first_tsc)=(u64)get_cycles();
+            this_cpu(lost_records_first_tsc) = (u64)get_cycles();
         started_below_highwater = 0;
         goto unlock;
     }
@@ -802,9 +826,8 @@ unlock:
     spin_unlock_irqrestore(&this_cpu(t_lock), flags);
 
     /* Notify trace buffer consumer that we've crossed the high water mark. */
-    if ( likely(buf!=NULL)
-         && started_below_highwater
-         && (calc_unconsumed_bytes(buf) >= t_buf_highwater) )
+    if ( likely(buf != NULL) && started_below_highwater &&
+         (calc_unconsumed_bytes(buf) >= t_buf_highwater) )
         tasklet_schedule(&trace_notify_dom0_tasklet);
 }
 
@@ -815,6 +838,7 @@ void __trace_hypercall(uint32_t event, unsigned long op,
         uint32_t op;
         uint32_t args[5];
     } d;
+
     uint32_t *a = d.args;
 
     /*

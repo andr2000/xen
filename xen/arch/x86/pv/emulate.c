@@ -36,8 +36,8 @@ int pv_emul_read_descriptor(unsigned int sel, const struct vcpu *v,
     *ar = desc.b & 0x00f0ff00;
     if ( !(desc.b & _SEGMENT_L) )
     {
-        *base = ((desc.a >> 16) + ((desc.b & 0xff) << 16) +
-                 (desc.b & 0xff000000));
+        *base =
+            ((desc.a >> 16) + ((desc.b & 0xff) << 16) + (desc.b & 0xff000000));
         *limit = (desc.a & 0xffff) | (desc.b & 0x000f0000);
         if ( desc.b & _SEGMENT_G )
             *limit = ((*limit + 1) << 12) - 1;
@@ -47,13 +47,13 @@ int pv_emul_read_descriptor(unsigned int sel, const struct vcpu *v,
             unsigned int a, l;
             unsigned char valid;
 
-            asm volatile (
-                "larl %2,%0 ; setz %1"
-                : "=r" (a), "=qm" (valid) : "rm" (sel));
+            asm volatile("larl %2,%0 ; setz %1"
+                         : "=r"(a), "=qm"(valid)
+                         : "rm"(sel));
             BUG_ON(valid && ((a & 0x00f0ff00) != *ar));
-            asm volatile (
-                "lsll %2,%0 ; setz %1"
-                : "=r" (l), "=qm" (valid) : "rm" (sel));
+            asm volatile("lsll %2,%0 ; setz %1"
+                         : "=r"(l), "=qm"(valid)
+                         : "rm"(sel));
             BUG_ON(valid && (l != *limit));
         }
 #endif
@@ -96,8 +96,7 @@ uint64_t pv_get_reg(struct vcpu *v, unsigned int reg)
         return msrs->spec_ctrl.raw;
 
     default:
-        printk(XENLOG_G_ERR "%s(%pv, 0x%08x) Bad register\n",
-               __func__, v, reg);
+        printk(XENLOG_G_ERR "%s(%pv, 0x%08x) Bad register\n", __func__, v, reg);
         domain_crash(d);
         return 0;
     }
@@ -117,8 +116,11 @@ void pv_set_reg(struct vcpu *v, unsigned int reg, uint64_t val)
         break;
 
     default:
-        printk(XENLOG_G_ERR "%s(%pv, 0x%08x, 0x%016"PRIx64") Bad register\n",
-               __func__, v, reg, val);
+        printk(XENLOG_G_ERR "%s(%pv, 0x%08x, 0x%016" PRIx64 ") Bad register\n",
+               __func__,
+               v,
+               reg,
+               val);
         domain_crash(d);
     }
 }

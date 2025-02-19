@@ -21,11 +21,8 @@
 #include <asm/platforms/xilinx-zynqmp-eemi.h>
 #include <asm/smccc.h>
 
-static const char * const zynqmp_dt_compat[] __initconst =
-{
-    "xlnx,zynqmp",
-    NULL
-};
+static const char *const zynqmp_dt_compat[]
+    __initconst = { "xlnx,zynqmp", NULL };
 
 static bool zynqmp_smc(struct cpu_user_regs *regs)
 {
@@ -35,8 +32,9 @@ static bool zynqmp_smc(struct cpu_user_regs *regs)
      */
     if ( !cpus_have_const_cap(ARM_SMCCC_1_1) )
     {
-        printk_once(XENLOG_WARNING
-                    "ZynqMP firmware Error: no SMCCC 1.1 support. Disabling firmware calls\n");
+        printk_once(
+            XENLOG_WARNING
+            "ZynqMP firmware Error: no SMCCC 1.1 support. Disabling firmware calls\n");
 
         return false;
     }
@@ -44,8 +42,7 @@ static bool zynqmp_smc(struct cpu_user_regs *regs)
 }
 
 PLATFORM_START(xilinx_zynqmp, "Xilinx ZynqMP")
-    .compatible = zynqmp_dt_compat,
-    .smc = zynqmp_smc,
+    .compatible = zynqmp_dt_compat, .smc = zynqmp_smc,
 PLATFORM_END
 
 /*

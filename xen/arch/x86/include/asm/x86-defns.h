@@ -218,4 +218,4 @@
 #define X86_ET_SW_EXC      6 /* Software Exception (INT3, INTO) */
 #define X86_ET_OTHER       7 /* Misc event: MTF=0, SYSCALL=1, SYSENTER=2 */
 
-#endif	/* __XEN_X86_DEFNS_H__ */
+#endif /* __XEN_X86_DEFNS_H__ */

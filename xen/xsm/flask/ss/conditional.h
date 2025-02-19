@@ -59,10 +59,10 @@ struct cond_node {
     struct cond_node *next;
 };
 
-int cond_policydb_init(struct policydb* p);
-void cond_policydb_destroy(struct policydb* p);
+int cond_policydb_init(struct policydb *p);
+void cond_policydb_destroy(struct policydb *p);
 
-int cond_init_bool_indexes(struct policydb* p);
+int cond_init_bool_indexes(struct policydb *p);
 int cf_check cond_destroy_bool(void *key, void *datum, void *p);
 
 int cf_check cond_index_bool(void *key, void *datum, void *datap);
@@ -70,7 +70,8 @@ int cf_check cond_index_bool(void *key, void *datum, void *datap);
 int cf_check cond_read_bool(struct policydb *p, struct hashtab *h, void *fp);
 int cond_read_list(struct policydb *p, void *fp);
 
-void cond_compute_av(struct avtab *ctab, struct avtab_key *key, struct av_decision *avd);
+void cond_compute_av(struct avtab *ctab, struct avtab_key *key,
+                     struct av_decision *avd);
 
 int evaluate_cond_node(struct policydb *p, struct cond_node *node);
 

@@ -23,8 +23,8 @@ extern char xen_cap_info[128];
 
 #ifdef BUILD_ID
 void xen_build_init(void);
-int xen_build_id_check(const Elf_Note *n, unsigned int n_sz,
-                       const void **p, unsigned int *len);
+int xen_build_id_check(const Elf_Note *n, unsigned int n_sz, const void **p,
+                       unsigned int *len);
 #else
 static inline void xen_build_init(void) {};
 #endif

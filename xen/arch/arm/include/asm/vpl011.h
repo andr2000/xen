@@ -25,12 +25,13 @@
 #include <xen/mm.h>
 
 /* helper macros */
-#define VPL011_LOCK(d,flags) spin_lock_irqsave(&(d)->arch.vpl011.lock, flags)
-#define VPL011_UNLOCK(d,flags) spin_unlock_irqrestore(&(d)->arch.vpl011.lock, flags)
+#define VPL011_LOCK(d, flags) spin_lock_irqsave(&(d)->arch.vpl011.lock, flags)
+#define VPL011_UNLOCK(d, flags) spin_unlock_irqrestore(&(d)->arch.vpl011.lock, flags)
 
 #define SBSA_UART_FIFO_SIZE 32
 /* Same size as VUART_BUF_SIZE, used in vuart.c */
 #define SBSA_UART_OUT_BUF_SIZE 128
+
 struct vpl011_xen_backend {
     char in[SBSA_UART_FIFO_SIZE];
     char out[SBSA_UART_OUT_BUF_SIZE];
@@ -40,6 +41,7 @@ struct vpl011_xen_backend {
 
 struct vpl011 {
     bool backend_in_domain;
+
     union {
         struct {
             void *ring_buf;
@@ -47,15 +49,16 @@ struct vpl011 {
         } dom;
         struct vpl011_xen_backend *xen;
     } backend;
-    uint32_t    uartfr;         /* Flag register */
-    uint32_t    uartcr;         /* Control register */
-    uint32_t    uartimsc;       /* Interrupt mask register*/
-    uint32_t    uarticr;        /* Interrupt clear register */
-    uint32_t    uartris;        /* Raw interrupt status register */
-    uint32_t    shadow_uartmis; /* shadow masked interrupt register */
-    paddr_t     base_addr;
+
+    uint32_t uartfr; /* Flag register */
+    uint32_t uartcr; /* Control register */
+    uint32_t uartimsc; /* Interrupt mask register*/
+    uint32_t uarticr; /* Interrupt clear register */
+    uint32_t uartris; /* Raw interrupt status register */
+    uint32_t shadow_uartmis; /* shadow masked interrupt register */
+    paddr_t base_addr;
     unsigned int virq;
-    spinlock_t  lock;
+    spinlock_t lock;
     evtchn_port_t evtchn;
 };
 
@@ -66,8 +69,7 @@ struct vpl011_init_info {
 };
 
 #ifdef CONFIG_SBSA_VUART_CONSOLE
-int domain_vpl011_init(struct domain *d,
-                       struct vpl011_init_info *info);
+int domain_vpl011_init(struct domain *d, struct vpl011_init_info *info);
 void domain_vpl011_deinit(struct domain *d);
 void vpl011_rx_char_xen(struct domain *d, char c);
 #else
@@ -77,9 +79,9 @@ static inline int domain_vpl011_init(struct domain *d,
     return -ENOSYS;
 }
 
-static inline void domain_vpl011_deinit(struct domain *d) { }
+static inline void domain_vpl011_deinit(struct domain *d) {}
 #endif
-#endif  /* _VPL011_H_ */
+#endif /* _VPL011_H_ */
 
 /*
  * Local variables:

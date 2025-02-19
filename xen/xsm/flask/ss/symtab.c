@@ -22,12 +22,12 @@ static unsigned int cf_check symhash(struct hashtab *h, const void *key)
     keyp = key;
     size = strlen(keyp);
     for ( p = keyp; (p - keyp) < size; p++ )
-        val = (val << 4 | (val >> (8*sizeof(unsigned int)-4))) ^ (*p);
+        val = (val << 4 | (val >> (8 * sizeof(unsigned int) - 4))) ^ (*p);
     return val & (h->size - 1);
 }
 
-static int cf_check symcmp(
-    struct hashtab *h, const void *key1, const void *key2)
+static int cf_check symcmp(struct hashtab *h, const void *key1,
+                           const void *key2)
 {
     const char *keyp1, *keyp2;
 
@@ -35,7 +35,6 @@ static int cf_check symcmp(
     keyp2 = key2;
     return strcmp(keyp1, keyp2);
 }
-
 
 int symtab_init(struct symtab *s, unsigned int size)
 {
@@ -45,4 +44,3 @@ int symtab_init(struct symtab *s, unsigned int size)
     s->nprim = 0;
     return 0;
 }
-

@@ -5,8 +5,9 @@
 
 #include <asm/page.h>
 
-void __trace_pv_trap(int trapnr, unsigned long eip,
-                     int use_error_code, unsigned error_code);
+void __trace_pv_trap(int trapnr, unsigned long eip, int use_error_code,
+                     unsigned error_code);
+
 static inline void trace_pv_trap(int trapnr, unsigned long eip,
                                  int use_error_code, unsigned error_code)
 {
@@ -15,14 +16,15 @@ static inline void trace_pv_trap(int trapnr, unsigned long eip,
 }
 
 void __trace_pv_page_fault(unsigned long addr, unsigned error_code);
-static inline void trace_pv_page_fault(unsigned long addr,
-                                       unsigned error_code)
+
+static inline void trace_pv_page_fault(unsigned long addr, unsigned error_code)
 {
     if ( unlikely(tb_init_done) )
         __trace_pv_page_fault(addr, error_code);
 }
 
 void __trace_trap_one_addr(unsigned event, unsigned long va);
+
 static inline void trace_trap_one_addr(unsigned event, unsigned long va)
 {
     if ( unlikely(tb_init_done) )
@@ -31,6 +33,7 @@ static inline void trace_trap_one_addr(unsigned event, unsigned long va)
 
 void __trace_trap_two_addr(unsigned event, unsigned long va1,
                            unsigned long va2);
+
 static inline void trace_trap_two_addr(unsigned event, unsigned long va1,
                                        unsigned long va2)
 {
@@ -39,6 +42,7 @@ static inline void trace_trap_two_addr(unsigned event, unsigned long va1,
 }
 
 void __trace_ptwr_emulation(unsigned long addr, l1_pgentry_t npte);
+
 static inline void trace_ptwr_emulation(unsigned long addr, l1_pgentry_t npte)
 {
     if ( unlikely(tb_init_done) )

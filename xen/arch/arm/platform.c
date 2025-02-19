@@ -18,7 +18,6 @@ extern const struct platform_desc _splatform[], _eplatform[];
 /* Pointer to the current platform description */
 static const struct platform_desc *platform;
 
-
 static bool __init platform_is_compatible(const struct platform_desc *plat)
 {
     const char *const *compat;
@@ -148,7 +147,7 @@ bool platform_device_is_blacklisted(const struct dt_device_node *node)
 
 unsigned int arch_get_dma_bitsize(void)
 {
-    return ( platform && platform->dma_bitsize ) ? platform->dma_bitsize : 32;
+    return (platform && platform->dma_bitsize) ? platform->dma_bitsize : 32;
 }
 
 /*

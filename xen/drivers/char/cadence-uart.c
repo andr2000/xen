@@ -35,10 +35,10 @@ static struct cuart {
     /* UART with IRQ line: interrupt-driven I/O. */
     struct irqaction irqaction;
     struct vuart_info vuart;
-} cuart_com = {0};
+} cuart_com = { 0 };
 
 #define cuart_read(uart, off)           readl((uart)->regs + (off))
-#define cuart_write(uart, off,val)      writel((val), (uart)->regs + (off))
+#define cuart_write(uart, off, val)      writel((val), (uart)->regs + (off))
 
 static void cuart_interrupt(int irq, void *data)
 {
@@ -46,7 +46,8 @@ static void cuart_interrupt(int irq, void *data)
     struct cuart *uart = port->uart;
     unsigned int status;
 
-    do {
+    do
+    {
         status = cuart_read(uart, R_UART_SR);
         /* ACK.  */
         if ( status & UART_SR_INTR_RTRIG )
@@ -63,8 +64,10 @@ static void __init cuart_init_preirq(struct serial_port *port)
 
     cuart_write(uart, R_UART_MR, UART_MR_NO_PARITY);
     /* Enable and Reset both the RX and TX paths.  */
-    cuart_write(uart, R_UART_CR, UART_CR_RX_RST | UART_CR_TX_RST |
-                      UART_CR_RX_ENABLE | UART_CR_TX_ENABLE);
+    cuart_write(uart,
+                R_UART_CR,
+                UART_CR_RX_RST | UART_CR_TX_RST | UART_CR_RX_ENABLE |
+                    UART_CR_TX_ENABLE);
 }
 
 static void __init cuart_init_postirq(struct serial_port *port)
@@ -75,10 +78,11 @@ static void __init cuart_init_postirq(struct serial_port *port)
     if ( uart->irq > 0 )
     {
         uart->irqaction.handler = cuart_interrupt;
-        uart->irqaction.name    = "cadence-uart";
-        uart->irqaction.dev_id  = port;
+        uart->irqaction.name = "cadence-uart";
+        uart->irqaction.dev_id = port;
         if ( (rc = setup_irq(uart->irq, 0, &uart->irqaction)) != 0 )
-            printk("ERROR: Failed to allocate cadence-uart IRQ %d\n", uart->irq);
+            printk("ERROR: Failed to allocate cadence-uart IRQ %d\n",
+                   uart->irq);
     }
 
     /* Clear pending error interrupts */
@@ -95,7 +99,7 @@ static int cuart_tx_ready(struct serial_port *port)
     struct cuart *uart = port->uart;
     unsigned int status = cuart_read(uart, R_UART_SR);
 
-    return !( status & UART_SR_INTR_TFUL );
+    return !(status & UART_SR_INTR_TFUL);
 }
 
 static void cuart_putc(struct serial_port *port, char c)
@@ -120,7 +124,7 @@ static int __init cuart_irq(struct serial_port *port)
 {
     struct cuart *uart = port->uart;
 
-    return ( (uart->irq > 0) ? uart->irq : -1 );
+    return ((uart->irq > 0) ? uart->irq : -1);
 }
 
 static const struct vuart_info *cuart_vuart(struct serial_port *port)
@@ -131,13 +135,13 @@ static const struct vuart_info *cuart_vuart(struct serial_port *port)
 }
 
 static struct uart_driver __read_mostly cuart_driver = {
-    .init_preirq  = cuart_init_preirq,
+    .init_preirq = cuart_init_preirq,
     .init_postirq = cuart_init_postirq,
-    .tx_ready     = cuart_tx_ready,
-    .putc         = cuart_putc,
-    .getc         = cuart_getc,
-    .irq          = cuart_irq,
-    .vuart_info   = cuart_vuart,
+    .tx_ready = cuart_tx_ready,
+    .putc = cuart_putc,
+    .getc = cuart_getc,
+    .irq = cuart_irq,
+    .vuart_info = cuart_vuart,
 };
 
 static int __init cuart_init(struct dt_device_node *dev, const void *data)
@@ -155,8 +159,7 @@ static int __init cuart_init(struct dt_device_node *dev, const void *data)
     res = dt_device_get_paddr(dev, 0, &addr, &size);
     if ( res )
     {
-        printk("cadence: Unable to retrieve the base"
-               " address of the UART\n");
+        printk("cadence: Unable to retrieve the base" " address of the UART\n");
         return res;
     }
 
@@ -189,16 +192,14 @@ static int __init cuart_init(struct dt_device_node *dev, const void *data)
     return 0;
 }
 
-static const struct dt_device_match cuart_dt_match[] __initconst =
-{
+static const struct dt_device_match cuart_dt_match[] __initconst = {
     DT_MATCH_COMPATIBLE("cdns,uart-r1p8"),
     DT_MATCH_COMPATIBLE("cdns,uart-r1p12"),
     { /* sentinel */ },
 };
 
 DT_DEVICE_START(cuart, "Cadence UART", DEVICE_SERIAL)
-    .dt_match = cuart_dt_match,
-    .init = cuart_init,
+    .dt_match = cuart_dt_match, .init = cuart_init,
 DT_DEVICE_END
 
 /*

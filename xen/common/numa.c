@@ -37,9 +37,8 @@ unsigned long __ro_after_init memnodemapsize;
 nodeid_t *__ro_after_init memnodemap;
 static typeof(*memnodemap) __ro_after_init _memnodemap[64];
 
-nodeid_t __read_mostly cpu_to_node[NR_CPUS] = {
-    [0 ... NR_CPUS-1] = NUMA_NO_NODE
-};
+nodeid_t __read_mostly cpu_to_node[NR_CPUS] = { [0 ... NR_CPUS - 1] =
+                                                    NUMA_NO_NODE };
 
 cpumask_t __read_mostly node_to_cpumask[MAX_NUMNODES];
 
@@ -67,17 +66,17 @@ bool valid_numa_range(paddr_t start, paddr_t end, nodeid_t node)
     {
         const struct node *nd = &node_memblk_range[i];
 
-        if ( nd->start <= start && nd->end >= end &&
-             memblk_nodeid[i] == node )
+        if ( nd->start <= start && nd->end >= end && memblk_nodeid[i] == node )
             return true;
     }
 
     return false;
 }
 
-static enum conflicts __init conflicting_memblks(
-    nodeid_t nid, paddr_t start, paddr_t end, paddr_t nd_start,
-    paddr_t nd_end, unsigned int *mblkid)
+static enum conflicts __init conflicting_memblks(nodeid_t nid, paddr_t start,
+                                                 paddr_t end, paddr_t nd_start,
+                                                 paddr_t nd_end,
+                                                 unsigned int *mblkid)
 {
     unsigned int i;
 
@@ -108,8 +107,8 @@ static enum conflicts __init conflicting_memblks(
          * to check full contains situation. Because overlaps have
          * been checked above.
          */
-        if ( nid != memblk_nodeid[i] &&
-             nd->start >= nd_start && nd->end <= nd_end )
+        if ( nid != memblk_nodeid[i] && nd->start >= nd_start &&
+             nd->end <= nd_end )
             return INTERLEAVE;
     }
 
@@ -186,28 +185,45 @@ bool __init numa_update_node_memblks(nodeid_t node, unsigned int arch_nid,
         {
             bool mismatch = !hotplug != !test_bit(i, memblk_hotplug);
 
-            printk("%sNUMA: %s %u [%"PRIpaddr", %"PRIpaddr"] overlaps with itself [%"PRIpaddr", %"PRIpaddr"]\n",
-                   mismatch ? KERN_ERR : KERN_WARNING, numa_fw_nid_name,
-                   arch_nid, start, end - 1,
-                   node_memblk_range[i].start, node_memblk_range[i].end - 1);
+            printk("%sNUMA: %s %u [%" PRIpaddr ", %" PRIpaddr
+                   "] overlaps with itself [%" PRIpaddr ", %" PRIpaddr "]\n",
+                   mismatch ? KERN_ERR : KERN_WARNING,
+                   numa_fw_nid_name,
+                   arch_nid,
+                   start,
+                   end - 1,
+                   node_memblk_range[i].start,
+                   node_memblk_range[i].end - 1);
             if ( mismatch )
                 return false;
             break;
         }
 
-        printk(KERN_ERR
-               "NUMA: %s %u [%"PRIpaddr", %"PRIpaddr"] overlaps with %s %u [%"PRIpaddr", %"PRIpaddr"]\n",
-               numa_fw_nid_name, arch_nid, start, end - 1, numa_fw_nid_name,
+        printk(KERN_ERR "NUMA: %s %u [%" PRIpaddr ", %" PRIpaddr
+                        "] overlaps with %s %u [%" PRIpaddr ", %" PRIpaddr
+                        "]\n",
+               numa_fw_nid_name,
+               arch_nid,
+               start,
+               end - 1,
+               numa_fw_nid_name,
                numa_node_to_arch_nid(memblk_nodeid[i]),
-               node_memblk_range[i].start, node_memblk_range[i].end - 1);
+               node_memblk_range[i].start,
+               node_memblk_range[i].end - 1);
         return false;
 
     case INTERLEAVE:
-        printk(KERN_ERR
-               "NUMA： %s %u: [%"PRIpaddr", %"PRIpaddr"] interleaves with %s %u memblk [%"PRIpaddr", %"PRIpaddr"]\n",
-               numa_fw_nid_name, arch_nid, nd_start, nd_end - 1,
-               numa_fw_nid_name, numa_node_to_arch_nid(memblk_nodeid[i]),
-               node_memblk_range[i].start, node_memblk_range[i].end - 1);
+        printk(KERN_ERR "NUMA： %s %u: [%" PRIpaddr ", %" PRIpaddr
+                        "] interleaves with %s %u memblk [%" PRIpaddr
+                        ", %" PRIpaddr "]\n",
+               numa_fw_nid_name,
+               arch_nid,
+               nd_start,
+               nd_end - 1,
+               numa_fw_nid_name,
+               numa_node_to_arch_nid(memblk_nodeid[i]),
+               node_memblk_range[i].start,
+               node_memblk_range[i].end - 1);
         return false;
 
     case NO_CONFLICT:
@@ -221,23 +237,29 @@ bool __init numa_update_node_memblks(nodeid_t node, unsigned int arch_nid,
         nd->end = nd_end;
     }
 
-    printk(KERN_INFO "NUMA: Node %u %s %u [%"PRIpaddr", %"PRIpaddr"]%s\n",
-           node, numa_fw_nid_name, arch_nid, start, end - 1,
+    printk(KERN_INFO "NUMA: Node %u %s %u [%" PRIpaddr ", %" PRIpaddr "]%s\n",
+           node,
+           numa_fw_nid_name,
+           arch_nid,
+           start,
+           end - 1,
            hotplug ? " (hotplug)" : "");
 
     /* Keep node_memblk_range[] sorted by address. */
     for ( i = 0; i < num_node_memblks; ++i )
         if ( node_memblk_range[i].start > start ||
              (node_memblk_range[i].start == start &&
-             node_memblk_range[i].end > end) )
+              node_memblk_range[i].end > end) )
             break;
 
-    memmove(&node_memblk_range[i + 1], &node_memblk_range[i],
+    memmove(&node_memblk_range[i + 1],
+            &node_memblk_range[i],
             (num_node_memblks - i) * sizeof(*node_memblk_range));
     node_memblk_range[i].start = start;
     node_memblk_range[i].end = end;
 
-    memmove(&memblk_nodeid[i + 1], &memblk_nodeid[i],
+    memmove(&memblk_nodeid[i + 1],
+            &memblk_nodeid[i],
             (num_node_memblks - i) * sizeof(*memblk_nodeid));
     memblk_nodeid[i] = node;
 
@@ -272,7 +294,7 @@ static bool __init nodes_cover_memory(void)
 {
     unsigned int i;
 
-    for ( i = 0; ; i++ )
+    for ( i = 0;; i++ )
     {
         int err;
         unsigned int j;
@@ -290,9 +312,10 @@ static bool __init nodes_cover_memory(void)
         if ( err )
             continue;
 
-        do {
+        do
+        {
             found = false;
-            for_each_node_mask ( j, memory_nodes_parsed )
+            for_each_node_mask(j, memory_nodes_parsed)
                 if ( start < numa_nodes[j].end && end > numa_nodes[j].start )
                 {
                     if ( start >= numa_nodes[j].start )
@@ -311,8 +334,10 @@ static bool __init nodes_cover_memory(void)
 
         if ( start < end )
         {
-            printk(KERN_ERR "NUMA: No node for RAM range: "
-                   "[%"PRIpaddr", %"PRIpaddr"]\n", start, end - 1);
+            printk(KERN_ERR "NUMA: No node for RAM range: " "[%" PRIpaddr
+                            ", %" PRIpaddr "]\n",
+                   start,
+                   end - 1);
             return false;
         }
     }
@@ -341,8 +366,8 @@ static bool __init numa_process_nodes(paddr_t start, paddr_t end)
         return false;
     }
 
-    ret = compute_hash_shift(node_memblk_range, num_node_memblks,
-                             memblk_nodeid);
+    ret =
+        compute_hash_shift(node_memblk_range, num_node_memblks, memblk_nodeid);
     if ( ret < 0 )
     {
         printk(KERN_ERR
@@ -355,7 +380,7 @@ static bool __init numa_process_nodes(paddr_t start, paddr_t end)
     nodes_or(all_nodes_parsed, memory_nodes_parsed, processor_nodes_parsed);
 
     /* Finally register nodes */
-    for_each_node_mask ( i, all_nodes_parsed )
+    for_each_node_mask(i, all_nodes_parsed)
     {
         if ( numa_nodes[i].end == numa_nodes[i].start )
             printk(KERN_INFO "NUMA: node %u has no memory\n", i);
@@ -403,7 +428,8 @@ static int __init populate_memnodemap(const struct node *nodes,
         if ( (epdx >> shift) >= memnodemapsize )
             return 0;
 
-        do {
+        do
+        {
             if ( memnodemap[spdx >> shift] != NUMA_NO_NODE &&
                  (!nodeids || memnodemap[spdx >> shift] != nodeids[i]) )
                 return -1;
@@ -432,7 +458,8 @@ static int __init allocate_cachealigned_memnodemap(void)
         panic("Unable to map the NUMA node map. Retry with numa=off");
     size <<= PAGE_SHIFT;
     printk(KERN_DEBUG "NUMA: Allocated memnodemap from %lx - %lx\n",
-           mfn_to_maddr(mfn), mfn_to_maddr(mfn) + size);
+           mfn_to_maddr(mfn),
+           mfn_to_maddr(mfn) + size);
     memnodemapsize = size / sizeof(*memnodemap);
 
     return 0;
@@ -477,8 +504,8 @@ static unsigned int __init extract_lsb_from_nodes(const struct node *nodes,
     return i;
 }
 
-int __init compute_hash_shift(const struct node *nodes,
-                              unsigned int numnodes, const nodeid_t *nodeids)
+int __init compute_hash_shift(const struct node *nodes, unsigned int numnodes,
+                              const nodeid_t *nodeids)
 {
     unsigned int shift = extract_lsb_from_nodes(nodes, numnodes, nodeids);
 
@@ -491,9 +518,10 @@ int __init compute_hash_shift(const struct node *nodes,
 
     if ( populate_memnodemap(nodes, numnodes, shift, nodeids) != 1 )
     {
-        printk(KERN_INFO "Your memory is not aligned you need to "
-               "rebuild your hypervisor with a bigger NODEMAPSIZE "
-               "shift=%u\n", shift);
+        printk(
+            KERN_INFO
+            "Your memory is not aligned you need to " "rebuild your hypervisor with a bigger NODEMAPSIZE " "shift=%u\n",
+            shift);
         return -1;
     }
 
@@ -527,7 +555,8 @@ void __init setup_node_bootmem(nodeid_t nodeid, paddr_t start, paddr_t end)
     node->node_present_pages = 0;
 
     /* Calculate the number of present RAM pages within the node */
-    do {
+    do
+    {
         paddr_t ram_start, ram_end;
 
         err = arch_get_ram_range(idx++, &ram_start, &ram_end);
@@ -565,8 +594,7 @@ void __init numa_init_array(void)
 static unsigned int __initdata numa_fake;
 
 /* Numa emulation */
-static int __init numa_emulation(unsigned long start_pfn,
-                                 unsigned long end_pfn)
+static int __init numa_emulation(unsigned long start_pfn, unsigned long end_pfn)
 {
     int ret;
     unsigned int i;
@@ -581,7 +609,8 @@ static int __init numa_emulation(unsigned long start_pfn,
         while ( (x << 1) < sz )
             x <<= 1;
         if ( x < sz / 2 )
-            printk(KERN_ERR "Numa emulation unbalanced. Complain to maintainer\n");
+            printk(KERN_ERR
+                   "Numa emulation unbalanced. Complain to maintainer\n");
         sz = x;
     }
 
@@ -594,8 +623,11 @@ static int __init numa_emulation(unsigned long start_pfn,
             sz = pfn_to_paddr(end_pfn) - nodes[i].start;
 
         nodes[i].end = nodes[i].start + sz;
-        printk(KERN_INFO "Faking node %u at %"PRIx64"-%"PRIx64" (%"PRIu64"MB)\n",
-               i, nodes[i].start, nodes[i].end,
+        printk(KERN_INFO "Faking node %u at %" PRIx64 "-%" PRIx64 " (%" PRIu64
+                         "MB)\n",
+               i,
+               nodes[i].start,
+               nodes[i].end,
                (nodes[i].end - nodes[i].start) >> 20);
         node_set_online(i);
     }
@@ -608,7 +640,7 @@ static int __init numa_emulation(unsigned long start_pfn,
     }
     memnode_shift = ret;
 
-    for_each_online_node ( i )
+    for_each_online_node(i)
         setup_node_bootmem(i, nodes[i].start, nodes[i].end);
 
     numa_init_array();
@@ -636,8 +668,9 @@ void __init numa_initmem_init(unsigned long start_pfn, unsigned long end_pfn)
     printk(KERN_INFO "%s\n",
            numa_off ? "NUMA turned off" : "No NUMA configuration found");
 
-    printk(KERN_INFO "Faking a node at %"PRIpaddr"-%"PRIpaddr"\n",
-           start, end);
+    printk(KERN_INFO "Faking a node at %" PRIpaddr "-%" PRIpaddr "\n",
+           start,
+           end);
 
     /* Setup dummy node covering all memory */
     memnode_shift = BITS_PER_LONG - 1;
@@ -687,6 +720,7 @@ static int __init cf_check numa_setup(const char *opt)
 
     return 0;
 }
+
 custom_param("numa", numa_setup);
 
 static void cf_check dump_numa(unsigned char key)
@@ -695,25 +729,30 @@ static void cf_check dump_numa(unsigned char key)
     unsigned int i, j, n;
     struct domain *d;
 
-    printk("'%c' pressed -> dumping numa info (now = %"PRI_stime")\n", key,
+    printk("'%c' pressed -> dumping numa info (now = %" PRI_stime ")\n",
+           key,
            now);
 
-    for_each_online_node ( i )
+    for_each_online_node(i)
     {
         mfn_t mfn = _mfn(node_start_pfn(i) + 1);
 
         printk("NODE%u start->%lu size->%lu free->%lu\n",
-               i, node_start_pfn(i), node_spanned_pages(i),
+               i,
+               node_start_pfn(i),
+               node_spanned_pages(i),
                avail_node_heap_pages(i));
         /* Sanity check mfn_to_nid() */
         if ( node_spanned_pages(i) > 1 && mfn_to_nid(mfn) != i )
-            printk("mfn_to_nid(%"PRI_mfn") -> %d should be %u\n",
-                   mfn_x(mfn), mfn_to_nid(mfn), i);
+            printk("mfn_to_nid(%" PRI_mfn ") -> %d should be %u\n",
+                   mfn_x(mfn),
+                   mfn_to_nid(mfn),
+                   i);
     }
 
     j = cpumask_first(&cpu_online_map);
     n = 0;
-    for_each_online_cpu ( i )
+    for_each_online_cpu(i)
     {
         if ( i != j + n || cpu_to_node[j] != cpu_to_node[i] )
         {
@@ -735,7 +774,7 @@ static void cf_check dump_numa(unsigned char key)
     rcu_read_lock(&domlist_read_lock);
 
     printk("Memory location of each domain:\n");
-    for_each_domain ( d )
+    for_each_domain(d)
     {
         const struct page_info *page;
         unsigned int page_num_node[MAX_NUMNODES];
@@ -748,14 +787,14 @@ static void cf_check dump_numa(unsigned char key)
         memset(page_num_node, 0, sizeof(page_num_node));
 
         nrspin_lock(&d->page_alloc_lock);
-        page_list_for_each ( page, &d->page_list )
+        page_list_for_each(page, &d->page_list)
         {
             i = page_to_nid(page);
             page_num_node[i]++;
         }
         nrspin_unlock(&d->page_alloc_lock);
 
-        for_each_online_node ( i )
+        for_each_online_node(i)
             printk("    Node %u: %u\n", i, page_num_node[i]);
 
         if ( !read_trylock(&d->vnuma_rwlock) )
@@ -769,7 +808,8 @@ static void cf_check dump_numa(unsigned char key)
 
         vnuma = d->vnuma;
         printk("     %u vnodes, %u vcpus, guest physical layout:\n",
-               vnuma->nr_vnodes, d->max_vcpus);
+               vnuma->nr_vnodes,
+               d->max_vcpus);
         for ( i = 0; i < vnuma->nr_vnodes; i++ )
         {
             unsigned int start_cpu = ~0U;
@@ -804,7 +844,7 @@ static void cf_check dump_numa(unsigned char key)
                 }
             }
 
-            if ( start_cpu != ~0U  && start_cpu != j - 1 )
+            if ( start_cpu != ~0U && start_cpu != j - 1 )
                 printk("-%u", j - 1);
 
             printk("\n");
@@ -812,7 +852,7 @@ static void cf_check dump_numa(unsigned char key)
             for ( j = 0; j < vnuma->nr_vmemranges; j++ )
             {
                 if ( vnuma->vmemrange[j].nid == i )
-                    printk("           %016"PRIx64" - %016"PRIx64"\n",
+                    printk("           %016" PRIx64 " - %016" PRIx64 "\n",
                            vnuma->vmemrange[j].start,
                            vnuma->vmemrange[j].end);
             }
@@ -829,4 +869,5 @@ static int __init cf_check register_numa_trigger(void)
     register_keyhandler('u', dump_numa, "dump NUMA info", 1);
     return 0;
 }
+
 __initcall(register_numa_trigger);

@@ -52,16 +52,18 @@ struct nestedsvm {
 
     /* Only meaningful when vmexit_pending flag is set */
     struct {
-        uint64_t exitcode;  /* native exitcode to inject into l1 guest */
+        uint64_t exitcode; /* native exitcode to inject into l1 guest */
         uint64_t exitinfo1; /* additional information to the exitcode */
         uint64_t exitinfo2; /* additional information to the exitcode */
     } ns_vmexit;
+
     union {
         uint32_t bytes;
+
         struct {
-            uint32_t rflagsif: 1;
-            uint32_t vintrmask: 1;
-            uint32_t reserved: 30;
+            uint32_t rflagsif:1;
+            uint32_t vintrmask:1;
+            uint32_t reserved:30;
         } fields;
     } ns_hostflags;
 };

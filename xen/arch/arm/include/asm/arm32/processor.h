@@ -5,8 +5,7 @@
 
 #ifndef __ASSEMBLY__
 /* On stack VCPU state */
-struct cpu_user_regs
-{
+struct cpu_user_regs {
     uint32_t r0;
     uint32_t r1;
     uint32_t r2;
@@ -18,26 +17,31 @@ struct cpu_user_regs
     uint32_t r8;
     uint32_t r9;
     uint32_t r10;
+
     union {
         uint32_t r11;
         uint32_t fp;
     };
+
     uint32_t r12;
 
-    uint32_t sp; /* r13 - SP: Valid for Hyp. frames only, o/w banked (see below) */
+    uint32_t
+        sp; /* r13 - SP: Valid for Hyp. frames only, o/w banked (see below) */
 
     /* r14 - LR: is the same physical register as LR_usr */
     union {
-        uint32_t lr; /* r14 - LR: Valid for Hyp. Same physical register as lr_usr. */
+        uint32_t
+            lr; /* r14 - LR: Valid for Hyp. Same physical register as lr_usr. */
 
         uint32_t lr_usr;
     };
 
-    union {  /* Return IP, pc32 is used to allow code to be common with 64-bit */
+    union { /* Return IP, pc32 is used to allow code to be common with 64-bit */
         uint32_t pc, pc32;
     };
+
     uint32_t cpsr; /* Return mode */
-    uint32_t hsr;  /* Exception Syndrome */
+    uint32_t hsr; /* Exception Syndrome */
 
     /* Outer guest frame only from here on... */
 

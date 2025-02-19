@@ -48,4 +48,4 @@
 #define ACPI_PDC_T_MASK			(ACPI_PDC_T_FFH | \
 					 ACPI_PDC_SMP_T_SWCOORD)
 
-#endif				/* __PDC_INTEL_H__ */
+#endif /* __PDC_INTEL_H__ */

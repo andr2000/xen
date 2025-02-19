@@ -112,9 +112,11 @@ static inline bool cpus_have_cap(unsigned int num)
 
 static inline void cpus_set_cap(unsigned int num)
 {
-    if (num >= ARM_NCAPS)
-        printk(XENLOG_WARNING "Attempt to set an illegal CPU capability (%d >= %d)\n",
-               num, ARM_NCAPS);
+    if ( num >= ARM_NCAPS )
+        printk(XENLOG_WARNING
+               "Attempt to set an illegal CPU capability (%d >= %d)\n",
+               num,
+               ARM_NCAPS);
     else
         __set_bit(num, cpu_hwcaps);
 }
@@ -124,8 +126,9 @@ struct arm_cpu_capabilities {
     u16 capability;
     bool (*matches)(const struct arm_cpu_capabilities *entry);
     int (*enable)(void *data); /* Called on every active CPUs */
+
     union {
-        struct {    /* To be used for eratum handling only */
+        struct { /* To be used for eratum handling only */
             u32 midr_model;
             u32 midr_range_min, midr_range_max;
         };
@@ -144,6 +147,7 @@ int enable_nonboot_cpu_caps(const struct arm_cpu_capabilities *caps);
 struct cpuinfo_arm {
     union {
         register_t bits;
+
         struct {
             unsigned long revision:4;
             unsigned long part_number:12;
@@ -155,8 +159,10 @@ struct cpuinfo_arm {
 #endif
         };
     } midr;
+
     union {
         register_t bits;
+
         struct {
             unsigned long aff0:8;
             unsigned long aff1:8;
@@ -177,15 +183,16 @@ struct cpuinfo_arm {
     /* 64-bit CPUID registers. */
     union {
         register_t bits[2];
+
         struct {
             /* PFR0 */
             unsigned long el0:4;
             unsigned long el1:4;
             unsigned long el2:4;
             unsigned long el3:4;
-            unsigned long fp:4;   /* Floating Point */
+            unsigned long fp:4; /* Floating Point */
             unsigned long simd:4; /* Advanced SIMD */
-            unsigned long gic:4;  /* GIC support */
+            unsigned long gic:4; /* GIC support */
             unsigned long ras:4;
             unsigned long sve:4;
             unsigned long sel2:4;
@@ -210,6 +217,7 @@ struct cpuinfo_arm {
 
     union {
         register_t bits[2];
+
         struct {
             /* DFR0 */
             unsigned long debug_ver:4;
@@ -238,6 +246,7 @@ struct cpuinfo_arm {
 
     union {
         register_t bits[3];
+
         struct {
             /* MMFR0 */
             unsigned long pa_range:4;
@@ -279,6 +288,7 @@ struct cpuinfo_arm {
 
     union {
         register_t bits[3];
+
         struct {
             /* ISAR0 */
             unsigned long __res0:4;
@@ -329,6 +339,7 @@ struct cpuinfo_arm {
 
     union {
         register_t bits[1];
+
         struct {
             unsigned long len:4;
             unsigned long __res0:60;
@@ -363,6 +374,7 @@ struct cpuinfo_arm {
      */
     union {
         register_t bits[3];
+
         struct {
             /* PFR0 */
             unsigned long arm:4;
@@ -403,6 +415,7 @@ struct cpuinfo_arm {
 
     union {
         register_t bits[2];
+
         struct {
             /* DFR0 */
             unsigned long copdbg:4;

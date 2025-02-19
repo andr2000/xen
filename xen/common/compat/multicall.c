@@ -15,7 +15,7 @@ typedef int ret_t;
 static inline void xlat_multicall_entry(struct mc_state *mcs)
 {
     int i;
-    for (i=0; i<6; i++)
+    for ( i = 0; i < 6; i++ )
         mcs->compat_call.args[i] = mcs->call.args[i];
 }
 

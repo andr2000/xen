@@ -9,13 +9,12 @@
 
 unsigned int __read_mostly nr_cpu_ids = NR_CPUS;
 #ifndef nr_cpumask_bits
-unsigned int __read_mostly nr_cpumask_bits
-    = BITS_TO_LONGS(NR_CPUS) * BITS_PER_LONG;
+unsigned int __read_mostly nr_cpumask_bits = BITS_TO_LONGS(NR_CPUS) *
+                                             BITS_PER_LONG;
 #endif
 
-const cpumask_t cpumask_all = {
-    .bits[0 ... (BITS_TO_LONGS(NR_CPUS) - 1)] = ~0UL
-};
+const cpumask_t cpumask_all = { .bits[0 ...(BITS_TO_LONGS(NR_CPUS) - 1)] =
+                                    ~0UL };
 
 /*
  * cpu_bit_bitmap[] is a special, "compressed" data structure that
@@ -31,7 +30,7 @@ const cpumask_t cpumask_all = {
 #define MASK_DECLARE_4(x) MASK_DECLARE_2(x), MASK_DECLARE_2((x) + 2)
 #define MASK_DECLARE_8(x) MASK_DECLARE_4(x), MASK_DECLARE_4((x) + 4)
 
-const unsigned long cpu_bit_bitmap[BITS_PER_LONG+1][BITS_TO_LONGS(NR_CPUS)] = {
+const unsigned long cpu_bit_bitmap[BITS_PER_LONG + 1][BITS_TO_LONGS(NR_CPUS)] = {
 
     MASK_DECLARE_8(0),  MASK_DECLARE_8(8),
     MASK_DECLARE_8(16), MASK_DECLARE_8(24),
@@ -88,7 +87,7 @@ static int cpu_notifier_call_chain(unsigned int cpu, unsigned long action,
 {
     void *hcpu = (void *)(long)cpu;
     int notifier_rc = notifier_call_chain(&cpu_chain, action, hcpu, nb);
-    int ret =  notifier_to_errno(notifier_rc);
+    int ret = notifier_to_errno(notifier_rc);
 
     BUG_ON(ret && nofail);
 
@@ -141,9 +140,9 @@ int cpu_down(unsigned int cpu)
     cpu_hotplug_done();
     return 0;
 
- fail:
+fail:
     cpu_notifier_call_chain(cpu, CPU_DOWN_FAILED, &nb, true);
- out:
+out:
     cpu_hotplug_done();
     return err;
 }
@@ -178,9 +177,9 @@ int cpu_up(unsigned int cpu)
     cpu_hotplug_done();
     return 0;
 
- fail:
+fail:
     cpu_notifier_call_chain(cpu, CPU_UP_CANCELED, &nb, true);
- out:
+out:
     cpu_hotplug_done();
     return err;
 }
@@ -202,7 +201,7 @@ int disable_nonboot_cpus(void)
 
     printk("Disabling non-boot CPUs ...\n");
 
-    for_each_online_cpu ( cpu )
+    for_each_online_cpu(cpu)
     {
         if ( cpu == 0 )
             continue;
@@ -227,7 +226,7 @@ void enable_nonboot_cpus(void)
 
     printk("Enabling non-boot CPUs  ...\n");
 
-    for_each_present_cpu ( cpu )
+    for_each_present_cpu(cpu)
     {
         if ( park_offline_cpus ? cpu == smp_processor_id()
                                : !cpumask_test_cpu(cpu, &frozen_cpus) )
@@ -242,7 +241,7 @@ void enable_nonboot_cpus(void)
             printk("Error re-offlining CPU%d: %d\n", cpu, error);
     }
 
-    for_each_cpu ( cpu, &frozen_cpus )
+    for_each_cpu(cpu, &frozen_cpus)
         cpu_notifier_call_chain(cpu, CPU_RESUME_FAILED, NULL, true);
 
     cpumask_clear(&frozen_cpus);

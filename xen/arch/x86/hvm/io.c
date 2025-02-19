@@ -84,9 +84,9 @@ bool handle_mmio_with_translation(unsigned long gla, unsigned long gpfn,
 {
     struct hvm_vcpu_io *hvio = &current->arch.hvm.hvm_io;
 
-    hvio->mmio_access = access.gla_valid &&
-                        access.kind == npfec_kind_with_gla
-                        ? access : (struct npfec){};
+    hvio->mmio_access = access.gla_valid && access.kind == npfec_kind_with_gla
+                            ? access
+                            : (struct npfec){};
     hvio->mmio_gla = gla & PAGE_MASK;
     hvio->mmio_gpfn = gpfn;
     return handle_mmio();
@@ -134,9 +134,13 @@ bool handle_pio(uint16_t port, unsigned int size, int dir)
         break;
 
     default:
-        gprintk(XENLOG_ERR, "Unexpected PIO status %d, port %#x %s 0x%0*x\n",
-                rc, port, dir == IOREQ_WRITE ? "write" : "read",
-                size * 2, data & ((1u << (size * 8)) - 1));
+        gprintk(XENLOG_ERR,
+                "Unexpected PIO status %d, port %#x %s 0x%0*x\n",
+                rc,
+                port,
+                dir == IOREQ_WRITE ? "write" : "read",
+                size * 2,
+                data & ((1u << (size * 8)) - 1));
         domain_crash(curr->domain);
         return false;
     }
@@ -144,8 +148,8 @@ bool handle_pio(uint16_t port, unsigned int size, int dir)
     return true;
 }
 
-static bool cf_check g2m_portio_accept(
-    const struct hvm_io_handler *handler, const ioreq_t *p)
+static bool cf_check g2m_portio_accept(const struct hvm_io_handler *handler,
+                                       const ioreq_t *p)
 {
     struct vcpu *curr = current;
     const struct hvm_domain *hvm = &curr->domain->arch.hvm;
@@ -153,7 +157,7 @@ static bool cf_check g2m_portio_accept(
     struct g2m_ioport *g2m_ioport;
     unsigned int start, end;
 
-    list_for_each_entry( g2m_ioport, &hvm->g2m_ioport_list, list )
+    list_for_each_entry(g2m_ioport, &hvm->g2m_ioport_list, list)
     {
         start = g2m_ioport->gport;
         end = start + g2m_ioport->np;
@@ -167,9 +171,9 @@ static bool cf_check g2m_portio_accept(
     return 0;
 }
 
-static int cf_check g2m_portio_read(
-    const struct hvm_io_handler *handler, uint64_t addr, uint32_t size,
-    uint64_t *data)
+static int cf_check g2m_portio_read(const struct hvm_io_handler *handler,
+                                    uint64_t addr, uint32_t size,
+                                    uint64_t *data)
 {
     struct hvm_vcpu_io *hvio = &current->arch.hvm.hvm_io;
     const struct g2m_ioport *g2m_ioport = hvio->g2m_ioport;
@@ -193,9 +197,9 @@ static int cf_check g2m_portio_read(
     return X86EMUL_OKAY;
 }
 
-static int cf_check g2m_portio_write(
-    const struct hvm_io_handler *handler, uint64_t addr, uint32_t size,
-    uint64_t data)
+static int cf_check g2m_portio_write(const struct hvm_io_handler *handler,
+                                     uint64_t addr, uint32_t size,
+                                     uint64_t data)
 {
     struct hvm_vcpu_io *hvio = &current->arch.hvm.hvm_io;
     const struct g2m_ioport *g2m_ioport = hvio->g2m_ioport;
@@ -219,11 +223,9 @@ static int cf_check g2m_portio_write(
     return X86EMUL_OKAY;
 }
 
-static const struct hvm_io_ops g2m_portio_ops = {
-    .accept = g2m_portio_accept,
-    .read = g2m_portio_read,
-    .write = g2m_portio_write
-};
+static const struct hvm_io_ops g2m_portio_ops = { .accept = g2m_portio_accept,
+                                                  .read = g2m_portio_read,
+                                                  .write = g2m_portio_write };
 
 void register_g2m_portio_handler(struct domain *d)
 {
@@ -251,15 +253,15 @@ unsigned int hvm_pci_decode_addr(unsigned int cf8, unsigned int addr,
 }
 
 /* vPCI config space IO ports handlers (0xcf8/0xcfc). */
-static bool cf_check vpci_portio_accept(
-    const struct hvm_io_handler *handler, const ioreq_t *p)
+static bool cf_check vpci_portio_accept(const struct hvm_io_handler *handler,
+                                        const ioreq_t *p)
 {
     return (p->addr == 0xcf8 && p->size == 4) || (p->addr & ~3) == 0xcfc;
 }
 
-static int cf_check vpci_portio_read(
-    const struct hvm_io_handler *handler, uint64_t addr, uint32_t size,
-    uint64_t *data)
+static int cf_check vpci_portio_read(const struct hvm_io_handler *handler,
+                                     uint64_t addr, uint32_t size,
+                                     uint64_t *data)
 {
     const struct domain *d = current->domain;
     unsigned int reg;
@@ -290,9 +292,9 @@ static int cf_check vpci_portio_read(
     return X86EMUL_OKAY;
 }
 
-static int cf_check vpci_portio_write(
-    const struct hvm_io_handler *handler, uint64_t addr, uint32_t size,
-    uint64_t data)
+static int cf_check vpci_portio_write(const struct hvm_io_handler *handler,
+                                      uint64_t addr, uint32_t size,
+                                      uint64_t data)
 {
     struct domain *d = current->domain;
     unsigned int reg;
@@ -356,7 +358,7 @@ static const struct hvm_mmcfg *vpci_mmcfg_find(const struct domain *d,
 {
     const struct hvm_mmcfg *mmcfg;
 
-    list_for_each_entry ( mmcfg, &d->arch.hvm.mmcfg_regions, next )
+    list_for_each_entry(mmcfg, &d->arch.hvm.mmcfg_regions, next)
         if ( addr >= mmcfg->addr && addr < mmcfg->addr + mmcfg->size )
             return mmcfg;
 
@@ -367,9 +369,10 @@ int __hwdom_init vpci_subtract_mmcfg(const struct domain *d, struct rangeset *r)
 {
     const struct hvm_mmcfg *mmcfg;
 
-    list_for_each_entry ( mmcfg, &d->arch.hvm.mmcfg_regions, next )
+    list_for_each_entry(mmcfg, &d->arch.hvm.mmcfg_regions, next)
     {
-        int rc = rangeset_remove_range(r, PFN_DOWN(mmcfg->addr),
+        int rc = rangeset_remove_range(r,
+                                       PFN_DOWN(mmcfg->addr),
                                        PFN_DOWN(mmcfg->addr + mmcfg->size - 1));
 
         if ( rc )
@@ -402,8 +405,8 @@ static int cf_check vpci_mmcfg_accept(struct vcpu *v, unsigned long addr)
     return found;
 }
 
-static int cf_check vpci_mmcfg_read(
-    struct vcpu *v, unsigned long addr, unsigned int len, unsigned long *data)
+static int cf_check vpci_mmcfg_read(struct vcpu *v, unsigned long addr,
+                                    unsigned int len, unsigned long *data)
 {
     struct domain *d = v->domain;
     const struct hvm_mmcfg *mmcfg;
@@ -429,8 +432,8 @@ static int cf_check vpci_mmcfg_read(
     return X86EMUL_OKAY;
 }
 
-static int cf_check vpci_mmcfg_write(
-    struct vcpu *v, unsigned long addr, unsigned int len, unsigned long data)
+static int cf_check vpci_mmcfg_write(struct vcpu *v, unsigned long addr,
+                                     unsigned int len, unsigned long data)
 {
     struct domain *d = v->domain;
     const struct hvm_mmcfg *mmcfg;
@@ -481,16 +484,15 @@ int register_vpci_mmcfg_handler(struct domain *d, paddr_t addr,
     new->size = (end_bus - start_bus + 1) << 20;
 
     write_lock(&d->arch.hvm.mmcfg_lock);
-    list_for_each_entry ( mmcfg, &d->arch.hvm.mmcfg_regions, next )
+    list_for_each_entry(mmcfg, &d->arch.hvm.mmcfg_regions, next)
         if ( new->addr < mmcfg->addr + mmcfg->size &&
              mmcfg->addr < new->addr + new->size )
         {
             int ret = -EEXIST;
 
-            if ( new->addr == mmcfg->addr &&
-                 new->start_bus == mmcfg->start_bus &&
-                 new->segment == mmcfg->segment &&
-                 new->size == mmcfg->size )
+            if ( new->addr == mmcfg->addr &&new->start_bus ==
+                 mmcfg->start_bus &&new->segment ==
+                 mmcfg->segment &&new->size == mmcfg->size )
                 ret = 0;
             write_unlock(&d->arch.hvm.mmcfg_lock);
             xfree(new);
@@ -513,8 +515,8 @@ void destroy_vpci_mmcfg(struct domain *d)
     write_lock(&d->arch.hvm.mmcfg_lock);
     while ( !list_empty(mmcfg_regions) )
     {
-        struct hvm_mmcfg *mmcfg = list_first_entry(mmcfg_regions,
-                                                   struct hvm_mmcfg, next);
+        struct hvm_mmcfg *mmcfg =
+            list_first_entry(mmcfg_regions, struct hvm_mmcfg, next);
 
         list_del(&mmcfg->next);
         xfree(mmcfg);

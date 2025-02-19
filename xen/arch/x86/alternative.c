@@ -23,69 +23,55 @@ extern struct alt_instr __alt_instructions[], __alt_instructions_end[];
 
 #ifdef K8_NOP1
 static const unsigned char k8nops[] init_or_livepatch_const = {
-    K8_NOP1,
-    K8_NOP2,
-    K8_NOP3,
-    K8_NOP4,
-    K8_NOP5,
-    K8_NOP6,
-    K8_NOP7,
-    K8_NOP8,
-    K8_NOP9,
+    K8_NOP1, K8_NOP2, K8_NOP3, K8_NOP4, K8_NOP5,
+    K8_NOP6, K8_NOP7, K8_NOP8, K8_NOP9,
 };
-static const unsigned char * const k8_nops[ASM_NOP_MAX+1] init_or_livepatch_constrel = {
-    NULL,
-    k8nops,
-    k8nops + 1,
-    k8nops + 1 + 2,
-    k8nops + 1 + 2 + 3,
-    k8nops + 1 + 2 + 3 + 4,
-    k8nops + 1 + 2 + 3 + 4 + 5,
-    k8nops + 1 + 2 + 3 + 4 + 5 + 6,
-    k8nops + 1 + 2 + 3 + 4 + 5 + 6 + 7,
-    k8nops + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8,
-};
+static const unsigned char
+    *const k8_nops[ASM_NOP_MAX + 1] init_or_livepatch_constrel = {
+        NULL,
+        k8nops,
+        k8nops + 1,
+        k8nops + 1 + 2,
+        k8nops + 1 + 2 + 3,
+        k8nops + 1 + 2 + 3 + 4,
+        k8nops + 1 + 2 + 3 + 4 + 5,
+        k8nops + 1 + 2 + 3 + 4 + 5 + 6,
+        k8nops + 1 + 2 + 3 + 4 + 5 + 6 + 7,
+        k8nops + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8,
+    };
 #endif
 
 #ifdef P6_NOP1
 static const unsigned char p6nops[] init_or_livepatch_const = {
-    P6_NOP1,
-    P6_NOP2,
-    P6_NOP3,
-    P6_NOP4,
-    P6_NOP5,
-    P6_NOP6,
-    P6_NOP7,
-    P6_NOP8,
-    P6_NOP9,
+    P6_NOP1, P6_NOP2, P6_NOP3, P6_NOP4, P6_NOP5,
+    P6_NOP6, P6_NOP7, P6_NOP8, P6_NOP9,
 };
-static const unsigned char * const p6_nops[ASM_NOP_MAX+1] init_or_livepatch_constrel = {
-    NULL,
-    p6nops,
-    p6nops + 1,
-    p6nops + 1 + 2,
-    p6nops + 1 + 2 + 3,
-    p6nops + 1 + 2 + 3 + 4,
-    p6nops + 1 + 2 + 3 + 4 + 5,
-    p6nops + 1 + 2 + 3 + 4 + 5 + 6,
-    p6nops + 1 + 2 + 3 + 4 + 5 + 6 + 7,
-    p6nops + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8,
-};
+static const unsigned char
+    *const p6_nops[ASM_NOP_MAX + 1] init_or_livepatch_constrel = {
+        NULL,
+        p6nops,
+        p6nops + 1,
+        p6nops + 1 + 2,
+        p6nops + 1 + 2 + 3,
+        p6nops + 1 + 2 + 3 + 4,
+        p6nops + 1 + 2 + 3 + 4 + 5,
+        p6nops + 1 + 2 + 3 + 4 + 5 + 6,
+        p6nops + 1 + 2 + 3 + 4 + 5 + 6 + 7,
+        p6nops + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8,
+    };
 #endif
 
-static const unsigned char * const *ideal_nops init_or_livepatch_data = p6_nops;
+static const unsigned char *const *ideal_nops init_or_livepatch_data = p6_nops;
 
 #ifdef HAVE_AS_NOPS_DIRECTIVE
 
 /* Nops in .init.rodata to compare against the runtime ideal nops. */
-asm ( ".pushsection .init.rodata, \"a\", @progbits\n\t"
-      "toolchain_nops: .nops " __stringify(ASM_NOP_MAX) "\n\t"
-      ".popsection\n\t");
+asm(".pushsection .init.rodata, \"a\", @progbits\n\t" "toolchain_nops: .nops " __stringify(ASM_NOP_MAX) "\n\t" ".popsection\n\t");
 extern char toolchain_nops[ASM_NOP_MAX];
 static bool init_or_livepatch_read_mostly toolchain_nops_are_ideal;
 
 #else
-# define toolchain_nops_are_ideal false
+#define toolchain_nops_are_ideal false
 #endif
 
 static void __init arch_init_ideal_nops(void)
@@ -155,8 +141,8 @@ void init_or_livepatch add_nops(void *insns, unsigned int len)
  * "noinline" to cause control flow change and thus invalidate I$ and
  * cause refetch after modification.
  */
-static void init_or_livepatch noinline
-text_poke(void *addr, const void *opcode, size_t len)
+static void init_or_livepatch noinline text_poke(void *addr, const void *opcode,
+                                                 size_t len)
 {
     memcpy(addr, opcode, len);
 }
@@ -202,7 +188,9 @@ static int init_or_livepatch _apply_alternatives(struct alt_instr *start,
         {
             printk(XENLOG_ERR
                    "Alt for %ps, replacement size %#x larger than origin %#x\n",
-                    ALT_ORIG_PTR(a), a->repl_len, total_len);
+                   ALT_ORIG_PTR(a),
+                   a->repl_len,
+                   total_len);
             return -ENOSPC;
         }
 
@@ -210,15 +198,19 @@ static int init_or_livepatch _apply_alternatives(struct alt_instr *start,
         {
             printk(XENLOG_ERR
                    "Alt for %ps, origin size %#x bigger than buffer %#zx\n",
-                   ALT_ORIG_PTR(a), total_len, sizeof(buf));
+                   ALT_ORIG_PTR(a),
+                   total_len,
+                   sizeof(buf));
             return -ENOSPC;
         }
 
         if ( a->cpuid >= NCAPINTS * 32 )
         {
-             printk(XENLOG_ERR
+            printk(XENLOG_ERR
                    "Alt for %ps, feature %#x outside of featureset range %#x\n",
-                   ALT_ORIG_PTR(a), a->cpuid, NCAPINTS * 32);
+                   ALT_ORIG_PTR(a),
+                   a->cpuid,
+                   NCAPINTS * 32);
             return -ERANGE;
         }
 
@@ -281,10 +273,8 @@ static int init_or_livepatch _apply_alternatives(struct alt_instr *start,
              * (for ease of recognition) instead of CALL/JMP.
              */
             if ( a->cpuid == X86_FEATURE_ALWAYS &&
-                 *(int32_t *)(buf + 1) == -5 &&
-                 a->orig_len >= 6 &&
-                 orig[0] == 0xff &&
-                 orig[1] == (*buf & 1 ? 0x25 : 0x15) )
+                 *(int32_t *)(buf + 1) == -5 && a->orig_len >= 6 &&
+                 orig[0] == 0xff && orig[1] == (*buf & 1 ? 0x25 : 0x15) )
             {
                 long disp = *(int32_t *)(orig + 2);
                 const uint8_t *dest = *(void **)(orig + 6 + disp);
@@ -310,7 +300,8 @@ static int init_or_livepatch _apply_alternatives(struct alt_instr *start,
                         else
                             printk(XENLOG_WARNING
                                    "altcall %ps dest %ps has no endbr64\n",
-                                   orig, dest);
+                                   orig,
+                                   dest);
                     }
 
                     disp = dest - (orig + 5);
@@ -333,7 +324,7 @@ static int init_or_livepatch _apply_alternatives(struct alt_instr *start,
             else
                 *(int32_t *)(buf + 1) += repl - orig;
         }
-        else if ( force && system_state < SYS_STATE_active  )
+        else if ( force && system_state < SYS_STATE_active )
             ASSERT_UNREACHABLE();
 
         a->priv = 1;
@@ -396,8 +387,8 @@ static unsigned int __initdata alt_done;
  * condition where an NMI hits while we are midway though patching some
  * instructions in the NMI path.
  */
-static int __init cf_check nmi_apply_alternatives(
-    const struct cpu_user_regs *regs, int cpu)
+static int __init cf_check
+nmi_apply_alternatives(const struct cpu_user_regs *regs, int cpu)
 {
     /*
      * More than one NMI may occur between the two set_nmi_callback() below.
@@ -418,7 +409,8 @@ static int __init cf_check nmi_apply_alternatives(
                                  PAGE_HYPERVISOR_RWX);
         flush_local(FLUSH_TLB_GLOBAL);
 
-        rc = _apply_alternatives(__alt_instructions, __alt_instructions_end,
+        rc = _apply_alternatives(__alt_instructions,
+                                 __alt_instructions_end,
                                  alt_done);
         if ( rc )
             panic("Unable to apply alternatives: %d\n", rc);

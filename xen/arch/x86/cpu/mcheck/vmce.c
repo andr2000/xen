@@ -70,10 +70,12 @@ int vmce_restore_vcpu(struct vcpu *v, const struct hvm_vmce_vcpu *ctxt)
 
     if ( ctxt->caps & ~guest_mcg_cap & ~MCG_CAP_COUNT & ~MCG_CTL_P )
     {
-        printk(XENLOG_G_ERR
-               "%s restore: unsupported MCA capabilities %#"PRIx64" for %pv (supported: %#Lx)\n",
-                is_hvm_vcpu(v) ? "HVM" : "PV", ctxt->caps,
-                v, guest_mcg_cap & ~MCG_CAP_COUNT);
+        printk(XENLOG_G_ERR "%s restore: unsupported MCA capabilities %#" PRIx64
+                            " for %pv (supported: %#Lx)\n",
+               is_hvm_vcpu(v) ? "HVM" : "PV",
+               ctxt->caps,
+               v,
+               guest_mcg_cap & ~MCG_CAP_COUNT);
         return -EINVAL;
     }
 
@@ -101,8 +103,11 @@ static int bank_mce_rdmsr(const struct vcpu *v, uint32_t msr, uint64_t *val)
     case MSR_IA32_MC0_CTL:
         /* stick all 1's to MCi_CTL */
         *val = ~0UL;
-        mce_printk(MCE_VERBOSE, "MCE: %pv: rd MC%u_CTL %#"PRIx64"\n",
-                   v, bank, *val);
+        mce_printk(MCE_VERBOSE,
+                   "MCE: %pv: rd MC%u_CTL %#" PRIx64 "\n",
+                   v,
+                   bank,
+                   *val);
         break;
 
     case MSR_IA32_MC0_STATUS:
@@ -110,8 +115,11 @@ static int bank_mce_rdmsr(const struct vcpu *v, uint32_t msr, uint64_t *val)
         {
             *val = v->arch.vmce.bank[bank].mci_status;
             if ( *val )
-                mce_printk(MCE_VERBOSE, "MCE: %pv: rd MC%u_STATUS %#"PRIx64"\n",
-                           v, bank, *val);
+                mce_printk(MCE_VERBOSE,
+                           "MCE: %pv: rd MC%u_STATUS %#" PRIx64 "\n",
+                           v,
+                           bank,
+                           *val);
         }
         break;
 
@@ -120,8 +128,11 @@ static int bank_mce_rdmsr(const struct vcpu *v, uint32_t msr, uint64_t *val)
         {
             *val = v->arch.vmce.bank[bank].mci_addr;
             if ( *val )
-                mce_printk(MCE_VERBOSE, "MCE: %pv: rd MC%u_ADDR %#"PRIx64"\n",
-                           v, bank, *val);
+                mce_printk(MCE_VERBOSE,
+                           "MCE: %pv: rd MC%u_ADDR %#" PRIx64 "\n",
+                           v,
+                           bank,
+                           *val);
         }
         break;
 
@@ -130,8 +141,11 @@ static int bank_mce_rdmsr(const struct vcpu *v, uint32_t msr, uint64_t *val)
         {
             *val = v->arch.vmce.bank[bank].mci_misc;
             if ( *val )
-                mce_printk(MCE_VERBOSE, "MCE: %pv: rd MC%u_MISC %#"PRIx64"\n",
-                           v, bank, *val);
+                mce_printk(MCE_VERBOSE,
+                           "MCE: %pv: rd MC%u_MISC %#" PRIx64 "\n",
+                           v,
+                           bank,
+                           *val);
         }
         break;
 
@@ -183,18 +197,26 @@ int vmce_rdmsr(uint32_t msr, uint64_t *val)
         *val = cur->arch.vmce.mcg_status;
         if ( *val )
             mce_printk(MCE_VERBOSE,
-                       "MCE: %pv: rd MCG_STATUS %#"PRIx64"\n", cur, *val);
+                       "MCE: %pv: rd MCG_STATUS %#" PRIx64 "\n",
+                       cur,
+                       *val);
         break;
 
     case MSR_IA32_MCG_CAP:
         *val = cur->arch.vmce.mcg_cap;
-        mce_printk(MCE_VERBOSE, "MCE: %pv: rd MCG_CAP %#"PRIx64"\n", cur, *val);
+        mce_printk(MCE_VERBOSE,
+                   "MCE: %pv: rd MCG_CAP %#" PRIx64 "\n",
+                   cur,
+                   *val);
         break;
 
     case MSR_IA32_MCG_CTL:
         if ( cur->arch.vmce.mcg_cap & MCG_CTL_P )
             *val = ~0ULL;
-        mce_printk(MCE_VERBOSE, "MCE: %pv: rd MCG_CTL %#"PRIx64"\n", cur, *val);
+        mce_printk(MCE_VERBOSE,
+                   "MCE: %pv: rd MCG_CTL %#" PRIx64 "\n",
+                   cur,
+                   *val);
         break;
 
     case MSR_IA32_MCG_EXT_CTL:
@@ -206,13 +228,16 @@ int vmce_rdmsr(uint32_t msr, uint64_t *val)
         if ( vmce_has_lmce(cur) )
         {
             *val = cur->arch.vmce.mcg_ext_ctl;
-            mce_printk(MCE_VERBOSE, "MCE: %pv: rd MCG_EXT_CTL %#"PRIx64"\n",
-                       cur, *val);
+            mce_printk(MCE_VERBOSE,
+                       "MCE: %pv: rd MCG_EXT_CTL %#" PRIx64 "\n",
+                       cur,
+                       *val);
         }
         else
         {
             ret = -1;
-            mce_printk(MCE_VERBOSE, "MCE: %pv: rd MCG_EXT_CTL, not supported\n",
+            mce_printk(MCE_VERBOSE,
+                       "MCE: %pv: rd MCG_EXT_CTL, not supported\n",
                        cur);
         }
         break;
@@ -246,8 +271,11 @@ static int bank_mce_wrmsr(struct vcpu *v, uint32_t msr, uint64_t val)
         break;
 
     case MSR_IA32_MC0_STATUS:
-        mce_printk(MCE_VERBOSE, "MCE: %pv: wr MC%u_STATUS %#"PRIx64"\n",
-                   v, bank, val);
+        mce_printk(MCE_VERBOSE,
+                   "MCE: %pv: wr MC%u_STATUS %#" PRIx64 "\n",
+                   v,
+                   bank,
+                   val);
         if ( val )
             ret = -1;
         else if ( bank < GUEST_MC_BANK_NUM )
@@ -255,8 +283,11 @@ static int bank_mce_wrmsr(struct vcpu *v, uint32_t msr, uint64_t val)
         break;
 
     case MSR_IA32_MC0_ADDR:
-        mce_printk(MCE_VERBOSE, "MCE: %pv: wr MC%u_ADDR %#"PRIx64"\n",
-                   v, bank, val);
+        mce_printk(MCE_VERBOSE,
+                   "MCE: %pv: wr MC%u_ADDR %#" PRIx64 "\n",
+                   v,
+                   bank,
+                   val);
         if ( val )
             ret = -1;
         else if ( bank < GUEST_MC_BANK_NUM )
@@ -264,8 +295,11 @@ static int bank_mce_wrmsr(struct vcpu *v, uint32_t msr, uint64_t val)
         break;
 
     case MSR_IA32_MC0_MISC:
-        mce_printk(MCE_VERBOSE, "MCE: %pv: wr MC%u_MISC %#"PRIx64"\n",
-                   v, bank, val);
+        mce_printk(MCE_VERBOSE,
+                   "MCE: %pv: wr MC%u_MISC %#" PRIx64 "\n",
+                   v,
+                   bank,
+                   val);
         if ( val )
             ret = -1;
         else if ( bank < GUEST_MC_BANK_NUM )
@@ -318,8 +352,10 @@ int vmce_wrmsr(uint32_t msr, uint64_t val)
 
     case MSR_IA32_MCG_STATUS:
         cur->arch.vmce.mcg_status = val;
-        mce_printk(MCE_VERBOSE, "MCE: %pv: wr MCG_STATUS %"PRIx64"\n",
-                   cur, val);
+        mce_printk(MCE_VERBOSE,
+                   "MCE: %pv: wr MCG_STATUS %" PRIx64 "\n",
+                   cur,
+                   val);
         break;
 
     case MSR_IA32_MCG_CAP:
@@ -336,8 +372,11 @@ int vmce_wrmsr(uint32_t msr, uint64_t val)
             cur->arch.vmce.mcg_ext_ctl = val;
         else
             ret = -1;
-        mce_printk(MCE_VERBOSE, "MCE: %pv: wr MCG_EXT_CTL %"PRIx64"%s\n",
-                   cur, val, (ret == -1) ? ", not supported" : "");
+        mce_printk(MCE_VERBOSE,
+                   "MCE: %pv: wr MCG_EXT_CTL %" PRIx64 "%s\n",
+                   cur,
+                   val,
+                   (ret == -1) ? ", not supported" : "");
         break;
 
     default:
@@ -362,7 +401,8 @@ static int cf_check vmce_save_vcpu_ctxt(struct vcpu *v, hvm_domain_context_t *h)
     return hvm_save_entry(VMCE_VCPU, v->vcpu_id, h, &ctxt);
 }
 
-static int cf_check vmce_load_vcpu_ctxt(struct domain *d, hvm_domain_context_t *h)
+static int cf_check vmce_load_vcpu_ctxt(struct domain *d,
+                                        hvm_domain_context_t *h)
 {
     unsigned int vcpuid = hvm_load_instance(h);
     struct vcpu *v;
@@ -371,8 +411,10 @@ static int cf_check vmce_load_vcpu_ctxt(struct domain *d, hvm_domain_context_t *
 
     if ( vcpuid >= d->max_vcpus || (v = d->vcpu[vcpuid]) == NULL )
     {
-        dprintk(XENLOG_G_ERR, "HVM restore: dom%d has no vcpu%u\n",
-                d->domain_id, vcpuid);
+        dprintk(XENLOG_G_ERR,
+                "HVM restore: dom%d has no vcpu%u\n",
+                d->domain_id,
+                vcpuid);
         err = -EINVAL;
     }
     else
@@ -399,7 +441,7 @@ int inject_vmce(struct domain *d, int vcpu)
     struct vcpu *v;
     int ret = -ESRCH;
 
-    for_each_vcpu ( d, v )
+    for_each_vcpu(d, v)
     {
         if ( vcpu != VMCE_INJECT_BROADCAST && vcpu != v->vcpu_id )
             continue;
@@ -408,8 +450,7 @@ int inject_vmce(struct domain *d, int vcpu)
         if ( !v->is_initialised )
             continue;
 
-        if ( (is_hvm_domain(d) ||
-              pv_trap_callback_registered(v, X86_EXC_MC)) &&
+        if ( (is_hvm_domain(d) || pv_trap_callback_registered(v, X86_EXC_MC)) &&
              !test_and_set_bool(v->arch.mce_pending) )
         {
             mce_printk(MCE_VERBOSE, "MCE: inject vMCE to %pv\n", v);
@@ -436,8 +477,9 @@ static int vcpu_fill_mc_msrs(struct vcpu *v, uint64_t mcg_status,
 {
     if ( v->arch.vmce.mcg_status & MCG_STATUS_MCIP )
     {
-        mce_printk(MCE_QUIET, "MCE: %pv: guest has not handled previous"
-                   " vMCE yet!\n", v);
+        mce_printk(MCE_QUIET,
+                   "MCE: %pv: guest has not handled previous" " vMCE yet!\n",
+                   v);
         return -EBUSY;
     }
 
@@ -483,15 +525,18 @@ int fill_vmsr_data(struct mcinfo_bank *mc_bank, struct domain *d,
      * the severest error on vCPU0, the less severe errors on other
      * vCPUs will not prevent guest from recovering on those vCPUs.
      */
-    ret = vcpu_fill_mc_msrs(v, gstatus, mc_bank->mc_status,
-                            mc_bank->mc_addr, mc_bank->mc_misc);
+    ret = vcpu_fill_mc_msrs(v,
+                            gstatus,
+                            mc_bank->mc_status,
+                            mc_bank->mc_addr,
+                            mc_bank->mc_misc);
     if ( broadcast )
-        for_each_vcpu ( d, v )
+        for_each_vcpu(d, v)
         {
             if ( !v->vcpu_id )
                 continue;
-            err = vcpu_fill_mc_msrs(v, MCG_STATUS_MCIP | MCG_STATUS_RIPV,
-                                    0, 0, 0);
+            err =
+                vcpu_fill_mc_msrs(v, MCG_STATUS_MCIP | MCG_STATUS_RIPV, 0, 0, 0);
             if ( err )
                 ret = err;
         }
@@ -530,7 +575,7 @@ int unmmap_broken_page(struct domain *d, mfn_t mfn, unsigned long gfn)
 
     rc = -1;
     r_mfn = get_gfn_query(d, gfn, &pt);
-    if ( p2m_to_mask(pt) & P2M_UNMAP_TYPES)
+    if ( p2m_to_mask(pt) & P2M_UNMAP_TYPES )
     {
         ASSERT(mfn_eq(r_mfn, mfn));
         rc = p2m_change_type_one(d, gfn, pt, p2m_ram_broken);

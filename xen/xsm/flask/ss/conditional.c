@@ -37,49 +37,49 @@ static int cond_evaluate_expr(struct policydb *p, struct cond_expr *expr)
     {
         switch ( cur->expr_type )
         {
-            case COND_BOOL:
-                if ( sp == (COND_EXPR_MAXDEPTH - 1) )
-                    return -1;
-                sp++;
-                s[sp] = p->bool_val_to_struct[cur->bool_val - 1]->state;
-            break;
-            case COND_NOT:
-                if ( sp < 0 )
-                    return -1;
-                s[sp] = !s[sp];
-            break;
-            case COND_OR:
-                if ( sp < 1 )
-                    return -1;
-                sp--;
-                s[sp] |= s[sp + 1];
-            break;
-            case COND_AND:
-                if ( sp < 1 )
-                    return -1;
-                sp--;
-                s[sp] &= s[sp + 1];
-            break;
-          case COND_XOR:
-                if ( sp < 1 )
-                    return -1;
-               sp--;
-                s[sp] ^= s[sp + 1];
-               break;
-            case COND_EQ:
-                if ( sp < 1 )
-                    return -1;
-                sp--;
-                s[sp] = (s[sp] == s[sp + 1]);
-            break;
-            case COND_NEQ:
-                if ( sp < 1 )
-                    return -1;
-                sp--;
-                s[sp] = (s[sp] != s[sp + 1]);
-            break;
-            default:
+        case COND_BOOL:
+            if ( sp == (COND_EXPR_MAXDEPTH - 1) )
                 return -1;
+            sp++;
+            s[sp] = p->bool_val_to_struct[cur->bool_val - 1]->state;
+            break;
+        case COND_NOT:
+            if ( sp < 0 )
+                return -1;
+            s[sp] = !s[sp];
+            break;
+        case COND_OR:
+            if ( sp < 1 )
+                return -1;
+            sp--;
+            s[sp] |= s[sp + 1];
+            break;
+        case COND_AND:
+            if ( sp < 1 )
+                return -1;
+            sp--;
+            s[sp] &= s[sp + 1];
+            break;
+        case COND_XOR:
+            if ( sp < 1 )
+                return -1;
+            sp--;
+            s[sp] ^= s[sp + 1];
+            break;
+        case COND_EQ:
+            if ( sp < 1 )
+                return -1;
+            sp--;
+            s[sp] = (s[sp] == s[sp + 1]);
+            break;
+        case COND_NEQ:
+            if ( sp < 1 )
+                return -1;
+            sp--;
+            s[sp] = (s[sp] != s[sp + 1]);
+            break;
+        default:
+            return -1;
         }
     }
     return s[0];
@@ -95,14 +95,16 @@ static int cond_evaluate_expr(struct policydb *p, struct cond_expr *expr)
 int evaluate_cond_node(struct policydb *p, struct cond_node *node)
 {
     int new_state;
-    struct cond_av_list* cur;
+    struct cond_av_list *cur;
 
     new_state = cond_evaluate_expr(p, node->expr);
     if ( new_state != node->cur_state )
     {
         node->cur_state = new_state;
         if ( new_state == -1 )
-            printk(KERN_ERR "Flask: expression result was undefined - disabling all rules.\n");
+            printk(
+                KERN_ERR
+                "Flask: expression result was undefined - disabling all rules.\n");
         /* turn the rules on or off */
         for ( cur = node->true_list; cur != NULL; cur = cur->next )
         {
@@ -183,8 +185,9 @@ void cond_policydb_destroy(struct policydb *p)
 int cond_init_bool_indexes(struct policydb *p)
 {
     xfree(p->bool_val_to_struct);
-    p->bool_val_to_struct = (struct cond_bool_datum**)
-        xmalloc_array(struct cond_bool_datum*, p->p_bools.nprim);
+    p->bool_val_to_struct =
+        (struct cond_bool_datum **)xmalloc_array(struct cond_bool_datum *,
+                                                 p->p_bools.nprim);
     if ( !p->bool_val_to_struct )
         return -1;
     return 0;
@@ -209,7 +212,7 @@ int cf_check cond_index_bool(void *key, void *datum, void *datap)
         return -EINVAL;
 
     p->p_bool_val_to_name[booldatum->value - 1] = key;
-    p->bool_val_to_struct[booldatum->value -1] = booldatum;
+    p->bool_val_to_struct[booldatum->value - 1] = booldatum;
 
     return 0;
 }
@@ -261,16 +264,15 @@ err:
     return -1;
 }
 
-struct cond_insertf_data
-{
+struct cond_insertf_data {
     struct policydb *p;
     struct cond_av_list *other;
     struct cond_av_list *head;
     struct cond_av_list *tail;
 };
 
-static int cf_check cond_insertf(
-    struct avtab *a, struct avtab_key *k, struct avtab_datum *d, void *ptr)
+static int cf_check cond_insertf(struct avtab *a, struct avtab_key *k,
+                                 struct avtab_datum *d, void *ptr)
 {
     struct cond_insertf_data *data = ptr;
     struct policydb *p = data->p;
@@ -287,8 +289,8 @@ static int cf_check cond_insertf(
     {
         if ( avtab_search(&p->te_avtab, k) )
         {
-            printk("Flask: type rule already exists outside of a "
-                                                                "conditional.");
+            printk(
+                "Flask: type rule already exists outside of a " "conditional.");
             goto err;
         }
         /*
@@ -329,8 +331,8 @@ static int cf_check cond_insertf(
         {
             if ( avtab_search(&p->te_cond_avtab, k) )
             {
-                printk("Flask: conflicting type rules when adding type rule "
-                                                                "for true.\n");
+                printk(
+                    "Flask: conflicting type rules when adding type rule " "for true.\n");
                 goto err;
             }
         }
@@ -361,8 +363,9 @@ err:
     return -1;
 }
 
-static int cond_read_av_list(struct policydb *p, void *fp, 
-                    struct cond_av_list **ret_list, struct cond_av_list *other)
+static int cond_read_av_list(struct policydb *p, void *fp,
+                             struct cond_av_list **ret_list,
+                             struct cond_av_list *other)
 {
     int i, rc;
     __le32 buf[1];
@@ -486,7 +489,7 @@ int cond_read_list(struct policydb *p, void *fp)
 
     rc = avtab_alloc(&(p->te_cond_avtab), p->te_avtab.nel);
     if ( rc )
-      goto err;
+        goto err;
 
     for ( i = 0; i < len; i++ )
     {
@@ -515,29 +518,29 @@ err:
  * av table, and if so, add them to the result
  */
 void cond_compute_av(struct avtab *ctab, struct avtab_key *key,
-                                                        struct av_decision *avd)
+                     struct av_decision *avd)
 {
     struct avtab_node *node;
 
-    if( !ctab || !key || !avd )
+    if ( !ctab || !key || !avd )
         return;
 
-    for( node = avtab_search_node(ctab, key); node != NULL;
-                node = avtab_search_node_next(node, key->specified) )
+    for ( node = avtab_search_node(ctab, key); node != NULL;
+          node = avtab_search_node_next(node, key->specified) )
     {
-        if ( (u16) (AVTAB_ALLOWED|AVTAB_ENABLED) ==
-             (node->key.specified & (AVTAB_ALLOWED|AVTAB_ENABLED)) )
+        if ( (u16)(AVTAB_ALLOWED | AVTAB_ENABLED) ==
+             (node->key.specified & (AVTAB_ALLOWED | AVTAB_ENABLED)) )
             avd->allowed |= node->datum.data;
-        if ( (u16) (AVTAB_AUDITDENY|AVTAB_ENABLED) ==
-             (node->key.specified & (AVTAB_AUDITDENY|AVTAB_ENABLED)) )
+        if ( (u16)(AVTAB_AUDITDENY | AVTAB_ENABLED) ==
+             (node->key.specified & (AVTAB_AUDITDENY | AVTAB_ENABLED)) )
             /* Since a '0' in an auditdeny mask represents a
              * permission we do NOT want to audit (dontaudit), we use
              * the '&' operand to ensure that all '0's in the mask
              * are retained (much unlike the allow and auditallow cases).
              */
             avd->auditdeny &= node->datum.data;
-        if ( (u16) (AVTAB_AUDITALLOW|AVTAB_ENABLED) ==
-             (node->key.specified & (AVTAB_AUDITALLOW|AVTAB_ENABLED)) )
+        if ( (u16)(AVTAB_AUDITALLOW | AVTAB_ENABLED) ==
+             (node->key.specified & (AVTAB_AUDITALLOW | AVTAB_ENABLED)) )
             avd->auditallow |= node->datum.data;
     }
     return;

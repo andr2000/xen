@@ -76,7 +76,6 @@ struct rcu_head {
        (ptr)->next = NULL; (ptr)->func = NULL; \
 } while (0)
 
-
 int rcu_pending(int cpu);
 int rcu_needs_cpu(int cpu);
 
@@ -171,8 +170,7 @@ void rcu_init(void);
 void rcu_check_callbacks(int cpu);
 
 /* Exported interfaces */
-void call_rcu(struct rcu_head *head, 
-              void (*func)(struct rcu_head *head));
+void call_rcu(struct rcu_head *head, void (*func)(struct rcu_head *head));
 
 void rcu_barrier(void);
 

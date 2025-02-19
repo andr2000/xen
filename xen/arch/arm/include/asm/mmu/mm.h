@@ -25,8 +25,7 @@ extern unsigned long directmap_base_pdx;
  *   this can only be != 1 for P2M walks starting at the first or
  *   subsequent level.
  */
-void dump_pt_walk(paddr_t ttbr, paddr_t addr,
-                  unsigned int root_level,
+void dump_pt_walk(paddr_t ttbr, paddr_t addr, unsigned int root_level,
                   unsigned int nr_root_tables);
 
 /* Switch to a new root page-tables */

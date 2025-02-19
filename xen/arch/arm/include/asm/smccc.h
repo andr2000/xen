@@ -354,7 +354,7 @@ void arm_smccc_1_2_smc(const struct arm_smccc_1_2_regs *args,
     ARM_SMCCC_CALL_VAL(ARM_SMCCC_FAST_CALL,         \
                        ARM_SMCCC_CONV_32,           \
                        ARM_SMCCC_OWNER_ARCH,        \
-                       0x0)                         \
+                       0x0)
 
 #define ARM_SMCCC_ARCH_FEATURES_FID                 \
     ARM_SMCCC_CALL_VAL(ARM_SMCCC_FAST_CALL,         \
@@ -390,7 +390,7 @@ void arm_smccc_1_2_smc(const struct arm_smccc_1_2_regs *args,
 #define ARM_SMCCC_RESERVED_RANGE_START  0x0
 #define ARM_SMCCC_RESERVED_RANGE_END    0x0100FFFF
 
-#endif  /* __ASM_ARM_SMCCC_H__ */
+#endif /* __ASM_ARM_SMCCC_H__ */
 
 /*
  * Local variables:

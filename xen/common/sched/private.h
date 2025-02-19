@@ -43,21 +43,20 @@ enum sched_gran {
  * one it wants (This may be the one right in front of it).
  */
 struct sched_resource {
-    struct scheduler   *scheduler;
-    struct cpupool     *cpupool;
-    spinlock_t         *schedule_lock,
-                       _lock;
-    struct sched_unit  *curr;
-    struct sched_unit  *sched_unit_idle;
-    struct sched_unit  *prev;
-    void               *sched_priv;
-    struct timer        s_timer;        /* scheduling timer                */
+    struct scheduler *scheduler;
+    struct cpupool *cpupool;
+    spinlock_t *schedule_lock, _lock;
+    struct sched_unit *curr;
+    struct sched_unit *sched_unit_idle;
+    struct sched_unit *prev;
+    void *sched_priv;
+    struct timer s_timer; /* scheduling timer                */
 
     /* Cpu with lowest id in scheduling resource. */
-    unsigned int        master_cpu;
-    unsigned int        granularity;
-    cpumask_var_t       cpus;           /* cpus covered by this struct     */
-    struct rcu_head     rcu;
+    unsigned int master_cpu;
+    unsigned int granularity;
+    cpumask_var_t cpus; /* cpus covered by this struct     */
+    struct rcu_head rcu;
 };
 
 DECLARE_PER_CPU(struct sched_resource *, sched_res);
@@ -88,7 +87,7 @@ static inline bool is_unit_online(const struct sched_unit *unit)
 {
     const struct vcpu *v;
 
-    for_each_sched_unit_vcpu ( unit, v )
+    for_each_sched_unit_vcpu(unit, v)
         if ( is_vcpu_online(v) )
             return true;
 
@@ -105,7 +104,7 @@ static inline bool unit_runnable(const struct sched_unit *unit)
 {
     const struct vcpu *v;
 
-    for_each_sched_unit_vcpu ( unit, v )
+    for_each_sched_unit_vcpu(unit, v)
         if ( vcpu_runnable(v) )
             return true;
 
@@ -132,7 +131,7 @@ static inline bool unit_runnable_state(const struct sched_unit *unit)
     if ( is_idle_unit(unit) )
         return true;
 
-    for_each_sched_unit_vcpu ( unit, v )
+    for_each_sched_unit_vcpu(unit, v)
     {
         runnable = vcpu_runnable(v);
 
@@ -151,7 +150,7 @@ static inline void sched_set_res(struct sched_unit *unit,
     unsigned int cpu = cpumask_first(res->cpus);
     struct vcpu *v;
 
-    for_each_sched_unit_vcpu ( unit, v )
+    for_each_sched_unit_vcpu(unit, v)
     {
         ASSERT(cpu < nr_cpu_ids);
         v->processor = cpu;
@@ -173,7 +172,7 @@ static inline void sched_set_pause_flags(struct sched_unit *unit,
 {
     struct vcpu *v;
 
-    for_each_sched_unit_vcpu ( unit, v )
+    for_each_sched_unit_vcpu(unit, v)
         set_bit(bit, &v->pause_flags);
 }
 
@@ -183,7 +182,7 @@ static inline void sched_clear_pause_flags(struct sched_unit *unit,
 {
     struct vcpu *v;
 
-    for_each_sched_unit_vcpu ( unit, v )
+    for_each_sched_unit_vcpu(unit, v)
         clear_bit(bit, &v->pause_flags);
 }
 
@@ -260,29 +259,36 @@ static inline void kind##_schedule_unlock##irq(spinlock_t *lock \
 }
 
 #define EXTRA_TYPE(arg)
-sched_lock(pcpu, unsigned int cpu,     cpu, )
-sched_lock(unit, const struct sched_unit *i, i->res->master_cpu, )
-sched_lock(pcpu, unsigned int cpu,     cpu,          _irq)
-sched_lock(unit, const struct sched_unit *i, i->res->master_cpu, _irq)
-sched_unlock(pcpu, unsigned int cpu,     cpu, )
-sched_unlock(unit, const struct sched_unit *i, i->res->master_cpu, )
-sched_unlock(pcpu, unsigned int cpu,     cpu,          _irq)
-sched_unlock(unit, const struct sched_unit *i, i->res->master_cpu, _irq)
+sched_lock(pcpu, unsigned int cpu,
+           cpu, ) sched_lock(unit, const struct sched_unit *i,
+                             i->res->master_cpu, ) sched_lock(pcpu,
+                                                              unsigned int cpu,
+                                                              cpu, _irq)
+    sched_lock(unit, const struct sched_unit *i, i->res->master_cpu,
+               _irq) sched_unlock(pcpu, unsigned int cpu, cpu, )
+        sched_unlock(unit, const struct sched_unit *i, i->res->master_cpu, )
+            sched_unlock(pcpu, unsigned int cpu, cpu,
+                         _irq) sched_unlock(unit, const struct sched_unit *i,
+                                            i->res->master_cpu, _irq)
 #undef EXTRA_TYPE
 
 #define EXTRA_TYPE(arg) , unsigned long arg
 #define spin_unlock_irqsave spin_unlock_irqrestore
-sched_lock(pcpu, unsigned int cpu,     cpu,          _irqsave, *flags)
-sched_lock(unit, const struct sched_unit *i, i->res->master_cpu, _irqsave, *flags)
+                sched_lock(pcpu, unsigned int cpu, cpu, _irqsave, *flags)
+                    sched_lock(unit, const struct sched_unit *i,
+                               i->res->master_cpu, _irqsave, *flags)
 #undef spin_unlock_irqsave
-sched_unlock(pcpu, unsigned int cpu,     cpu,          _irqrestore, flags)
-sched_unlock(unit, const struct sched_unit *i, i->res->master_cpu, _irqrestore, flags)
+                        sched_unlock(pcpu, unsigned int cpu, cpu, _irqrestore,
+                                     flags)
+                            sched_unlock(unit, const struct sched_unit *i,
+                                         i->res->master_cpu, _irqrestore, flags)
 #undef EXTRA_TYPE
 
 #undef sched_unlock
 #undef sched_lock
 
-static inline spinlock_t *pcpu_schedule_trylock(unsigned int cpu)
+                                static inline spinlock_t *pcpu_schedule_trylock(
+                                    unsigned int cpu)
 {
     spinlock_t *lock = get_sched_res(cpu)->schedule_lock;
 
@@ -295,73 +301,60 @@ static inline spinlock_t *pcpu_schedule_trylock(unsigned int cpu)
 }
 
 struct scheduler {
-    const char *name;       /* full name for this scheduler      */
-    const char *opt_name;   /* option name for this scheduler    */
-    unsigned int sched_id;  /* ID for this scheduler             */
-    void *sched_data;       /* global data pointer               */
-    struct cpupool *cpupool;/* points to this scheduler's pool   */
+    const char *name; /* full name for this scheduler      */
+    const char *opt_name; /* option name for this scheduler    */
+    unsigned int sched_id; /* ID for this scheduler             */
+    void *sched_data; /* global data pointer               */
+    struct cpupool *cpupool; /* points to this scheduler's pool   */
 
-    int          (*global_init)    (void);
+    int (*global_init)(void);
 
-    int          (*init)           (struct scheduler *ops);
-    void         (*deinit)         (struct scheduler *ops);
+    int (*init)(struct scheduler *ops);
+    void (*deinit)(struct scheduler *ops);
 
-    void         (*free_udata)     (const struct scheduler *ops, void *priv);
-    void *       (*alloc_udata)    (const struct scheduler *ops,
-                                    struct sched_unit *unit, void *dd);
+    void (*free_udata)(const struct scheduler *ops, void *priv);
+    void *(*alloc_udata)(const struct scheduler *ops, struct sched_unit *unit,
+                         void *dd);
 
-    void         (*free_pdata)     (const struct scheduler *ops,
-                                    void *pcpu, int cpu);
-    void *       (*alloc_pdata)    (const struct scheduler *ops, int cpu);
-    void         (*deinit_pdata)   (const struct scheduler *ops,
-                                    void *pcpu, int cpu);
+    void (*free_pdata)(const struct scheduler *ops, void *pcpu, int cpu);
+    void *(*alloc_pdata)(const struct scheduler *ops, int cpu);
+    void (*deinit_pdata)(const struct scheduler *ops, void *pcpu, int cpu);
 
     /* Returns ERR_PTR(-err) for error, NULL for 'nothing needed'. */
-    void *       (*alloc_domdata)  (const struct scheduler *ops,
-                                    struct domain *dom);
+    void *(*alloc_domdata)(const struct scheduler *ops, struct domain *dom);
     /* Idempotent. */
-    void         (*free_domdata)   (const struct scheduler *ops, void *data);
+    void (*free_domdata)(const struct scheduler *ops, void *data);
 
-    spinlock_t * (*switch_sched)   (struct scheduler *new_ops, unsigned int cpu,
-                                    void *pdata, void *vdata);
+    spinlock_t *(*switch_sched)(struct scheduler *new_ops, unsigned int cpu,
+                                void *pdata, void *vdata);
 
     /* Activate / deactivate units in a cpu pool */
-    void         (*insert_unit)    (const struct scheduler *ops,
-                                    struct sched_unit *unit);
-    void         (*remove_unit)    (const struct scheduler *ops,
-                                    struct sched_unit *unit);
+    void (*insert_unit)(const struct scheduler *ops, struct sched_unit *unit);
+    void (*remove_unit)(const struct scheduler *ops, struct sched_unit *unit);
 
-    void         (*sleep)          (const struct scheduler *ops,
-                                    struct sched_unit *unit);
-    void         (*wake)           (const struct scheduler *ops,
-                                    struct sched_unit *unit);
-    void         (*yield)          (const struct scheduler *ops,
-                                    struct sched_unit *unit);
-    void         (*context_saved)  (const struct scheduler *ops,
-                                    struct sched_unit *unit);
+    void (*sleep)(const struct scheduler *ops, struct sched_unit *unit);
+    void (*wake)(const struct scheduler *ops, struct sched_unit *unit);
+    void (*yield)(const struct scheduler *ops, struct sched_unit *unit);
+    void (*context_saved)(const struct scheduler *ops, struct sched_unit *unit);
 
-    void         (*do_schedule)    (const struct scheduler *ops,
-                                    struct sched_unit *currunit, s_time_t now,
-                                    bool tasklet_work_scheduled);
+    void (*do_schedule)(const struct scheduler *ops,
+                        struct sched_unit *currunit, s_time_t now,
+                        bool tasklet_work_scheduled);
 
     struct sched_resource *(*pick_resource)(const struct scheduler *ops,
                                             const struct sched_unit *unit);
-    void         (*migrate)        (const struct scheduler *ops,
-                                    struct sched_unit *unit,
-                                    unsigned int new_cpu);
-    int          (*adjust)         (const struct scheduler *ops,
-                                    struct domain *d,
-                                    struct xen_domctl_scheduler_op *op);
-    void         (*adjust_affinity)(const struct scheduler *ops,
-                                    struct sched_unit *unit,
-                                    const struct cpumask *hard,
-                                    const struct cpumask *soft);
-    int          (*adjust_global)  (const struct scheduler *ops,
-                                    struct xen_sysctl_scheduler_op *sc);
-    void         (*dump_settings)  (const struct scheduler *ops);
-    void         (*dump_cpu_state) (const struct scheduler *ops, int cpu);
-    void         (*move_timers)    (const struct scheduler *ops,
-                                    struct sched_resource *sr);
+    void (*migrate)(const struct scheduler *ops, struct sched_unit *unit,
+                    unsigned int new_cpu);
+    int (*adjust)(const struct scheduler *ops, struct domain *d,
+                  struct xen_domctl_scheduler_op *op);
+    void (*adjust_affinity)(const struct scheduler *ops,
+                            struct sched_unit *unit, const struct cpumask *hard,
+                            const struct cpumask *soft);
+    int (*adjust_global)(const struct scheduler *ops,
+                         struct xen_sysctl_scheduler_op *sc);
+    void (*dump_settings)(const struct scheduler *ops);
+    void (*dump_cpu_state)(const struct scheduler *ops, int cpu);
+    void (*move_timers)(const struct scheduler *ops, struct sched_resource *sr);
 };
 
 static inline int sched_init(struct scheduler *s)
@@ -375,8 +368,8 @@ static inline void sched_deinit(struct scheduler *s)
 }
 
 static inline spinlock_t *sched_switch_sched(struct scheduler *s,
-                                             unsigned int cpu,
-                                             void *pdata, void *vdata)
+                                             unsigned int cpu, void *pdata,
+                                             void *vdata)
 {
     return s->switch_sched(s, cpu, pdata, vdata);
 }
@@ -399,8 +392,7 @@ static inline void *sched_alloc_domdata(const struct scheduler *s,
     return s->alloc_domdata ? s->alloc_domdata(s, d) : NULL;
 }
 
-static inline void sched_free_domdata(const struct scheduler *s,
-                                      void *data)
+static inline void sched_free_domdata(const struct scheduler *s, void *data)
 {
     ASSERT(s->free_domdata || !data);
     if ( s->free_domdata )
@@ -489,8 +481,8 @@ static inline void sched_migrate(const struct scheduler *s,
         sched_set_res(unit, get_sched_res(cpu));
 }
 
-static inline struct sched_resource *sched_pick_resource(
-    const struct scheduler *s, const struct sched_unit *unit)
+static inline struct sched_resource *
+sched_pick_resource(const struct scheduler *s, const struct sched_unit *unit)
 {
     return s->pick_resource(s, unit);
 }
@@ -527,7 +519,7 @@ static inline void sched_unit_pause_nosync(const struct sched_unit *unit)
 {
     struct vcpu *v;
 
-    for_each_sched_unit_vcpu ( unit, v )
+    for_each_sched_unit_vcpu(unit, v)
         vcpu_pause_nosync(v);
 }
 
@@ -535,26 +527,25 @@ static inline void sched_unit_unpause(const struct sched_unit *unit)
 {
     struct vcpu *v;
 
-    for_each_sched_unit_vcpu ( unit, v )
+    for_each_sched_unit_vcpu(unit, v)
         vcpu_unpause(v);
 }
 
 #define REGISTER_SCHEDULER(x) static const struct scheduler *x##_entry \
   __used_section(".data.schedulers") = &(x)
 
-struct cpupool
-{
-    unsigned int     cpupool_id;
+struct cpupool {
+    unsigned int cpupool_id;
 #define CPUPOOLID_NONE    (~0U)
-    unsigned int     n_dom;
-    cpumask_var_t    cpu_valid;      /* all cpus assigned to pool */
-    cpumask_var_t    res_valid;      /* all scheduling resources of pool */
+    unsigned int n_dom;
+    cpumask_var_t cpu_valid; /* all cpus assigned to pool */
+    cpumask_var_t res_valid; /* all scheduling resources of pool */
     struct list_head list;
-    struct cpupool   *next;
+    struct cpupool *next;
     struct scheduler *sched;
-    atomic_t         refcnt;
-    enum sched_gran  gran;
-    unsigned int     sched_gran;     /* Number of cpus per sched-item. */
+    atomic_t refcnt;
+    enum sched_gran gran;
+    unsigned int sched_gran; /* Number of cpus per sched-item. */
 };
 
 static inline cpumask_t *cpupool_domain_master_cpumask(const struct domain *d)
@@ -616,9 +607,8 @@ static inline bool has_soft_affinity(const struct sched_unit *unit)
  * that are not part of vc's hard affinity are filtered out from the result,
  * to avoid running a vcpu where it would like, but is not allowed to!
  */
-static inline void
-affinity_balance_cpumask(const struct sched_unit *unit, int step,
-                         cpumask_t *mask)
+static inline void affinity_balance_cpumask(const struct sched_unit *unit,
+                                            int step, cpumask_t *mask)
 {
     if ( step == BALANCE_SOFT_AFFINITY )
     {

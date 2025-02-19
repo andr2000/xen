@@ -31,9 +31,9 @@ static int __init rcar2_smp_init(void)
 
     /* map ICRAM */
     pram = ioremap_nocache(RCAR2_RAM_ADDR, RCAR2_RAM_SIZE);
-    if( !pram )
+    if ( !pram )
     {
-        dprintk( XENLOG_ERR, "Unable to map RCAR2 ICRAM\n");
+        dprintk(XENLOG_ERR, "Unable to map RCAR2 ICRAM\n");
         return -ENOMEM;
     }
 
@@ -46,15 +46,11 @@ static int __init rcar2_smp_init(void)
     return 0;
 }
 
-static const char *const rcar2_dt_compat[] __initconst =
-{
-    "renesas,lager",
-    NULL
-};
+static const char *const rcar2_dt_compat[]
+    __initconst = { "renesas,lager", NULL };
 
 PLATFORM_START(rcar2, "Renesas R-Car Gen2")
-    .compatible = rcar2_dt_compat,
-    .cpu_up = cpu_up_send_sgi,
+    .compatible = rcar2_dt_compat, .cpu_up = cpu_up_send_sgi,
     .smp_init = rcar2_smp_init,
 PLATFORM_END
 

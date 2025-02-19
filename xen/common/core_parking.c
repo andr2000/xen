@@ -28,7 +28,7 @@
 
 static DEFINE_SPINLOCK(accounting_lock);
 static uint32_t cur_idle_nums;
-static unsigned int core_parking_cpunum[NR_CPUS] = {[0 ... NR_CPUS-1] = -1};
+static unsigned int core_parking_cpunum[NR_CPUS] = { [0 ... NR_CPUS - 1] = -1 };
 
 struct cp_policy {
     char name[30];
@@ -52,6 +52,7 @@ static int __init cf_check setup_core_parking_option(const char *str)
 
     return 0;
 }
+
 custom_param("core_parking", setup_core_parking_option);
 
 static unsigned int cf_check core_parking_performance(unsigned int event)
@@ -272,4 +273,5 @@ static int __init cf_check core_parking_init(void)
 
     return ret;
 }
+
 presmp_initcall(core_parking_init);

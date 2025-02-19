@@ -48,8 +48,8 @@
 #define get_year(x)    ((x) + epoch_year)
 
 enum rtc_mode {
-   rtc_mode_no_ack,
-   rtc_mode_strict
+    rtc_mode_no_ack,
+    rtc_mode_strict
 };
 
 /* This must be in sync with how hvmloader sets the ACPI WAET flags. */
@@ -67,8 +67,7 @@ static void rtc_update_irq(RTCState *s)
         return;
 
     /* IRQ is raised if any source is both raised & enabled */
-    if ( !(s->hw.cmos_data[RTC_REG_B] &
-           s->hw.cmos_data[RTC_REG_C] &
+    if ( !(s->hw.cmos_data[RTC_REG_B] & s->hw.cmos_data[RTC_REG_C] &
            (RTC_PF | RTC_AF | RTC_UF)) )
         return;
 
@@ -86,9 +85,8 @@ static void cf_check rtc_pf_callback(struct vcpu *v, void *opaque)
 
     spin_lock(&s->lock);
 
-    if ( !rtc_mode_is(s, no_ack)
-         && (s->hw.cmos_data[RTC_REG_C] & RTC_IRQF)
-         && ++(s->pt_dead_ticks) >= 10 )
+    if ( !rtc_mode_is(s, no_ack) && (s->hw.cmos_data[RTC_REG_C] & RTC_IRQF) &&
+         ++(s->pt_dead_ticks) >= 10 )
     {
         /* VM is ignoring its RTC; no point in running the timer */
         TRACE_TIME(TRC_HVM_EMUL_RTC_STOP_TIMER);
@@ -96,7 +94,7 @@ static void cf_check rtc_pf_callback(struct vcpu *v, void *opaque)
         s->period = 0;
     }
 
-    s->hw.cmos_data[RTC_REG_C] |= RTC_PF|RTC_IRQF;
+    s->hw.cmos_data[RTC_REG_C] |= RTC_PF | RTC_IRQF;
 
     spin_unlock(&s->lock);
 }
@@ -112,8 +110,8 @@ static void check_for_pf_ticks(RTCState *s)
         return;
 
     now = NOW();
-    if ( (now - s->start_time) / s->period
-         != (s->check_ticks_since - s->start_time) / s->period )
+    if ( (now - s->start_time) / s->period !=
+         (s->check_ticks_since - s->start_time) / s->period )
         s->hw.cmos_data[RTC_REG_C] |= RTC_PF;
 
     s->check_ticks_since = now;
@@ -155,8 +153,14 @@ static void rtc_timer_update(RTCState *s)
                 if ( s->hw.cmos_data[RTC_REG_B] & RTC_PIE )
                 {
                     TRACE_TIME(TRC_HVM_EMUL_RTC_START_TIMER, delta, period);
-                    create_periodic_time(v, &s->pt, delta, period,
-                                         RTC_IRQ, rtc_pf_callback, s, false);
+                    create_periodic_time(v,
+                                         &s->pt,
+                                         delta,
+                                         period,
+                                         RTC_IRQ,
+                                         rtc_pf_callback,
+                                         s,
+                                         false);
                 }
                 else
                     s->check_ticks_since = now;
@@ -183,12 +187,12 @@ static void check_update_timer(RTCState *s)
 
     ASSERT(spin_is_locked(&s->lock));
 
-    if (!(s->hw.cmos_data[RTC_REG_C] & RTC_UF) &&
-            !(s->hw.cmos_data[RTC_REG_B] & RTC_SET))
+    if ( !(s->hw.cmos_data[RTC_REG_C] & RTC_UF) &&
+         !(s->hw.cmos_data[RTC_REG_B] & RTC_SET) )
     {
         s->use_timer = 1;
         guest_usec = get_localtime_us(d) % USEC_PER_SEC;
-        if (guest_usec >= (USEC_PER_SEC - 244))
+        if ( guest_usec >= (USEC_PER_SEC - 244) )
         {
             /* RTC is in update cycle */
             s->hw.cmos_data[RTC_REG_A] |= RTC_UIP;
@@ -222,7 +226,7 @@ static void cf_check rtc_update_timer(void *opaque)
     RTCState *s = opaque;
 
     spin_lock(&s->lock);
-    if (!(s->hw.cmos_data[RTC_REG_B] & RTC_SET))
+    if ( !(s->hw.cmos_data[RTC_REG_B] & RTC_SET) )
     {
         s->hw.cmos_data[RTC_REG_A] |= RTC_UIP;
         set_timer(&s->update_timer2, s->next_update_time + 244000UL);
@@ -235,7 +239,7 @@ static void cf_check rtc_update_timer2(void *opaque)
     RTCState *s = opaque;
 
     spin_lock(&s->lock);
-    if (!(s->hw.cmos_data[RTC_REG_B] & RTC_SET))
+    if ( !(s->hw.cmos_data[RTC_REG_B] & RTC_SET) )
     {
         s->hw.cmos_data[RTC_REG_C] |= RTC_UF;
         s->hw.cmos_data[RTC_REG_A] &= ~RTC_UIP;
@@ -292,8 +296,8 @@ static void alarm_timer_update(RTCState *s)
 
     stop_timer(&s->alarm_timer);
 
-    if (!(s->hw.cmos_data[RTC_REG_C] & RTC_AF) &&
-            !(s->hw.cmos_data[RTC_REG_B] & RTC_SET))
+    if ( !(s->hw.cmos_data[RTC_REG_C] & RTC_AF) &&
+         !(s->hw.cmos_data[RTC_REG_B] & RTC_SET) )
     {
         s->current_tm = gmtime(get_localtime(d));
         rtc_copy_date(s);
@@ -309,46 +313,46 @@ static void alarm_timer_update(RTCState *s)
         next_update_time = USEC_PER_SEC - (get_localtime_us(d) % USEC_PER_SEC);
         next_update_time = next_update_time * NS_PER_USEC + NOW();
 
-        if ((s->hw.cmos_data[RTC_HOURS_ALARM] & 0xc0) == 0xc0)
+        if ( (s->hw.cmos_data[RTC_HOURS_ALARM] & 0xc0) == 0xc0 )
         {
-            if ((s->hw.cmos_data[RTC_MINUTES_ALARM] & 0xc0) == 0xc0)
+            if ( (s->hw.cmos_data[RTC_MINUTES_ALARM] & 0xc0) == 0xc0 )
             {
-                if ((s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0)
+                if ( (s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0 )
                     next_alarm_sec = 1;
-                else if (cur_sec < alarm_sec)
+                else if ( cur_sec < alarm_sec )
                     next_alarm_sec = alarm_sec - cur_sec;
                 else
                     next_alarm_sec = alarm_sec + SEC_PER_MIN - cur_sec;
             }
             else
             {
-                if (cur_min < alarm_min)
+                if ( cur_min < alarm_min )
                 {
                     min = alarm_min - cur_min;
                     next_alarm_sec = min * SEC_PER_MIN - cur_sec;
-                    if ((s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0)
+                    if ( (s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0 )
                         next_alarm_sec += 0;
                     else
                         next_alarm_sec += alarm_sec;
                 }
-                else if (cur_min == alarm_min)
+                else if ( cur_min == alarm_min )
                 {
-                    if ((s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0)
+                    if ( (s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0 )
                         next_alarm_sec = 1;
-                    else if (cur_sec < alarm_sec)
+                    else if ( cur_sec < alarm_sec )
                         next_alarm_sec = alarm_sec - cur_sec;
                     else
                     {
                         min = alarm_min + MIN_PER_HOUR - cur_min;
-                        next_alarm_sec =
-                            alarm_sec + min * SEC_PER_MIN - cur_sec;
+                        next_alarm_sec = alarm_sec + min * SEC_PER_MIN -
+                                         cur_sec;
                     }
                 }
                 else
                 {
                     min = alarm_min + MIN_PER_HOUR - cur_min;
                     next_alarm_sec = min * SEC_PER_MIN - cur_sec;
-                    if ((s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0)
+                    if ( (s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0 )
                         next_alarm_sec += 0;
                     else
                         next_alarm_sec += alarm_sec;
@@ -357,14 +361,14 @@ static void alarm_timer_update(RTCState *s)
         }
         else
         {
-            if (cur_hour < alarm_hour)
+            if ( cur_hour < alarm_hour )
             {
                 hour = alarm_hour - cur_hour;
-                next_alarm_sec = hour * SEC_PER_HOUR -
-                    cur_min * SEC_PER_MIN - cur_sec;
-                if ((s->hw.cmos_data[RTC_MINUTES_ALARM] & 0xc0) == 0xc0)
+                next_alarm_sec = hour * SEC_PER_HOUR - cur_min * SEC_PER_MIN -
+                                 cur_sec;
+                if ( (s->hw.cmos_data[RTC_MINUTES_ALARM] & 0xc0) == 0xc0 )
                 {
-                    if ((s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0)
+                    if ( (s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0 )
                         next_alarm_sec += 0;
                     else
                         next_alarm_sec += alarm_sec;
@@ -372,43 +376,43 @@ static void alarm_timer_update(RTCState *s)
                 else
                 {
                     next_alarm_sec += alarm_min * SEC_PER_MIN;
-                    if ((s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0)
+                    if ( (s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0 )
                         next_alarm_sec += 0;
                     else
                         next_alarm_sec += alarm_sec;
                 }
             }
-            else if (cur_hour == alarm_hour)
+            else if ( cur_hour == alarm_hour )
             {
-                if ((s->hw.cmos_data[RTC_MINUTES_ALARM] & 0xc0) == 0xc0)
+                if ( (s->hw.cmos_data[RTC_MINUTES_ALARM] & 0xc0) == 0xc0 )
                 {
-                    if ((s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0)
+                    if ( (s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0 )
                         next_alarm_sec = 1;
-                    else if (cur_sec < alarm_sec)
+                    else if ( cur_sec < alarm_sec )
                         next_alarm_sec = alarm_sec - cur_sec;
                     else
                         next_alarm_sec = alarm_sec + SEC_PER_MIN - cur_sec;
                 }
-                else if (cur_min < alarm_min)
+                else if ( cur_min < alarm_min )
                 {
                     min = alarm_min - cur_min;
                     next_alarm_sec = min * SEC_PER_MIN - cur_sec;
-                    if ((s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0)
+                    if ( (s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0 )
                         next_alarm_sec += 0;
                     else
                         next_alarm_sec += alarm_sec;
                 }
-                else if (cur_min == alarm_min)
+                else if ( cur_min == alarm_min )
                 {
-                    if ((s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0)
+                    if ( (s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0 )
                         next_alarm_sec = 1;
-                    else if (cur_sec < alarm_sec)
+                    else if ( cur_sec < alarm_sec )
                         next_alarm_sec = alarm_sec - cur_sec;
                     else
                     {
                         hour = alarm_hour + HOUR_PER_DAY - cur_hour;
                         next_alarm_sec = hour * SEC_PER_HOUR -
-                            cur_min * SEC_PER_MIN - cur_sec;
+                                         cur_min * SEC_PER_MIN - cur_sec;
                         next_alarm_sec += alarm_min * SEC_PER_MIN + alarm_sec;
                     }
                 }
@@ -416,9 +420,9 @@ static void alarm_timer_update(RTCState *s)
                 {
                     hour = alarm_hour + HOUR_PER_DAY - cur_hour;
                     next_alarm_sec = hour * SEC_PER_HOUR -
-                        cur_min * SEC_PER_MIN - cur_sec;
+                                     cur_min * SEC_PER_MIN - cur_sec;
                     next_alarm_sec += alarm_min * SEC_PER_MIN;
-                    if ((s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0)
+                    if ( (s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0 )
                         next_alarm_sec += 0;
                     else
                         next_alarm_sec += alarm_sec;
@@ -427,11 +431,11 @@ static void alarm_timer_update(RTCState *s)
             else
             {
                 hour = alarm_hour + HOUR_PER_DAY - cur_hour;
-                next_alarm_sec = hour * SEC_PER_HOUR -
-                    cur_min * SEC_PER_MIN - cur_sec;
-                if ((s->hw.cmos_data[RTC_MINUTES_ALARM] & 0xc0) == 0xc0)
+                next_alarm_sec = hour * SEC_PER_HOUR - cur_min * SEC_PER_MIN -
+                                 cur_sec;
+                if ( (s->hw.cmos_data[RTC_MINUTES_ALARM] & 0xc0) == 0xc0 )
                 {
-                    if ((s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0)
+                    if ( (s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0 )
                         next_alarm_sec += 0;
                     else
                         next_alarm_sec += alarm_sec;
@@ -439,7 +443,7 @@ static void alarm_timer_update(RTCState *s)
                 else
                 {
                     next_alarm_sec += alarm_min * SEC_PER_MIN;
-                    if ((s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0)
+                    if ( (s->hw.cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0 )
                         next_alarm_sec += 0;
                     else
                         next_alarm_sec += alarm_sec;
@@ -460,7 +464,7 @@ static void cf_check rtc_alarm_cb(void *opaque)
     RTCState *s = opaque;
 
     spin_lock(&s->lock);
-    if (!(s->hw.cmos_data[RTC_REG_B] & RTC_SET))
+    if ( !(s->hw.cmos_data[RTC_REG_B] & RTC_SET) )
     {
         s->hw.cmos_data[RTC_REG_C] |= RTC_AF;
         rtc_update_irq(s);
@@ -532,7 +536,7 @@ static int rtc_ioport_write(void *opaque, uint32_t addr, uint32_t data)
             /* set mode: reset UIP mode */
             s->hw.cmos_data[RTC_REG_A] &= ~RTC_UIP;
             /* adjust cmos before stopping */
-            if (!(orig & RTC_SET))
+            if ( !(orig & RTC_SET) )
             {
                 s->current_tm = gmtime(get_localtime(d));
                 rtc_copy_date(s);
@@ -579,12 +583,16 @@ static void rtc_set_time(RTCState *s)
     struct tm *tm = &s->current_tm;
     struct domain *d = vrtc_domain(s);
     unsigned long before, after; /* XXX s_time_t */
-      
+
     ASSERT(spin_is_locked(&s->lock));
 
-    before = mktime(get_year(tm->tm_year), tm->tm_mon + 1, tm->tm_mday,
-		    tm->tm_hour, tm->tm_min, tm->tm_sec);
-    
+    before = mktime(get_year(tm->tm_year),
+                    tm->tm_mon + 1,
+                    tm->tm_mday,
+                    tm->tm_hour,
+                    tm->tm_min,
+                    tm->tm_sec);
+
     tm->tm_sec = from_bcd(s, s->hw.cmos_data[RTC_SECONDS]);
     tm->tm_min = from_bcd(s, s->hw.cmos_data[RTC_MINUTES]);
     tm->tm_hour = convert_hour(s, s->hw.cmos_data[RTC_HOURS]);
@@ -593,8 +601,12 @@ static void rtc_set_time(RTCState *s)
     tm->tm_mon = from_bcd(s, s->hw.cmos_data[RTC_MONTH]) - 1;
     tm->tm_year = from_bcd(s, s->hw.cmos_data[RTC_YEAR]) + 100;
 
-    after = mktime(get_year(tm->tm_year), tm->tm_mon + 1, tm->tm_mday,
-                   tm->tm_hour, tm->tm_min, tm->tm_sec);
+    after = mktime(get_year(tm->tm_year),
+                   tm->tm_mon + 1,
+                   tm->tm_mday,
+                   tm->tm_hour,
+                   tm->tm_min,
+                   tm->tm_sec);
 
     /* We use the guest's setting of the RTC to define the local-time 
      * offset for this domain. */
@@ -636,12 +648,12 @@ static int update_in_progress(RTCState *s)
     uint64_t guest_usec;
     struct domain *d = vrtc_domain(s);
 
-    if (s->hw.cmos_data[RTC_REG_B] & RTC_SET)
+    if ( s->hw.cmos_data[RTC_REG_B] & RTC_SET )
         return 0;
 
     guest_usec = get_localtime_us(d);
     /* UIP bit will be set at last 244us of every second. */
-    if ((guest_usec % USEC_PER_SEC) >= (USEC_PER_SEC - 244))
+    if ( (guest_usec % USEC_PER_SEC) >= (USEC_PER_SEC - 244) )
         return 1;
 
     return 0;
@@ -664,7 +676,7 @@ static uint32_t rtc_ioport_read(RTCState *s)
     case RTC_MONTH:
     case RTC_YEAR:
         /* if not in set mode, adjust cmos before reading*/
-        if (!(s->hw.cmos_data[RTC_REG_B] & RTC_SET))
+        if ( !(s->hw.cmos_data[RTC_REG_B] & RTC_SET) )
         {
             s->current_tm = gmtime(get_localtime(d));
             rtc_copy_date(s);
@@ -673,7 +685,7 @@ static uint32_t rtc_ioport_read(RTCState *s)
         break;
     case RTC_REG_A:
         ret = s->hw.cmos_data[s->hw.cmos_index];
-        if ((s->use_timer == 0) && update_in_progress(s))
+        if ( (s->use_timer == 0) && update_in_progress(s) )
             ret |= RTC_UIP;
         break;
     case RTC_REG_C:
@@ -696,8 +708,8 @@ static uint32_t rtc_ioport_read(RTCState *s)
     return ret;
 }
 
-static int cf_check handle_rtc_io(
-    int dir, unsigned int port, unsigned int bytes, uint32_t *val)
+static int cf_check handle_rtc_io(int dir, unsigned int port,
+                                  unsigned int bytes, uint32_t *val)
 {
     struct RTCState *vrtc = vcpu_vrtc(current);
 
@@ -707,7 +719,7 @@ static int cf_check handle_rtc_io(
         *val = ~0;
         return X86EMUL_OKAY;
     }
-    
+
     if ( dir == IOREQ_WRITE )
     {
         if ( rtc_ioport_write(vrtc, port, (uint8_t)*val) )
@@ -814,8 +826,8 @@ void rtc_reset(struct domain *d)
 }
 
 /* RTC mediator for HVM hardware domain. */
-static int cf_check hw_rtc_io(
-    int dir, unsigned int port, unsigned int size, uint32_t *val)
+static int cf_check hw_rtc_io(int dir, unsigned int port, unsigned int size,
+                              uint32_t *val)
 {
     if ( dir == IOREQ_READ )
         *val = ~0;

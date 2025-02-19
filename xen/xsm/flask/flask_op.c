@@ -27,7 +27,8 @@
 #define _copy_to_guest copy_to_guest
 #define _copy_from_guest copy_from_guest
 
-enum flask_bootparam_t __read_mostly flask_bootparam = FLASK_BOOTPARAM_ENFORCING;
+enum flask_bootparam_t __read_mostly flask_bootparam =
+    FLASK_BOOTPARAM_ENFORCING;
 
 bool __read_mostly flask_enforcing = true;
 
@@ -71,6 +72,7 @@ static int __init cf_check parse_flask_param(const char *s)
 
     return (flask_bootparam == FLASK_BOOTPARAM_INVALID) ? -EINVAL : 0;
 }
+
 custom_param("flask", parse_flask_param);
 
 static int domain_has_security(struct domain *d, uint32_t perms)
@@ -81,8 +83,11 @@ static int domain_has_security(struct domain *d, uint32_t perms)
     if ( !dsec )
         return -EACCES;
 
-    return avc_has_perm(dsec->sid, SECINITSID_SECURITY, SECCLASS_SECURITY,
-                        perms, NULL);
+    return avc_has_perm(dsec->sid,
+                        SECINITSID_SECURITY,
+                        SECCLASS_SECURITY,
+                        perms,
+                        NULL);
 }
 
 static int flask_security_relabel(struct xen_flask_transition *arg)
@@ -106,7 +111,10 @@ static int flask_security_create(struct xen_flask_transition *arg)
     if ( rv )
         return rv;
 
-    rv = security_transition_sid(arg->ssid, arg->tsid, arg->tclass, &arg->newsid);
+    rv = security_transition_sid(arg->ssid,
+                                 arg->tsid,
+                                 arg->tclass,
+                                 &arg->newsid);
 
     return rv;
 }
@@ -184,7 +192,7 @@ static int flask_security_context(struct xen_flask_sid_context *arg)
     if ( rv < 0 )
         goto out;
 
- out:
+out:
     xfree(buf);
 
     return rv;
@@ -221,8 +229,8 @@ static int flask_security_sid(struct xen_flask_sid_context *arg)
 
 #ifndef COMPAT
 
-static int flask_security_setavc_threshold(
-    struct xen_flask_setavc_threshold *arg)
+static int
+flask_security_setavc_threshold(struct xen_flask_setavc_threshold *arg)
 {
     int rv = 0;
 
@@ -234,7 +242,7 @@ static int flask_security_setavc_threshold(
         avc_cache_threshold = arg->threshold;
     }
 
- out:
+out:
     return rv;
 }
 
@@ -314,7 +322,7 @@ static int flask_security_set_bool(struct xen_flask_boolean *arg)
         rv = 0;
     }
 
- out:
+out:
     spin_unlock(&sel_sem);
     return rv;
 }
@@ -355,7 +363,7 @@ static int flask_security_get_bool(struct xen_flask_boolean *arg)
         xfree(nameout);
     }
 
- out:
+out:
     spin_unlock(&sel_sem);
     return rv;
 }
@@ -375,7 +383,7 @@ static int flask_security_commit_bools(void)
     if ( bool_pending_values )
         rv = security_set_bools(bool_num, bool_pending_values);
 
- out:
+out:
     spin_unlock(&sel_sem);
     return rv;
 }
@@ -395,7 +403,7 @@ static int flask_security_make_bools(void)
     bool_num = num;
     bool_pending_values = values;
 
- out:
+out:
     return ret;
 }
 
@@ -456,15 +464,15 @@ static int flask_security_load(struct xen_flask_load *load)
 
     if ( !is_reload )
         printk(XENLOG_INFO "Flask: Policy loaded, continuing in %s mode.\n",
-            flask_enforcing ? "enforcing" : "permissive");
+               flask_enforcing ? "enforcing" : "permissive");
 
     xfree(bool_pending_values);
     bool_pending_values = NULL;
     ret = 0;
 
- out:
+out:
     spin_unlock(&sel_sem);
- out_free:
+out_free:
     xfree(buf);
     return ret;
 }
@@ -545,7 +553,7 @@ static int flask_get_peer_sid(struct xen_flask_peersid *arg)
     arg->sid = dsec->sid;
     rv = 0;
 
- out:
+out:
     read_unlock(&d->event_lock);
     return rv;
 }
@@ -569,37 +577,57 @@ static int flask_relabel_domain(const struct xen_flask_relabel *arg)
 
     if ( arg->domid == DOMID_SELF )
     {
-        rc = avc_has_perm(dsec->sid, arg->sid, SECCLASS_DOMAIN2, DOMAIN2__RELABELSELF, &ad);
+        rc = avc_has_perm(dsec->sid,
+                          arg->sid,
+                          SECCLASS_DOMAIN2,
+                          DOMAIN2__RELABELSELF,
+                          &ad);
         if ( rc )
             goto out;
     }
     else
     {
-        rc = avc_has_perm(csec->sid, dsec->sid, SECCLASS_DOMAIN2, DOMAIN2__RELABELFROM, &ad);
+        rc = avc_has_perm(csec->sid,
+                          dsec->sid,
+                          SECCLASS_DOMAIN2,
+                          DOMAIN2__RELABELFROM,
+                          &ad);
         if ( rc )
             goto out;
 
-        rc = avc_has_perm(csec->sid, arg->sid, SECCLASS_DOMAIN2, DOMAIN2__RELABELTO, &ad);
+        rc = avc_has_perm(csec->sid,
+                          arg->sid,
+                          SECCLASS_DOMAIN2,
+                          DOMAIN2__RELABELTO,
+                          &ad);
         if ( rc )
             goto out;
     }
 
-    rc = avc_has_perm(dsec->sid, arg->sid, SECCLASS_DOMAIN, DOMAIN__TRANSITION, &ad);
+    rc = avc_has_perm(dsec->sid,
+                      arg->sid,
+                      SECCLASS_DOMAIN,
+                      DOMAIN__TRANSITION,
+                      &ad);
     if ( rc )
         goto out;
 
     dsec->sid = arg->sid;
     dsec->self_sid = arg->sid;
-    security_transition_sid(dsec->sid, dsec->sid, SECCLASS_DOMAIN,
+    security_transition_sid(dsec->sid,
+                            dsec->sid,
+                            SECCLASS_DOMAIN,
                             &dsec->self_sid);
     if ( d->target )
     {
         struct domain_security_struct *tsec = d->target->ssid;
-        security_transition_sid(tsec->sid, dsec->sid, SECCLASS_DOMAIN,
+        security_transition_sid(tsec->sid,
+                                dsec->sid,
+                                SECCLASS_DOMAIN,
                                 &dsec->target_sid);
     }
 
- out:
+out:
     rcu_unlock_domain(d);
     return rc;
 }
@@ -720,13 +748,13 @@ ret_t cf_check do_flask_op(XEN_GUEST_HANDLE_PARAM(void) u_flask_op)
     if ( rv < 0 )
         goto out;
 
-    if ( (FLASK_COPY_OUT&(1UL<<op.cmd)) )
+    if ( (FLASK_COPY_OUT & (1UL << op.cmd)) )
     {
         if ( copy_to_guest(u_flask_op, &op, 1) )
             rv = -EFAULT;
     }
 
- out:
+out:
     return rv;
 }
 

@@ -171,8 +171,8 @@
 
 /* The limit field is right-shifted by 12 bits if .ar.g is set. */
 struct vm_event_x86_selector_reg {
-    uint32_t limit  :    20;
-    uint32_t ar     :    12;
+    uint32_t limit:20;
+    uint32_t ar:12;
 };
 
 /*
@@ -289,7 +289,7 @@ struct vm_event_regs_arm {
 struct vm_event_mem_access {
     uint64_t gfn;
     uint64_t offset;
-    uint64_t gla;   /* if flags has MEM_ACCESS_GLA_VALID set */
+    uint64_t gla; /* if flags has MEM_ACCESS_GLA_VALID set */
     uint32_t flags; /* MEM_ACCESS_* */
     uint32_t _pad;
 };
@@ -313,7 +313,7 @@ struct vm_event_debug {
     uint64_t gfn;
     uint64_t pending_dbg; /* Behaves like the VT-x PENDING_DBG field. */
     uint32_t insn_length;
-    uint8_t type;        /* HVMOP_TRAP_* */
+    uint8_t type; /* HVMOP_TRAP_* */
     uint8_t _pad[3];
 };
 
@@ -331,12 +331,13 @@ struct vm_event_mov_to_msr {
 struct vm_event_desc_access {
     union {
         struct {
-            uint32_t instr_info;         /* VMX: VMCS Instruction-Information */
+            uint32_t instr_info; /* VMX: VMCS Instruction-Information */
             uint32_t _pad1;
             uint64_t exit_qualification; /* VMX: VMCS Exit Qualification */
         } vmx;
     } arch;
-    uint8_t descriptor;                  /* VM_EVENT_DESC_* */
+
+    uint8_t descriptor; /* VM_EVENT_DESC_* */
     uint8_t is_write;
     uint8_t _pad[6];
 };
@@ -374,7 +375,7 @@ struct vm_event_sharing {
 struct vm_event_emul_read_data {
     uint32_t size;
     /* The struct is used in a union with vm_event_regs_x86. */
-    uint8_t  data[sizeof(struct vm_event_regs_x86) - sizeof(uint32_t)];
+    uint8_t data[sizeof(struct vm_event_regs_x86) - sizeof(uint32_t)];
 };
 
 struct vm_event_emul_insn_data {
@@ -392,35 +393,36 @@ struct vm_event_vmexit {
 
 struct vm_event_io {
     uint32_t bytes; /* size of access */
-    uint16_t port;  /* port number */
-    uint8_t  in;    /* direction (0 = OUT, 1 = IN) */
-    uint8_t  str;   /* string instruction (0 = not string, 1 = string) */
+    uint16_t port; /* port number */
+    uint8_t in; /* direction (0 = OUT, 1 = IN) */
+    uint8_t str; /* string instruction (0 = not string, 1 = string) */
 };
 
 typedef struct vm_event_st {
-    uint32_t version;   /* VM_EVENT_INTERFACE_VERSION */
-    uint32_t flags;     /* VM_EVENT_FLAG_* */
-    uint32_t reason;    /* VM_EVENT_REASON_* */
+    uint32_t version; /* VM_EVENT_INTERFACE_VERSION */
+    uint32_t flags; /* VM_EVENT_FLAG_* */
+    uint32_t reason; /* VM_EVENT_REASON_* */
     uint32_t vcpu_id;
     uint16_t altp2m_idx; /* may be used during request and response */
     uint16_t _pad[3];
 
     union {
-        struct vm_event_paging                mem_paging;
-        struct vm_event_sharing               mem_sharing;
-        struct vm_event_mem_access            mem_access;
-        struct vm_event_write_ctrlreg         write_ctrlreg;
-        struct vm_event_mov_to_msr            mov_to_msr;
-        struct vm_event_desc_access           desc_access;
-        struct vm_event_singlestep            singlestep;
-        struct vm_event_fast_singlestep       fast_singlestep;
-        struct vm_event_debug                 software_breakpoint;
-        struct vm_event_debug                 debug_exception;
-        struct vm_event_cpuid                 cpuid;
-        struct vm_event_vmexit                vmexit;
-        struct vm_event_io                    io;
+        struct vm_event_paging mem_paging;
+        struct vm_event_sharing mem_sharing;
+        struct vm_event_mem_access mem_access;
+        struct vm_event_write_ctrlreg write_ctrlreg;
+        struct vm_event_mov_to_msr mov_to_msr;
+        struct vm_event_desc_access desc_access;
+        struct vm_event_singlestep singlestep;
+        struct vm_event_fast_singlestep fast_singlestep;
+        struct vm_event_debug software_breakpoint;
+        struct vm_event_debug debug_exception;
+        struct vm_event_cpuid cpuid;
+        struct vm_event_vmexit vmexit;
+        struct vm_event_io io;
+
         union {
-            struct vm_event_interrupt_x86     x86;
+            struct vm_event_interrupt_x86 x86;
         } interrupt;
     } u;
 

@@ -39,15 +39,15 @@ uint64_t get_localtime_us(struct domain *d);
 unsigned long get_sec(void);
 
 struct tm {
-    int     tm_sec;         /* seconds */
-    int     tm_min;         /* minutes */
-    int     tm_hour;        /* hours */
-    int     tm_mday;        /* day of the month */
-    int     tm_mon;         /* month */
-    int     tm_year;        /* year */
-    int     tm_wday;        /* day of the week */
-    int     tm_yday;        /* day in the year */
-    int     tm_isdst;       /* daylight saving time */
+    int tm_sec; /* seconds */
+    int tm_min; /* minutes */
+    int tm_hour; /* hours */
+    int tm_mday; /* day of the month */
+    int tm_mon; /* month */
+    int tm_year; /* year */
+    int tm_wday; /* day of the week */
+    int tm_yday; /* day in the year */
+    int tm_isdst; /* daylight saving time */
 };
 struct tm gmtime(unsigned long t);
 struct tm wallclock_time(uint64_t *ns);
@@ -68,8 +68,7 @@ struct tm wallclock_time(uint64_t *ns);
 extern void update_vcpu_system_time(struct vcpu *v);
 extern void update_domain_wallclock_time(struct domain *d);
 
-extern void do_settime(
-    u64 secs, unsigned int nsecs, u64 system_time_base);
+extern void do_settime(u64 secs, unsigned int nsecs, u64 system_time_base);
 
 extern void send_timer_event(struct vcpu *v);
 

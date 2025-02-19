@@ -86,39 +86,37 @@ void queue_write_lock_slowpath(rwlock_t *lock)
      * Set the waiting flag to notify readers that a writer is pending,
      * or wait for a previous writer to go away.
      */
-    for ( ; ; )
+    for ( ;; )
     {
         cnts = atomic_read(&lock->cnts);
         if ( !(cnts & _QW_WMASK) &&
-             (atomic_cmpxchg(&lock->cnts, cnts,
-                             cnts | _QW_WAITING) == cnts) )
+             (atomic_cmpxchg(&lock->cnts, cnts, cnts | _QW_WAITING) == cnts) )
             break;
 
         cpu_relax();
     }
 
     /* When no more readers, set the locked flag. */
-    for ( ; ; )
+    for ( ;; )
     {
         cnts = atomic_read(&lock->cnts);
         if ( (cnts == _QW_WAITING) &&
-             (atomic_cmpxchg(&lock->cnts, _QW_WAITING,
-                             _write_lock_val()) == _QW_WAITING) )
+             (atomic_cmpxchg(&lock->cnts, _QW_WAITING, _write_lock_val()) ==
+              _QW_WAITING) )
             break;
 
         cpu_relax();
     }
- unlock:
+unlock:
     spin_unlock(&lock->lock);
 
     lock_enter(&lock->lock.debug);
 }
 
-
 static DEFINE_PER_CPU(cpumask_t, percpu_rwlock_readers);
 
 void _percpu_write_lock(percpu_rwlock_t **per_cpudata,
-                percpu_rwlock_t *percpu_rwlock)
+                        percpu_rwlock_t *percpu_rwlock)
 {
     unsigned int cpu;
     cpumask_t *rwlock_readers = &this_cpu(percpu_rwlock_readers);
@@ -145,7 +143,7 @@ void _percpu_write_lock(percpu_rwlock_t **per_cpudata,
     cpumask_copy(rwlock_readers, &cpu_online_map);
 
     /* Check if there are any percpu readers in progress on this rwlock. */
-    for ( ; ; )
+    for ( ;; )
     {
         for_each_cpu(cpu, rwlock_readers)
         {

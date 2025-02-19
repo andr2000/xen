@@ -36,6 +36,7 @@
  */
 union host_lpi {
     uint64_t data;
+
     struct {
         uint32_t virt_lpi;
         uint16_t dom_id;
@@ -71,9 +72,9 @@ static struct {
 } lpi_data;
 
 struct lpi_redist_data {
-    paddr_t             redist_addr;
-    unsigned int        redist_id;
-    void                *pending_table;
+    paddr_t redist_addr;
+    unsigned int redist_id;
+    void *pending_table;
 };
 
 static DEFINE_PER_CPU(struct lpi_redist_data, lpi_redist);
@@ -143,7 +144,7 @@ void vgic_vcpu_inject_lpi(struct domain *d, unsigned int virq)
 
     vcpu_id = ACCESS_ONCE(p->lpi_vcpu_id);
     if ( vcpu_id >= d->max_vcpus )
-          return;
+        return;
 
     vgic_inject_irq(d, d->vcpu[vcpu_id], virq, true);
 }
@@ -216,7 +217,8 @@ void gicv3_lpi_update_host_entry(uint32_t host_lpi, int domain_id,
 
     host_lpi -= LPI_OFFSET;
 
-    hlpip = &lpi_data.host_lpis[host_lpi / HOST_LPIS_PER_PAGE][host_lpi % HOST_LPIS_PER_PAGE];
+    hlpip = &lpi_data.host_lpis[host_lpi / HOST_LPIS_PER_PAGE]
+                               [host_lpi % HOST_LPIS_PER_PAGE];
 
     hlpi.virt_lpi = virt_lpi;
     hlpi.dom_id = domain_id;
@@ -272,8 +274,9 @@ static int gicv3_lpi_set_pendtable(void __iomem *rdist_base)
 
     ASSERT(!(virt_to_maddr(pendtable) & ~GENMASK(51, 16)));
 
-    val  = GIC_BASER_CACHE_RaWaWb << GICR_PENDBASER_INNER_CACHEABILITY_SHIFT;
-    val |= GIC_BASER_CACHE_SameAsInner << GICR_PENDBASER_OUTER_CACHEABILITY_SHIFT;
+    val = GIC_BASER_CACHE_RaWaWb << GICR_PENDBASER_INNER_CACHEABILITY_SHIFT;
+    val |= GIC_BASER_CACHE_SameAsInner
+           << GICR_PENDBASER_OUTER_CACHEABILITY_SHIFT;
     val |= GIC_BASER_InnerShareable << GICR_PENDBASER_SHAREABILITY_SHIFT;
     val |= GICR_PENDBASER_PTZ;
     val |= virt_to_maddr(pendtable);
@@ -297,12 +300,13 @@ static int gicv3_lpi_set_pendtable(void __iomem *rdist_base)
  * Tell a redistributor about the (shared) property table, allocating one
  * if not already done.
  */
-static int gicv3_lpi_set_proptable(void __iomem * rdist_base)
+static int gicv3_lpi_set_proptable(void __iomem *rdist_base)
 {
     uint64_t reg;
 
-    reg  = GIC_BASER_CACHE_RaWaWb << GICR_PROPBASER_INNER_CACHEABILITY_SHIFT;
-    reg |= GIC_BASER_CACHE_SameAsInner << GICR_PROPBASER_OUTER_CACHEABILITY_SHIFT;
+    reg = GIC_BASER_CACHE_RaWaWb << GICR_PROPBASER_INNER_CACHEABILITY_SHIFT;
+    reg |= GIC_BASER_CACHE_SameAsInner
+           << GICR_PROPBASER_OUTER_CACHEABILITY_SHIFT;
     reg |= GIC_BASER_InnerShareable << GICR_PROPBASER_SHAREABILITY_SHIFT;
 
     /*
@@ -354,7 +358,7 @@ static int gicv3_lpi_set_proptable(void __iomem * rdist_base)
     return 0;
 }
 
-int gicv3_lpi_init_rdist(void __iomem * rdist_base)
+int gicv3_lpi_init_rdist(void __iomem *rdist_base)
 {
     uint32_t reg;
     int ret;
@@ -419,7 +423,8 @@ int gicv3_lpi_init_host_lpis(unsigned int host_lpi_bits)
      * Tell the user about it, the actual number is reported below.
      */
     if ( max_lpi_bits < 14 || max_lpi_bits > 32 )
-        printk(XENLOG_WARNING "WARNING: max_lpi_bits must be between 14 and 32, adjusting.\n");
+        printk(XENLOG_WARNING
+               "WARNING: max_lpi_bits must be between 14 and 32, adjusting.\n");
 
     max_lpi_bits = max(max_lpi_bits, 14U);
     lpi_data.max_host_lpi_ids = BIT(min(host_lpi_bits, max_lpi_bits), UL);
@@ -430,7 +435,8 @@ int gicv3_lpi_init_host_lpis(unsigned int host_lpi_bits)
      * It's very unlikely that we need more than 24 bits worth of LPIs.
      */
     if ( lpi_data.max_host_lpi_ids > BIT(24, UL) )
-        warning_add("Using high number of LPIs, limit memory usage with max_lpi_bits\n");
+        warning_add(
+            "Using high number of LPIs, limit memory usage with max_lpi_bits\n");
 
     spin_lock_init(&lpi_data.host_lpis_lock);
     lpi_data.next_free_lpi = 0;
@@ -459,8 +465,7 @@ static int find_unused_host_lpi(uint32_t start, uint32_t *index)
 
     ASSERT(spin_is_locked(&lpi_data.host_lpis_lock));
 
-    for ( chunk = start;
-          chunk < MAX_NR_HOST_LPIS / HOST_LPIS_PER_PAGE;
+    for ( chunk = start; chunk < MAX_NR_HOST_LPIS / HOST_LPIS_PER_PAGE;
           chunk++ )
     {
         /* If we hit an unallocated chunk, use entry 0 in that one. */
@@ -501,7 +506,7 @@ int gicv3_allocate_host_lpi_block(struct domain *d, uint32_t *first_lpi)
     chunk = find_unused_host_lpi(lpi_data.next_free_lpi / HOST_LPIS_PER_PAGE,
                                  &lpi_idx);
 
-    if ( chunk == - 1 )          /* rescan for a hole from the beginning */
+    if ( chunk == -1 ) /* rescan for a hole from the beginning */
     {
         lpi_idx = 0;
         chunk = find_unused_host_lpi(0, &lpi_idx);
@@ -588,7 +593,7 @@ void gicv3_free_host_lpi_block(uint32_t first_lpi)
 
     hlpi = gic_get_host_lpi(first_lpi);
     if ( !hlpi )
-        return;         /* Nothing to free here. */
+        return; /* Nothing to free here. */
 
     spin_lock(&lpi_data.host_lpis_lock);
 

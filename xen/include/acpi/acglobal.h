@@ -52,10 +52,10 @@
  */
 #ifdef DEFINE_ACPI_GLOBALS
 #define ACPI_EXTERN
-#define ACPI_INIT_GLOBAL(a,b) a=b
+#define ACPI_INIT_GLOBAL(a, b) a=b
 #else
 #define ACPI_EXTERN extern
-#define ACPI_INIT_GLOBAL(a,b) a
+#define ACPI_INIT_GLOBAL(a, b) a
 #endif
 
 /*****************************************************************************
@@ -94,10 +94,10 @@ ACPI_EXTERN u8 acpi_gbl_reduced_hardware;
 #ifndef DEFINE_ACPI_GLOBALS
 
 extern char const *acpi_gbl_exception_names_env[];
-extern char const *acpi_gbl_exception_names_pgm[];
-extern char const *acpi_gbl_exception_names_tbl[];
-extern char const *acpi_gbl_exception_names_aml[];
-extern char const *acpi_gbl_exception_names_ctrl[];
+extern const char *acpi_gbl_exception_names_pgm[];
+extern const char *acpi_gbl_exception_names_tbl[];
+extern const char *acpi_gbl_exception_names_aml[];
+extern const char *acpi_gbl_exception_names_ctrl[];
 
 #endif
 
@@ -107,7 +107,6 @@ extern char const *acpi_gbl_exception_names_ctrl[];
  *
  ****************************************************************************/
 
-extern struct acpi_bit_register_info
-    acpi_gbl_bit_register_info[ACPI_NUM_BITREG];
+extern struct acpi_bit_register_info acpi_gbl_bit_register_info[ACPI_NUM_BITREG];
 
-#endif				/* __ACGLOBAL_H__ */
+#endif /* __ACGLOBAL_H__ */

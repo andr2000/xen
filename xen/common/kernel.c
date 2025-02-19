@@ -76,7 +76,7 @@ static int parse_params(const char *cmdline, const struct kernel_param *start,
     int rc, final_rc = 0;
     bool bool_assert, found;
 
-    for ( ; ; )
+    for ( ;; )
     {
         /* Skip whitespace. */
         while ( *p == ' ' )
@@ -88,7 +88,7 @@ static int parse_params(const char *cmdline, const struct kernel_param *start,
         q = optkey = opt;
         while ( (*p != ' ') && (*p != '\0') )
         {
-            if ( (q-opt) < (sizeof(opt)-1) ) /* avoid overflow */
+            if ( (q - opt) < (sizeof(opt) - 1) ) /* avoid overflow */
                 *q++ = *p;
             p++;
         }
@@ -103,7 +103,7 @@ static int parse_params(const char *cmdline, const struct kernel_param *start,
         }
         else
         {
-            optval = q;       /* default option value is empty string */
+            optval = q; /* default option value is empty string */
             q = NULL;
         }
 
@@ -144,9 +144,8 @@ static int parse_params(const char *cmdline, const struct kernel_param *start,
                 strlcpy(param->par.var, optval, param->len);
                 break;
             case OPT_UINT:
-                rctmp = assign_integer_param(
-                    param,
-                    simple_strtoll(optval, &s, 0));
+                rctmp = assign_integer_param(param,
+                                             simple_strtoll(optval, &s, 0));
                 if ( *s )
                     rctmp = -EINVAL;
                 break;
@@ -160,9 +159,8 @@ static int parse_params(const char *cmdline, const struct kernel_param *start,
                 assign_integer_param(param, bool_assert);
                 break;
             case OPT_SIZE:
-                rctmp = assign_integer_param(
-                    param,
-                    parse_size_and_unit(optval, &s));
+                rctmp = assign_integer_param(param,
+                                             parse_size_and_unit(optval, &s));
                 if ( *s )
                     rctmp = -EINVAL;
                 break;
@@ -191,7 +189,9 @@ static int parse_params(const char *cmdline, const struct kernel_param *start,
         if ( rc )
         {
             printk("parameter \"%s\" has invalid value \"%s\", rc=%d!\n",
-                    key, optval, rc);
+                   key,
+                   optval,
+                   rc);
             final_rc = rc;
         }
         if ( !found )
@@ -233,7 +233,11 @@ void __init cmdline_parse(const char *cmdline)
 
 int parse_bool(const char *s, const char *e)
 {
-    size_t len = e ? ({ ASSERT(e >= s); e - s; }) : strlen(s);
+    size_t len = e ? ({
+        ASSERT(e >= s);
+        e - s;
+    })
+                   : strlen(s);
 
     switch ( len )
     {
@@ -290,7 +294,11 @@ int parse_boolean(const char *name, const char *s, const char *e)
     if ( has_neg_prefix )
         s += 3;
 
-    slen = e ? ({ ASSERT(e >= s); e - s; }) : strlen(s);
+    slen = e ? ({
+        ASSERT(e >= s);
+        e - s;
+    })
+             : strlen(s);
     nlen = strlen(name);
 
     /* Does s now start with name? */
@@ -328,7 +336,11 @@ int __init parse_signed_integer(const char *name, const char *s, const char *e,
     const char *str;
     long long pval;
 
-    slen = e ? ({ ASSERT(e >= s); e - s; }) : strlen(s);
+    slen = e ? ({
+        ASSERT(e >= s);
+        e - s;
+    })
+             : strlen(s);
     nlen = strlen(name);
 
     if ( !e )
@@ -351,7 +363,7 @@ int __init parse_signed_integer(const char *name, const char *s, const char *e,
 
 int cmdline_strcmp(const char *frag, const char *name)
 {
-    for ( ; ; frag++, name++ )
+    for ( ;; frag++, name++ )
     {
         unsigned char f = *frag, n = *name;
         int res = f - n;
@@ -388,7 +400,9 @@ char *print_tainted(char *str)
 {
     if ( tainted )
     {
-        snprintf(str, TAINT_STRING_MAX_LEN, "Tainted: %c%c%c%c%c%c",
+        snprintf(str,
+                 TAINT_STRING_MAX_LEN,
+                 "Tainted: %c%c%c%c%c%c",
                  tainted & TAINT_MACHINE_INSECURE ? 'I' : ' ',
                  tainted & TAINT_MACHINE_CHECK ? 'M' : ' ',
                  tainted & TAINT_SYNC_CONSOLE ? 'C' : ' ',
@@ -480,6 +494,7 @@ static int __init cf_check buildinfo_init(void)
 
     return 0;
 }
+
 __initcall(buildinfo_init);
 
 static HYPFS_DIR_INIT(params, "params");
@@ -501,6 +516,7 @@ static int __init cf_check param_init(void)
 
     return 0;
 }
+
 __initcall(param_init);
 #endif
 
@@ -548,7 +564,7 @@ static long xenver_varbuf_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
 
     sz = strlen(str);
 
- have_len:
+have_len:
     if ( sz > KB(64) ) /* Arbitrary limit.  Avoid long-running operations. */
         return -E2BIG;
 
@@ -561,8 +577,7 @@ static long xenver_varbuf_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
     if ( sz > user_str.len )
         return -ENOBUFS;
 
-    if ( copy_to_guest_offset(arg, offsetof(struct xen_varbuf, buf),
-                              str, sz) )
+    if ( copy_to_guest_offset(arg, offsetof(struct xen_varbuf, buf), str, sz) )
         return -EFAULT;
 
     return sz;
@@ -593,10 +608,11 @@ long do_xen_version(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
         xen_compile_info_t info;
 
         memset(&info, 0, sizeof(info));
-        safe_strcpy(info.compiler,       deny ? xen_deny() : xen_compiler());
-        safe_strcpy(info.compile_by,     deny ? xen_deny() : xen_compile_by());
-        safe_strcpy(info.compile_domain, deny ? xen_deny() : xen_compile_domain());
-        safe_strcpy(info.compile_date,   deny ? xen_deny() : xen_compile_date());
+        safe_strcpy(info.compiler, deny ? xen_deny() : xen_compiler());
+        safe_strcpy(info.compile_by, deny ? xen_deny() : xen_compile_by());
+        safe_strcpy(info.compile_domain,
+                    deny ? xen_deny() : xen_compile_domain());
+        safe_strcpy(info.compile_date, deny ? xen_deny() : xen_compile_date());
         if ( copy_to_guest(arg, &info, 1) )
             return -EFAULT;
         return 0;
@@ -624,8 +640,8 @@ long do_xen_version(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
         {
             compat_platform_parameters_t params = {
                 .virt_start = is_pv_vcpu(curr)
-                            ? HYPERVISOR_COMPAT_VIRT_START(curr->domain)
-                            : 0,
+                                  ? HYPERVISOR_COMPAT_VIRT_START(curr->domain)
+                                  : 0,
             };
 
             if ( copy_to_guest(arg, &params, 1) )
@@ -644,8 +660,8 @@ long do_xen_version(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
                  * the caller not to issue this hypercall.
                  */
                 .virt_start = !IS_ENABLED(CONFIG_DEBUG) && is_pv_vcpu(curr)
-                              ? HYPERVISOR_VIRT_START
-                              : 0,
+                                  ? HYPERVISOR_VIRT_START
+                                  : 0,
             };
 
             if ( copy_to_guest(arg, &params, 1) )
@@ -685,9 +701,8 @@ long do_xen_version(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
             if ( VM_ASSIST(d, pae_extended_cr3) )
                 fi.submap |= (1U << XENFEAT_pae_pgdir_above_4gb);
             if ( paging_mode_translate(d) )
-                fi.submap |=
-                    (1U << XENFEAT_writable_page_tables) |
-                    (1U << XENFEAT_auto_translated_physmap);
+                fi.submap |= (1U << XENFEAT_writable_page_tables) |
+                             (1U << XENFEAT_auto_translated_physmap);
             if ( is_hardware_domain(d) )
                 fi.submap |= 1U << XENFEAT_dom0;
 #ifdef CONFIG_ARM
@@ -732,8 +747,9 @@ long do_xen_version(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
 
         BUILD_BUG_ON(ARRAY_SIZE(current->domain->handle) != ARRAY_SIZE(hdl));
 
-        if ( copy_to_guest(arg, deny ? hdl : current->domain->handle,
-                           ARRAY_SIZE(hdl) ) )
+        if ( copy_to_guest(arg,
+                           deny ? hdl : current->domain->handle,
+                           ARRAY_SIZE(hdl)) )
             return -EFAULT;
         return 0;
     }

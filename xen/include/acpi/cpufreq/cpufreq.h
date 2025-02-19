@@ -42,13 +42,13 @@ struct acpi_cpufreq_data {
 extern struct acpi_cpufreq_data *cpufreq_drv_data[NR_CPUS];
 
 struct cpufreq_cpuinfo {
-    unsigned int        max_freq;
-    unsigned int        second_max_freq;    /* P1 if Turbo Mode is on */
-    unsigned int        perf_freq; /* Scaling freq for aperf/mpref.
+    unsigned int max_freq;
+    unsigned int second_max_freq; /* P1 if Turbo Mode is on */
+    unsigned int perf_freq; /* Scaling freq for aperf/mpref.
                                       acpi-cpufreq uses max_freq, but HWP uses
                                       base_freq.*/
-    unsigned int        min_freq;
-    unsigned int        transition_latency; /* in 10^(-9) s = nanoseconds */
+    unsigned int min_freq;
+    unsigned int transition_latency; /* in 10^(-9) s = nanoseconds */
 };
 
 struct perf_limits {
@@ -64,25 +64,26 @@ struct perf_limits {
 };
 
 struct cpufreq_policy {
-    cpumask_var_t       cpus;          /* affected CPUs */
-    unsigned int        shared_type;   /* ANY or ALL affected CPUs
+    cpumask_var_t cpus; /* affected CPUs */
+    unsigned int shared_type; /* ANY or ALL affected CPUs
                                           should set cpufreq */
-    unsigned int        cpu;           /* cpu nr of registered CPU */
-    struct cpufreq_cpuinfo    cpuinfo;
+    unsigned int cpu; /* cpu nr of registered CPU */
+    struct cpufreq_cpuinfo cpuinfo;
 
-    unsigned int        min;    /* in kHz */
-    unsigned int        max;    /* in kHz */
-    unsigned int        cur;    /* in kHz, only needed if cpufreq
+    unsigned int min; /* in kHz */
+    unsigned int max; /* in kHz */
+    unsigned int cur; /* in kHz, only needed if cpufreq
                                  * governors are used */
-    struct perf_limits  limits;
-    struct cpufreq_governor     *governor;
+    struct perf_limits limits;
+    struct cpufreq_governor *governor;
 
-    bool                resume; /* flag for cpufreq 1st run
+    bool resume; /* flag for cpufreq 1st run
                                  * S3 wakeup, hotplug cpu, etc */
-    int8_t              turbo;  /* tristate flag: 0 for unsupported
+    int8_t turbo; /* tristate flag: 0 for unsupported
                                  * -1 for disable, 1 for enabled
                                  * See CPUFREQ_TURBO_* below for defines */
 };
+
 DECLARE_PER_CPU(struct cpufreq_policy *, cpufreq_cpu_policy);
 
 extern int __cpufreq_set_policy(struct cpufreq_policy *data,
@@ -95,12 +96,11 @@ extern int __cpufreq_set_policy(struct cpufreq_policy *data,
 /******************** cpufreq transition notifiers *******************/
 
 struct cpufreq_freqs {
-    unsigned int cpu;    /* cpu nr */
+    unsigned int cpu; /* cpu nr */
     unsigned int old;
     unsigned int new;
-    u8 flags;            /* flags of cpufreq_driver, see below. */
+    u8 flags; /* flags of cpufreq_driver, see below. */
 };
-
 
 /*********************************************************************
  *                          CPUFREQ GOVERNORS                        *
@@ -111,10 +111,9 @@ struct cpufreq_freqs {
 #define CPUFREQ_GOV_LIMITS 3
 
 struct cpufreq_governor {
-    char    name[CPUFREQ_NAME_LEN];
-    int     (*governor)(struct cpufreq_policy *policy,
-                        unsigned int event);
-    bool    (*handle_option)(const char *name, const char *value);
+    char name[CPUFREQ_NAME_LEN];
+    int (*governor)(struct cpufreq_policy *policy, unsigned int event);
+    bool (*handle_option)(const char *name, const char *value);
     struct list_head governor_list;
 };
 
@@ -148,12 +147,11 @@ extern int cpufreq_driver_getavg(unsigned int cpu, unsigned int flag);
 int cpufreq_update_turbo(unsigned int cpu, int new_state);
 int cpufreq_get_turbo_status(unsigned int cpu);
 
-static inline int
-__cpufreq_governor(struct cpufreq_policy *policy, unsigned int event)
+static inline int __cpufreq_governor(struct cpufreq_policy *policy,
+                                     unsigned int event)
 {
     return policy->governor->governor(policy, event);
 }
-
 
 /*********************************************************************
  *                      CPUFREQ DRIVER INTERFACE                     *
@@ -164,38 +162,36 @@ __cpufreq_governor(struct cpufreq_policy *policy, unsigned int event)
 
 struct cpufreq_driver {
     const char *name;
-    int    (*init)(struct cpufreq_policy *policy);
-    int    (*verify)(struct cpufreq_policy *policy);
-    int    (*setpolicy)(struct cpufreq_policy *policy);
-    int    (*update)(unsigned int cpu, struct cpufreq_policy *policy);
-    int    (*target)(struct cpufreq_policy *policy,
-                     unsigned int target_freq,
-                     unsigned int relation);
-    unsigned int    (*get)(unsigned int cpu);
-    int    (*exit)(struct cpufreq_policy *policy);
+    int (*init)(struct cpufreq_policy *policy);
+    int (*verify)(struct cpufreq_policy *policy);
+    int (*setpolicy)(struct cpufreq_policy *policy);
+    int (*update)(unsigned int cpu, struct cpufreq_policy *policy);
+    int (*target)(struct cpufreq_policy *policy, unsigned int target_freq,
+                  unsigned int relation);
+    unsigned int (*get)(unsigned int cpu);
+    int (*exit)(struct cpufreq_policy *policy);
 };
 
 extern struct cpufreq_driver cpufreq_driver;
 
 int cpufreq_register_driver(const struct cpufreq_driver *driver_data);
 
-static inline
-void cpufreq_verify_within_limits(struct cpufreq_policy *policy,
-                                  unsigned int min, unsigned int max)
+static inline void cpufreq_verify_within_limits(struct cpufreq_policy *policy,
+                                                unsigned int min,
+                                                unsigned int max)
 {
-    if (policy->min < min)
+    if ( policy->min < min )
         policy->min = min;
-    if (policy->max < min)
+    if ( policy->max < min )
         policy->max = min;
-    if (policy->min > max)
+    if ( policy->min > max )
         policy->min = max;
-    if (policy->max > max)
+    if ( policy->max > max )
         policy->max = max;
-    if (policy->min > policy->max)
+    if ( policy->min > policy->max )
         policy->min = policy->max;
     return;
 }
-
 
 /*********************************************************************
  *                     FREQUENCY TABLE HELPERS                       *
@@ -205,23 +201,21 @@ void cpufreq_verify_within_limits(struct cpufreq_policy *policy,
 #define CPUFREQ_TABLE_END     ~1
 
 struct cpufreq_frequency_table {
-    unsigned int    index;     /* any */
-    unsigned int    frequency; /* kHz - doesn't need to be in ascending
+    unsigned int index; /* any */
+    unsigned int frequency; /* kHz - doesn't need to be in ascending
                                 * order */
 };
 
 int cpufreq_frequency_table_cpuinfo(struct cpufreq_policy *policy,
-                   struct cpufreq_frequency_table *table);
+                                    struct cpufreq_frequency_table *table);
 
 int cpufreq_frequency_table_verify(struct cpufreq_policy *policy,
-                   struct cpufreq_frequency_table *table);
+                                   struct cpufreq_frequency_table *table);
 
 int cpufreq_frequency_table_target(struct cpufreq_policy *policy,
-                   struct cpufreq_frequency_table *table,
-                   unsigned int target_freq,
-                   unsigned int relation,
-                   unsigned int *index);
-
+                                   struct cpufreq_frequency_table *table,
+                                   unsigned int target_freq,
+                                   unsigned int relation, unsigned int *index);
 
 /*********************************************************************
  *                     UNIFIED DEBUG HELPERS                         *
@@ -240,8 +234,7 @@ struct cpu_dbs_info_s {
 
 int get_cpufreq_ondemand_para(uint32_t *sampling_rate_max,
                               uint32_t *sampling_rate_min,
-                              uint32_t *sampling_rate,
-                              uint32_t *up_threshold);
+                              uint32_t *sampling_rate, uint32_t *up_threshold);
 int write_ondemand_sampling_rate(unsigned int sampling_rate);
 int write_ondemand_up_threshold(unsigned int up_threshold);
 
@@ -257,11 +250,13 @@ int hwp_register_driver(void);
 #ifdef CONFIG_INTEL
 bool hwp_active(void);
 #else
-static inline bool hwp_active(void) { return false; }
+static inline bool hwp_active(void)
+{
+    return false;
+}
 #endif
 
-int get_hwp_para(unsigned int cpu,
-                 struct xen_cppc_para *cppc_para);
+int get_hwp_para(unsigned int cpu, struct xen_cppc_para *cppc_para);
 int set_hwp_para(struct cpufreq_policy *policy,
                  struct xen_set_cppc_para *set_cppc);
 

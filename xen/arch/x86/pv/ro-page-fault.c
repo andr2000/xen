@@ -14,8 +14,8 @@
 #include "emulate.h"
 #include "mm.h"
 
-static int cf_check pv_emul_is_mem_write(
-    const struct x86_emulate_state *state, struct x86_emulate_ctxt *ctxt)
+static int cf_check pv_emul_is_mem_write(const struct x86_emulate_state *state,
+                                         struct x86_emulate_ctxt *ctxt)
 {
     return x86_insn_is_mem_write(state, ctxt) ? X86EMUL_OKAY
                                               : X86EMUL_UNHANDLEABLE;
@@ -27,12 +27,13 @@ static int cf_check pv_emul_is_mem_write(
 
 struct ptwr_emulate_ctxt {
     unsigned long cr2;
-    l1_pgentry_t  pte;
+    l1_pgentry_t pte;
 };
 
-static int cf_check ptwr_emulated_read(
-    enum x86_segment seg, unsigned long offset, void *p_data,
-    unsigned int bytes, struct x86_emulate_ctxt *ctxt)
+static int cf_check ptwr_emulated_read(enum x86_segment seg,
+                                       unsigned long offset, void *p_data,
+                                       unsigned int bytes,
+                                       struct x86_emulate_ctxt *ctxt)
 {
     unsigned int rc = bytes;
     unsigned long addr = offset;
@@ -40,16 +41,16 @@ static int cf_check ptwr_emulated_read(
     if ( !__addr_ok(addr) ||
          (rc = __copy_from_guest_pv(p_data, (void *)addr, bytes)) )
     {
-        x86_emul_pagefault(0, addr + bytes - rc, ctxt);  /* Read fault. */
+        x86_emul_pagefault(0, addr + bytes - rc, ctxt); /* Read fault. */
         return X86EMUL_EXCEPTION;
     }
 
     return X86EMUL_OKAY;
 }
 
-static int cf_check ptwr_emulated_insn_fetch(
-    unsigned long offset, void *p_data, unsigned int bytes,
-    struct x86_emulate_ctxt *ctxt)
+static int cf_check ptwr_emulated_insn_fetch(unsigned long offset, void *p_data,
+                                             unsigned int bytes,
+                                             struct x86_emulate_ctxt *ctxt)
 {
     unsigned int rc = copy_from_guest_pv(p_data, (void *)offset, bytes);
 
@@ -85,8 +86,11 @@ static int ptwr_emulated_update(unsigned long addr, intpte_t *p_old,
     if ( unlikely(((addr ^ ptwr_ctxt->cr2) & PAGE_MASK) ||
                   (addr & (bytes - 1))) )
     {
-        gdprintk(XENLOG_WARNING, "bad access (cr2=%lx, addr=%lx, bytes=%u)\n",
-                 ptwr_ctxt->cr2, addr, bytes);
+        gdprintk(XENLOG_WARNING,
+                 "bad access (cr2=%lx, addr=%lx, bytes=%u)\n",
+                 ptwr_ctxt->cr2,
+                 addr,
+                 bytes);
         return X86EMUL_UNHANDLEABLE;
     }
 
@@ -100,7 +104,8 @@ static int ptwr_emulated_update(unsigned long addr, intpte_t *p_old,
 
         /* Align address; read full word. */
         addr &= ~(sizeof(full) - 1);
-        if ( (rc = copy_from_guest_pv(&full, (void __user *)addr,
+        if ( (rc = copy_from_guest_pv(&full,
+                                      (void __user *)addr,
                                       sizeof(full))) != 0 )
         {
             x86_emul_pagefault(0, /* Read fault. */
@@ -111,21 +116,21 @@ static int ptwr_emulated_update(unsigned long addr, intpte_t *p_old,
         /* Mask out bits provided by caller. */
         full &= ~((((intpte_t)1 << (bytes * 8)) - 1) << offset);
         /* Shift the caller value and OR in the missing bits. */
-        val  &= (((intpte_t)1 << (bytes * 8)) - 1);
+        val &= (((intpte_t)1 << (bytes * 8)) - 1);
         val <<= offset;
-        val  |= full;
+        val |= full;
         /* Also fill in missing parts of the cmpxchg old value. */
-        old  &= (((intpte_t)1 << (bytes * 8)) - 1);
+        old &= (((intpte_t)1 << (bytes * 8)) - 1);
         old <<= offset;
-        old  |= full;
+        old |= full;
     }
 
-    pte  = ptwr_ctxt->pte;
-    mfn  = l1e_get_mfn(pte);
+    pte = ptwr_ctxt->pte;
+    mfn = l1e_get_mfn(pte);
     page = mfn_to_page(mfn);
 
     /* We are looking only for read-only mappings of p.t. pages. */
-    ASSERT((l1e_get_flags(pte) & (_PAGE_RW|_PAGE_PRESENT)) == _PAGE_PRESENT);
+    ASSERT((l1e_get_flags(pte) & (_PAGE_RW | _PAGE_PRESENT)) == _PAGE_PRESENT);
     ASSERT(mfn_valid(mfn));
     ASSERT((page->u.inuse.type_info & PGT_type_mask) == PGT_l1_page_table);
     ASSERT((page->u.inuse.type_info & PGT_count_mask) != 0);
@@ -157,8 +162,9 @@ static int ptwr_emulated_update(unsigned long addr, intpte_t *p_old,
              * zap the PRESENT bit on the assumption that the bottom half will
              * be written immediately after we return to the guest.
              */
-            gdprintk(XENLOG_DEBUG, "ptwr_emulate: fixing up invalid PAE PTE %"
-                     PRIpte"\n", l1e_get_intpte(nl1e));
+            gdprintk(XENLOG_DEBUG,
+                     "ptwr_emulate: fixing up invalid PAE PTE %" PRIpte "\n",
+                     l1e_get_intpte(nl1e));
             l1e_remove_flags(nl1e, _PAGE_PRESENT);
             break;
 
@@ -179,8 +185,11 @@ static int ptwr_emulated_update(unsigned long addr, intpte_t *p_old,
     if ( p_old )
     {
         ol1e = l1e_from_intpte(old);
-        old = paging_cmpxchg_guest_entry(v, &l1e_get_intpte(*pl1e), old,
-                                         l1e_get_intpte(nl1e), mfn);
+        old = paging_cmpxchg_guest_entry(v,
+                                         &l1e_get_intpte(*pl1e),
+                                         old,
+                                         l1e_get_intpte(nl1e),
+                                         mfn);
         if ( l1e_get_intpte(ol1e) == old )
             ret = X86EMUL_OKAY;
         else
@@ -213,16 +222,19 @@ static int ptwr_emulated_update(unsigned long addr, intpte_t *p_old,
     return X86EMUL_OKAY;
 }
 
-static int cf_check ptwr_emulated_write(
-    enum x86_segment seg, unsigned long offset, void *p_data,
-    unsigned int bytes, struct x86_emulate_ctxt *ctxt)
+static int cf_check ptwr_emulated_write(enum x86_segment seg,
+                                        unsigned long offset, void *p_data,
+                                        unsigned int bytes,
+                                        struct x86_emulate_ctxt *ctxt)
 {
     intpte_t val = 0;
 
     if ( (bytes > sizeof(val)) || (bytes & (bytes - 1)) || !bytes )
     {
-        gdprintk(XENLOG_WARNING, "bad write size (addr=%lx, bytes=%u)\n",
-                 offset, bytes);
+        gdprintk(XENLOG_WARNING,
+                 "bad write size (addr=%lx, bytes=%u)\n",
+                 offset,
+                 bytes);
         return X86EMUL_UNHANDLEABLE;
     }
 
@@ -231,17 +243,21 @@ static int cf_check ptwr_emulated_write(
     return ptwr_emulated_update(offset, NULL, val, bytes, ctxt);
 }
 
-static int cf_check ptwr_emulated_cmpxchg(
-    enum x86_segment seg, unsigned long offset, void *p_old, void *p_new,
-    unsigned int bytes, bool lock, struct x86_emulate_ctxt *ctxt)
+static int cf_check ptwr_emulated_cmpxchg(enum x86_segment seg,
+                                          unsigned long offset, void *p_old,
+                                          void *p_new, unsigned int bytes,
+                                          bool lock,
+                                          struct x86_emulate_ctxt *ctxt)
 {
     intpte_t old = 0, new = 0;
     int rc;
 
     if ( (bytes > sizeof(new)) || (bytes & (bytes - 1)) )
     {
-        gdprintk(XENLOG_WARNING, "bad cmpxchg size (addr=%lx, bytes=%u)\n",
-                 offset, bytes);
+        gdprintk(XENLOG_WARNING,
+                 "bad cmpxchg size (addr=%lx, bytes=%u)\n",
+                 offset,
+                 bytes);
         return X86EMUL_UNHANDLEABLE;
     }
 
@@ -256,16 +272,16 @@ static int cf_check ptwr_emulated_cmpxchg(
 }
 
 static const struct x86_emulate_ops ptwr_emulate_ops = {
-    .read       = ptwr_emulated_read,
+    .read = ptwr_emulated_read,
     .insn_fetch = ptwr_emulated_insn_fetch,
-    .write      = ptwr_emulated_write,
-    .cmpxchg    = ptwr_emulated_cmpxchg,
-    .validate   = pv_emul_is_mem_write,
+    .write = ptwr_emulated_write,
+    .cmpxchg = ptwr_emulated_cmpxchg,
+    .validate = pv_emul_is_mem_write,
 };
 
 /* Write page fault handler: check if guest is trying to modify a PTE. */
-static int ptwr_do_page_fault(struct x86_emulate_ctxt *ctxt,
-                              unsigned long addr, l1_pgentry_t pte)
+static int ptwr_do_page_fault(struct x86_emulate_ctxt *ctxt, unsigned long addr,
+                              l1_pgentry_t pte)
 {
     struct ptwr_emulate_ctxt ptwr_ctxt = {
         .cr2 = addr,
@@ -299,17 +315,17 @@ static int ptwr_do_page_fault(struct x86_emulate_ctxt *ctxt,
  */
 
 static const struct x86_emulate_ops mmio_ro_emulate_ops = {
-    .read       = x86emul_unhandleable_rw,
+    .read = x86emul_unhandleable_rw,
     .insn_fetch = ptwr_emulated_insn_fetch,
-    .write      = mmio_ro_emulated_write,
-    .validate   = pv_emul_is_mem_write,
+    .write = mmio_ro_emulated_write,
+    .validate = pv_emul_is_mem_write,
 };
 
 static const struct x86_emulate_ops mmcfg_intercept_ops = {
-    .read       = x86emul_unhandleable_rw,
+    .read = x86emul_unhandleable_rw,
     .insn_fetch = ptwr_emulated_insn_fetch,
-    .write      = mmcfg_intercept_write,
-    .validate   = pv_emul_is_mem_write,
+    .write = mmcfg_intercept_write,
+    .validate = pv_emul_is_mem_write,
 };
 
 /* Check if guest is trying to modify a r/o MMIO page. */
@@ -345,10 +361,10 @@ int pv_ro_page_fault(unsigned long addr, struct cpu_user_regs *regs)
     const struct domain *currd = current->domain;
     unsigned int addr_size = is_pv_32bit_domain(currd) ? 32 : BITS_PER_LONG;
     struct x86_emulate_ctxt ctxt = {
-        .regs      = regs,
+        .regs = regs,
         .addr_size = addr_size,
-        .sp_size   = addr_size,
-        .lma       = addr_size > 32,
+        .sp_size = addr_size,
+        .lma = addr_size > 32,
     };
     int rc;
     bool mmio_ro;
@@ -387,7 +403,8 @@ int pv_ro_page_fault(unsigned long addr, struct cpu_user_regs *regs)
         else
             gdprintk(XENLOG_WARNING,
                      "Unexpected event (type %u, vector %#x) from emulation\n",
-                     ctxt.event.type, ctxt.event.vector);
+                     ctxt.event.type,
+                     ctxt.event.vector);
 
         /* Fallthrough */
     case X86EMUL_OKAY:

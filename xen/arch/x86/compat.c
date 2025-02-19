@@ -38,7 +38,9 @@ long do_sched_op_compat(int cmd, unsigned long arg)
 
     case SCHEDOP_shutdown:
         TRACE_TIME(TRC_SCHED_SHUTDOWN,
-                   current->domain->domain_id, current->vcpu_id, arg);
+                   current->domain->domain_id,
+                   current->vcpu_id,
+                   arg);
         domain_shutdown(current->domain, (u8)arg);
         break;
 
@@ -50,8 +52,7 @@ long do_sched_op_compat(int cmd, unsigned long arg)
 }
 
 /* Legacy hypercall (as of 0x00030202). */
-long do_event_channel_op_compat(
-    XEN_GUEST_HANDLE_PARAM(evtchn_op_t) uop)
+long do_event_channel_op_compat(XEN_GUEST_HANDLE_PARAM(evtchn_op_t) uop)
 {
     struct evtchn_op op;
 

@@ -63,15 +63,18 @@ DEFINE_XEN_GUEST_HANDLE(xen_tmem_oid_t);
 typedef xen_pfn_t tmem_cli_mfn_t;
 #endif
 typedef XEN_GUEST_HANDLE(char) tmem_cli_va_t;
+
 struct tmem_op {
     uint32_t cmd;
     int32_t pool_id;
+
     union {
         struct {
             uint64_t uuid[2];
             uint32_t flags;
             uint32_t arg1;
         } creat; /* for cmd == TMEM_NEW_POOL. */
+
         struct {
 #if __XEN_INTERFACE_VERSION__ < 0x00040600
             uint64_t oid[3];
@@ -90,7 +93,7 @@ typedef struct tmem_op tmem_op_t;
 DEFINE_XEN_GUEST_HANDLE(tmem_op_t);
 #endif
 
-#endif  /* __XEN_INTERFACE_VERSION__ < 0x00041300 */
+#endif /* __XEN_INTERFACE_VERSION__ < 0x00041300 */
 
 #endif /* __XEN_PUBLIC_TMEM_H__ */
 

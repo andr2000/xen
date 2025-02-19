@@ -79,8 +79,7 @@ TVM_REG(CONTEXTIDR_EL1)
                                   1, domain_cpuinfo.field.bits[offset]); \
     }
 
-void do_sysreg(struct cpu_user_regs *regs,
-               const union hsr hsr)
+void do_sysreg(struct cpu_user_regs *regs, const union hsr hsr)
 {
     const struct hsr_sysreg sysreg = hsr.sysreg;
     int regidx = hsr.sysreg.reg;
@@ -112,22 +111,22 @@ void do_sysreg(struct cpu_user_regs *regs,
             p2m_set_way_flush(current, regs, hsr);
         break;
 
-    /*
+        /*
      * HCR_EL2.TVM
      *
      * ARMv8 (DDI 0487D.a): Table D1-38
      */
-    GENERATE_CASE(SCTLR_EL1)
-    GENERATE_CASE(TTBR0_EL1)
-    GENERATE_CASE(TTBR1_EL1)
-    GENERATE_CASE(TCR_EL1)
-    GENERATE_CASE(ESR_EL1)
-    GENERATE_CASE(FAR_EL1)
-    GENERATE_CASE(AFSR0_EL1)
-    GENERATE_CASE(AFSR1_EL1)
-    GENERATE_CASE(MAIR_EL1)
-    GENERATE_CASE(AMAIR_EL1)
-    GENERATE_CASE(CONTEXTIDR_EL1)
+        GENERATE_CASE(SCTLR_EL1)
+        GENERATE_CASE(TTBR0_EL1)
+        GENERATE_CASE(TTBR1_EL1)
+        GENERATE_CASE(TCR_EL1)
+        GENERATE_CASE(ESR_EL1)
+        GENERATE_CASE(FAR_EL1)
+        GENERATE_CASE(AFSR0_EL1)
+        GENERATE_CASE(AFSR1_EL1)
+        GENERATE_CASE(MAIR_EL1)
+        GENERATE_CASE(AMAIR_EL1)
+        GENERATE_CASE(CONTEXTIDR_EL1)
 
     /*
      * MDCR_EL2.TDRA
@@ -150,8 +149,7 @@ void do_sysreg(struct cpu_user_regs *regs,
     case HSR_SYSREG_OSDLR_EL1:
         return handle_raz_wi(regs, regidx, hsr.sysreg.read, hsr, 1);
     case HSR_SYSREG_OSLSR_EL1:
-        return handle_ro_read_val(regs, regidx, hsr.sysreg.read, hsr, 1,
-                                  1 << 3);
+        return handle_ro_read_val(regs, regidx, hsr.sysreg.read, hsr, 1, 1 << 3);
 
     /*
      * MDCR_EL2.TDA
@@ -189,7 +187,11 @@ void do_sysreg(struct cpu_user_regs *regs,
          * Accessible at EL0 only if MDSCR_EL1.TDCC is set to 0. We emulate that
          * register as RAZ/WI above. So RO at both EL0 and EL1.
          */
-        return handle_ro_read_val(regs, regidx, hsr.sysreg.read, hsr, 0,
+        return handle_ro_read_val(regs,
+                                  regidx,
+                                  hsr.sysreg.read,
+                                  hsr,
+                                  0,
                                   partial_emulation ? (1U << 29) : 0);
 
     case HSR_SYSREG_DBGDTR_EL0:
@@ -205,11 +207,11 @@ void do_sysreg(struct cpu_user_regs *regs,
             goto fail;
         return handle_raz_wi(regs, regidx, hsr.sysreg.read, hsr, 0);
 
-    HSR_SYSREG_DBG_CASES(DBGBVR):
-    HSR_SYSREG_DBG_CASES(DBGBCR):
-    HSR_SYSREG_DBG_CASES(DBGWVR):
-    HSR_SYSREG_DBG_CASES(DBGWCR):
-        return handle_raz_wi(regs, regidx, hsr.sysreg.read, hsr, 1);
+        HSR_SYSREG_DBG_CASES(DBGBVR)
+            : HSR_SYSREG_DBG_CASES(DBGBCR)
+            : HSR_SYSREG_DBG_CASES(DBGWVR)
+            : HSR_SYSREG_DBG_CASES(DBGWCR)
+            : return handle_raz_wi(regs, regidx, hsr.sysreg.read, hsr, 1);
 
     /*
      * MDCR_EL2.TPM
@@ -297,34 +299,34 @@ void do_sysreg(struct cpu_user_regs *regs,
          */
         return handle_raz_wi(regs, regidx, hsr.sysreg.read, hsr, 1);
 
-    /*
+        /*
      * HCR_EL2.TID3
      *
      * This is trapping most Identification registers used by a guest
      * to identify the processor features
      */
-    GENERATE_TID3_INFO(ID_PFR0_EL1, pfr32, 0)
-    GENERATE_TID3_INFO(ID_PFR1_EL1, pfr32, 1)
-    GENERATE_TID3_INFO(ID_PFR2_EL1, pfr32, 2)
-    GENERATE_TID3_INFO(ID_DFR0_EL1, dbg32, 0)
-    GENERATE_TID3_INFO(ID_DFR1_EL1, dbg32, 1)
-    GENERATE_TID3_INFO(ID_AFR0_EL1, aux32, 0)
-    GENERATE_TID3_INFO(ID_MMFR0_EL1, mm32, 0)
-    GENERATE_TID3_INFO(ID_MMFR1_EL1, mm32, 1)
-    GENERATE_TID3_INFO(ID_MMFR2_EL1, mm32, 2)
-    GENERATE_TID3_INFO(ID_MMFR3_EL1, mm32, 3)
-    GENERATE_TID3_INFO(ID_MMFR4_EL1, mm32, 4)
-    GENERATE_TID3_INFO(ID_MMFR5_EL1, mm32, 5)
-    GENERATE_TID3_INFO(ID_ISAR0_EL1, isa32, 0)
-    GENERATE_TID3_INFO(ID_ISAR1_EL1, isa32, 1)
-    GENERATE_TID3_INFO(ID_ISAR2_EL1, isa32, 2)
-    GENERATE_TID3_INFO(ID_ISAR3_EL1, isa32, 3)
-    GENERATE_TID3_INFO(ID_ISAR4_EL1, isa32, 4)
-    GENERATE_TID3_INFO(ID_ISAR5_EL1, isa32, 5)
-    GENERATE_TID3_INFO(ID_ISAR6_EL1, isa32, 6)
-    GENERATE_TID3_INFO(MVFR0_EL1, mvfr, 0)
-    GENERATE_TID3_INFO(MVFR1_EL1, mvfr, 1)
-    GENERATE_TID3_INFO(MVFR2_EL1, mvfr, 2)
+        GENERATE_TID3_INFO(ID_PFR0_EL1, pfr32, 0)
+        GENERATE_TID3_INFO(ID_PFR1_EL1, pfr32, 1)
+        GENERATE_TID3_INFO(ID_PFR2_EL1, pfr32, 2)
+        GENERATE_TID3_INFO(ID_DFR0_EL1, dbg32, 0)
+        GENERATE_TID3_INFO(ID_DFR1_EL1, dbg32, 1)
+        GENERATE_TID3_INFO(ID_AFR0_EL1, aux32, 0)
+        GENERATE_TID3_INFO(ID_MMFR0_EL1, mm32, 0)
+        GENERATE_TID3_INFO(ID_MMFR1_EL1, mm32, 1)
+        GENERATE_TID3_INFO(ID_MMFR2_EL1, mm32, 2)
+        GENERATE_TID3_INFO(ID_MMFR3_EL1, mm32, 3)
+        GENERATE_TID3_INFO(ID_MMFR4_EL1, mm32, 4)
+        GENERATE_TID3_INFO(ID_MMFR5_EL1, mm32, 5)
+        GENERATE_TID3_INFO(ID_ISAR0_EL1, isa32, 0)
+        GENERATE_TID3_INFO(ID_ISAR1_EL1, isa32, 1)
+        GENERATE_TID3_INFO(ID_ISAR2_EL1, isa32, 2)
+        GENERATE_TID3_INFO(ID_ISAR3_EL1, isa32, 3)
+        GENERATE_TID3_INFO(ID_ISAR4_EL1, isa32, 4)
+        GENERATE_TID3_INFO(ID_ISAR5_EL1, isa32, 5)
+        GENERATE_TID3_INFO(ID_ISAR6_EL1, isa32, 6)
+        GENERATE_TID3_INFO(MVFR0_EL1, mvfr, 0)
+        GENERATE_TID3_INFO(MVFR1_EL1, mvfr, 1)
+        GENERATE_TID3_INFO(MVFR2_EL1, mvfr, 2)
 
     case HSR_SYSREG_ID_AA64PFR0_EL1:
     {
@@ -337,26 +339,31 @@ void do_sysreg(struct cpu_user_regs *regs,
                                     ID_AA64PFR0_SVE_SHIFT);
             /* sysval is the sve field on the system */
             uint64_t sysval = cpuid_feature_extract_unsigned_field_width(
-                                system_cpuinfo.pfr64.bits[0],
-                                ID_AA64PFR0_SVE_SHIFT, 4);
+                system_cpuinfo.pfr64.bits[0],
+                ID_AA64PFR0_SVE_SHIFT,
+                4);
             guest_reg_value &= ~mask;
             guest_reg_value |= (sysval << ID_AA64PFR0_SVE_SHIFT) & mask;
         }
 
-        return handle_ro_read_val(regs, regidx, hsr.sysreg.read, hsr, 1,
+        return handle_ro_read_val(regs,
+                                  regidx,
+                                  hsr.sysreg.read,
+                                  hsr,
+                                  1,
                                   guest_reg_value);
     }
 
-    GENERATE_TID3_INFO(ID_AA64PFR1_EL1, pfr64, 1)
-    GENERATE_TID3_INFO(ID_AA64DFR0_EL1, dbg64, 0)
-    GENERATE_TID3_INFO(ID_AA64DFR1_EL1, dbg64, 1)
-    GENERATE_TID3_INFO(ID_AA64ISAR0_EL1, isa64, 0)
-    GENERATE_TID3_INFO(ID_AA64ISAR1_EL1, isa64, 1)
-    GENERATE_TID3_INFO(ID_AA64MMFR0_EL1, mm64, 0)
-    GENERATE_TID3_INFO(ID_AA64MMFR1_EL1, mm64, 1)
-    GENERATE_TID3_INFO(ID_AA64MMFR2_EL1, mm64, 2)
-    GENERATE_TID3_INFO(ID_AA64AFR0_EL1, aux64, 0)
-    GENERATE_TID3_INFO(ID_AA64AFR1_EL1, aux64, 1)
+        GENERATE_TID3_INFO(ID_AA64PFR1_EL1, pfr64, 1)
+        GENERATE_TID3_INFO(ID_AA64DFR0_EL1, dbg64, 0)
+        GENERATE_TID3_INFO(ID_AA64DFR1_EL1, dbg64, 1)
+        GENERATE_TID3_INFO(ID_AA64ISAR0_EL1, isa64, 0)
+        GENERATE_TID3_INFO(ID_AA64ISAR1_EL1, isa64, 1)
+        GENERATE_TID3_INFO(ID_AA64MMFR0_EL1, mm64, 0)
+        GENERATE_TID3_INFO(ID_AA64MMFR1_EL1, mm64, 1)
+        GENERATE_TID3_INFO(ID_AA64MMFR2_EL1, mm64, 2)
+        GENERATE_TID3_INFO(ID_AA64AFR0_EL1, aux64, 0)
+        GENERATE_TID3_INFO(ID_AA64AFR1_EL1, aux64, 1)
 
     case HSR_SYSREG_ID_AA64ZFR0_EL1:
     {
@@ -369,7 +376,11 @@ void do_sysreg(struct cpu_user_regs *regs,
         if ( is_sve_domain(v->domain) )
             guest_reg_value = system_cpuinfo.zfr64.bits[0];
 
-        return handle_ro_read_val(regs, regidx, hsr.sysreg.read, hsr, 1,
+        return handle_ro_read_val(regs,
+                                  regidx,
+                                  hsr.sysreg.read,
+                                  hsr,
+                                  1,
                                   guest_reg_value);
     }
 
@@ -382,28 +393,28 @@ void do_sysreg(struct cpu_user_regs *regs,
      * Reference manual Armv8 (Chapter D12.3.2 of issue F.c) so handle them
      * as Read-only read as zero.
      */
-    case HSR_SYSREG(3,0,c0,c3,3):
-    case HSR_SYSREG(3,0,c0,c3,7):
-    case HSR_SYSREG(3,0,c0,c4,2):
-    case HSR_SYSREG(3,0,c0,c4,3):
-    case HSR_SYSREG(3,0,c0,c4,5):
-    case HSR_SYSREG(3,0,c0,c4,6):
-    case HSR_SYSREG(3,0,c0,c4,7):
-    case HSR_SYSREG(3,0,c0,c5,2):
-    case HSR_SYSREG(3,0,c0,c5,3):
-    case HSR_SYSREG(3,0,c0,c5,6):
-    case HSR_SYSREG(3,0,c0,c5,7):
-    case HSR_SYSREG(3,0,c0,c6,2):
-    case HSR_SYSREG(3,0,c0,c6,3):
-    case HSR_SYSREG(3,0,c0,c6,4):
-    case HSR_SYSREG(3,0,c0,c6,5):
-    case HSR_SYSREG(3,0,c0,c6,6):
-    case HSR_SYSREG(3,0,c0,c6,7):
-    case HSR_SYSREG(3,0,c0,c7,3):
-    case HSR_SYSREG(3,0,c0,c7,4):
-    case HSR_SYSREG(3,0,c0,c7,5):
-    case HSR_SYSREG(3,0,c0,c7,6):
-    case HSR_SYSREG(3,0,c0,c7,7):
+    case HSR_SYSREG(3, 0, c0, c3, 3):
+    case HSR_SYSREG(3, 0, c0, c3, 7):
+    case HSR_SYSREG(3, 0, c0, c4, 2):
+    case HSR_SYSREG(3, 0, c0, c4, 3):
+    case HSR_SYSREG(3, 0, c0, c4, 5):
+    case HSR_SYSREG(3, 0, c0, c4, 6):
+    case HSR_SYSREG(3, 0, c0, c4, 7):
+    case HSR_SYSREG(3, 0, c0, c5, 2):
+    case HSR_SYSREG(3, 0, c0, c5, 3):
+    case HSR_SYSREG(3, 0, c0, c5, 6):
+    case HSR_SYSREG(3, 0, c0, c5, 7):
+    case HSR_SYSREG(3, 0, c0, c6, 2):
+    case HSR_SYSREG(3, 0, c0, c6, 3):
+    case HSR_SYSREG(3, 0, c0, c6, 4):
+    case HSR_SYSREG(3, 0, c0, c6, 5):
+    case HSR_SYSREG(3, 0, c0, c6, 6):
+    case HSR_SYSREG(3, 0, c0, c6, 7):
+    case HSR_SYSREG(3, 0, c0, c7, 3):
+    case HSR_SYSREG(3, 0, c0, c7, 4):
+    case HSR_SYSREG(3, 0, c0, c7, 5):
+    case HSR_SYSREG(3, 0, c0, c7, 6):
+    case HSR_SYSREG(3, 0, c0, c7, 7):
         return handle_ro_raz(regs, regidx, hsr.sysreg.read, hsr, 1);
 
     /*
@@ -428,17 +439,20 @@ void do_sysreg(struct cpu_user_regs *regs,
     regs->pc += 4;
     return;
 
- fail:
+fail:
     gdprintk(XENLOG_ERR,
-             "%s %d, %d, c%d, c%d, %d %s x%d @ 0x%"PRIregister"\n",
+             "%s %d, %d, c%d, c%d, %d %s x%d @ 0x%" PRIregister "\n",
              sysreg.read ? "mrs" : "msr",
-             sysreg.op0, sysreg.op1,
-             sysreg.crn, sysreg.crm,
+             sysreg.op0,
+             sysreg.op1,
+             sysreg.crn,
+             sysreg.crm,
              sysreg.op2,
              sysreg.read ? "=>" : "<=",
-             sysreg.reg, regs->pc);
+             sysreg.reg,
+             regs->pc);
     gdprintk(XENLOG_ERR,
-             "unhandled 64-bit sysreg access %#"PRIregister"\n",
+             "unhandled 64-bit sysreg access %#" PRIregister "\n",
              hsr.bits & HSR_SYSREG_REGS_MASK);
     inject_undef_exception(regs, hsr);
 }

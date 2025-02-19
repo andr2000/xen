@@ -47,7 +47,7 @@ static inline bool insn_is_branch_imm(uint32_t insn)
      * conditional branch instructions. So, mask the conditional bits will not
      * make other unconditional instruction to hit this check.
      */
-    return ( (insn & 0x0E000000) == 0x0A000000 );
+    return ((insn & 0x0E000000) == 0x0A000000);
 }
 
 static inline int32_t insn_get_branch_offset(uint32_t insn)

@@ -27,8 +27,7 @@ extern const uint32_t known_features[FSCAPINTS];
                        XEN_SYSCTL_CPU_LEVELCAP_l7s0_ebx)
 extern unsigned int expected_levelling_cap, levelling_caps;
 
-struct cpuidmasks
-{
+struct cpuidmasks {
     uint64_t _1cd;
     uint64_t e1cd;
     uint64_t Da1;
@@ -47,8 +46,8 @@ bool recheck_cpu_features(unsigned int cpu);
 
 struct vcpu;
 struct cpuid_leaf;
-void guest_cpuid(const struct vcpu *v, uint32_t leaf,
-                 uint32_t subleaf, struct cpuid_leaf *res);
+void guest_cpuid(const struct vcpu *v, uint32_t leaf, uint32_t subleaf,
+                 struct cpuid_leaf *res);
 
 #endif /* __ASSEMBLY__ */
 #endif /* !__X86_CPUID_H__ */

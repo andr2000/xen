@@ -47,7 +47,8 @@ static int __init cf_check parse_vpmu_params(const char *s)
     const char *ss;
     int rc = 0, val;
 
-    do {
+    do
+    {
         ss = strchr(s, ',');
         if ( !ss )
             ss = strchr(s, '\0');
@@ -82,6 +83,7 @@ static int __init cf_check parse_vpmu_params(const char *s)
 
     return rc;
 }
+
 custom_param("vpmu", parse_vpmu_params);
 
 void vpmu_lvtpc_update(uint32_t val)
@@ -113,9 +115,8 @@ int vpmu_do_msr(unsigned int msr, uint64_t *msr_content, bool is_write)
      * profiling the whole system.
      */
     if ( likely(vpmu_mode == XENPMU_MODE_OFF) ||
-         ((vpmu_mode & XENPMU_MODE_ALL) &&
-          !is_hardware_domain(curr->domain)) )
-         goto nop;
+         ((vpmu_mode & XENPMU_MODE_ALL) && !is_hardware_domain(curr->domain)) )
+        goto nop;
 
     vpmu = vcpu_vpmu(curr);
     if ( !vpmu_is_set(vpmu, VPMU_INITIALIZED) )
@@ -132,7 +133,7 @@ int vpmu_do_msr(unsigned int msr, uint64_t *msr_content, bool is_write)
      * (and unload) it again.
      */
     if ( !has_vlapic(curr->domain) && vpmu->xenpmu_data &&
-        vpmu_is_set(vpmu, VPMU_CACHED) )
+         vpmu_is_set(vpmu, VPMU_CACHED) )
     {
         vpmu_set(vpmu, VPMU_CONTEXT_SAVE);
         alternative_vcall(vpmu_ops.arch_vpmu_save, curr, 0);
@@ -141,7 +142,7 @@ int vpmu_do_msr(unsigned int msr, uint64_t *msr_content, bool is_write)
 
     return ret;
 
- nop:
+nop:
     if ( !is_write && (msr != MSR_IA32_MISC_ENABLE) )
         *msr_content = 0;
 
@@ -357,7 +358,7 @@ void vpmu_save(struct vcpu *v)
     int pcpu = smp_processor_id();
 
     if ( !vpmu_are_all_set(vpmu, VPMU_CONTEXT_ALLOCATED | VPMU_CONTEXT_LOADED) )
-       return;
+        return;
 
     vpmu->last_pcpu = pcpu;
     per_cpu(last_vcpu, pcpu) = v;
@@ -383,7 +384,7 @@ int vpmu_load(struct vcpu *v, bool from_guest)
     /* Only when PMU is counting, we load PMU context immediately. */
     if ( !vpmu_is_set(vpmu, VPMU_RUNNING) ||
          (!has_vlapic(vpmu_vcpu(vpmu)->domain) &&
-         vpmu_is_set(vpmu, VPMU_CACHED)) )
+          vpmu_is_set(vpmu, VPMU_CACHED)) )
         return 0;
 
     apic_write(APIC_LVTPC, vpmu->hw_lapic_lvtpc);
@@ -417,8 +418,9 @@ static int vpmu_arch_initialise(struct vcpu *v)
     {
         if ( vpmu_mode != XENPMU_MODE_OFF )
         {
-            printk(XENLOG_G_WARNING "VPMU: Unknown CPU vendor %d. "
-                   "Disabling VPMU\n", vendor);
+            printk(XENLOG_G_WARNING
+                   "VPMU: Unknown CPU vendor %d. " "Disabling VPMU\n",
+                   vendor);
             opt_vpmu_enabled = 0;
             vpmu_mode = XENPMU_MODE_OFF;
         }
@@ -449,13 +451,12 @@ static void get_vpmu(struct vcpu *v)
      * so we don't need to include it in the count.
      */
     if ( !is_hardware_domain(v->domain) &&
-        (vpmu_mode & (XENPMU_MODE_SELF | XENPMU_MODE_HV)) )
+         (vpmu_mode & (XENPMU_MODE_SELF | XENPMU_MODE_HV)) )
     {
         vpmu_count++;
         vpmu_set(vcpu_vpmu(v), VPMU_AVAILABLE);
     }
-    else if ( is_hardware_domain(v->domain) &&
-              (vpmu_mode != XENPMU_MODE_OFF) )
+    else if ( is_hardware_domain(v->domain) && (vpmu_mode != XENPMU_MODE_OFF) )
         vpmu_set(vcpu_vpmu(v), VPMU_AVAILABLE);
 
     spin_unlock(&vpmu_lock);
@@ -474,11 +475,10 @@ static void put_vpmu(struct vcpu *v)
         vpmu_count--;
         vpmu_reset(vcpu_vpmu(v), VPMU_AVAILABLE);
     }
-    else if ( is_hardware_domain(v->domain) &&
-              (vpmu_mode != XENPMU_MODE_OFF) )
+    else if ( is_hardware_domain(v->domain) && (vpmu_mode != XENPMU_MODE_OFF) )
         vpmu_reset(vcpu_vpmu(v), VPMU_AVAILABLE);
 
- out:
+out:
     spin_unlock(&vpmu_lock);
 }
 
@@ -516,8 +516,7 @@ static void vpmu_arch_destroy(struct vcpu *v)
      */
     if ( cpu_online(vpmu->last_pcpu) &&
          per_cpu(last_vcpu, vpmu->last_pcpu) == v )
-        on_selected_cpus(cpumask_of(vpmu->last_pcpu),
-                         vpmu_clear_last, v, 1);
+        on_selected_cpus(cpumask_of(vpmu->last_pcpu), vpmu_clear_last, v, 1);
 
     /*
      * Unload VPMU first if VPMU_CONTEXT_LOADED being set.
@@ -525,7 +524,9 @@ static void vpmu_arch_destroy(struct vcpu *v)
      */
     if ( vpmu_is_set(vpmu, VPMU_CONTEXT_LOADED) )
         on_selected_cpus(cpumask_of(vcpu_vpmu(v)->last_pcpu),
-                         vpmu_save_force, v, 1);
+                         vpmu_save_force,
+                         v,
+                         1);
 
     alternative_vcall(vpmu_ops.arch_vpmu_destroy, v);
 
@@ -637,12 +638,11 @@ void vpmu_dump(struct vcpu *v)
         alternative_vcall(vpmu_ops.arch_vpmu_dump, v);
 }
 
-long do_xenpmu_op(
-    unsigned int op, XEN_GUEST_HANDLE_PARAM(xen_pmu_params_t) arg)
+long do_xenpmu_op(unsigned int op, XEN_GUEST_HANDLE_PARAM(xen_pmu_params_t) arg)
 {
     int ret;
     struct vcpu *curr;
-    struct xen_pmu_params pmu_params = {.val = 0};
+    struct xen_pmu_params pmu_params = { .val = 0 };
     struct xen_pmu_data *xenpmu_data;
     struct vpmu_struct *vpmu;
 
@@ -689,9 +689,8 @@ long do_xenpmu_op(
          * We can always safely switch between XENPMU_MODE_SELF and
          * XENPMU_MODE_HV while other VPMUs are active.
          */
-        if ( (vpmu_count == 0) ||
-             ((vpmu_mode ^ pmu_params.val) ==
-              (XENPMU_MODE_SELF | XENPMU_MODE_HV)) )
+        if ( (vpmu_count == 0) || ((vpmu_mode ^ pmu_params.val) ==
+                                   (XENPMU_MODE_SELF | XENPMU_MODE_HV)) )
             vpmu_mode = pmu_params.val;
         else if ( vpmu_mode != pmu_params.val )
         {
@@ -718,9 +717,9 @@ long do_xenpmu_op(
         break;
 
     case XENPMU_feature_set:
-        if ( pmu_params.val & ~(XENPMU_FEATURE_INTEL_BTS |
-                                XENPMU_FEATURE_IPC_ONLY |
-                                XENPMU_FEATURE_ARCH_ONLY))
+        if ( pmu_params.val &
+             ~(XENPMU_FEATURE_INTEL_BTS | XENPMU_FEATURE_IPC_ONLY |
+               XENPMU_FEATURE_ARCH_ONLY) )
             return -EINVAL;
 
         spin_lock(&vpmu_lock);
@@ -776,7 +775,7 @@ long do_xenpmu_op(
             vpmu_set(vpmu, VPMU_CACHED);
             ret = -EIO;
         }
-        break ;
+        break;
 
     default:
         ret = -EINVAL;
@@ -786,8 +785,8 @@ long do_xenpmu_op(
     return ret;
 }
 
-static int cf_check cpu_callback(
-    struct notifier_block *nfb, unsigned long action, void *hcpu)
+static int cf_check cpu_callback(struct notifier_block *nfb,
+                                 unsigned long action, void *hcpu)
 {
     unsigned int cpu = (unsigned long)hcpu;
     struct vcpu *vcpu = per_cpu(last_vcpu, cpu);
@@ -809,9 +808,7 @@ static int cf_check cpu_callback(
     return NOTIFY_DONE;
 }
 
-static struct notifier_block cpu_nfb = {
-    .notifier_call = cpu_callback
-};
+static struct notifier_block cpu_nfb = { .notifier_call = cpu_callback };
 
 static int __init cf_check vpmu_init(void)
 {
@@ -849,8 +846,9 @@ static int __init cf_check vpmu_init(void)
 #endif
 
     default:
-        printk(XENLOG_WARNING "VPMU: Unknown CPU vendor: %d. "
-               "Turning VPMU off.\n", vendor);
+        printk(XENLOG_WARNING
+               "VPMU: Unknown CPU vendor: %d. " "Turning VPMU off.\n",
+               vendor);
         break;
     }
 
@@ -858,8 +856,7 @@ static int __init cf_check vpmu_init(void)
     {
         vpmu_ops = *ops;
         register_cpu_notifier(&cpu_nfb);
-        printk(XENLOG_INFO "VPMU: version " __stringify(XENPMU_VER_MAJ) "."
-               __stringify(XENPMU_VER_MIN) "\n");
+        printk(XENLOG_INFO "VPMU: version " __stringify(XENPMU_VER_MAJ) "." __stringify(XENPMU_VER_MIN) "\n");
     }
     else
     {
@@ -869,4 +866,5 @@ static int __init cf_check vpmu_init(void)
 
     return 0;
 }
+
 presmp_initcall(vpmu_init);

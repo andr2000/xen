@@ -38,8 +38,12 @@
 bool __read_mostly kexecing;
 
 /* Memory regions to store the per cpu register state etc. on a crash. */
-typedef struct { Elf_Note * start; size_t size; } crash_note_range_t;
-static crash_note_range_t * crash_notes;
+typedef struct {
+    Elf_Note *start;
+    size_t size;
+} crash_note_range_t;
+
+static crash_note_range_t *crash_notes;
 
 /* Lock to prevent race conditions when allocating the crash note buffers.
  * It also serves to protect calls to alloc_from_crash_heap when allocating
@@ -57,13 +61,15 @@ static struct kexec_image *kexec_image[KEXEC_IMAGE_NR];
 #define KEXEC_FLAG_IN_PROGRESS   (KEXEC_IMAGE_NR + 2)
 #define KEXEC_FLAG_IN_HYPERCALL  (KEXEC_IMAGE_NR + 3)
 
-static unsigned long kexec_flags = 0; /* the lowest bits are for KEXEC_IMAGE... */
+static unsigned long kexec_flags =
+    0; /* the lowest bits are for KEXEC_IMAGE... */
 
 static unsigned char vmcoreinfo_data[VMCOREINFO_BYTES];
 static size_t vmcoreinfo_size = 0;
 
 xen_kexec_reserve_t kexec_crash_area;
 paddr_t __initdata kexec_crash_area_limit = ~(paddr_t)0;
+
 static struct {
     u64 start, end;
     unsigned long size;
@@ -109,11 +115,12 @@ static int __init cf_check parse_crashkernel(const char *str)
     const char *cur;
     int rc = 0;
 
-    if ( strchr(str, ':' ) )
+    if ( strchr(str, ':') )
     {
         unsigned int idx = 0;
 
-        do {
+        do
+        {
             if ( idx >= ARRAY_SIZE(ranges) )
             {
                 printk(XENLOG_WARNING "crashkernel: too many ranges\n");
@@ -189,6 +196,7 @@ static int __init cf_check parse_crashkernel(const char *str)
 
     return rc;
 }
+
 custom_param("crashkernel", parse_crashkernel);
 
 /* Parse command lines in the format:
@@ -203,25 +211,26 @@ custom_param("crashkernel", parse_crashkernel);
  */
 static int __init cf_check parse_low_crashinfo(const char *str)
 {
-
     if ( !strlen(str) )
         /* default to min if user just specifies "low_crashinfo" */
         low_crashinfo_mode = LOW_CRASHINFO_MIN;
-    else if ( !strcmp(str, "none" ) )
+    else if ( !strcmp(str, "none") )
         low_crashinfo_mode = LOW_CRASHINFO_NONE;
-    else if ( !strcmp(str, "min" ) )
+    else if ( !strcmp(str, "min") )
         low_crashinfo_mode = LOW_CRASHINFO_MIN;
-    else if ( !strcmp(str, "all" ) )
+    else if ( !strcmp(str, "all") )
         low_crashinfo_mode = LOW_CRASHINFO_ALL;
     else
     {
-        printk("Unknown low_crashinfo parameter '%s'.  Defaulting to min.\n", str);
+        printk("Unknown low_crashinfo parameter '%s'.  Defaulting to min.\n",
+               str);
         low_crashinfo_mode = LOW_CRASHINFO_MIN;
         return -EINVAL;
     }
 
     return 0;
 }
+
 custom_param("low_crashinfo", parse_low_crashinfo);
 
 /* Parse command lines in the format:
@@ -243,13 +252,15 @@ static int __init cf_check parse_crashinfo_maxaddr(const char *str)
         crashinfo_maxaddr = addr;
     else
     {
-        printk("Unable to parse crashinfo_maxaddr. Defaulting to %"PRIpaddr"\n",
+        printk("Unable to parse crashinfo_maxaddr. Defaulting to %" PRIpaddr
+               "\n",
                crashinfo_maxaddr);
         return -EINVAL;
     }
 
     return *q ? -EINVAL : 0;
 }
+
 custom_param("crashinfo_maxaddr", parse_crashinfo_maxaddr);
 
 void __init set_kexec_crash_area_size(u64 system_ram)
@@ -299,7 +310,7 @@ static int noinline one_cpu_only(void)
          * Another cpu has beaten us to this point.  Wait here patiently for
          * it to kill us.
          */
-        for ( ; ; )
+        for ( ;; )
             halt();
     }
 
@@ -317,7 +328,7 @@ void kexec_crash_save_cpu(void)
     ELF_Prstatus *prstatus;
     crash_xen_core_t *xencore;
 
-    BUG_ON ( ! crash_notes );
+    BUG_ON(!crash_notes);
 
     if ( cpumask_test_and_set_cpu(cpu, &crash_saved_cpus) )
         return;
@@ -426,22 +437,19 @@ static void setup_note(Elf_Note *n, const char *name, int type, int descsz)
 
 static size_t sizeof_note(const char *name, int descsz)
 {
-    return (sizeof(Elf_Note) +
-            ELFNOTE_ALIGN(strlen(name)+1) +
+    return (sizeof(Elf_Note) + ELFNOTE_ALIGN(strlen(name) + 1) +
             ELFNOTE_ALIGN(descsz));
 }
 
 static size_t sizeof_cpu_notes(const unsigned long cpu)
 {
     /* All CPUs present a PRSTATUS and crash_xen_core note. */
-    size_t bytes =
-        + sizeof_note("CORE", sizeof(ELF_Prstatus)) +
-        + sizeof_note("Xen", sizeof(crash_xen_core_t));
+    size_t bytes = +sizeof_note("CORE", sizeof(ELF_Prstatus)) +
+                   +sizeof_note("Xen", sizeof(crash_xen_core_t));
 
     /* CPU0 also presents the crash_xen_info note. */
-    if ( ! cpu )
-        bytes = bytes +
-            sizeof_note("Xen", sizeof(crash_xen_info_t));
+    if ( !cpu )
+        bytes = bytes + sizeof_note("Xen", sizeof(crash_xen_info_t));
 
     return bytes;
 }
@@ -450,12 +458,12 @@ static size_t sizeof_cpu_notes(const unsigned long cpu)
  * crash heap if the user has requested that crash notes be allocated
  * in lower memory.  There is currently no case where the crash notes
  * should be free()'d. */
-static void * alloc_from_crash_heap(const size_t bytes)
+static void *alloc_from_crash_heap(const size_t bytes)
 {
-    void * ret;
+    void *ret;
     if ( crash_heap_current + bytes > crash_heap_end )
         return NULL;
-    ret = (void*)crash_heap_current;
+    ret = (void *)crash_heap_current;
     crash_heap_current += bytes;
     return ret;
 }
@@ -463,11 +471,11 @@ static void * alloc_from_crash_heap(const size_t bytes)
 /* Allocate a crash note buffer for a newly onlined cpu. */
 static int kexec_init_cpu_notes(const unsigned long cpu)
 {
-    Elf_Note * note = NULL;
+    Elf_Note *note = NULL;
     int ret = 0;
     int nr_bytes = 0;
 
-    BUG_ON( cpu >= nr_cpu_ids || ! crash_notes );
+    BUG_ON(cpu >= nr_cpu_ids || !crash_notes);
 
     /* If already allocated, nothing to do. */
     if ( crash_notes[cpu].start )
@@ -505,7 +513,7 @@ static int kexec_init_cpu_notes(const unsigned long cpu)
 
         /* If the allocation failed, and another CPU did not beat us, give
          * up with ENOMEM. */
-        if ( ! note )
+        if ( !note )
             ret = -ENOMEM;
         /* else all is good so lets set up the notes. */
         else
@@ -515,14 +523,18 @@ static int kexec_init_cpu_notes(const unsigned long cpu)
             note = ELFNOTE_NEXT(note);
 
             /* Set up Xen CORE note. */
-            setup_note(note, "Xen", XEN_ELFNOTE_CRASH_REGS,
+            setup_note(note,
+                       "Xen",
+                       XEN_ELFNOTE_CRASH_REGS,
                        sizeof(crash_xen_core_t));
 
-            if ( ! cpu )
+            if ( !cpu )
             {
                 /* Set up Xen Crash Info note. */
                 xen_crash_note = note = ELFNOTE_NEXT(note);
-                setup_note(note, "Xen", XEN_ELFNOTE_CRASH_INFO,
+                setup_note(note,
+                           "Xen",
+                           XEN_ELFNOTE_CRASH_INFO,
                            sizeof(crash_xen_info_t));
             }
         }
@@ -531,8 +543,8 @@ static int kexec_init_cpu_notes(const unsigned long cpu)
     return ret;
 }
 
-static int cf_check cpu_callback(
-    struct notifier_block *nfb, unsigned long action, void *hcpu)
+static int cf_check cpu_callback(struct notifier_block *nfb,
+                                 unsigned long action, void *hcpu)
 {
     unsigned long cpu = (unsigned long)hcpu;
 
@@ -554,9 +566,7 @@ static int cf_check cpu_callback(
     return NOTIFY_DONE;
 }
 
-static struct notifier_block cpu_nfb = {
-    .notifier_call = cpu_callback
-};
+static struct notifier_block cpu_nfb = { .notifier_call = cpu_callback };
 
 void __init kexec_early_calculations(void)
 {
@@ -585,14 +595,14 @@ static int __init cf_check kexec_init(void)
         /* This calculation is safe even if the machine is booted in
          * uniprocessor mode. */
         crash_heap_size = sizeof_cpu_notes(0) +
-            sizeof_cpu_notes(1) * (nr_cpu_ids - 1);
+                          sizeof_cpu_notes(1) * (nr_cpu_ids - 1);
         crash_heap_size = PAGE_ALIGN(crash_heap_size);
 
-        crash_heap_current = alloc_xenheap_pages(
-            get_order_from_bytes(crash_heap_size),
-            MEMF_bits(crashinfo_maxaddr_bits) );
+        crash_heap_current =
+            alloc_xenheap_pages(get_order_from_bytes(crash_heap_size),
+                                MEMF_bits(crashinfo_maxaddr_bits));
 
-        if ( ! crash_heap_current )
+        if ( !crash_heap_current )
             return -ENOMEM;
 
         memset(crash_heap_current, 0, crash_heap_size);
@@ -604,7 +614,7 @@ static int __init cf_check kexec_init(void)
        Only the individual CPU crash notes themselves must be allocated
        in lower memory if requested. */
     crash_notes = xzalloc_array(crash_note_range_t, nr_cpu_ids);
-    if ( ! crash_notes )
+    if ( !crash_notes )
         return -ENOMEM;
 
     register_keyhandler('C', do_crashdump_trigger, "trigger a crashdump", 0);
@@ -613,6 +623,7 @@ static int __init cf_check kexec_init(void)
     register_cpu_notifier(&cpu_nfb);
     return 0;
 }
+
 /* The reason for this to be a presmp_initcall as opposed to a regular
  * __initcall is to allow the setup of the cpu hotplug handler before APs are
  * brought up. */
@@ -620,7 +631,8 @@ presmp_initcall(kexec_init);
 
 static int kexec_get_reserve(xen_kexec_range_t *range)
 {
-    if ( kexec_crash_area.size > 0 && kexec_crash_area.start > 0) {
+    if ( kexec_crash_area.size > 0 && kexec_crash_area.start > 0 )
+    {
         range->start = kexec_crash_area.start;
         range->size = kexec_crash_area.size;
     }
@@ -636,7 +648,7 @@ static int kexec_get_cpu(xen_kexec_range_t *range)
     if ( nr < 0 || nr >= nr_cpu_ids )
         return -ERANGE;
 
-    if ( ! crash_notes )
+    if ( !crash_notes )
         return -EINVAL;
 
     /* Try once again to allocate room for the crash notes.  It is just possible
@@ -726,7 +738,7 @@ static int kexec_get_range_compat(XEN_GUEST_HANDLE_PARAM(void) uarg)
     {
         XLAT_kexec_range(&compat_range, &range);
         if ( unlikely(__copy_to_guest(uarg, &compat_range, 1)) )
-             ret = -EFAULT;
+            ret = -EFAULT;
     }
 
     return ret;
@@ -758,9 +770,10 @@ void vmcoreinfo_append_str(const char *fmt, ...)
     va_list args;
     char buf[0x50];
     int r;
-    size_t note_size = sizeof(Elf_Note) + ELFNOTE_ALIGN(strlen(VMCOREINFO_NOTE_NAME) + 1);
+    size_t note_size = sizeof(Elf_Note) +
+                       ELFNOTE_ALIGN(strlen(VMCOREINFO_NOTE_NAME) + 1);
 
-    if (vmcoreinfo_size + note_size + sizeof(buf) > VMCOREINFO_BYTES)
+    if ( vmcoreinfo_size + note_size + sizeof(buf) > VMCOREINFO_BYTES )
         return;
 
     va_start(args, fmt);
@@ -776,10 +789,12 @@ static void crash_save_vmcoreinfo(void)
 {
     size_t data_size;
 
-    if (vmcoreinfo_size > 0)    /* already saved */
+    if ( vmcoreinfo_size > 0 ) /* already saved */
         return;
 
-    data_size = VMCOREINFO_BYTES - (sizeof(Elf_Note) + ELFNOTE_ALIGN(strlen(VMCOREINFO_NOTE_NAME) + 1));
+    data_size =
+        VMCOREINFO_BYTES -
+        (sizeof(Elf_Note) + ELFNOTE_ALIGN(strlen(VMCOREINFO_NOTE_NAME) + 1));
     setup_note((Elf_Note *)vmcoreinfo_data, VMCOREINFO_NOTE_NAME, 0, data_size);
 
     VMCOREINFO_PAGESIZE(PAGE_SIZE);
@@ -835,7 +850,7 @@ static int kexec_exec(XEN_GUEST_HANDLE_PARAM(void) uarg)
     if ( !test_bit(base + pos, &kexec_flags) )
         return -ENOENT;
 
-    switch (exec.type)
+    switch ( exec.type )
     {
     case KEXEC_TYPE_DEFAULT:
         image = kexec_image[base + pos];
@@ -910,32 +925,30 @@ static uint16_t kexec_load_v1_arch(void)
 }
 
 static int kexec_segments_add_segment(unsigned int *nr_segments,
-                                      xen_kexec_segment_t *segments,
-                                      mfn_t mfn)
+                                      xen_kexec_segment_t *segments, mfn_t mfn)
 {
     paddr_t maddr = mfn_to_maddr(mfn);
     unsigned int n = *nr_segments;
 
     /* Need a new segment? */
-    if ( n == 0
-         || segments[n-1].dest_maddr + segments[n-1].dest_size != maddr )
+    if ( n == 0 ||
+         segments[n - 1].dest_maddr + segments[n - 1].dest_size != maddr )
     {
         n++;
         if ( n > KEXEC_SEGMENT_MAX )
             return -EINVAL;
         *nr_segments = n;
 
-        set_xen_guest_handle(segments[n-1].buf.h, NULL);
-        segments[n-1].buf_size = 0;
-        segments[n-1].dest_maddr = maddr;
-        segments[n-1].dest_size = 0;
+        set_xen_guest_handle(segments[n - 1].buf.h, NULL);
+        segments[n - 1].buf_size = 0;
+        segments[n - 1].dest_maddr = maddr;
+        segments[n - 1].dest_size = 0;
     }
 
     return 0;
 }
 
-static int kexec_segments_from_ind_page(mfn_t mfn,
-                                        unsigned int *nr_segments,
+static int kexec_segments_from_ind_page(mfn_t mfn, unsigned int *nr_segments,
                                         xen_kexec_segment_t *segments,
                                         bool compat)
 {
@@ -949,7 +962,7 @@ static int kexec_segments_from_ind_page(mfn_t mfn,
      * Walk the indirection page list, adding destination pages to the
      * segments.
      */
-    for ( entry = page; ; )
+    for ( entry = page;; )
     {
         unsigned long ind;
 
@@ -975,7 +988,7 @@ static int kexec_segments_from_ind_page(mfn_t mfn,
                 ret = -EINVAL;
                 goto done;
             }
-            segments[*nr_segments-1].dest_size += PAGE_SIZE;
+            segments[*nr_segments - 1].dest_size += PAGE_SIZE;
             break;
         default:
             ret = -EINVAL;
@@ -1017,8 +1030,12 @@ static int kexec_do_load_v1(xen_kexec_load_v1_t *load, int compat)
     if ( ret < 0 )
         goto error;
 
-    ret = kimage_alloc(&kimage, load->type, arch, load->image.start_address,
-                       nr_segments, segments);
+    ret = kimage_alloc(&kimage,
+                       load->type,
+                       arch,
+                       load->image.start_address,
+                       nr_segments,
+                       segments);
     if ( ret < 0 )
         goto error;
 
@@ -1123,8 +1140,12 @@ static int kexec_load(XEN_GUEST_HANDLE_PARAM(void) uarg)
         goto error;
     }
 
-    ret = kimage_alloc(&kimage, load.type, load.arch, load.entry_maddr,
-                       load.nr_segments, segments);
+    ret = kimage_alloc(&kimage,
+                       load.type,
+                       load.arch,
+                       load.entry_maddr,
+                       load.nr_segments,
+                       segments);
     if ( ret < 0 )
         goto error;
 
@@ -1139,7 +1160,7 @@ static int kexec_load(XEN_GUEST_HANDLE_PARAM(void) uarg)
     return 0;
 
 error:
-    if ( ! kimage )
+    if ( !kimage )
         xfree(segments);
     kimage_free(kimage);
     return ret;
@@ -1214,8 +1235,7 @@ static int kexec_status(XEN_GUEST_HANDLE_PARAM(void) uarg)
 }
 
 static int do_kexec_op_internal(unsigned long op,
-                                XEN_GUEST_HANDLE_PARAM(void) uarg,
-                                bool compat)
+                                XEN_GUEST_HANDLE_PARAM(void) uarg, bool compat)
 {
     int ret = -EINVAL;
 
@@ -1224,15 +1244,18 @@ static int do_kexec_op_internal(unsigned long op,
         return ret;
 
     if ( test_and_set_bit(KEXEC_FLAG_IN_HYPERCALL, &kexec_flags) )
-        return hypercall_create_continuation(__HYPERVISOR_kexec_op, "lh", op, uarg);
+        return hypercall_create_continuation(__HYPERVISOR_kexec_op,
+                                             "lh",
+                                             op,
+                                             uarg);
 
     switch ( op )
     {
     case KEXEC_CMD_kexec_get_range:
-        if (compat)
-                ret = kexec_get_range_compat(uarg);
+        if ( compat )
+            ret = kexec_get_range_compat(uarg);
         else
-                ret = kexec_get_range(uarg);
+            ret = kexec_get_range(uarg);
         break;
     case KEXEC_CMD_kexec_load_v1:
         if ( compat )

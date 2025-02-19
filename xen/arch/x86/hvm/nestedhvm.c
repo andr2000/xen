@@ -8,22 +8,20 @@
 #include <asm/msr.h>
 #include <asm/hvm/support.h>
 #include <asm/hvm/hvm.h>
-#include <asm/p2m.h>    /* for struct p2m_domain */
+#include <asm/p2m.h> /* for struct p2m_domain */
 #include <asm/hvm/nestedhvm.h>
-#include <asm/event.h>  /* for local_event_delivery_(en|dis)able */
+#include <asm/event.h> /* for local_event_delivery_(en|dis)able */
 #include <asm/paging.h> /* for paging_mode_hap() */
 
 static unsigned long *shadow_io_bitmap[3];
 
 /* Nested VCPU */
-bool
-nestedhvm_vcpu_in_guestmode(struct vcpu *v)
+bool nestedhvm_vcpu_in_guestmode(struct vcpu *v)
 {
     return vcpu_nestedhvm(v).nv_guestmode;
 }
 
-void
-nestedhvm_vcpu_reset(struct vcpu *v)
+void nestedhvm_vcpu_reset(struct vcpu *v)
 {
     struct nestedvcpu *nv = &vcpu_nestedhvm(v);
 
@@ -49,8 +47,7 @@ nestedhvm_vcpu_reset(struct vcpu *v)
     nestedhvm_vcpu_exit_guestmode(v);
 }
 
-int
-nestedhvm_vcpu_initialise(struct vcpu *v)
+int nestedhvm_vcpu_initialise(struct vcpu *v)
 {
     int rc;
 
@@ -65,8 +62,7 @@ nestedhvm_vcpu_initialise(struct vcpu *v)
     return 0;
 }
 
-void
-nestedhvm_vcpu_destroy(struct vcpu *v)
+void nestedhvm_vcpu_destroy(struct vcpu *v)
 {
     alternative_vcall(hvm_funcs.nhvm_vcpu_destroy, v);
 }
@@ -77,7 +73,8 @@ static void cf_check nestedhvm_flushtlb_ipi(void *info)
     struct domain *d = info;
 
     ASSERT(d != NULL);
-    if (v->domain != d) {
+    if ( v->domain != d )
+    {
         /* This cpu doesn't belong to the domain */
         return;
     }
@@ -91,11 +88,9 @@ static void cf_check nestedhvm_flushtlb_ipi(void *info)
     vcpu_nestedhvm(v).stale_np2m = true;
 }
 
-void
-nestedhvm_vmcx_flushtlb(struct p2m_domain *p2m)
+void nestedhvm_vmcx_flushtlb(struct p2m_domain *p2m)
 {
-    on_selected_cpus(p2m->dirty_cpumask, nestedhvm_flushtlb_ipi,
-        p2m->domain, 1);
+    on_selected_cpus(p2m->dirty_cpumask, nestedhvm_flushtlb_ipi, p2m->domain, 1);
     cpumask_clear(p2m->dirty_cpumask);
 }
 
@@ -162,22 +157,25 @@ static int __init cf_check nestedhvm_setup(void)
 
     return 0;
 }
+
 __initcall(nestedhvm_setup);
 
-unsigned long *
-nestedhvm_vcpu_iomap_get(bool ioport_80, bool ioport_ed)
+unsigned long *nestedhvm_vcpu_iomap_get(bool ioport_80, bool ioport_ed)
 {
     int i;
 
-    if (!hvm_port80_allowed)
+    if ( !hvm_port80_allowed )
         ioport_80 = 1;
 
-    if (ioport_80 == 0) {
-        if (ioport_ed == 0)
+    if ( ioport_80 == 0 )
+    {
+        if ( ioport_ed == 0 )
             return hvm_io_bitmap;
         i = 0;
-    } else {
-        if (ioport_ed == 0)
+    }
+    else
+    {
+        if ( ioport_ed == 0 )
             i = 1;
         else
             i = 2;

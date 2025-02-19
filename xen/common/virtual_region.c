@@ -10,11 +10,9 @@
 #include <xen/spinlock.h>
 #include <xen/virtual_region.h>
 
-extern const struct bug_frame
-    __start_bug_frames_0[], __stop_bug_frames_0[],
-    __start_bug_frames_1[], __stop_bug_frames_1[],
-    __start_bug_frames_2[], __stop_bug_frames_2[],
-    __start_bug_frames_3[], __stop_bug_frames_3[];
+extern const struct bug_frame __start_bug_frames_0[], __stop_bug_frames_0[],
+    __start_bug_frames_1[], __stop_bug_frames_1[], __start_bug_frames_2[],
+    __stop_bug_frames_2[], __start_bug_frames_3[], __stop_bug_frames_3[];
 
 /*
  * For the built-in regions, the double linked list can be constructed at
@@ -81,10 +79,9 @@ const struct virtual_region *find_text_region(unsigned long addr)
     const struct virtual_region *iter, *region = NULL;
 
     rcu_read_lock(&rcu_virtual_region_lock);
-    list_for_each_entry_rcu ( iter, &virtual_region_list, list )
+    list_for_each_entry_rcu(iter, &virtual_region_list, list)
     {
-        if ( (void *)addr >= iter->text_start &&
-             (void *)addr <  iter->text_end )
+        if ( (void *)addr >= iter->text_start && (void *)addr < iter->text_end )
         {
             region = iter;
             break;
@@ -99,7 +96,7 @@ const struct virtual_region *find_text_region(unsigned long addr)
  * Suggest inline so when !CONFIG_LIVEPATCH the function is not left
  * unreachable after init code is removed.
  */
-static void inline remove_virtual_region(struct virtual_region *r)
+static inline void remove_virtual_region(struct virtual_region *r)
 {
     unsigned long flags;
 
@@ -132,7 +129,7 @@ void relax_virtual_region_perms(void)
     const struct virtual_region *region;
 
     rcu_read_lock(&rcu_virtual_region_lock);
-    list_for_each_entry_rcu( region, &virtual_region_list, list )
+    list_for_each_entry_rcu(region, &virtual_region_list, list)
     {
         modify_xen_mappings_lite((unsigned long)region->text_start,
                                  (unsigned long)region->text_end,
@@ -150,7 +147,7 @@ void tighten_virtual_region_perms(void)
     const struct virtual_region *region;
 
     rcu_read_lock(&rcu_virtual_region_lock);
-    list_for_each_entry_rcu( region, &virtual_region_list, list )
+    list_for_each_entry_rcu(region, &virtual_region_list, list)
     {
         modify_xen_mappings_lite((unsigned long)region->text_start,
                                  (unsigned long)region->text_end,

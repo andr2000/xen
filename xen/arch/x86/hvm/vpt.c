@@ -77,16 +77,18 @@ static int pt_irq_vector(struct periodic_time *pt, enum hvm_intsrc src)
     isa_irq = pt->irq;
 
     if ( src == hvm_intsrc_pic )
-        return (v->domain->arch.hvm.vpic[isa_irq >> 3].irq_base
-                + (isa_irq & 7));
+        return (v->domain->arch.hvm.vpic[isa_irq >> 3].irq_base +
+                (isa_irq & 7));
 
     ASSERT(src == hvm_intsrc_lapic);
     gsi = pt->source == PTSRC_isa ? hvm_isa_irq_to_gsi(isa_irq) : pt->irq;
     vector = vioapic_get_vector(v->domain, gsi);
     if ( vector < 0 )
     {
-        dprintk(XENLOG_WARNING, "d%u: invalid GSI (%u) for platform timer\n",
-                v->domain->domain_id, gsi);
+        dprintk(XENLOG_WARNING,
+                "d%u: invalid GSI (%u) for platform timer\n",
+                v->domain->domain_id,
+                gsi);
         domain_crash(v->domain);
         return -1;
     }
@@ -128,7 +130,8 @@ static int pt_irq_masked(struct periodic_time *pt)
         {
             dprintk(XENLOG_WARNING,
                     "d%d: invalid GSI (%u) for platform timer\n",
-                    v->domain->domain_id, gsi);
+                    v->domain->domain_id,
+                    gsi);
             domain_crash(v->domain);
             return -1;
         }
@@ -195,7 +198,7 @@ static void pt_process_missed_ticks(struct periodic_time *pt)
     if ( missed_ticks <= 0 )
         return;
 
-    missed_ticks = missed_ticks / (s_time_t) pt->period + 1;
+    missed_ticks = missed_ticks / (s_time_t)pt->period + 1;
     if ( mode_is(pt->vcpu->domain, no_missed_ticks_pending) )
         pt->do_not_freeze = !pt->pending_intr_nr;
     else
@@ -233,7 +236,7 @@ void pt_save_timer(struct vcpu *v)
 
     pt_vcpu_lock(v);
 
-    list_for_each_entry ( pt, head, list )
+    list_for_each_entry(pt, head, list)
         if ( !pt->do_not_freeze )
             stop_timer(&pt->timer);
 
@@ -249,7 +252,7 @@ void pt_restore_timer(struct vcpu *v)
 
     pt_vcpu_lock(v);
 
-    list_for_each_entry ( pt, head, list )
+    list_for_each_entry(pt, head, list)
     {
         if ( pt->pending_intr_nr == 0 )
         {
@@ -325,7 +328,7 @@ int pt_update_irq(struct vcpu *v)
 
     earliest_pt = NULL;
     max_lag = -1ULL;
-    list_for_each_entry_safe ( pt, temp, head, list )
+    list_for_each_entry_safe(pt, temp, head, list)
     {
         if ( pt->pending_intr_nr )
         {
@@ -408,7 +411,7 @@ int pt_update_irq(struct vcpu *v)
 
                 pt_vcpu_lock(v);
                 /* Make sure the timer is still on the list. */
-                list_for_each_entry ( pt, &v->arch.hvm.tm_list, list )
+                list_for_each_entry(pt, &v->arch.hvm.tm_list, list)
                     if ( pt == earliest_pt )
                     {
                         pt_irq_fired(v, pt);
@@ -428,13 +431,12 @@ int pt_update_irq(struct vcpu *v)
     return pt_vector;
 }
 
-static struct periodic_time *is_pt_irq(
-    struct vcpu *v, struct hvm_intack intack)
+static struct periodic_time *is_pt_irq(struct vcpu *v, struct hvm_intack intack)
 {
     struct list_head *head = &v->arch.hvm.tm_list;
     struct periodic_time *pt;
 
-    list_for_each_entry ( pt, head, list )
+    list_for_each_entry(pt, head, list)
     {
         if ( pt->pending_intr_nr && pt->irq_issued &&
              (intack.vector == pt_irq_vector(pt, intack.source)) )
@@ -480,18 +482,17 @@ void pt_migrate(struct vcpu *v)
 
     pt_vcpu_lock(v);
 
-    list_for_each_entry ( pt, head, list )
+    list_for_each_entry(pt, head, list)
         migrate_timer(&pt->timer, v->processor);
 
     pt_vcpu_unlock(v);
 }
 
-void create_periodic_time(
-    struct vcpu *v, struct periodic_time *pt, uint64_t delta,
-    uint64_t period, uint8_t irq, time_cb *cb, void *data, bool level)
+void create_periodic_time(struct vcpu *v, struct periodic_time *pt,
+                          uint64_t delta, uint64_t period, uint8_t irq,
+                          time_cb *cb, void *data, bool level)
 {
-    if ( !pt->source ||
-         (irq >= NR_ISAIRQS && pt->source == PTSRC_isa) ||
+    if ( !pt->source || (irq >= NR_ISAIRQS && pt->source == PTSRC_isa) ||
          (level && period) ||
          (pt->source == PTSRC_ioapic ? irq >= hvm_domain_irq(v->domain)->nr_gsis
                                      : level) )
@@ -512,8 +513,10 @@ void create_periodic_time(
     if ( (period < 100000) && period )
     {
         if ( !test_and_set_bool(pt->warned_timeout_too_short) )
-            gdprintk(XENLOG_WARNING, "HVM_PlatformTime: program too "
-                     "small period %"PRIu64"\n", period);
+            gdprintk(XENLOG_WARNING,
+                     "HVM_PlatformTime: program too " "small period %" PRIu64
+                     "\n",
+                     period);
         period = 100000;
     }
 
@@ -604,7 +607,7 @@ static void pt_adjust_vcpu(struct periodic_time *pt, struct vcpu *v)
     }
     pt_vcpu_unlock(v);
 
- out:
+out:
     write_unlock(&v->domain->arch.hvm.pl_time->pt_migrate);
 }
 
@@ -634,7 +637,6 @@ void pt_adjust_global_vcpu_target(struct vcpu *v)
         pt_adjust_vcpu(&pl_time->vhpet.pt[i], v);
     write_unlock(&pl_time->vhpet.lock);
 }
-
 
 static void pt_resume(struct periodic_time *pt)
 {

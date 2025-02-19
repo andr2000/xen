@@ -83,8 +83,8 @@ extern void *_xmalloc(unsigned long size, unsigned long align);
 extern void *_xzalloc(unsigned long size, unsigned long align);
 extern void *_xrealloc(void *ptr, unsigned long size, unsigned long align);
 
-static inline void *_xmalloc_array(
-    unsigned long size, unsigned long align, unsigned long num)
+static inline void *_xmalloc_array(unsigned long size, unsigned long align,
+                                   unsigned long num)
 {
     /* Check for overflow. */
     if ( size && num > UINT_MAX / size )
@@ -92,8 +92,8 @@ static inline void *_xmalloc_array(
     return _xmalloc(size * num, align);
 }
 
-static inline void *_xzalloc_array(
-    unsigned long size, unsigned long align, unsigned long num)
+static inline void *_xzalloc_array(unsigned long size, unsigned long align,
+                                   unsigned long num)
 {
     /* Check for overflow. */
     if ( size && num > UINT_MAX / size )
@@ -101,8 +101,8 @@ static inline void *_xzalloc_array(
     return _xzalloc(size * num, align);
 }
 
-static inline void *_xrealloc_array(
-    void *ptr, unsigned long size, unsigned long align, unsigned long num)
+static inline void *_xrealloc_array(void *ptr, unsigned long size,
+                                    unsigned long align, unsigned long num)
 {
     /* Check for overflow. */
     if ( size && num > UINT_MAX / size )
@@ -117,7 +117,7 @@ static inline void *_xrealloc_array(
 struct xmem_pool;
 
 typedef void *(xmem_pool_get_memory)(unsigned long bytes);
-typedef void (xmem_pool_put_memory)(void *ptr);
+typedef void(xmem_pool_put_memory)(void *ptr);
 
 /**
  * xmem_pool_create - create dynamic memory pool
@@ -129,12 +129,11 @@ typedef void (xmem_pool_put_memory)(void *ptr);
  *
  * All size values are rounded up to next page boundary.
  */
-struct xmem_pool *xmem_pool_create(
-    const char *name,
-    xmem_pool_get_memory get_mem,
-    xmem_pool_put_memory put_mem,
-    unsigned long max_size,
-    unsigned long grow_size);
+struct xmem_pool *xmem_pool_create(const char *name,
+                                   xmem_pool_get_memory get_mem,
+                                   xmem_pool_put_memory put_mem,
+                                   unsigned long max_size,
+                                   unsigned long grow_size);
 
 /**
  * xmem_pool_destroy - cleanup given pool

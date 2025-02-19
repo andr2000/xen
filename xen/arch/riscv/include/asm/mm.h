@@ -43,8 +43,7 @@ static inline void *maddr_to_virt(paddr_t ma)
  */
 static inline unsigned long virt_to_maddr(unsigned long va)
 {
-    if ((va >= DIRECTMAP_VIRT_START) &&
-        (va <= DIRECTMAP_VIRT_END))
+    if ( (va >= DIRECTMAP_VIRT_START) && (va <= DIRECTMAP_VIRT_END) )
         return directmapoff_to_maddr(va - directmap_virt_start);
 
     BUILD_BUG_ON(XEN_VIRT_SIZE != MB(2));
@@ -54,6 +53,7 @@ static inline unsigned long virt_to_maddr(unsigned long va)
     /* phys_offset = load_start - XEN_VIRT_START */
     return phys_offset + va;
 }
+
 #define virt_to_maddr(va) virt_to_maddr((unsigned long)(va))
 
 /* Convert between Xen-heap virtual addresses and machine frame numbers. */
@@ -70,8 +70,7 @@ static inline unsigned long virt_to_maddr(unsigned long va)
 
 #define mfn_from_pte(pte) maddr_to_mfn(pte_to_paddr(pte))
 
-struct page_info
-{
+struct page_info {
     /* Each frame can be threaded onto a doubly-linked list. */
     struct page_list_entry list;
 
@@ -95,7 +94,7 @@ struct page_info
                  * INVALID_DIRTY_IDX.
                  */
 #define INVALID_DIRTY_IDX ((1UL << (MAX_ORDER + 1)) - 1)
-                unsigned long first_dirty:MAX_ORDER + 1;
+                unsigned long first_dirty : MAX_ORDER + 1;
 
                 /* Do TLBs need flushing for safety before next page use? */
                 bool need_tlbflush:1;
@@ -166,9 +165,7 @@ static inline int get_page_type(struct page_info *page, unsigned long type)
     return 1;
 }
 
-static inline void put_page_type(struct page_info *page)
-{
-}
+static inline void put_page_type(struct page_info *page) {}
 
 static inline void put_page_and_type(struct page_info *page)
 {

@@ -114,7 +114,8 @@ static int paging_free_log_dirty_bitmap(struct domain *d, int rc)
 
     if ( !d->arch.paging.preempt.dom )
     {
-        memset(&d->arch.paging.preempt.log_dirty, 0,
+        memset(&d->arch.paging.preempt.log_dirty,
+               0,
                sizeof(d->arch.paging.preempt.log_dirty));
         ASSERT(rc <= 0);
         d->arch.paging.preempt.log_dirty.done = -rc;
@@ -281,9 +282,9 @@ void paging_mark_pfn_dirty(struct domain *d, pfn_t pfn)
 
     if ( unlikely(mfn_eq(d->arch.paging.log_dirty.top, INVALID_MFN)) )
     {
-         d->arch.paging.log_dirty.top = paging_new_log_dirty_node(d);
-         if ( unlikely(mfn_eq(d->arch.paging.log_dirty.top, INVALID_MFN)) )
-             goto out;
+        d->arch.paging.log_dirty.top = paging_new_log_dirty_node(d);
+        if ( unlikely(mfn_eq(d->arch.paging.log_dirty.top, INVALID_MFN)) )
+            goto out;
     }
 
     l4 = paging_map_log_dirty_bitmap(d);
@@ -317,7 +318,9 @@ void paging_mark_pfn_dirty(struct domain *d, pfn_t pfn)
     {
         PAGING_DEBUG(LOGDIRTY,
                      "d%d: marked mfn %" PRI_mfn " (pfn %" PRI_pfn ")\n",
-                     d->domain_id, mfn_x(mfn), pfn_x(pfn));
+                     d->domain_id,
+                     mfn_x(mfn),
+                     pfn_x(pfn));
         d->arch.paging.log_dirty.dirty_count++;
     }
 
@@ -393,8 +396,7 @@ bool paging_mfn_is_dirty(const struct domain *d, mfn_t gmfn)
 /* Read a domain's log-dirty bitmap and stats.  If the operation is a CLEAN,
  * clear the bitmap and stats as well. */
 static int paging_log_dirty_op(struct domain *d,
-                               struct xen_domctl_shadow_op *sc,
-                               bool resuming)
+                               struct xen_domctl_shadow_op *sc, bool resuming)
 {
     int rv = 0, clean = 0, peek = 1;
     unsigned long pages = 0;
@@ -408,8 +410,7 @@ static int paging_log_dirty_op(struct domain *d,
          * Mark dirty all currently write-mapped pages on e.g. the
          * final iteration of a save operation.
          */
-        if ( is_hvm_domain(d) &&
-             (sc->mode & XEN_DOMCTL_SHADOW_LOGDIRTY_FINAL) )
+        if ( is_hvm_domain(d) && (sc->mode & XEN_DOMCTL_SHADOW_LOGDIRTY_FINAL) )
             hvm_mapped_guest_frames_mark_dirty(d);
 
         domain_pause(d);
@@ -425,7 +426,8 @@ static int paging_log_dirty_op(struct domain *d,
     paging_lock(d);
 
     if ( !d->arch.paging.preempt.dom )
-        memset(&d->arch.paging.preempt.log_dirty, 0,
+        memset(&d->arch.paging.preempt.log_dirty,
+               0,
                sizeof(d->arch.paging.preempt.log_dirty));
     else if ( d->arch.paging.preempt.dom != current->domain ||
               d->arch.paging.preempt.op != sc->op )
@@ -438,7 +440,8 @@ static int paging_log_dirty_op(struct domain *d,
 
     clean = (sc->op == XEN_DOMCTL_SHADOW_OP_CLEAN);
 
-    PAGING_DEBUG(LOGDIRTY, "log-dirty %s: dom %u faults=%lu dirty=%lu\n",
+    PAGING_DEBUG(LOGDIRTY,
+                 "log-dirty %s: dom %u faults=%lu dirty=%lu\n",
                  (clean) ? "clean" : "peek",
                  d->domain_id,
                  d->arch.paging.log_dirty.fault_count,
@@ -453,10 +456,12 @@ static int paging_log_dirty_op(struct domain *d,
         /* caller may have wanted just to clean the state or access stats. */
         peek = 0;
 
-    if ( unlikely(d->arch.paging.log_dirty.failed_allocs) ) {
+    if ( unlikely(d->arch.paging.log_dirty.failed_allocs) )
+    {
         printk(XENLOG_WARNING
                "%u failed page allocs while logging dirty pages of d%d\n",
-               d->arch.paging.log_dirty.failed_allocs, d->domain_id);
+               d->arch.paging.log_dirty.failed_allocs,
+               d->domain_id);
         rv = -ENOMEM;
         goto out;
     }
@@ -468,28 +473,30 @@ static int paging_log_dirty_op(struct domain *d,
 
     for ( ; (pages < sc->pages) && (i4 < LOGDIRTY_NODE_ENTRIES); i4++, i3 = 0 )
     {
-        l3 = ((l4 && !mfn_eq(l4[i4], INVALID_MFN)) ?
-              map_domain_page(l4[i4]) : NULL);
+        l3 = ((l4 && !mfn_eq(l4[i4], INVALID_MFN)) ? map_domain_page(l4[i4])
+                                                   : NULL);
         for ( ; (pages < sc->pages) && (i3 < LOGDIRTY_NODE_ENTRIES); i3++ )
         {
-            l2 = ((l3 && !mfn_eq(l3[i3], INVALID_MFN)) ?
-                  map_domain_page(l3[i3]) : NULL);
-            for ( i2 = 0;
-                  (pages < sc->pages) && (i2 < LOGDIRTY_NODE_ENTRIES);
+            l2 = ((l3 && !mfn_eq(l3[i3], INVALID_MFN)) ? map_domain_page(l3[i3])
+                                                       : NULL);
+            for ( i2 = 0; (pages < sc->pages) && (i2 < LOGDIRTY_NODE_ENTRIES);
                   i2++ )
             {
                 unsigned int bytes = PAGE_SIZE;
-                l1 = ((l2 && !mfn_eq(l2[i2], INVALID_MFN)) ?
-                      map_domain_page(l2[i2]) : NULL);
+                l1 = ((l2 && !mfn_eq(l2[i2], INVALID_MFN))
+                          ? map_domain_page(l2[i2])
+                          : NULL);
                 if ( unlikely(((sc->pages - pages + 7) >> 3) < bytes) )
                     bytes = (unsigned int)((sc->pages - pages + 7) >> 3);
                 if ( likely(peek) )
                 {
                     if ( (l1 ? copy_to_guest_offset(sc->dirty_bitmap,
-                                                    pages >> 3, (uint8_t *)l1,
+                                                    pages >> 3,
+                                                    (uint8_t *)l1,
                                                     bytes)
                              : clear_guest_offset(sc->dirty_bitmap,
-                                                  pages >> 3, bytes)) != 0 )
+                                                  pages >> 3,
+                                                  bytes)) != 0 )
                     {
                         rv = -EFAULT;
                         goto out;
@@ -566,7 +573,7 @@ static int paging_log_dirty_op(struct domain *d,
     domain_unpause(d);
     return rv;
 
- out:
+out:
     d->arch.paging.preempt.dom = NULL;
     paging_unlock(d);
     domain_unpause(d);
@@ -584,10 +591,8 @@ static int paging_log_dirty_op(struct domain *d,
 }
 
 #ifdef CONFIG_HVM
-void paging_log_dirty_range(struct domain *d,
-                           unsigned long begin_pfn,
-                           unsigned long nr,
-                           uint8_t *dirty_bitmap)
+void paging_log_dirty_range(struct domain *d, unsigned long begin_pfn,
+                            unsigned long nr, uint8_t *dirty_bitmap)
 {
     struct p2m_domain *p2m = p2m_get_hostp2m(d);
     int i;
@@ -671,8 +676,7 @@ void paging_vcpu_init(struct vcpu *v)
 
 #if PG_log_dirty
 int paging_domctl(struct domain *d, struct xen_domctl_shadow_op *sc,
-                  XEN_GUEST_HANDLE_PARAM(xen_domctl_t) u_domctl,
-                  bool resuming)
+                  XEN_GUEST_HANDLE_PARAM(xen_domctl_t) u_domctl, bool resuming)
 {
     int rc;
 
@@ -690,22 +694,26 @@ int paging_domctl(struct domain *d, struct xen_domctl_shadow_op *sc,
 
     if ( unlikely(d->vcpu == NULL) || unlikely(d->vcpu[0] == NULL) )
     {
-        gdprintk(XENLOG_DEBUG, "Paging op on a domain (%u) with no vcpus\n",
+        gdprintk(XENLOG_DEBUG,
+                 "Paging op on a domain (%u) with no vcpus\n",
                  d->domain_id);
         return -EINVAL;
     }
 
-    if ( resuming
-         ? (d->arch.paging.preempt.dom != current->domain ||
-            d->arch.paging.preempt.op != sc->op)
-         : (d->arch.paging.preempt.dom &&
-            sc->op != XEN_DOMCTL_SHADOW_OP_GET_ALLOCATION) )
+    if ( resuming ? (d->arch.paging.preempt.dom != current->domain ||
+                     d->arch.paging.preempt.op != sc->op)
+                  : (d->arch.paging.preempt.dom &&
+                     sc->op != XEN_DOMCTL_SHADOW_OP_GET_ALLOCATION) )
     {
-        printk(XENLOG_G_DEBUG
-               "%pv: Paging op %#x on Dom%u with unfinished prior op %#x by Dom%u\n",
-               current, sc->op, d->domain_id, d->arch.paging.preempt.op,
-               d->arch.paging.preempt.dom
-               ? d->arch.paging.preempt.dom->domain_id : DOMID_INVALID);
+        printk(
+            XENLOG_G_DEBUG
+            "%pv: Paging op %#x on Dom%u with unfinished prior op %#x by Dom%u\n",
+            current,
+            sc->op,
+            d->domain_id,
+            d->arch.paging.preempt.op,
+            d->arch.paging.preempt.dom ? d->arch.paging.preempt.dom->domain_id
+                                       : DOMID_INVALID);
         return -EBUSY;
     }
 
@@ -722,7 +730,6 @@ int paging_domctl(struct domain *d, struct xen_domctl_shadow_op *sc,
      */
     switch ( sc->op )
     {
-
     case XEN_DOMCTL_SHADOW_OP_ENABLE:
         if ( !(sc->mode & XEN_DOMCTL_SHADOW_ENABLE_LOG_DIRTY) )
             break;
@@ -749,8 +756,7 @@ int paging_domctl(struct domain *d, struct xen_domctl_shadow_op *sc,
         return shadow_domctl(d, sc, u_domctl);
 }
 
-long do_paging_domctl_cont(
-    XEN_GUEST_HANDLE_PARAM(xen_domctl_t) u_domctl)
+long do_paging_domctl_cont(XEN_GUEST_HANDLE_PARAM(xen_domctl_t) u_domctl)
 {
     struct xen_domctl op;
     struct domain *d;
@@ -784,7 +790,8 @@ long do_paging_domctl_cont(
 
     if ( ret == -ERESTART )
         ret = hypercall_create_continuation(__HYPERVISOR_paging_domctl_cont,
-                                            "h", u_domctl);
+                                            "h",
+                                            u_domctl);
     else if ( __copy_field_to_guest(u_domctl, &op, u.shadow_op) )
         ret = -EFAULT;
 
@@ -833,8 +840,10 @@ void paging_final_teardown(struct domain *d)
     bool hap = hap_enabled(d);
 
     PAGING_PRINTK("%pd start: total = %u, free = %u, p2m = %u\n",
-                  d, d->arch.paging.total_pages,
-                  d->arch.paging.free_pages, d->arch.paging.p2m_pages);
+                  d,
+                  d->arch.paging.total_pages,
+                  d->arch.paging.free_pages,
+                  d->arch.paging.p2m_pages);
 
     if ( hap )
         hap_final_teardown(d);
@@ -855,8 +864,10 @@ void paging_final_teardown(struct domain *d)
     p2m_teardown(p2m_get_hostp2m(d), true, NULL);
 
     PAGING_PRINTK("%pd done: total = %u, free = %u, p2m = %u\n",
-                  d, d->arch.paging.total_pages,
-                  d->arch.paging.free_pages, d->arch.paging.p2m_pages);
+                  d,
+                  d->arch.paging.total_pages,
+                  d->arch.paging.free_pages,
+                  d->arch.paging.p2m_pages);
     ASSERT(!d->arch.paging.p2m_pages);
     ASSERT(!d->arch.paging.free_pages);
     ASSERT(!d->arch.paging.total_pages);
@@ -941,14 +952,13 @@ void paging_dump_vcpu_info(struct vcpu *v)
                    paging_get_hostmode(v)->guest_levels,
                    paging_get_hostmode(v)->shadow.shadow_levels);
         else
-            printk("hap, %u levels\n",
-                   paging_get_hostmode(v)->guest_levels);
+            printk("hap, %u levels\n", paging_get_hostmode(v)->guest_levels);
     }
 }
 
 const struct paging_mode *paging_get_mode(struct vcpu *v)
 {
-    if (!nestedhvm_is_n2(v))
+    if ( !nestedhvm_is_n2(v) )
         return paging_get_hostmode(v);
 
     return paging_get_nestedmode(v);
@@ -958,7 +968,7 @@ const struct paging_mode *paging_get_mode(struct vcpu *v)
 void paging_update_nestedmode(struct vcpu *v)
 {
     ASSERT(nestedhvm_enabled(v->domain));
-    if (nestedhvm_paging_mode_hap(v))
+    if ( nestedhvm_paging_mode_hap(v) )
         /* nested-on-nested */
         v->arch.paging.nestedmode = hap_paging_get_mode(v);
     else
@@ -989,10 +999,10 @@ int arch_get_paging_mempool_size(struct domain *d, uint64_t *size)
 {
     unsigned long pages;
 
-    if ( is_pv_domain(d) )                 /* TODO: Relax in due course */
+    if ( is_pv_domain(d) ) /* TODO: Relax in due course */
         return -EOPNOTSUPP;
 
-    pages  = d->arch.paging.total_pages;
+    pages = d->arch.paging.total_pages;
     pages += d->arch.paging.p2m_pages;
 
     *size = pages << PAGE_SHIFT;
@@ -1006,11 +1016,11 @@ int arch_set_paging_mempool_size(struct domain *d, uint64_t size)
     bool preempted = false;
     int rc;
 
-    if ( is_pv_domain(d) )                 /* TODO: Relax in due course */
+    if ( is_pv_domain(d) ) /* TODO: Relax in due course */
         return -EOPNOTSUPP;
 
-    if ( size & ~PAGE_MASK ||              /* Non page-sized request? */
-         pages != (unsigned int)pages )    /* Overflow $X_set_allocation()? */
+    if ( size & ~PAGE_MASK || /* Non page-sized request? */
+         pages != (unsigned int)pages ) /* Overflow $X_set_allocation()? */
         return -EINVAL;
 
     paging_lock(d);

@@ -20,10 +20,8 @@ Revision History
 
 --*/
 
-
 #define EFIWARN(a)                            (a)
 #define EFI_ERROR(a)              ((INTN)(a) < 0)
-
 
 #define EFI_SUCCESS                             0
 #define EFI_LOAD_ERROR                  EFIERR(1)
@@ -64,4 +62,3 @@ Revision History
 #define EFI_WARN_BUFFER_TOO_SMALL       EFIWARN(4)
 
 #endif
-

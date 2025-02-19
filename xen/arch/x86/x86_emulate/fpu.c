@@ -11,11 +11,11 @@
 #include "private.h"
 
 #ifdef __XEN__
-# include <asm/amd.h>
-# define cpu_has_amd_erratum(nr) \
+#include <asm/amd.h>
+#define cpu_has_amd_erratum(nr) \
          cpu_has_amd_erratum(&current_cpu_data, AMD_ERRATUM_##nr)
 #else
-# define cpu_has_amd_erratum(nr) 0
+#define cpu_has_amd_erratum(nr) 0
 #endif
 
 /* Floating point status word definitions. */
@@ -25,7 +25,7 @@ static inline bool fpu_check_write(void)
 {
     uint16_t fsw;
 
-    asm ( "fnstsw %0" : "=am" (fsw) );
+    asm("fnstsw %0" : "=am"(fsw));
 
     return !(fsw & FSW_ES);
 }
@@ -69,13 +69,10 @@ do {                                                                    \
     put_stub(stub);                                                     \
 } while (0)
 
-int x86emul_fpu(struct x86_emulate_state *s,
-                struct cpu_user_regs *regs,
-                struct operand *dst,
-                struct operand *src,
+int x86emul_fpu(struct x86_emulate_state *s, struct cpu_user_regs *regs,
+                struct operand *dst, struct operand *src,
                 struct x86_emulate_ctxt *ctxt,
-                const struct x86_emulate_ops *ops,
-                unsigned int *insn_bytes,
+                const struct x86_emulate_ops *ops, unsigned int *insn_bytes,
                 enum x86_emulate_fpu_type *fpu_type,
 #define fpu_type (*fpu_type) /* for get_fpu() */
                 mmval_t *mmvalp)
@@ -89,7 +86,7 @@ int x86emul_fpu(struct x86_emulate_state *s,
     {
         unsigned long dummy;
 
-    case 0x9b:  /* wait/fwait */
+    case 0x9b: /* wait/fwait */
         host_and_vcpu_must_have(fpu);
         get_fpu(X86EMUL_FPU_wait);
         emulate_fpu_insn_stub(b);
@@ -113,8 +110,11 @@ int x86emul_fpu(struct x86_emulate_state *s,
         default:
         fpu_memsrc32:
             ASSERT(s->ea.type == OP_MEM);
-            if ( (rc = ops->read(s->ea.mem.seg, s->ea.mem.off, &src->val,
-                                 4, ctxt)) != X86EMUL_OKAY )
+            if ( (rc = ops->read(s->ea.mem.seg,
+                                 s->ea.mem.off,
+                                 &src->val,
+                                 4,
+                                 ctxt)) != X86EMUL_OKAY )
                 goto done;
             emulate_fpu_insn_memsrc(b, s->modrm_reg & 7, src->val);
             break;
@@ -186,19 +186,25 @@ int x86emul_fpu(struct x86_emulate_state *s,
                  * the field to communicate real vs protected mode to ->blk().
                  */
                 s->rex_prefix = in_protmode(ctxt, ops);
-                if ( (rc = ops->blk(s->ea.mem.seg, s->ea.mem.off, NULL,
+                if ( (rc = ops->blk(s->ea.mem.seg,
+                                    s->ea.mem.off,
+                                    NULL,
                                     s->op_bytes > 2 ? sizeof(struct x87_env32)
                                                     : sizeof(struct x87_env16),
                                     &regs->eflags,
-                                    s, ctxt)) != X86EMUL_OKAY )
+                                    s,
+                                    ctxt)) != X86EMUL_OKAY )
                     goto done;
                 s->fpu_ctrl = true;
                 break;
             case 5: /* fldcw m2byte */
                 s->fpu_ctrl = true;
             fpu_memsrc16:
-                if ( (rc = ops->read(s->ea.mem.seg, s->ea.mem.off, &src->val,
-                                     2, ctxt)) != X86EMUL_OKAY )
+                if ( (rc = ops->read(s->ea.mem.seg,
+                                     s->ea.mem.off,
+                                     &src->val,
+                                     2,
+                                     ctxt)) != X86EMUL_OKAY )
                     goto done;
                 emulate_fpu_insn_memsrc(b, s->modrm_reg & 7, src->val);
                 break;
@@ -234,7 +240,7 @@ int x86emul_fpu(struct x86_emulate_state *s,
             vcpu_must_have(cmov);
             emulate_fpu_insn_stub_eflags(0xda, s->modrm);
             break;
-        case 0xe9:          /* fucompp */
+        case 0xe9: /* fucompp */
             emulate_fpu_insn_stub(0xda, s->modrm);
             break;
         default:
@@ -262,7 +268,7 @@ int x86emul_fpu(struct x86_emulate_state *s,
         case 0xe2: /* fnclex */
         case 0xe3: /* fninit */
         case 0xe4: /* fnsetpm - 287 only, ignored by 387 */
-        /* case 0xe5: frstpm - 287 only, #UD on 387 */
+            /* case 0xe5: frstpm - 287 only, #UD on 387 */
             s->fpu_ctrl = true;
             emulate_fpu_insn_stub(0xdb, s->modrm);
             break;
@@ -280,8 +286,11 @@ int x86emul_fpu(struct x86_emulate_state *s,
                 goto fpu_memdst32;
             case 5: /* fld m80fp */
             fpu_memsrc80:
-                if ( (rc = ops->read(s->ea.mem.seg, s->ea.mem.off, mmvalp,
-                                     10, ctxt)) != X86EMUL_OKAY )
+                if ( (rc = ops->read(s->ea.mem.seg,
+                                     s->ea.mem.off,
+                                     mmvalp,
+                                     10,
+                                     ctxt)) != X86EMUL_OKAY )
                     goto done;
                 emulate_fpu_insn_memsrc(b, s->modrm_reg & 7, *mmvalp);
                 break;
@@ -290,8 +299,11 @@ int x86emul_fpu(struct x86_emulate_state *s,
                 fail_if(!ops->write);
                 emulate_fpu_insn_memdst(b, s->modrm_reg & 7, *mmvalp);
                 if ( fpu_check_write() &&
-                     (rc = ops->write(s->ea.mem.seg, s->ea.mem.off, mmvalp,
-                                      10, ctxt)) != X86EMUL_OKAY )
+                     (rc = ops->write(s->ea.mem.seg,
+                                      s->ea.mem.off,
+                                      mmvalp,
+                                      10,
+                                      ctxt)) != X86EMUL_OKAY )
                     goto done;
                 break;
             default:
@@ -319,8 +331,11 @@ int x86emul_fpu(struct x86_emulate_state *s,
         default:
         fpu_memsrc64:
             ASSERT(s->ea.type == OP_MEM);
-            if ( (rc = ops->read(s->ea.mem.seg, s->ea.mem.off, &src->val,
-                                 8, ctxt)) != X86EMUL_OKAY )
+            if ( (rc = ops->read(s->ea.mem.seg,
+                                 s->ea.mem.off,
+                                 &src->val,
+                                 8,
+                                 ctxt)) != X86EMUL_OKAY )
                 goto done;
             emulate_fpu_insn_memsrc(b, s->modrm_reg & 7, src->val);
             break;
@@ -368,11 +383,15 @@ int x86emul_fpu(struct x86_emulate_state *s,
                  * the field to communicate real vs protected mode to ->blk().
                  */
                 s->rex_prefix = in_protmode(ctxt, ops);
-                if ( (rc = ops->blk(s->ea.mem.seg, s->ea.mem.off, NULL,
-                                    s->op_bytes > 2 ? sizeof(struct x87_env32) + 80
-                                                    : sizeof(struct x87_env16) + 80,
+                if ( (rc = ops->blk(s->ea.mem.seg,
+                                    s->ea.mem.off,
+                                    NULL,
+                                    s->op_bytes > 2
+                                        ? sizeof(struct x87_env32) + 80
+                                        : sizeof(struct x87_env16) + 80,
                                     &regs->eflags,
-                                    s, ctxt)) != X86EMUL_OKAY )
+                                    s,
+                                    ctxt)) != X86EMUL_OKAY )
                     goto done;
                 s->fpu_ctrl = true;
                 break;
@@ -472,12 +491,12 @@ int x86emul_fpu(struct x86_emulate_state *s,
 
     rc = X86EMUL_OKAY;
 
- done:
+done:
     put_stub(stub);
     return rc;
 
 #ifdef __XEN__
- emulation_stub_failure:
+emulation_stub_failure:
     return X86EMUL_stub_failure;
 #endif
 }

@@ -18,8 +18,7 @@
 #include <asm/hvm/svm/vmcb.h>
 
 #ifdef CONFIG_MEM_SHARING
-struct mem_sharing_domain
-{
+struct mem_sharing_domain {
     bool enabled, block_interrupts;
 
     /*
@@ -59,19 +58,19 @@ struct hvm_domain {
     } ioreq_gfn;
 
     /* Cached CF8 for guest PCI config cycles */
-    uint32_t                pci_cf8;
+    uint32_t pci_cf8;
 
-    struct pl_time         *pl_time;
+    struct pl_time *pl_time;
 
     struct hvm_io_handler *io_handler;
-    unsigned int          io_handler_count;
+    unsigned int io_handler_count;
 
     /* Lock protects access to irq, vpic and vioapic. */
-    spinlock_t             irq_lock;
-    struct hvm_irq        *irq;
-    struct hvm_hw_vpic     vpic[2]; /* 0=master; 1=slave */
-    struct hvm_vioapic    **vioapic;
-    unsigned int           nr_vioapics;
+    spinlock_t irq_lock;
+    struct hvm_irq *irq;
+    struct hvm_hw_vpic vpic[2]; /* 0=master; 1=slave */
+    struct hvm_vioapic **vioapic;
+    unsigned int nr_vioapics;
 
     /*
      * hvm_hw_pmtimer is a publicly-visible name. We will defer renaming
@@ -81,18 +80,18 @@ struct hvm_domain {
      * Internally, however, we will be using hvm_hw_acpi.
      */
 #define hvm_hw_acpi hvm_hw_pmtimer
-    struct hvm_hw_acpi     acpi;
+    struct hvm_hw_acpi acpi;
 
     /* VCPU which is current target for 8259 interrupts. */
-    struct vcpu           *i8259_target;
+    struct vcpu *i8259_target;
 
     /* emulated irq to pirq */
     struct radix_tree_root emuirq_pirq;
 
-    uint64_t              *params;
+    uint64_t *params;
 
     /* Memory ranges with pinned cache attributes. */
-    struct list_head       pinned_cacheattr_ranges;
+    struct list_head pinned_cacheattr_ranges;
 
     /* VRAM dirty support.  Protect with the domain paging lock. */
     struct sh_dirty_vram *dirty_vram;
@@ -100,16 +99,16 @@ struct hvm_domain {
     /* If one of vcpus of this domain is in no_fill_mode or
      * mtrr/pat between vcpus is not the same, set is_in_uc_mode
      */
-    spinlock_t             uc_lock;
-    bool                   is_in_uc_mode;
+    spinlock_t uc_lock;
+    bool is_in_uc_mode;
 
-    bool                   is_s3_suspended;
+    bool is_s3_suspended;
 
     /* Compatibility setting for a bug in x2APIC LDR */
     bool bug_x2apic_ldr_vcpu_id;
 
     /* hypervisor intercepted msix table */
-    struct list_head       msixtbl_list;
+    struct list_head msixtbl_list;
 
     struct viridian_domain *viridian;
 

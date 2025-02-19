@@ -62,8 +62,7 @@ static inline bool list_head_is_null(const struct list_head *list)
  * This is only for internal list manipulation where we know
  * the prev/next entries already!
  */
-static inline void __list_add(struct list_head *new,
-                              struct list_head *prev,
+static inline void __list_add(struct list_head *new, struct list_head *prev,
                               struct list_head *next)
 {
     next->prev = new;
@@ -104,8 +103,7 @@ static inline void list_add_tail(struct list_head *new, struct list_head *head)
  * This is only for internal list manipulation where we know
  * the prev/next entries already!
  */
-static inline void __list_add_rcu(struct list_head *new,
-                                  struct list_head *prev,
+static inline void __list_add_rcu(struct list_head *new, struct list_head *prev,
                                   struct list_head *next)
 {
     new->next = next;
@@ -165,8 +163,7 @@ static inline void list_add_tail_rcu(struct list_head *new,
  * This is only for internal list manipulation where we know
  * the prev/next entries already!
  */
-static inline void __list_del(struct list_head *prev,
-                              struct list_head *next)
+static inline void __list_del(struct list_head *prev, struct list_head *next)
 {
     next->prev = prev;
     prev->next = next;
@@ -223,8 +220,7 @@ static inline void list_del_rcu(struct list_head *entry)
  * @new : the new element to insert
  * Note: if 'old' was empty, it will be overwritten.
  */
-static inline void list_replace(struct list_head *old,
-                                struct list_head *new)
+static inline void list_replace(struct list_head *old, struct list_head *new)
 {
     new->next = old->next;
     new->next->prev = new;
@@ -339,8 +335,7 @@ static inline int list_empty_careful(const struct list_head *head)
     return (next == head) && (next == head->prev);
 }
 
-static inline void __list_splice(struct list_head *list,
-                                 struct list_head *head)
+static inline void __list_splice(struct list_head *list, struct list_head *head)
 {
     struct list_head *first = list->next;
     struct list_head *last = list->prev;
@@ -360,7 +355,7 @@ static inline void __list_splice(struct list_head *list,
  */
 static inline void list_splice(struct list_head *list, struct list_head *head)
 {
-    if (!list_empty(list))
+    if ( !list_empty(list) )
         __list_splice(list, head);
 }
 
@@ -374,7 +369,8 @@ static inline void list_splice(struct list_head *list, struct list_head *head)
 static inline void list_splice_init(struct list_head *list,
                                     struct list_head *head)
 {
-    if (!list_empty(list)) {
+    if ( !list_empty(list) )
+    {
         __list_splice(list, head);
         INIT_LIST_HEAD(list);
     }
@@ -440,7 +436,7 @@ static inline void list_splice_init(struct list_head *list,
   */
 #define list_next_entry(pos, member) \
         list_entry((pos)->member.next, typeof(*(pos)), member)
- 
+
 /**
   * list_prev_entry - get the prev element in list
   * @pos:        the type * to cursor
@@ -694,6 +690,7 @@ struct hlist_node {
 #define HLIST_HEAD_INIT { .first = NULL }
 #define HLIST_HEAD(name) struct hlist_head name = {  .first = NULL }
 #define INIT_HLIST_HEAD(ptr) ((ptr)->first = NULL)
+
 static inline void INIT_HLIST_NODE(struct hlist_node *h)
 {
     h->next = NULL;
@@ -715,7 +712,7 @@ static inline void __hlist_del(struct hlist_node *n)
     struct hlist_node *next = n->next;
     struct hlist_node **pprev = n->pprev;
     *pprev = next;
-    if (next)
+    if ( next )
         next->pprev = pprev;
 }
 
@@ -753,7 +750,8 @@ static inline void hlist_del_rcu(struct hlist_node *n)
 
 static inline void hlist_del_init(struct hlist_node *n)
 {
-    if (!hlist_unhashed(n)) {
+    if ( !hlist_unhashed(n) )
+    {
         __hlist_del(n);
         INIT_HLIST_NODE(n);
     }
@@ -774,7 +772,7 @@ static inline void hlist_replace_rcu(struct hlist_node *old,
     new->next = next;
     new->pprev = old->pprev;
     smp_wmb();
-    if (next)
+    if ( next )
         new->next->pprev = &new->next;
     *new->pprev = new;
     old->pprev = LIST_POISON2;
@@ -784,7 +782,7 @@ static inline void hlist_add_head(struct hlist_node *n, struct hlist_head *h)
 {
     struct hlist_node *first = h->first;
     n->next = first;
-    if (first)
+    if ( first )
         first->pprev = &n->next;
     h->first = n;
     n->pprev = &h->first;
@@ -816,14 +814,14 @@ static inline void hlist_add_head_rcu(struct hlist_node *n,
     n->next = first;
     n->pprev = &h->first;
     smp_wmb();
-    if (first)
+    if ( first )
         first->pprev = &n->next;
     h->first = n;
 }
 
 /* next must be != NULL */
 static inline void hlist_add_before(struct hlist_node *n,
-                    struct hlist_node *next)
+                                    struct hlist_node *next)
 {
     n->pprev = next->pprev;
     n->next = next;
@@ -832,14 +830,14 @@ static inline void hlist_add_before(struct hlist_node *n,
 }
 
 static inline void hlist_add_after(struct hlist_node *n,
-                    struct hlist_node *next)
+                                   struct hlist_node *next)
 {
     next->next = n->next;
     n->next = next;
     next->pprev = &n->next;
 
-    if(next->next)
-        next->next->pprev  = &next->next;
+    if ( next->next )
+        next->next->pprev = &next->next;
 }
 
 /**
@@ -895,7 +893,7 @@ static inline void hlist_add_after_rcu(struct hlist_node *prev,
     n->pprev = &prev->next;
     smp_wmb();
     prev->next = n;
-    if (n->next)
+    if ( n->next )
         n->next->pprev = &n->next;
 }
 
@@ -960,7 +958,6 @@ static inline void hlist_add_after_rcu(struct hlist_node *prev,
          (pos) && ({ n = (pos)->next; 1; }) &&                            \
          ({ tpos = hlist_entry(pos, typeof(*(tpos)), member); 1;});       \
          (pos) = (n))
-
 
 /**
  * hlist_for_each_entry_rcu - iterate over rcu list of given type

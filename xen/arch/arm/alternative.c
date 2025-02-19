@@ -55,8 +55,8 @@ static bool branch_insn_requires_update(const struct alt_instr *alt,
     BUG();
 }
 
-static u32 get_alt_insn(const struct alt_instr *alt,
-                        const u32 *insnptr, const u32 *altinsnptr)
+static u32 get_alt_insn(const struct alt_instr *alt, const u32 *insnptr,
+                        const u32 *altinsnptr)
 {
     u32 insn;
 
@@ -85,8 +85,8 @@ static u32 get_alt_insn(const struct alt_instr *alt,
 }
 
 static void patch_alternative(const struct alt_instr *alt,
-                              const uint32_t *origptr,
-                              uint32_t *updptr, int nr_inst)
+                              const uint32_t *origptr, uint32_t *updptr,
+                              int nr_inst)
 {
     const uint32_t *replptr;
     unsigned int i;
@@ -117,15 +117,15 @@ static int __apply_alternatives(const struct alt_region *region,
     alternative_cb_t alt_cb;
 
     printk(XENLOG_INFO "alternatives: Patching with alt table %p -> %p\n",
-           region->begin, region->end);
+           region->begin,
+           region->end);
 
     for ( alt = region->begin; alt < region->end; alt++ )
     {
         int nr_inst;
 
         /* Use ARM_CB_PATCH as an unconditional patch */
-        if ( alt->cpufeature < ARM_CB_PATCH &&
-             !cpus_have_cap(alt->cpufeature) )
+        if ( alt->cpufeature < ARM_CB_PATCH && !cpus_have_cap(alt->cpufeature) )
             continue;
 
         if ( alt->cpufeature == ARM_CB_PATCH )
@@ -147,7 +147,7 @@ static int __apply_alternatives(const struct alt_region *region,
 
         /* Ensure the new instructions reached the memory and nuke */
         clean_and_invalidate_dcache_va_range(origptr,
-                                             (sizeof (*origptr) * nr_inst));
+                                             (sizeof(*origptr) * nr_inst));
     }
 
     /* Nuke the instruction cache */
@@ -202,8 +202,7 @@ static void __init *xen_remap_colored(mfn_t xen_mfn, paddr_t xen_size)
     if ( !xen_colored_mfns )
         panic("Can't allocate LLC colored MFNs\n");
 
-    for_each_xen_colored_mfn ( xen_mfn, mfn, i )
-        xen_colored_mfns[i] = mfn;
+    for_each_xen_colored_mfn(xen_mfn, mfn, i) xen_colored_mfns[i] = mfn;
 
     xenmap = vmap(xen_colored_mfns, xen_size >> PAGE_SHIFT);
     xfree(xen_colored_mfns);
@@ -237,7 +236,7 @@ void __init apply_alternatives_all(void)
     /* Re-mapping Xen is not expected to fail during boot. */
     BUG_ON(!xenmap);
 
-	/* better not try code patching on a live SMP system */
+    /* better not try code patching on a live SMP system */
     ret = stop_machine_run(__apply_alternatives_multi_stop, xenmap, NR_CPUS);
 
     /* stop_machine_run should never fail at this stage of the boot */
@@ -247,7 +246,8 @@ void __init apply_alternatives_all(void)
 }
 
 #ifdef CONFIG_LIVEPATCH
-int apply_alternatives(const struct alt_instr *start, const struct alt_instr *end)
+int apply_alternatives(const struct alt_instr *start,
+                       const struct alt_instr *end)
 {
     const struct alt_region region = {
         .begin = start,

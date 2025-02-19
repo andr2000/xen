@@ -4,16 +4,14 @@
 
 #include <xen/stdbool.h>
 
-enum device_type
-{
+enum device_type {
 #ifdef CONFIG_HAS_DEVICE_TREE
     DEV_DT,
 #endif
     DEV_PCI
 };
 
-enum device_class
-{
+enum device_class {
     DEVICE_SERIAL,
     DEVICE_IOMMU,
     DEVICE_INTERRUPT_CONTROLLER,
@@ -23,14 +21,14 @@ enum device_class
 };
 
 /* struct device - The basic device structure */
-struct device
-{
+struct device {
     enum device_type type;
 #ifdef CONFIG_HAS_DEVICE_TREE
     struct dt_device_node *of_node; /* Used by drivers imported from Linux */
 #endif
 #ifdef CONFIG_HAS_PASSTHROUGH
-    void *iommu; /* IOMMU private data */;
+    void *iommu; /* IOMMU private data */
+    ;
     struct iommu_fwspec *iommu_fwspec; /* per-device IOMMU instance data */
 #endif
 };
@@ -113,8 +111,7 @@ struct acpi_device_desc {
  *
  *  Return 0 on success.
  */
-int acpi_device_init(enum device_class class,
-                     const void *data, int class_type);
+int acpi_device_init(enum device_class class, const void *data, int class_type);
 
 #define ACPI_DEVICE_START(dev_name, ident, cls)                     \
 static const struct acpi_device_desc __dev_desc_##dev_name __used   \

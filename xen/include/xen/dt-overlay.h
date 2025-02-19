@@ -1,5 +1,5 @@
- /* SPDX-License-Identifier: GPL-2.0-only */
- /*
+/* SPDX-License-Identifier: GPL-2.0-only */
+/*
  * xen/dt-overlay.h
  *
  * Device tree overlay support in Xen.
@@ -46,6 +46,7 @@ long dt_overlay_sysctl(struct xen_sysctl_dt_overlay *op);
 long dt_overlay_domctl(struct domain *d, struct xen_domctl_dt_overlay *op);
 #else
 #include <xen/errno.h>
+
 static inline long dt_overlay_sysctl(struct xen_sysctl_dt_overlay *op)
 {
     return -EOPNOTSUPP;

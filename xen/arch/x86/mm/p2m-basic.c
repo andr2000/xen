@@ -62,9 +62,9 @@ struct p2m_domain *p2m_init_one(struct domain *d)
         goto free_cpumask;
     return p2m;
 
- free_cpumask:
+free_cpumask:
     free_cpumask_var(p2m->dirty_cpumask);
- free_p2m:
+free_p2m:
     xfree(p2m);
     return NULL;
 }

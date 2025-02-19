@@ -48,7 +48,7 @@ int remove_xen_ranges(struct rangeset *r);
 int cf_check stub_selftest(void);
 
 #ifdef NDEBUG
-# define highmem_start 0
+#define highmem_start 0
 #else
 extern unsigned long highmem_start;
 #endif

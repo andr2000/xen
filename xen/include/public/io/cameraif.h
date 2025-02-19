@@ -1273,6 +1273,7 @@ struct xencamera_req {
     uint16_t id;
     uint8_t operation;
     uint8_t reserved[5];
+
     union {
         struct xencamera_config_req config;
         struct xencamera_frame_rate_req frame_rate;
@@ -1290,6 +1291,7 @@ struct xencamera_resp {
     uint8_t operation;
     uint8_t reserved;
     int32_t status;
+
     union {
         struct xencamera_config_resp config;
         struct xencamera_buf_get_layout_resp buf_layout;
@@ -1304,6 +1306,7 @@ struct xencamera_evt {
     uint16_t id;
     uint8_t type;
     uint8_t reserved[5];
+
     union {
         struct xencamera_frame_avail_evt frame_avail;
         struct xencamera_ctrl_value ctrl_value;

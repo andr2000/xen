@@ -80,7 +80,8 @@ static void cf_check intel_thermal_interrupt(void)
         printk(KERN_EMERG "CPU%u: Temperature above threshold\n", cpu);
         printk(KERN_EMERG "CPU%u: Running in modulated clock mode\n", cpu);
         add_taint(TAINT_MACHINE_CHECK);
-    } else
+    }
+    else
         printk(KERN_INFO "CPU%u: Temperature/speed normal\n", cpu);
 }
 
@@ -135,12 +136,11 @@ static void intel_init_thermal(struct cpuinfo_x86 *c)
      * BIOS has programmed on AP based on BSP's info we saved (since BIOS
      * is required to set the same value for all threads/cores).
      */
-    if ( (val & APIC_DM_MASK) != APIC_DM_FIXED
-         || (val & APIC_VECTOR_MASK) > 0xf )
+    if ( (val & APIC_DM_MASK) != APIC_DM_FIXED ||
+         (val & APIC_VECTOR_MASK) > 0xf )
         apic_write(APIC_LVTTHMR, val);
 
-    if ( (msr_content & (1ULL<<3))
-         && (val & APIC_DM_MASK) == APIC_DM_SMI )
+    if ( (msr_content & (1ULL << 3)) && (val & APIC_DM_MASK) == APIC_DM_SMI )
     {
         if ( c == &boot_cpu_data )
             printk(KERN_DEBUG "Thermal monitoring handled by SMI\n");
@@ -162,27 +162,28 @@ static void intel_init_thermal(struct cpuinfo_x86 *c)
     alloc_direct_apic_vector(&thermal_apic_vector, intel_thermal_interrupt);
 
     /* The temperature transition interrupt handler setup */
-    val = thermal_apic_vector;    /* our delivery vector */
-    val |= (APIC_DM_FIXED | APIC_LVT_MASKED);  /* we'll mask till we're ready */
+    val = thermal_apic_vector; /* our delivery vector */
+    val |= (APIC_DM_FIXED | APIC_LVT_MASKED); /* we'll mask till we're ready */
     apic_write(APIC_LVTTHMR, val);
 
     rdmsrl(MSR_IA32_THERM_INTERRUPT, msr_content);
     wrmsrl(MSR_IA32_THERM_INTERRUPT, msr_content | 0x03);
 
     rdmsrl(MSR_IA32_MISC_ENABLE, msr_content);
-    wrmsrl(MSR_IA32_MISC_ENABLE, msr_content | (1ULL<<3));
+    wrmsrl(MSR_IA32_MISC_ENABLE, msr_content | (1ULL << 3));
 
     apic_write(APIC_LVTTHMR, val & ~APIC_LVT_MASKED);
     if ( opt_cpu_info )
         printk(KERN_INFO "CPU%u: Thermal monitoring enabled (%s)\n",
-               cpu, tm2 ? "TM2" : "TM1");
+               cpu,
+               tm2 ? "TM2" : "TM1");
 }
 
 /* Intel MCE handler */
 static inline void intel_get_extended_msr(struct mcinfo_extended *ext, u32 msr)
 {
-    if ( ext->mc_msrs < ARRAY_SIZE(ext->mc_msr)
-         && msr < MSR_IA32_MCG_EAX + nr_intel_ext_msrs )
+    if ( ext->mc_msrs < ARRAY_SIZE(ext->mc_msr) &&
+         msr < MSR_IA32_MCG_EAX + nr_intel_ext_msrs )
     {
         ext->mc_msr[ext->mc_msrs].reg = msr;
         rdmsrl(msr, ext->mc_msr[ext->mc_msrs].value);
@@ -190,9 +191,8 @@ static inline void intel_get_extended_msr(struct mcinfo_extended *ext, u32 msr)
     }
 }
 
-
-struct mcinfo_extended *
-intel_get_extended_msrs(struct mcinfo_global *mig, struct mc_info *mi)
+struct mcinfo_extended *intel_get_extended_msrs(struct mcinfo_global *mig,
+                                                struct mc_info *mi)
 {
     struct mcinfo_extended *mc_ext;
     int i;
@@ -201,7 +201,7 @@ intel_get_extended_msrs(struct mcinfo_global *mig, struct mc_info *mi)
      * According to spec, processor _support_ 64 bit will always
      * have MSR beyond IA32_MCG_MISC
      */
-    if ( !mi|| !mig || nr_intel_ext_msrs == 0 ||
+    if ( !mi || !mig || nr_intel_ext_msrs == 0 ||
          !(mig->mc_gstatus & MCG_STATUS_EIPV) )
         return NULL;
 
@@ -221,8 +221,7 @@ intel_get_extended_msrs(struct mcinfo_global *mig, struct mc_info *mi)
     return mc_ext;
 }
 
-enum intel_mce_type
-{
+enum intel_mce_type {
     intel_mce_invalid,
     intel_mce_fatal,
     intel_mce_corrected,
@@ -254,7 +253,8 @@ static enum intel_mce_type intel_check_mce_type(uint64_t status)
                 return intel_mce_fatal;
             else
                 return intel_mce_ucr_srar;
-        } else
+        }
+        else
             return intel_mce_ucr_srao;
     }
     else
@@ -264,10 +264,9 @@ static enum intel_mce_type intel_check_mce_type(uint64_t status)
     return intel_mce_fatal;
 }
 
-static void intel_memerr_dhandler(
-             struct mca_binfo *binfo,
-             enum mce_result *result,
-             const struct cpu_user_regs *regs)
+static void intel_memerr_dhandler(struct mca_binfo *binfo,
+                                  enum mce_result *result,
+                                  const struct cpu_user_regs *regs)
 {
     mce_printk(MCE_VERBOSE, "MCE: Enter UCR recovery action\n");
     mc_memerr_dhandler(binfo, result, regs);
@@ -278,11 +277,10 @@ static bool cf_check intel_srar_check(uint64_t status)
     return (intel_check_mce_type(status) == intel_mce_ucr_srar);
 }
 
-static bool cf_check intel_checkaddr(
-    uint64_t status, uint64_t misc, int addrtype)
+static bool cf_check intel_checkaddr(uint64_t status, uint64_t misc,
+                                     int addrtype)
 {
-    if ( !(status & MCi_STATUS_ADDRV) ||
-         !(status & MCi_STATUS_MISCV) ||
+    if ( !(status & MCi_STATUS_ADDRV) || !(status & MCi_STATUS_MISCV) ||
          ((misc & MCi_MISC_ADDRMOD_MASK) != MCi_MISC_PHYSMOD) )
         /* addr is virtual */
         return (addrtype == MC_ADDR_VIRTUAL);
@@ -290,9 +288,9 @@ static bool cf_check intel_checkaddr(
     return (addrtype == MC_ADDR_PHYSICAL);
 }
 
-static void cf_check intel_srar_dhandler(
-    struct mca_binfo *binfo, enum mce_result *result,
-    const struct cpu_user_regs *regs)
+static void cf_check intel_srar_dhandler(struct mca_binfo *binfo,
+                                         enum mce_result *result,
+                                         const struct cpu_user_regs *regs)
 {
     uint64_t status = binfo->mib->mc_status;
 
@@ -313,9 +311,9 @@ static bool cf_check intel_srao_check(uint64_t status)
     return (intel_check_mce_type(status) == intel_mce_ucr_srao);
 }
 
-static void cf_check intel_srao_dhandler(
-    struct mca_binfo *binfo, enum mce_result *result,
-    const struct cpu_user_regs *regs)
+static void cf_check intel_srao_dhandler(struct mca_binfo *binfo,
+                                         enum mce_result *result,
+                                         const struct cpu_user_regs *regs)
 {
     uint64_t status = binfo->mib->mc_status;
 
@@ -339,9 +337,9 @@ static bool cf_check intel_default_check(uint64_t status)
     return true;
 }
 
-static void cf_check intel_default_mce_dhandler(
-    struct mca_binfo *binfo, enum mce_result *result,
-    const struct cpu_user_regs * regs)
+static void cf_check intel_default_mce_dhandler(struct mca_binfo *binfo,
+                                                enum mce_result *result,
+                                                const struct cpu_user_regs *regs)
 {
     uint64_t status = binfo->mib->mc_status;
     enum intel_mce_type type;
@@ -355,14 +353,14 @@ static void cf_check intel_default_mce_dhandler(
 }
 
 static const struct mca_error_handler intel_mce_dhandlers[] = {
-    {intel_srao_check, intel_srao_dhandler},
-    {intel_srar_check, intel_srar_dhandler},
-    {intel_default_check, intel_default_mce_dhandler}
+    { intel_srao_check,    intel_srao_dhandler        },
+    { intel_srar_check,    intel_srar_dhandler        },
+    { intel_default_check, intel_default_mce_dhandler }
 };
 
-static void cf_check intel_default_mce_uhandler(
-    struct mca_binfo *binfo, enum mce_result *result,
-    const struct cpu_user_regs *regs)
+static void cf_check intel_default_mce_uhandler(struct mca_binfo *binfo,
+                                                enum mce_result *result,
+                                                const struct cpu_user_regs *regs)
 {
     uint64_t status = binfo->mib->mc_status;
     enum intel_mce_type type;
@@ -382,7 +380,7 @@ static void cf_check intel_default_mce_uhandler(
 }
 
 static const struct mca_error_handler intel_mce_uhandlers[] = {
-    {intel_default_check, intel_default_mce_uhandler}
+    { intel_default_check, intel_default_mce_uhandler }
 };
 
 /* According to MCA OS writer guide, CMCI handler need to clear bank when
@@ -403,16 +401,17 @@ static bool cf_check intel_need_clearbank_scan(enum mca_source who, u64 status)
         if ( !(status & MCi_STATUS_UC) )
             return true;
         /* Spurious need clear bank */
-        else if ( ser_support && !(status & MCi_STATUS_OVER)
-                  && !(status & MCi_STATUS_EN) )
+        else if ( ser_support && !(status & MCi_STATUS_OVER) &&
+                  !(status & MCi_STATUS_EN) )
             return true;
         /* UCNA OVER = 0 need clear bank */
-        else if ( ser_support && !(status & MCi_STATUS_OVER)
-                  && !(status & MCi_STATUS_PCC) && !(status & MCi_STATUS_S)
-                  && !(status & MCi_STATUS_AR) )
+        else if ( ser_support && !(status & MCi_STATUS_OVER) &&
+                  !(status & MCi_STATUS_PCC) && !(status & MCi_STATUS_S) &&
+                  !(status & MCi_STATUS_AR) )
             return true;
         /* Only Log, no clear */
-        else return false;
+        else
+            return false;
     }
     else if ( who == MCA_MCE_SCAN )
     {
@@ -425,17 +424,16 @@ static bool cf_check intel_need_clearbank_scan(enum mca_source who, u64 status)
         if ( (status & MCi_STATUS_UC) && (status & MCi_STATUS_PCC) )
             return false;
         /* Spurious need clear bank */
-        else if ( !(status & MCi_STATUS_OVER)
-                  && (status & MCi_STATUS_UC) && !(status & MCi_STATUS_EN) )
+        else if ( !(status & MCi_STATUS_OVER) && (status & MCi_STATUS_UC) &&
+                  !(status & MCi_STATUS_EN) )
             return true;
         /* SRAR OVER=0 clear bank. OVER = 1 have caused reset */
-        else if ( (status & MCi_STATUS_UC)
-                  && (status & MCi_STATUS_S) && (status & MCi_STATUS_AR)
-                  && !(status & MCi_STATUS_OVER) )
+        else if ( (status & MCi_STATUS_UC) && (status & MCi_STATUS_S) &&
+                  (status & MCi_STATUS_AR) && !(status & MCi_STATUS_OVER) )
             return true;
         /* SRAO need clear bank */
-        else if ( !(status & MCi_STATUS_AR)
-                  && (status & MCi_STATUS_S) && (status & MCi_STATUS_UC) )
+        else if ( !(status & MCi_STATUS_AR) && (status & MCi_STATUS_S) &&
+                  (status & MCi_STATUS_UC) )
             return true;
         else
             return false;
@@ -454,26 +452,25 @@ static bool cf_check intel_need_clearbank_scan(enum mca_source who, u64 status)
  */
 static bool cf_check intel_recoverable_scan(uint64_t status)
 {
-
-    if ( !(status & MCi_STATUS_UC ) )
+    if ( !(status & MCi_STATUS_UC) )
         return true;
-    else if ( ser_support && !(status & MCi_STATUS_EN)
-              && !(status & MCi_STATUS_OVER) )
+    else if ( ser_support && !(status & MCi_STATUS_EN) &&
+              !(status & MCi_STATUS_OVER) )
         return true;
     /* SRAR error */
-    else if ( ser_support && !(status & MCi_STATUS_OVER)
-              && !(status & MCi_STATUS_PCC) && (status & MCi_STATUS_S)
-              && (status & MCi_STATUS_AR) && (status & MCi_STATUS_EN) )
+    else if ( ser_support && !(status & MCi_STATUS_OVER) &&
+              !(status & MCi_STATUS_PCC) && (status & MCi_STATUS_S) &&
+              (status & MCi_STATUS_AR) && (status & MCi_STATUS_EN) )
         return true;
     /* SRAO error */
-    else if ( ser_support && !(status & MCi_STATUS_PCC)
-              && (status & MCi_STATUS_S) && !(status & MCi_STATUS_AR)
-              && (status & MCi_STATUS_EN) )
+    else if ( ser_support && !(status & MCi_STATUS_PCC) &&
+              (status & MCi_STATUS_S) && !(status & MCi_STATUS_AR) &&
+              (status & MCi_STATUS_EN) )
         return true;
     /* UCNA error */
-    else if ( ser_support && !(status & MCi_STATUS_OVER)
-              && (status & MCi_STATUS_EN) && !(status & MCi_STATUS_PCC)
-              && !(status & MCi_STATUS_S) && !(status & MCi_STATUS_AR) )
+    else if ( ser_support && !(status & MCi_STATUS_OVER) &&
+              (status & MCi_STATUS_EN) && !(status & MCi_STATUS_PCC) &&
+              !(status & MCi_STATUS_S) && !(status & MCi_STATUS_AR) )
         return true;
     return false;
 }
@@ -518,9 +515,13 @@ static int do_cmci_discover(int i)
     threshold = cmci_threshold;
     if ( threshold > max_threshold )
     {
-        mce_printk(MCE_QUIET,
-                   "CMCI: threshold %#x too large for CPU%u bank %u, using %#x\n",
-                   threshold, cpu, i, max_threshold);
+        mce_printk(
+            MCE_QUIET,
+            "CMCI: threshold %#x too large for CPU%u bank %u, using %#x\n",
+            threshold,
+            cpu,
+            i,
+            max_threshold);
         threshold = max_threshold;
     }
     wrmsrl(msr, (val & ~CMCI_THRESHOLD_MASK) | CMCI_EN | threshold);
@@ -554,8 +555,10 @@ static void cmci_discover(void)
      * the CMCI interrupt will never be triggered again.
      */
 
-    mctc = mcheck_mca_logout(
-        MCA_CMCI_HANDLER, per_cpu(mce_banks_owned, cpu), &bs, NULL);
+    mctc = mcheck_mca_logout(MCA_CMCI_HANDLER,
+                             per_cpu(mce_banks_owned, cpu),
+                             &bs,
+                             NULL);
 
     if ( bs.errcnt && mctc != NULL )
     {
@@ -573,7 +576,8 @@ static void cmci_discover(void)
     else if ( mctc != NULL )
         mctelem_dismiss(mctc);
 
-    mce_printk(MCE_VERBOSE, "CMCI: CPU%d owner_map[%lx], no_cmci_map[%lx]\n",
+    mce_printk(MCE_VERBOSE,
+               "CMCI: CPU%d owner_map[%lx], no_cmci_map[%lx]\n",
                cpu,
                per_cpu(mce_banks_owned, cpu)->bank_map[0],
                per_cpu(no_cmci_banks, cpu)->bank_map[0]);
@@ -626,8 +630,8 @@ static void clear_cmci(void)
         if ( !mcabanks_test(i, per_cpu(mce_banks_owned, cpu)) )
             continue;
         rdmsrl(msr, val);
-        if ( val & (CMCI_EN|CMCI_THRESHOLD_MASK) )
-            wrmsrl(msr, val & ~(CMCI_EN|CMCI_THRESHOLD_MASK));
+        if ( val & (CMCI_EN | CMCI_THRESHOLD_MASK) )
+            wrmsrl(msr, val & ~(CMCI_EN | CMCI_THRESHOLD_MASK));
         mcabanks_clear(i, per_cpu(mce_banks_owned, cpu));
     }
 }
@@ -645,8 +649,10 @@ static void cf_check cmci_interrupt(void)
 
     ack_APIC_irq();
 
-    mctc = mcheck_mca_logout(
-        MCA_CMCI_HANDLER, this_cpu(mce_banks_owned), &bs, NULL);
+    mctc = mcheck_mca_logout(MCA_CMCI_HANDLER,
+                             this_cpu(mce_banks_owned),
+                             &bs,
+                             NULL);
 
     if ( bs.errcnt && mctc != NULL )
     {
@@ -681,8 +687,10 @@ static void intel_init_cmci(struct cpuinfo_x86 *c)
     apic = apic_read(APIC_CMCI);
     if ( apic & APIC_VECTOR_MASK )
     {
-        mce_printk(MCE_QUIET, "CPU%d CMCI LVT vector (%#x) already installed\n",
-                   cpu, ( apic & APIC_VECTOR_MASK ));
+        mce_printk(MCE_QUIET,
+                   "CPU%d CMCI LVT vector (%#x) already installed\n",
+                   cpu,
+                   (apic & APIC_VECTOR_MASK));
         return;
     }
 
@@ -771,7 +779,8 @@ static void intel_init_mca(struct cpuinfo_x86 *c)
     {
         dprintk(XENLOG_INFO,
                 "MCA Capability: firstbank %d, extended MCE MSR %d%s%s%s%s\n",
-                first, ext_num,
+                first,
+                ext_num,
                 CAP(broadcast, "BCAST"),
                 CAP(ser, "SER"),
                 CAP(cmci, "CMCI"),
@@ -785,18 +794,18 @@ static void intel_init_mca(struct cpuinfo_x86 *c)
         firstbank = first;
     }
     else if ( cmci != cmci_support || ser != ser_support ||
-              broadcast != mce_broadcast ||
-              first != firstbank || ext_num != nr_intel_ext_msrs ||
-              lmce != lmce_support )
-        dprintk(XENLOG_WARNING,
-                "CPU%u has different MCA capability "
-                "(firstbank %d, extended MCE MSR %d%s%s%s%s)"
-                " than BSP, may cause undetermined result!!!\n",
-                smp_processor_id(), first, ext_num,
-                CAP(broadcast, "BCAST"),
-                CAP(ser, "SER"),
-                CAP(cmci, "CMCI"),
-                CAP(lmce, "LMCE"));
+              broadcast != mce_broadcast || first != firstbank ||
+              ext_num != nr_intel_ext_msrs || lmce != lmce_support )
+        dprintk(
+            XENLOG_WARNING,
+            "CPU%u has different MCA capability " "(firstbank %d, extended MCE MSR %d%s%s%s%s)" " than BSP, may cause undetermined result!!!\n",
+            smp_processor_id(),
+            first,
+            ext_num,
+            CAP(broadcast, "BCAST"),
+            CAP(ser, "SER"),
+            CAP(cmci, "CMCI"),
+            CAP(lmce, "LMCE"));
 #undef CAP
 }
 
@@ -922,14 +931,14 @@ static int cpu_mcabank_alloc(unsigned int cpu)
     per_cpu(last_state, cpu) = -1;
 
     return 0;
- out:
+out:
     mcabanks_free(cmci);
     mcabanks_free(owned);
     return -ENOMEM;
 }
 
-static int cf_check cpu_callback(
-    struct notifier_block *nfb, unsigned long action, void *hcpu)
+static int cf_check cpu_callback(struct notifier_block *nfb,
+                                 unsigned long action, void *hcpu)
 {
     unsigned int cpu = (unsigned long)hcpu;
     int rc = 0;
@@ -961,9 +970,7 @@ static const struct mce_callbacks __initconst_cf_clobber intel_callbacks = {
     .need_clearbank_scan = intel_need_clearbank_scan,
 };
 
-static struct notifier_block cpu_nfb = {
-    .notifier_call = cpu_callback
-};
+static struct notifier_block cpu_nfb = { .notifier_call = cpu_callback };
 
 /* p4/p6 family have similar MCA initialization process */
 enum mcheck_type intel_mcheck_init(struct cpuinfo_x86 *c, bool bsp)
@@ -1008,7 +1015,7 @@ int vmce_intel_wrmsr(struct vcpu *v, uint32_t msr, uint64_t val)
     if ( bank < GUEST_MC_BANK_NUM )
     {
         v->arch.vmce.bank[bank].mci_ctl2 = val;
-        mce_printk(MCE_VERBOSE, "MCE: wr MC%u_CTL2 %#"PRIx64"\n", bank, val);
+        mce_printk(MCE_VERBOSE, "MCE: wr MC%u_CTL2 %#" PRIx64 "\n", bank, val);
     }
 
     return 1;
@@ -1040,9 +1047,8 @@ int vmce_intel_rdmsr(const struct vcpu *v, uint32_t msr, uint64_t *val)
     if ( bank < GUEST_MC_BANK_NUM )
     {
         *val = v->arch.vmce.bank[bank].mci_ctl2;
-        mce_printk(MCE_VERBOSE, "MCE: rd MC%u_CTL2 %#"PRIx64"\n", bank, *val);
+        mce_printk(MCE_VERBOSE, "MCE: rd MC%u_CTL2 %#" PRIx64 "\n", bank, *val);
     }
 
     return 1;
 }
-

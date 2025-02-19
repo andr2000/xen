@@ -99,8 +99,8 @@ DEFINE_PER_CPU_READ_MOSTLY(l1_pgentry_t, compat_gdt_l1e);
 #endif
 
 /* Master table, used by CPU0. */
-idt_entry_t __section(".bss.page_aligned") __aligned(PAGE_SIZE)
-    idt_table[IDT_ENTRIES];
+idt_entry_t __section(".bss.page_aligned")
+    __aligned(PAGE_SIZE) idt_table[IDT_ENTRIES];
 
 /* Pointer to the IDT of every CPU. */
 idt_entry_t *idt_tables[NR_CPUS] __read_mostly;
@@ -139,31 +139,26 @@ void show_code(const struct cpu_user_regs *regs)
      * Copy forward from regs->rip.  In the case of a fault, %ecx contains the
      * number of bytes remaining to copy.
      */
-    asm volatile ("1: rep movsb; 2:"
-                  _ASM_EXTABLE(1b, 2b)
-                  : "=&c" (missing_after),
-                    "=&D" (tmp), "=&S" (tmp)
-                  : "0" (ARRAY_SIZE(insns_after)),
-                    "1" (insns_after),
-                    "2" (regs->rip));
+    asm volatile("1: rep movsb; 2:" _ASM_EXTABLE(1b, 2b)
+                 : "=&c"(missing_after), "=&D"(tmp), "=&S"(tmp)
+                 : "0"(ARRAY_SIZE(insns_after)),
+                   "1"(insns_after),
+                   "2"(regs->rip));
 
     /*
      * Copy backwards from regs->rip - 1.  In the case of a fault, %ecx
      * contains the number of bytes remaining to copy.
      */
-    asm volatile ("std;"
-                  "1: rep movsb;"
-                  "2: cld;"
-                  _ASM_EXTABLE(1b, 2b)
-                  : "=&c" (missing_before),
-                    "=&D" (tmp), "=&S" (tmp)
-                  : "0" (ARRAY_SIZE(insns_before)),
-                    "1" (insns_before + ARRAY_SIZE(insns_before) - 1),
-                    "2" (regs->rip - 1));
+    asm volatile("std;" "1: rep movsb;" "2: cld;" _ASM_EXTABLE(1b, 2b)
+                 : "=&c"(missing_before), "=&D"(tmp), "=&S"(tmp)
+                 : "0"(ARRAY_SIZE(insns_before)),
+                   "1"(insns_before + ARRAY_SIZE(insns_before) - 1),
+                   "2"(regs->rip - 1));
     clac();
 
     printk("Xen code around <%p> (%ps)%s:\n",
-           _p(regs->rip), _p(regs->rip),
+           _p(regs->rip),
+           _p(regs->rip),
            (missing_before || missing_after) ? " [fault on access]" : "");
 
     /* Print bytes from insns_before[]. */
@@ -214,7 +209,7 @@ static void compat_show_guest_stack(struct vcpu *v,
         unsigned long mfn;
 
         mfn = read_cr3() >> PAGE_SHIFT;
-        for_each_vcpu( v->domain, vcpu )
+        for_each_vcpu(v->domain, vcpu)
             if ( pagetable_get_pfn(vcpu->arch.guest_table) == mfn )
                 break;
         if ( !vcpu )
@@ -276,7 +271,7 @@ static void show_guest_stack(struct vcpu *v, const struct cpu_user_regs *regs)
     }
 
     stack = (unsigned long *)regs->rsp;
-    printk("Guest stack trace from "__OP"sp=%p:\n  ", stack);
+    printk("Guest stack trace from " __OP "sp=%p:\n  ", stack);
 
     if ( !access_ok(stack, sizeof(*stack)) )
     {
@@ -304,7 +299,7 @@ static void show_guest_stack(struct vcpu *v, const struct cpu_user_regs *regs)
         }
     }
 
-    for ( i = 0; i < (debug_stack_lines*stack_words_per_line); i++ )
+    for ( i = 0; i < (debug_stack_lines * stack_words_per_line); i++ )
     {
         if ( (((long)stack - 1) ^ ((long)(stack + 1) - 1)) & mask )
             break;
@@ -355,8 +350,14 @@ static void show_hvm_stack(struct vcpu *v, const struct cpu_user_regs *regs)
     else
         printk("Guest stack trace from ss:sp=%04x:%0*lx:", ss.sel, i, sp);
 
-    if ( !hvm_vcpu_virtual_to_linear(v, x86_seg_ss, &ss, sp, bytes,
-                                     hvm_access_read, &cs, &addr) )
+    if ( !hvm_vcpu_virtual_to_linear(v,
+                                     x86_seg_ss,
+                                     &ss,
+                                     sp,
+                                     bytes,
+                                     hvm_access_read,
+                                     &cs,
+                                     &addr) )
     {
         printk(" Guest-inaccessible memory\n");
         return;
@@ -376,8 +377,8 @@ static void show_hvm_stack(struct vcpu *v, const struct cpu_user_regs *regs)
         if ( !(i++ % words_per_line) )
             printk("\n  ");
 
-        if ( hvm_copy_from_vcpu_linear(&val, addr, bytes, v,
-                                       pfec) != HVMTRANS_okay )
+        if ( hvm_copy_from_vcpu_linear(&val, addr, bytes, v, pfec) !=
+             HVMTRANS_okay )
         {
             printk(" Fault while accessing guest memory.");
             break;
@@ -422,12 +423,12 @@ unsigned long get_stack_trace_bottom(unsigned long sp)
     switch ( get_stack_page(sp) )
     {
     case 1 ... 4:
-        return ROUNDUP(sp, PAGE_SIZE) -
-            offsetof(struct cpu_user_regs, es) - sizeof(unsigned long);
+        return ROUNDUP(sp, PAGE_SIZE) - offsetof(struct cpu_user_regs, es) -
+               sizeof(unsigned long);
 
     case 6 ... 7:
-        return ROUNDUP(sp, STACK_SIZE) -
-            sizeof(struct cpu_info) - sizeof(unsigned long);
+        return ROUNDUP(sp, STACK_SIZE) - sizeof(struct cpu_info) -
+               sizeof(unsigned long);
 
     default:
         return sp - sizeof(unsigned long);
@@ -439,10 +440,13 @@ static unsigned long get_shstk_bottom(unsigned long sp)
     switch ( get_stack_page(sp) )
     {
 #ifdef CONFIG_XEN_SHSTK
-    case 0:  return ROUNDUP(sp, IST_SHSTK_SIZE) - sizeof(unsigned long);
-    case 5:  return ROUNDUP(sp, PAGE_SIZE)      - sizeof(unsigned long);
+    case 0:
+        return ROUNDUP(sp, IST_SHSTK_SIZE) - sizeof(unsigned long);
+    case 5:
+        return ROUNDUP(sp, PAGE_SIZE) - sizeof(unsigned long);
 #endif
-    default: return sp - sizeof(unsigned long);
+    default:
+        return sp - sizeof(unsigned long);
     }
 }
 
@@ -494,7 +498,7 @@ static void _show_trace(unsigned long sp, unsigned long bp)
     /* The initial frame pointer. */
     next = bp;
 
-    for ( ; ; )
+    for ( ;; )
     {
         /* Valid frame pointer? */
         if ( (next < low) || (next >= high) )
@@ -507,17 +511,17 @@ static void _show_trace(unsigned long sp, unsigned long bp)
             if ( (next < low) || (next >= high) )
                 break;
             frame = (unsigned long *)next;
-            next  = frame[0];
-            addr  = frame[(offsetof(struct cpu_user_regs, rip) -
-                           offsetof(struct cpu_user_regs, rbp))
-                         / BYTES_PER_LONG];
+            next = frame[0];
+            addr = frame[(offsetof(struct cpu_user_regs, rip) -
+                          offsetof(struct cpu_user_regs, rbp)) /
+                         BYTES_PER_LONG];
         }
         else
         {
             /* Ordinary stack frame. */
             frame = (unsigned long *)next;
-            next  = frame[0];
-            addr  = frame[1];
+            next = frame[0];
+            addr = frame[1];
         }
 
         printk("   [<%p>] F %pS\n", _p(addr), _p(addr));
@@ -536,19 +540,17 @@ static void show_trace(const struct cpu_user_regs *regs)
     printk("Xen call trace:\n");
 
     /* Guarded read of the stack top. */
-    asm ( "1: mov %[data], %[tos]; 2:\n"
-          ".pushsection .fixup,\"ax\"\n"
-          "3: movb $1, %[fault]; jmp 2b\n"
-          ".popsection\n"
-          _ASM_EXTABLE(1b, 3b)
-          : [tos] "+r" (tos), [fault] "+qm" (fault) : [data] "m" (*sp) );
+    asm("1: mov %[data], %[tos]; 2:\n" ".pushsection .fixup,\"ax\"\n" "3: movb $1, %[fault]; jmp 2b\n" ".popsection\n" _ASM_EXTABLE(
+            1b,
+            3b)
+        : [tos] "+r"(tos), [fault] "+qm"(fault)
+        : [data] "m"(*sp));
 
     /*
      * If RIP looks sensible, or the top of the stack doesn't, print RIP at
      * the top of the stack trace.
      */
-    if ( is_active_kernel_text(regs->rip) ||
-         !is_active_kernel_text(tos) )
+    if ( is_active_kernel_text(regs->rip) || !is_active_kernel_text(tos) )
         printk("   [<%p>] R %pS\n", _p(regs->rip), _p(regs->rip));
 
     if ( fault )
@@ -565,8 +567,7 @@ static void show_trace(const struct cpu_user_regs *regs)
      * return address; print it and skip past so _show_trace() doesn't print
      * it again.
      */
-    if ( !is_active_kernel_text(regs->rip) ||
-         is_active_kernel_text(tos) )
+    if ( !is_active_kernel_text(regs->rip) || is_active_kernel_text(tos) )
     {
         printk("   [<%p>] S %pS\n", _p(tos), _p(tos));
         sp++;
@@ -585,12 +586,13 @@ static void show_stack(const struct cpu_user_regs *regs)
     if ( guest_mode(regs) )
         return show_guest_stack(current, regs);
 
-    printk("Xen stack trace from "__OP"sp=%p:\n  ", stack);
+    printk("Xen stack trace from " __OP "sp=%p:\n  ", stack);
 
     stack_bottom = _p(get_stack_dump_bottom(regs->rsp));
 
-    for ( i = 0; i < (debug_stack_lines*stack_words_per_line) &&
-              (stack <= stack_bottom); i++ )
+    for ( i = 0; i < (debug_stack_lines * stack_words_per_line) &&
+                 (stack <= stack_bottom);
+          i++ )
     {
         if ( (i != 0) && ((i % stack_words_per_line) == 0) )
             printk("\n  ");
@@ -612,21 +614,23 @@ void show_stack_overflow(unsigned int cpu, const struct cpu_user_regs *regs)
 
     if ( _p(curr_stack_base) != stack_base[cpu] )
         printk("Current stack base %p differs from expected %p\n",
-               _p(curr_stack_base), stack_base[cpu]);
+               _p(curr_stack_base),
+               stack_base[cpu]);
 
     esp_bottom = (esp | (STACK_SIZE - 1)) + 1;
-    esp_top    = esp_bottom - PRIMARY_STACK_SIZE;
+    esp_top = esp_bottom - PRIMARY_STACK_SIZE;
 
     printk("Valid stack range: %p-%p, sp=%p, tss.rsp0=%p\n",
-           (void *)esp_top, (void *)esp_bottom, (void *)esp,
+           (void *)esp_top,
+           (void *)esp_bottom,
+           (void *)esp,
            (void *)per_cpu(tss_page, cpu).tss.rsp0);
 
     /*
      * Trigger overflow trace if %esp is anywhere within the guard page, or
      * with fewer than 512 bytes remaining on the primary stack.
      */
-    if ( (esp > (esp_top + 512)) ||
-         (esp < (esp_top - PAGE_SIZE)) )
+    if ( (esp > (esp_top + 512)) || (esp < (esp_top - PAGE_SIZE)) )
     {
         printk("No stack overflow detected. Skipping stack trace.\n");
         return;
@@ -636,7 +640,8 @@ void show_stack_overflow(unsigned int cpu, const struct cpu_user_regs *regs)
         esp = esp_top;
 
     printk("Xen stack overflow (dumping trace %p-%p):\n",
-           (void *)esp, (void *)esp_bottom);
+           (void *)esp,
+           (void *)esp_bottom);
 
     _show_trace(esp, regs->rbp);
 
@@ -666,7 +671,8 @@ void vcpu_show_execution_state(struct vcpu *v)
     }
 
     printk("*** Dumping Dom%d vcpu#%d state: ***\n",
-           v->domain->domain_id, v->vcpu_id);
+           v->domain->domain_id,
+           v->vcpu_id);
 
     if ( v == current )
     {
@@ -722,8 +728,8 @@ static cpumask_t show_state_mask;
 static bool opt_show_all;
 boolean_param("async-show-all", opt_show_all);
 
-static int cf_check nmi_show_execution_state(
-    const struct cpu_user_regs *regs, int cpu)
+static int cf_check nmi_show_execution_state(const struct cpu_user_regs *regs,
+                                             int cpu)
 {
     if ( !cpumask_test_cpu(cpu, &show_state_mask) )
         return 0;
@@ -732,10 +738,17 @@ static int cf_check nmi_show_execution_state(
         show_execution_state(regs);
     else if ( guest_mode(regs) )
         printk(XENLOG_ERR "CPU%d\t%pv\t%04x:%p in guest\n",
-               cpu, current, regs->cs, _p(regs->rip));
+               cpu,
+               current,
+               regs->cs,
+               _p(regs->rip));
     else
         printk(XENLOG_ERR "CPU%d\t%pv\t%04x:%p in Xen: %pS\n",
-               cpu, current, regs->cs, _p(regs->rip), _p(regs->rip));
+               cpu,
+               current,
+               regs->cs,
+               _p(regs->rip),
+               _p(regs->rip));
 
     cpumask_clear_cpu(cpu, &show_state_mask);
 
@@ -747,10 +760,9 @@ const char *vector_name(unsigned int vec)
     static const char names[][4] = {
 #define P(x) [X86_EXC_ ## x] = "#" #x
 #define N(x) [X86_EXC_ ## x] = #x
-        P(DE),  P(DB),  N(NMI), P(BP),  P(OF),  P(BR),  P(UD),  P(NM),
-        P(DF),  N(CSO), P(TS),  P(NP),  P(SS),  P(GP),  P(PF),  N(SPV),
-        P(MF),  P(AC),  P(MC),  P(XM),  P(VE),  P(CP),
-                                        P(HV),  P(VC),  P(SX),
+        P(DE),  P(DB), N(NMI), P(BP), P(OF), P(BR), P(UD),  P(NM), P(DF),
+        N(CSO), P(TS), P(NP),  P(SS), P(GP), P(PF), N(SPV), P(MF), P(AC),
+        P(MC),  P(XM), P(VE),  P(CP), P(HV), P(VC), P(SX),
 #undef N
 #undef P
     };
@@ -790,7 +802,8 @@ void fatal_trap(const struct cpu_user_regs *regs, bool show_remote)
         {
             unsigned int msecs, pending;
 
-            cpumask_andnot(&show_state_mask, &cpu_online_map,
+            cpumask_andnot(&show_state_mask,
+                           &cpu_online_map,
                            cpumask_of(smp_processor_id()));
             set_nmi_callback(nmi_show_execution_state);
             /* Ensure new callback is set before sending out the NMI. */
@@ -819,7 +832,9 @@ void fatal_trap(const struct cpu_user_regs *regs, bool show_remote)
     }
 
     panic("FATAL TRAP: vec %u, %s[%04x]%s\n",
-          trapnr, vector_name(trapnr), regs->error_code,
+          trapnr,
+          vector_name(trapnr),
+          regs->error_code,
           (regs->eflags & X86_EFLAGS_IF) ? "" : " IN INTERRUPT CONTEXT");
 }
 
@@ -895,7 +910,7 @@ static void fixup_exception_return(struct cpu_user_regs *regs,
                      * addresses actually match.  Then increment the interrupted
                      * context's SSP.
                      */
-                    BUG_ON(stub_ra != *(unsigned long*)ptr[-1]);
+                    BUG_ON(stub_ra != *(unsigned long *)ptr[-1]);
                     wrss(ptr[-1] + 8, &ptr[-1]);
                     goto shstk_done;
                 }
@@ -913,7 +928,7 @@ static void fixup_exception_return(struct cpu_user_regs *regs,
                     wrss(ptr[-1], &ptr[0]);
 
                 /* Finally account for our own stack having shifted up. */
-                asm volatile ( "incsspd %0" :: "r" (2) );
+                asm volatile("incsspd %0" ::"r"(2));
 
                 goto shstk_done;
             }
@@ -925,9 +940,8 @@ static void fixup_exception_return(struct cpu_user_regs *regs,
          * continue executing the interrupted context.
          */
         BUG();
-
     }
- shstk_done:
+shstk_done:
 
     /* Fixup the regular stack. */
     regs->rip = fixup;
@@ -947,8 +961,11 @@ static bool extable_fixup(struct cpu_user_regs *regs, bool print)
      */
     if ( IS_ENABLED(CONFIG_DEBUG) && print )
         printk(XENLOG_GUEST XENLOG_WARNING "Fixup %s[%04x]: %p [%ps] -> %p\n",
-               vector_name(regs->entry_vector), regs->error_code,
-               _p(regs->rip), _p(regs->rip), _p(fixup));
+               vector_name(regs->entry_vector),
+               regs->error_code,
+               _p(regs->rip),
+               _p(regs->rip),
+               _p(fixup));
 
     fixup_exception_return(regs, fixup, stub_ra);
     this_cpu(last_extable_addr) = regs->rip;
@@ -969,14 +986,15 @@ void asmlinkage do_trap(struct cpu_user_regs *regs)
     {
         pv_inject_hw_exception(trapnr,
                                (X86_EXC_HAVE_EC & (1u << trapnr))
-                               ? regs->error_code : X86_EVENT_NO_EC);
+                                   ? regs->error_code
+                                   : X86_EVENT_NO_EC);
         return;
     }
 
     if ( likely(extable_fixup(regs, true)) )
         return;
 
- hardware_trap:
+hardware_trap:
     fatal_trap(regs, false);
 }
 
@@ -1034,8 +1052,10 @@ int guest_wrmsr_xen(struct vcpu *v, uint32_t idx, uint64_t val)
             }
 
             gdprintk(XENLOG_WARNING,
-                     "Bad GMFN %lx (MFN %#"PRI_mfn") to MSR %08x\n",
-                     gmfn, mfn_x(page ? page_to_mfn(page) : INVALID_MFN), base);
+                     "Bad GMFN %lx (MFN %#" PRI_mfn ") to MSR %08x\n",
+                     gmfn,
+                     mfn_x(page ? page_to_mfn(page) : INVALID_MFN),
+                     base);
             return X86EMUL_EXCEPTION;
         }
 
@@ -1058,7 +1078,7 @@ void cpuid_hypervisor_leaves(const struct vcpu *v, uint32_t leaf,
     const struct domain *d = v->domain;
     const struct cpu_policy *p = d->arch.cpu_policy;
     uint32_t base = is_viridian_domain(d) ? 0x40000100 : 0x40000000;
-    uint32_t idx  = leaf - base;
+    uint32_t idx = leaf - base;
     unsigned int limit = is_viridian_domain(d) ? p->hv2_limit : p->hv_limit;
 
     if ( limit == 0 )
@@ -1085,8 +1105,8 @@ void cpuid_hypervisor_leaves(const struct vcpu *v, uint32_t leaf,
         break;
 
     case 2:
-        res->a = 1;            /* Number of hypercall-transfer pages */
-                               /* MSR base address */
+        res->a = 1; /* Number of hypercall-transfer pages */
+        /* MSR base address */
         res->b = is_viridian_domain(d) ? 0x40000200 : 0x40000000;
         if ( is_pv_domain(d) ) /* Features */
             res->c |= XEN_CPUID_FEAT1_MMU_PT_UPDATE_PRESERVE_AD;
@@ -1096,8 +1116,7 @@ void cpuid_hypervisor_leaves(const struct vcpu *v, uint32_t leaf,
         switch ( subleaf )
         {
         case 0: /* features */
-            res->a = ((d->arch.vtsc << 0) |
-                      (!!host_tsc_is_safe() << 1) |
+            res->a = ((d->arch.vtsc << 0) | (!!host_tsc_is_safe() << 1) |
                       (!!boot_cpu_has(X86_FEATURE_RDTSCP) << 2));
             res->b = d->arch.tsc_mode;
             res->c = d->arch.tsc_khz;
@@ -1139,8 +1158,7 @@ void cpuid_hypervisor_leaves(const struct vcpu *v, uint32_t leaf,
          * and wrmsr in the guest will run without VMEXITs (see
          * vmx_vlapic_msr_changed()).
          */
-        if ( cpu_has_vmx_virtualize_x2apic_mode &&
-             cpu_has_vmx_apic_reg_virt &&
+        if ( cpu_has_vmx_virtualize_x2apic_mode && cpu_has_vmx_apic_reg_virt &&
              cpu_has_vmx_virtual_intr_delivery )
             res->a |= XEN_HVM_CPUID_X2APIC_VIRT;
 
@@ -1221,7 +1239,7 @@ void asmlinkage do_invalid_op(struct cpu_user_regs *regs)
         return;
     }
 
- die:
+die:
     if ( likely(extable_fixup(regs, true)) )
         return;
 
@@ -1239,7 +1257,8 @@ void asmlinkage do_int3(struct cpu_user_regs *regs)
             return;
 
         printk(XENLOG_DEBUG "Hit embedded breakpoint at %p [%ps]\n",
-               _p(regs->rip), _p(regs->rip));
+               _p(regs->rip),
+               _p(regs->rip));
 
         return;
     }
@@ -1309,8 +1328,7 @@ void do_general_protection(struct cpu_user_regs *regs)
     }
 
     /* Emulate some simple privileged and I/O instructions. */
-    if ( (regs->error_code == 0) &&
-         pv_emulate_privileged_op(regs) )
+    if ( (regs->error_code == 0) && pv_emulate_privileged_op(regs) )
     {
         trace_trap_one_addr(TRC_PV_EMULATE_PRIVOP, regs->rip);
         return;
@@ -1321,11 +1339,11 @@ void do_general_protection(struct cpu_user_regs *regs)
     return;
 #endif
 
- gp_in_kernel:
+gp_in_kernel:
     if ( likely(extable_fixup(regs, true)) )
         return;
 
- hardware_gp:
+hardware_gp:
     show_execution_state(regs);
     panic("GENERAL PROTECTION FAULT\n[error_code=%04x]\n", regs->error_code);
 }
@@ -1348,7 +1366,8 @@ static int handle_ldt_mapping_fault(unsigned int offset,
     {
         if ( guest_mode(regs) )
             trace_trap_two_addr(TRC_PV_GDT_LDT_MAPPING_FAULT,
-                                regs->rip, offset);
+                                regs->rip,
+                                offset);
     }
     else
     {
@@ -1377,8 +1396,8 @@ static int handle_gdt_ldt_mapping_fault(unsigned long offset,
 {
     struct vcpu *curr = current;
     /* Which vcpu's area did we fault in, and is it in the ldt sub-area? */
-    unsigned int is_ldt_area = (offset >> (GDT_LDT_VCPU_VA_SHIFT-1)) & 1;
-    unsigned int vcpu_area   = (offset >> GDT_LDT_VCPU_VA_SHIFT);
+    unsigned int is_ldt_area = (offset >> (GDT_LDT_VCPU_VA_SHIFT - 1)) & 1;
+    unsigned int vcpu_area = (offset >> GDT_LDT_VCPU_VA_SHIFT);
 
     /*
      * If the fault is in another vcpu's area, it cannot be due to
@@ -1390,7 +1409,7 @@ static int handle_gdt_ldt_mapping_fault(unsigned long offset,
         return 0;
 
     /* Byte offset within the gdt/ldt sub-area. */
-    offset &= (1UL << (GDT_LDT_VCPU_VA_SHIFT-1)) - 1UL;
+    offset &= (1UL << (GDT_LDT_VCPU_VA_SHIFT - 1)) - 1UL;
 
     if ( likely(is_ldt_area) )
         return handle_ldt_mapping_fault(offset, regs);
@@ -1432,7 +1451,7 @@ static enum pf_type __page_fault_type(unsigned long addr,
     if ( in_irq() )
         return real_fault;
 
-    required_flags  = _PAGE_PRESENT;
+    required_flags = _PAGE_PRESENT;
     if ( error_code & PFEC_write_access )
         required_flags |= _PAGE_RW;
     if ( error_code & PFEC_user_mode )
@@ -1455,7 +1474,7 @@ static enum pf_type __page_fault_type(unsigned long addr,
         return real_fault;
     page_user &= l4e_get_flags(l4e);
 
-    l3t  = map_domain_page(_mfn(mfn));
+    l3t = map_domain_page(_mfn(mfn));
     l3e = l3e_read(&l3t[l3_table_offset(addr)]);
     mfn = l3e_get_pfn(l3e);
     unmap_domain_page(l3t);
@@ -1495,7 +1514,8 @@ leaf:
          * Disallow supervisor execution from user-accessible mappings
          */
         if ( (cr4 & X86_CR4_SMEP) &&
-             ((error_code & (PFEC_insn_fetch|PFEC_user_mode)) == PFEC_insn_fetch) )
+             ((error_code & (PFEC_insn_fetch | PFEC_user_mode)) ==
+              PFEC_insn_fetch) )
             return smep_fault;
 
         /*
@@ -1535,7 +1555,7 @@ static enum pf_type spurious_page_fault(unsigned long addr,
 
 static int fixup_page_fault(unsigned long addr, struct cpu_user_regs *regs)
 {
-    struct vcpu   *v = current;
+    struct vcpu *v = current;
     struct domain *d = v->domain;
 
     /* No fixups in interrupt context or when interrupts are disabled. */
@@ -1543,7 +1563,7 @@ static int fixup_page_fault(unsigned long addr, struct cpu_user_regs *regs)
         return 0;
 
     if ( !(regs->error_code & PFEC_page_present) &&
-          (pagefault_by_memadd(addr, regs)) )
+         (pagefault_by_memadd(addr, regs)) )
         return handle_memadd_fault(addr, regs);
 
     if ( unlikely(IN_HYPERVISOR_RANGE(addr)) )
@@ -1551,8 +1571,8 @@ static int fixup_page_fault(unsigned long addr, struct cpu_user_regs *regs)
 #ifdef CONFIG_PV
         if ( !(regs->error_code & (PFEC_user_mode | PFEC_reserved_bit)) &&
              (addr >= GDT_LDT_VIRT_START) && (addr < GDT_LDT_VIRT_END) )
-            return handle_gdt_ldt_mapping_fault(
-                addr - GDT_LDT_VIRT_START, regs);
+            return handle_gdt_ldt_mapping_fault(addr - GDT_LDT_VIRT_START,
+                                                regs);
 #endif
         return 0;
     }
@@ -1659,10 +1679,10 @@ void asmlinkage do_page_fault(struct cpu_user_regs *regs)
     fatal:
         show_execution_state(regs);
         show_page_walk(addr);
-        panic("FATAL PAGE FAULT\n"
-              "[error_code=%04x]\n"
-              "Faulting linear address: %p\n",
-              error_code, _p(addr));
+        panic(
+            "FATAL PAGE FAULT\n" "[error_code=%04x]\n" "Faulting linear address: %p\n",
+            error_code,
+            _p(addr));
     }
 
     pv_inject_page_fault(regs->error_code, addr);
@@ -1687,7 +1707,7 @@ void asmlinkage __init do_early_page_fault(struct cpu_user_regs *regs)
     {
         prev_eip = regs->rip;
         prev_cr2 = cr2;
-        stuck    = 0;
+        stuck = 0;
         return;
     }
 
@@ -1695,7 +1715,10 @@ void asmlinkage __init do_early_page_fault(struct cpu_user_regs *regs)
     {
         console_start_sync();
         printk("Early fatal page fault at %04x:%p (cr2=%p, ec=%04x)\n",
-               regs->cs, _p(regs->rip), _p(cr2), regs->error_code);
+               regs->cs,
+               _p(regs->rip),
+               _p(cr2),
+               regs->error_code);
         fatal_trap(regs, 0);
     }
 }
@@ -1728,7 +1751,8 @@ static void nmi_hwdom_report(unsigned int reason_idx)
 
 static void pci_serr_error(const struct cpu_user_regs *regs)
 {
-    outb((inb(0x61) & 0x0f) | 0x04, 0x61); /* clear-and-disable the PCI SERR error line. */
+    outb((inb(0x61) & 0x0f) | 0x04,
+         0x61); /* clear-and-disable the PCI SERR error line. */
 
     switch ( opt_nmi[0] )
     {
@@ -1740,7 +1764,7 @@ static void pci_serr_error(const struct cpu_user_regs *regs)
         pci_serr_cont = true;
         trigger_nmi_continuation();
         break;
-    default:  /* 'fatal' */
+    default: /* 'fatal' */
         console_force_unlock();
         printk("\n\nNMI - PCI system error (SERR)\n");
         fatal_trap(regs, 0);
@@ -1756,7 +1780,7 @@ static void io_check_error(const struct cpu_user_regs *regs)
         break;
     case 'i': /* 'ignore' */
         break;
-    default:  /* 'fatal' */
+    default: /* 'fatal' */
         console_force_unlock();
         printk("\n\nNMI - I/O ERROR\n");
         fatal_trap(regs, 0);
@@ -1777,7 +1801,7 @@ static void unknown_nmi_error(const struct cpu_user_regs *regs,
         break;
     case 'i': /* 'ignore' */
         break;
-    default:  /* 'fatal' */
+    default: /* 'fatal' */
         console_force_unlock();
         printk("Uhhuh. NMI received for unknown reason %02x.\n", reason);
         printk("Do you have a strange power saving mode enabled?\n");
@@ -1833,7 +1857,7 @@ void do_nmi(const struct cpu_user_regs *regs)
             unknown_nmi_error(regs, reason);
     }
 
- out:
+out:
     nmi_exit();
 }
 
@@ -2018,8 +2042,12 @@ void asmlinkage do_debug(struct cpu_user_regs *regs)
          */
         gprintk(XENLOG_WARNING,
                 "Hit #DB in Xen context: %04x:%p [%ps], stk %04x:%p, dr6 %lx\n",
-                regs->cs, _p(regs->rip), _p(regs->rip),
-                regs->ss, _p(regs->rsp), dr6);
+                regs->cs,
+                _p(regs->rip),
+                _p(regs->rip),
+                regs->ss,
+                _p(regs->rsp),
+                dr6);
 
         return;
     }
@@ -2031,7 +2059,8 @@ void asmlinkage do_debug(struct cpu_user_regs *regs)
      * by debugging actions completed behind it's back.
      */
     v->arch.dr6 = x86_merge_dr6(v->domain->arch.cpu_policy,
-                                v->arch.dr6, dr6 ^ X86_DR6_DEFAULT);
+                                v->arch.dr6,
+                                dr6 ^ X86_DR6_DEFAULT);
 
     if ( guest_kernel_mode(v, regs) && v->domain->debugger_attached )
     {
@@ -2045,11 +2074,8 @@ void asmlinkage do_debug(struct cpu_user_regs *regs)
 void asmlinkage do_entry_CP(struct cpu_user_regs *regs)
 {
     static const char errors[][10] = {
-        [1] = "near ret",
-        [2] = "far/iret",
-        [3] = "endbranch",
-        [4] = "rstorssp",
-        [5] = "setssbsy",
+        [1] = "near ret", [2] = "far/iret", [3] = "endbranch",
+        [4] = "rstorssp", [5] = "setssbsy",
     };
     const char *err = "??";
     unsigned int ec = regs->error_code;
@@ -2065,8 +2091,11 @@ void asmlinkage do_entry_CP(struct cpu_user_regs *regs)
      */
     if ( guest_mode(regs) )
     {
-        gprintk(XENLOG_ERR, "Hit #CP[%04x] in guest context %04x:%p\n",
-                ec, regs->cs, _p(regs->rip));
+        gprintk(XENLOG_ERR,
+                "Hit #CP[%04x] in guest context %04x:%p\n",
+                ec,
+                regs->cs,
+                _p(regs->rip));
         ASSERT_UNREACHABLE();
         domain_crash(current->domain);
         return;
@@ -2076,8 +2105,8 @@ void asmlinkage do_entry_CP(struct cpu_user_regs *regs)
     panic("CONTROL-FLOW PROTECTION FAULT: #CP[%04x] %s\n", ec, err);
 }
 
-static void __init noinline __set_intr_gate(unsigned int n,
-                                            uint32_t dpl, void *addr)
+static void __init noinline __set_intr_gate(unsigned int n, uint32_t dpl,
+                                            void *addr)
 {
     _set_gate(&idt_table[n], SYS_DESC_irq_gate, dpl, addr);
 }
@@ -2124,25 +2153,25 @@ void nocall entry_CP(void);
 
 void __init init_idt_traps(void)
 {
-    set_intr_gate (X86_EXC_DE,  entry_DE);
-    set_intr_gate (X86_EXC_DB,  entry_DB);
-    set_intr_gate (X86_EXC_NMI, entry_NMI);
-    set_swint_gate(X86_EXC_BP,  entry_BP);
-    set_swint_gate(X86_EXC_OF,  entry_OF);
-    set_intr_gate (X86_EXC_BR,  entry_BR);
-    set_intr_gate (X86_EXC_UD,  entry_UD);
-    set_intr_gate (X86_EXC_NM,  entry_NM);
-    set_intr_gate (X86_EXC_DF,  entry_DF);
-    set_intr_gate (X86_EXC_TS,  entry_TS);
-    set_intr_gate (X86_EXC_NP,  entry_NP);
-    set_intr_gate (X86_EXC_SS,  entry_SS);
-    set_intr_gate (X86_EXC_GP,  entry_GP);
-    set_intr_gate (X86_EXC_PF,  early_page_fault);
-    set_intr_gate (X86_EXC_MF,  entry_MF);
-    set_intr_gate (X86_EXC_AC,  entry_AC);
-    set_intr_gate (X86_EXC_MC,  entry_MC);
-    set_intr_gate (X86_EXC_XM,  entry_XM);
-    set_intr_gate (X86_EXC_CP,  entry_CP);
+    set_intr_gate(X86_EXC_DE, entry_DE);
+    set_intr_gate(X86_EXC_DB, entry_DB);
+    set_intr_gate(X86_EXC_NMI, entry_NMI);
+    set_swint_gate(X86_EXC_BP, entry_BP);
+    set_swint_gate(X86_EXC_OF, entry_OF);
+    set_intr_gate(X86_EXC_BR, entry_BR);
+    set_intr_gate(X86_EXC_UD, entry_UD);
+    set_intr_gate(X86_EXC_NM, entry_NM);
+    set_intr_gate(X86_EXC_DF, entry_DF);
+    set_intr_gate(X86_EXC_TS, entry_TS);
+    set_intr_gate(X86_EXC_NP, entry_NP);
+    set_intr_gate(X86_EXC_SS, entry_SS);
+    set_intr_gate(X86_EXC_GP, entry_GP);
+    set_intr_gate(X86_EXC_PF, early_page_fault);
+    set_intr_gate(X86_EXC_MF, entry_MF);
+    set_intr_gate(X86_EXC_AC, entry_AC);
+    set_intr_gate(X86_EXC_MC, entry_MC);
+    set_intr_gate(X86_EXC_XM, entry_XM);
+    set_intr_gate(X86_EXC_CP, entry_CP);
 
     /* Specify dedicated interrupt stacks for NMI, #DF, and #MC. */
     enable_each_ist(idt_table);
@@ -2192,6 +2221,7 @@ static void __init init_ler(void)
 }
 
 extern void (*const autogen_entrypoints[X86_NR_VECTORS])(void);
+
 void __init trap_init(void)
 {
     unsigned int vector;
@@ -2219,11 +2249,11 @@ void __init trap_init(void)
     init_ler();
 
     /* Cache {,compat_}gdt_l1e now that physically relocation is done. */
-    this_cpu(gdt_l1e) =
-        l1e_from_pfn(virt_to_mfn(boot_gdt), __PAGE_HYPERVISOR_RW);
+    this_cpu(gdt_l1e) = l1e_from_pfn(virt_to_mfn(boot_gdt),
+                                     __PAGE_HYPERVISOR_RW);
     if ( IS_ENABLED(CONFIG_PV32) )
-        this_cpu(compat_gdt_l1e) =
-            l1e_from_pfn(virt_to_mfn(boot_compat_gdt), __PAGE_HYPERVISOR_RW);
+        this_cpu(compat_gdt_l1e) = l1e_from_pfn(virt_to_mfn(boot_compat_gdt),
+                                                __PAGE_HYPERVISOR_RW);
 
     percpu_traps_init();
 
@@ -2279,20 +2309,20 @@ void asm_domain_crash_synchronous(unsigned long addr)
         addr = this_cpu(last_extable_addr);
 
     printk("domain_crash_sync called from entry.S: fault at %p %pS\n",
-           _p(addr), _p(addr));
+           _p(addr),
+           _p(addr));
 
     __domain_crash(current->domain);
 
-    for ( ; ; )
+    for ( ;; )
         do_softirq();
 }
 
 #ifdef CONFIG_DEBUG
 void asmlinkage check_ist_exit(const struct cpu_user_regs *regs, bool ist_exit)
 {
-    const unsigned int ist_mask =
-        (1U << X86_EXC_NMI) | (1U << X86_EXC_DB) |
-        (1U << X86_EXC_DF)  | (1U << X86_EXC_MC);
+    const unsigned int ist_mask = (1U << X86_EXC_NMI) | (1U << X86_EXC_DB) |
+                                  (1U << X86_EXC_DF) | (1U << X86_EXC_MC);
     uint8_t ev = regs->entry_vector;
     bool is_ist = (ev < X86_EXC_NUM) && ((1U << ev) & ist_mask);
 

@@ -34,9 +34,7 @@ static inline uint64_t hv_scale_tsc(uint64_t tsc, uint64_t scale,
      * after shifting right by 64 bits, we therefore only need the content
      * of RDX.
      */
-    asm ( "mulq %[scale]"
-          : "+a" (tsc), "=d" (result)
-          : [scale] "rm" (scale) );
+    asm("mulq %[scale]" : "+a"(tsc), "=d"(result) : [scale] "rm"(scale));
 
     return result + offset;
 }
@@ -59,7 +57,10 @@ const struct hypervisor_ops *hyperv_probe(void);
 
 #else
 
-static inline const struct hypervisor_ops *hyperv_probe(void) { return NULL; }
+static inline const struct hypervisor_ops *hyperv_probe(void)
+{
+    return NULL;
+}
 
 #endif /* CONFIG_HYPERV_GUEST */
 #endif /* __X86_GUEST_HYPERV_H__ */

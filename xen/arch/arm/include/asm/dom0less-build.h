@@ -13,6 +13,7 @@ bool is_dom0less_mode(void);
 #else /* !CONFIG_DOM0LESS_BOOT */
 
 static inline void create_domUs(void) {}
+
 static inline bool is_dom0less_mode(void)
 {
     return false;

@@ -20,37 +20,37 @@ static inline uint64_t hv_do_hypercall(uint64_t control, paddr_t input_addr,
                                        paddr_t output_addr)
 {
     uint64_t status;
-    register unsigned long r8 asm ( "r8" ) = output_addr;
+    register unsigned long r8 asm("r8") = output_addr;
 
     /* See TLFS for volatile registers */
-    asm volatile ( "call hv_hcall_page"
-                   : "=a" (status), "+c" (control),
-                     "+d" (input_addr) ASM_CALL_CONSTRAINT
-                   : "r" (r8)
-                   : "memory" );
+    asm volatile("call hv_hcall_page"
+                 : "=a"(status),
+                   "+c"(control),
+                   "+d"(input_addr)ASM_CALL_CONSTRAINT
+                 : "r"(r8)
+                 : "memory");
 
     return status;
 }
 
-static inline uint64_t hv_do_fast_hypercall(uint16_t code,
-                                            uint64_t input1, uint64_t input2)
+static inline uint64_t hv_do_fast_hypercall(uint16_t code, uint64_t input1,
+                                            uint64_t input2)
 {
     uint64_t status;
     uint64_t control = code | HV_HYPERCALL_FAST_BIT;
-    register unsigned long r8 asm ( "r8" ) = input2;
+    register unsigned long r8 asm("r8") = input2;
 
     /* See TLFS for volatile registers */
-    asm volatile ( "call hv_hcall_page"
-                   : "=a" (status), "+c" (control),
-                     "+d" (input1) ASM_CALL_CONSTRAINT
-                   : "r" (r8) );
+    asm volatile("call hv_hcall_page"
+                 : "=a"(status), "+c"(control), "+d"(input1)ASM_CALL_CONSTRAINT
+                 : "r"(r8));
 
     return status;
 }
 
 static inline uint64_t hv_do_rep_hypercall(uint16_t code, uint16_t rep_count,
-                                           uint16_t varhead_size,
-                                           paddr_t input, paddr_t output)
+                                           uint16_t varhead_size, paddr_t input,
+                                           paddr_t output)
 {
     uint64_t control = code;
     uint64_t status;
@@ -59,7 +59,8 @@ static inline uint64_t hv_do_rep_hypercall(uint16_t code, uint16_t rep_count,
     control |= (uint64_t)varhead_size << HV_HYPERCALL_VARHEAD_OFFSET;
     control |= (uint64_t)rep_count << HV_HYPERCALL_REP_COMP_OFFSET;
 
-    do {
+    do
+    {
         status = hv_do_hypercall(control, input, output);
         if ( (status & HV_HYPERCALL_RESULT_MASK) != HV_STATUS_SUCCESS )
             break;

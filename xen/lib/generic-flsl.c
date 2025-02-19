@@ -61,7 +61,9 @@ static void __init __constructor test_generic_flsl(void)
     RUNTIME_CHECK(generic_flsl, 7, 3);
     RUNTIME_CHECK(generic_flsl, 6, 3);
 
-    RUNTIME_CHECK(generic_flsl, 1 | (1UL << (BITS_PER_LONG - 1)), BITS_PER_LONG);
+    RUNTIME_CHECK(generic_flsl,
+                  1 | (1UL << (BITS_PER_LONG - 1)),
+                  BITS_PER_LONG);
 #if BITS_PER_LONG > 32
     RUNTIME_CHECK(generic_flsl, 1 | (1UL << 32), 33);
     RUNTIME_CHECK(generic_flsl, 1 | (1UL << 63), 64);

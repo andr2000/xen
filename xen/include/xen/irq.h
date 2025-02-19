@@ -80,6 +80,7 @@ typedef const struct hw_interrupt_type hw_irq_controller;
 #include <asm/irq.h>
 
 struct msi_desc;
+
 /*
  * This is the "IRQ descriptor", which contains various information
  * about the irq, including what kind of hardware handling it has,
@@ -91,10 +92,10 @@ struct msi_desc;
  * first field.
  */
 typedef struct irq_desc {
-    unsigned int status;        /* IRQ status */
+    unsigned int status; /* IRQ status */
     hw_irq_controller *handler;
-    struct msi_desc   *msi_desc;
-    struct irqaction *action;   /* IRQ action list */
+    struct msi_desc *msi_desc;
+    struct irqaction *action; /* IRQ action list */
     int irq;
     spinlock_t lock;
     struct arch_irq_desc arch;
@@ -119,8 +120,8 @@ extern int setup_irq(unsigned int irq, unsigned int irqflags,
                      struct irqaction *new);
 extern void release_irq(unsigned int irq, const void *dev_id);
 extern int request_irq(unsigned int irq, unsigned int irqflags,
-               void (*handler)(int irq, void *dev_id),
-               const char *devname, void *dev_id);
+                       void (*handler)(int irq, void *dev_id),
+                       const char *devname, void *dev_id);
 
 extern const hw_irq_controller no_irq_type;
 void cf_check no_action(int cpl, void *dev_id);
@@ -147,8 +148,8 @@ static inline const struct cpu_user_regs *get_irq_regs(void)
     return this_cpu(irq_regs);
 }
 
-static inline const struct cpu_user_regs *set_irq_regs(
-    const struct cpu_user_regs *new_regs)
+static inline const struct cpu_user_regs *
+set_irq_regs(const struct cpu_user_regs *new_regs)
 {
     const struct cpu_user_regs *old_regs, **pp_regs = &this_cpu(irq_regs);
 
@@ -195,10 +196,10 @@ extern int pirq_guest_bind(struct vcpu *v, struct pirq *pirq, int will_share);
 extern void pirq_guest_unbind(struct domain *d, struct pirq *pirq);
 extern void pirq_set_affinity(struct domain *d, int pirq,
                               const cpumask_t *mask);
-extern struct irq_desc *domain_spin_lock_irq_desc(
-    struct domain *d, int pirq, unsigned long *pflags);
-extern struct irq_desc *pirq_spin_lock_irq_desc(
-    const struct pirq *pirq, unsigned long *pflags);
+extern struct irq_desc *domain_spin_lock_irq_desc(struct domain *d, int pirq,
+                                                  unsigned long *pflags);
+extern struct irq_desc *pirq_spin_lock_irq_desc(const struct pirq *pirq,
+                                                unsigned long *pflags);
 
 unsigned int set_desc_affinity(struct irq_desc *desc, const cpumask_t *mask);
 

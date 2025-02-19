@@ -45,8 +45,8 @@ static void svm_inject_nmi(struct vcpu *v)
      * SVM does not virtualise the NMI mask, so we emulate it by intercepting
      * the next IRET and blocking NMI injection until the intercept triggers.
      */
-    vmcb_set_general1_intercepts(
-        vmcb, general1_intercepts | GENERAL1_INTERCEPT_IRET);
+    vmcb_set_general1_intercepts(vmcb,
+                                 general1_intercepts | GENERAL1_INTERCEPT_IRET);
 }
 
 static void svm_inject_extint(struct vcpu *v, int vector)
@@ -89,7 +89,9 @@ static void svm_enable_intr_window(struct vcpu *v, struct hvm_intack intack)
         }
     }
 
-    TRACE(TRC_HVM_INTR_WINDOW, intack.vector, intack.source,
+    TRACE(TRC_HVM_INTR_WINDOW,
+          intack.vector,
+          intack.source,
           vmcb->event_inj.v ? vmcb->event_inj.vector : -1);
 
     /*
@@ -113,13 +115,14 @@ static void svm_enable_intr_window(struct vcpu *v, struct hvm_intack intack)
         return;
 
     intr = vmcb_get_vintr(vmcb);
-    intr.fields.irq     = 1;
-    intr.fields.vector  = 0;
-    intr.fields.prio    = intack.vector >> 4;
+    intr.fields.irq = 1;
+    intr.fields.vector = 0;
+    intr.fields.prio = intack.vector >> 4;
     intr.fields.ign_tpr = (intack.source != hvm_intsrc_lapic);
     vmcb_set_vintr(vmcb, intr);
-    vmcb_set_general1_intercepts(
-        vmcb, general1_intercepts | GENERAL1_INTERCEPT_VINTR);
+    vmcb_set_general1_intercepts(vmcb,
+                                 general1_intercepts |
+                                     GENERAL1_INTERCEPT_VINTR);
 }
 
 void asmlinkage svm_intr_assist(void)
@@ -136,7 +139,8 @@ void asmlinkage svm_intr_assist(void)
     /* Crank the handle on interrupt state. */
     pt_update_irq(v);
 
-    do {
+    do
+    {
         intack = hvm_vcpu_has_pending_irq(v);
         if ( likely(intack.source == hvm_intsrc_none) )
             return;
@@ -172,7 +176,8 @@ void asmlinkage svm_intr_assist(void)
                 return;
             default:
                 panic("%s: nestedsvm_vcpu_interrupt can't handle value %#x\n",
-                    __func__, rc);
+                      __func__,
+                      rc);
             }
         }
 
@@ -205,7 +210,7 @@ void asmlinkage svm_intr_assist(void)
     }
     else
     {
-        TRACE(TRC_HVM_INJ_VIRQ, intack.vector, /*fake=*/ 0);
+        TRACE(TRC_HVM_INJ_VIRQ, intack.vector, /*fake=*/0);
         svm_inject_extint(v, intack.vector);
         pt_intr_post(v, intack);
     }

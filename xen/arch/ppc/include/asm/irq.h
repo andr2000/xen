@@ -13,8 +13,7 @@
 
 #define domain_pirq_to_irq(d, pirq) (pirq)
 
-struct arch_pirq {
-};
+struct arch_pirq {};
 
 struct arch_irq_desc {
     unsigned int type;
@@ -25,7 +24,8 @@ static inline void arch_move_irqs(struct vcpu *v)
     BUG_ON("unimplemented");
 }
 
-static inline int platform_get_irq(const struct dt_device_node *device, int index)
+static inline int platform_get_irq(const struct dt_device_node *device,
+                                   int index)
 {
     BUG_ON("unimplemented");
 }

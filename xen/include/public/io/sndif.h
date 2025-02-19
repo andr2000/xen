@@ -520,7 +520,6 @@
 #define XENSND_PCM_FORMAT_MPEG_STR      "mpeg"
 #define XENSND_PCM_FORMAT_GSM_STR       "gsm"
 
-
 /*
  ******************************************************************************
  *                          STATUS RETURN CODES
@@ -875,18 +874,22 @@ struct xensnd_trigger_req {
 
 struct xensnd_query_hw_param {
     uint64_t formats;
+
     struct {
         uint32_t min;
         uint32_t max;
     } rates;
+
     struct {
         uint32_t min;
         uint32_t max;
     } channels;
+
     struct {
         uint32_t min;
         uint32_t max;
     } buffer;
+
     struct {
         uint32_t min;
         uint32_t max;
@@ -998,6 +1001,7 @@ struct xensnd_req {
     uint16_t id;
     uint8_t operation;
     uint8_t reserved[5];
+
     union {
         struct xensnd_open_req open;
         struct xensnd_rw_req rw;
@@ -1012,6 +1016,7 @@ struct xensnd_resp {
     uint8_t operation;
     uint8_t reserved;
     int32_t status;
+
     union {
         struct xensnd_query_hw_param hw_param;
         uint8_t reserved1[56];
@@ -1022,6 +1027,7 @@ struct xensnd_evt {
     uint16_t id;
     uint8_t type;
     uint8_t reserved[5];
+
     union {
         struct xensnd_cur_pos_evt cur_pos;
         uint8_t reserved[56];

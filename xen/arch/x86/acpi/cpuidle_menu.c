@@ -92,23 +92,22 @@
  * measured idle time.
  */
 
-struct perf_factor{
-    s_time_t    time_stamp;
-    s_time_t    duration;
+struct perf_factor {
+    s_time_t time_stamp;
+    s_time_t duration;
     unsigned int irq_count_stamp;
     unsigned int irq_sum;
 };
 
-struct menu_device
-{
-    int             last_state_idx;
-    unsigned int    expected_us;
-    u64             predicted_us;
-    u64             latency_factor;
-    unsigned int    measured_us;
-    unsigned int    exit_us;
-    unsigned int    bucket;
-    u64             correction_factor[BUCKETS];
+struct menu_device {
+    int last_state_idx;
+    unsigned int expected_us;
+    u64 predicted_us;
+    u64 latency_factor;
+    unsigned int measured_us;
+    unsigned int exit_us;
+    unsigned int bucket;
+    u64 correction_factor[BUCKETS];
     struct perf_factor pf;
 };
 
@@ -116,19 +115,19 @@ static DEFINE_PER_CPU(struct menu_device, menu_devices);
 
 static inline int which_bucket(unsigned int duration)
 {
-   int bucket = 0;
+    int bucket = 0;
 
-   if (duration < 10)
-       return bucket;
-   if (duration < 100)
-       return bucket + 1;
-   if (duration < 1000)
-       return bucket + 2;
-   if (duration < 10000)
-       return bucket + 3;
-   if (duration < 100000)
-       return bucket + 4;
-   return bucket + 5;
+    if ( duration < 10 )
+        return bucket;
+    if ( duration < 100 )
+        return bucket + 1;
+    if ( duration < 1000 )
+        return bucket + 2;
+    if ( duration < 10000 )
+        return bucket + 3;
+    if ( duration < 100000 )
+        return bucket + 4;
+    return bucket + 5;
 }
 
 /*
@@ -147,27 +146,29 @@ static inline int which_bucket(unsigned int duration)
 static inline s_time_t avg_intr_interval_us(void)
 {
     struct menu_device *data = &this_cpu(menu_devices);
-    s_time_t    duration, now;
-    s_time_t    avg_interval;
+    s_time_t duration, now;
+    s_time_t avg_interval;
     unsigned int irq_sum;
 
     now = NOW();
-    duration = (data->pf.duration + (now - data->pf.time_stamp)
-            * (DECAY - 1)) / DECAY;
+    duration = (data->pf.duration + (now - data->pf.time_stamp) * (DECAY - 1)) /
+               DECAY;
 
-    irq_sum = (data->pf.irq_sum + (this_cpu(irq_count) - data->pf.irq_count_stamp)
-            * (DECAY - 1)) / DECAY;
+    irq_sum = (data->pf.irq_sum +
+               (this_cpu(irq_count) - data->pf.irq_count_stamp) * (DECAY - 1)) /
+              DECAY;
 
-    if (irq_sum == 0)
+    if ( irq_sum == 0 )
         /* no irq recently, so return a big enough interval: 1 sec */
         avg_interval = 1000000;
     else
         avg_interval = duration / irq_sum / 1000; /* in us */
 
-    if ( duration >= SAMPLING_PERIOD){
+    if ( duration >= SAMPLING_PERIOD )
+    {
         data->pf.time_stamp = now;
         data->pf.duration = duration;
-        data->pf.irq_count_stamp= this_cpu(irq_count);
+        data->pf.irq_count_stamp = this_cpu(irq_count);
         data->pf.irq_sum = irq_sum;
     }
 
@@ -189,7 +190,7 @@ static int cf_check menu_select(struct acpi_processor_power *power)
 {
     struct menu_device *data = &this_cpu(menu_devices);
     int i;
-    s_time_t    io_interval;
+    s_time_t io_interval;
 
     /*  TBD: Change to 0 if C0(polling mode) support is added later*/
     data->last_state_idx = CPUIDLE_DRIVER_STATE_START;
@@ -202,32 +203,32 @@ static int cf_check menu_select(struct acpi_processor_power *power)
 
     io_interval = avg_intr_interval_us();
 
-    data->latency_factor = DIV_ROUND(
-            data->latency_factor * (DECAY - 1) + data->measured_us,
-            DECAY);
+    data->latency_factor =
+        DIV_ROUND(data->latency_factor * (DECAY - 1) + data->measured_us,
+                  DECAY);
 
     /*
      * if the correction factor is 0 (eg first time init or cpu hotplug
      * etc), we actually want to start out with a unity factor.
      */
-    if (data->correction_factor[data->bucket] == 0)
+    if ( data->correction_factor[data->bucket] == 0 )
         data->correction_factor[data->bucket] = RESOLUTION * DECAY;
 
     /* Make sure to round up for half microseconds */
-    data->predicted_us = DIV_ROUND(
-            data->expected_us * data->correction_factor[data->bucket],
-            RESOLUTION * DECAY);
+    data->predicted_us =
+        DIV_ROUND(data->expected_us * data->correction_factor[data->bucket],
+                  RESOLUTION * DECAY);
 
     /* find the deepest idle state that satisfies our constraints */
     for ( i = CPUIDLE_DRIVER_STATE_START + 1; i < power->count; i++ )
     {
         struct acpi_processor_cx *s = &power->states[i];
 
-        if (s->target_residency > data->predicted_us)
+        if ( s->target_residency > data->predicted_us )
             break;
-        if (s->latency * IO_MULTIPLIER > io_interval)
+        if ( s->latency * IO_MULTIPLIER > io_interval )
             break;
-        if (s->latency * LATENCY_MULTIPLIER > data->latency_factor)
+        if ( s->latency * LATENCY_MULTIPLIER > data->latency_factor )
             break;
         /* TBD: we need to check the QoS requirment in future */
         data->exit_us = s->latency;
@@ -248,15 +249,14 @@ static void cf_check menu_reflect(struct acpi_processor_power *power)
      * We correct for the exit latency; we are assuming here that the
      * exit latency happens after the event that we're interested in.
      */
-    if (data->measured_us > data->exit_us)
+    if ( data->measured_us > data->exit_us )
         data->measured_us -= data->exit_us;
 
     /* update our correction ratio */
 
-    new_factor = data->correction_factor[data->bucket]
-        * (DECAY - 1) / DECAY;
+    new_factor = data->correction_factor[data->bucket] * (DECAY - 1) / DECAY;
 
-    if (data->expected_us > 0 && data->measured_us < MAX_INTERESTING)
+    if ( data->expected_us > 0 && data->measured_us < MAX_INTERESTING )
         new_factor += RESOLUTION * data->measured_us / data->expected_us;
     else
         /*
@@ -269,7 +269,7 @@ static void cf_check menu_reflect(struct acpi_processor_power *power)
      * We don't want 0 as factor; we always want at least
      * a tiny bit of estimated time.
      */
-    if (new_factor == 0)
+    if ( new_factor == 0 )
         new_factor = 1;
 
     data->correction_factor[data->bucket] = new_factor;
@@ -282,16 +282,16 @@ static int cf_check menu_enable_device(struct acpi_processor_power *power)
     return 0;
 }
 
-static struct cpuidle_governor menu_governor =
-{
-    .name =         "menu",
-    .rating =       20,
-    .enable =       menu_enable_device,
-    .select =       menu_select,
-    .reflect =      menu_reflect,
+static struct cpuidle_governor menu_governor = {
+    .name = "menu",
+    .rating = 20,
+    .enable = menu_enable_device,
+    .select = menu_select,
+    .reflect = menu_reflect,
 };
 
 struct cpuidle_governor *cpuidle_current_governor = &menu_governor;
+
 void menu_get_trace_data(u32 *expected, u32 *pred)
 {
     const struct menu_device *data = &this_cpu(menu_devices);

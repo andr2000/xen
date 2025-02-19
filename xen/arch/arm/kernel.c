@@ -40,8 +40,8 @@ struct minimal_dtb_header {
 
 #define DTB_MAGIC 0xd00dfeedU
 
-static void __init place_modules(struct kernel_info *info,
-                                 paddr_t kernbase, paddr_t kernend)
+static void __init place_modules(struct kernel_info *info, paddr_t kernbase,
+                                 paddr_t kernend)
 {
     /* Align DTB and initrd size to 2Mb. Linux only requires 4 byte alignment */
     const struct bootmodule *mod = info->initrd_bootmodule;
@@ -145,15 +145,16 @@ static void __init kernel_zimage_load(struct kernel_info *info)
 
     place_modules(info, load_addr, load_addr + len);
 
-    printk("Loading zImage from %"PRIpaddr" to %"PRIpaddr"-%"PRIpaddr"\n",
-           paddr, load_addr, load_addr + len);
+    printk("Loading zImage from %" PRIpaddr " to %" PRIpaddr "-%" PRIpaddr "\n",
+           paddr,
+           load_addr,
+           load_addr + len);
 
     kernel = ioremap_wc(paddr, len);
     if ( !kernel )
         panic("Unable to map the hwdom kernel\n");
 
-    rc = copy_to_guest_phys_flush_dcache(info->d, load_addr,
-                                         kernel, len);
+    rc = copy_to_guest_phys_flush_dcache(info->d, load_addr, kernel, len);
     if ( rc != 0 )
         panic("Unable to copy the kernel in the hwdom memory\n");
 
@@ -275,17 +276,17 @@ static int __init kernel_uimage_probe(struct kernel_info *info,
                                       struct bootmodule *mod)
 {
     struct {
-        __be32 magic;   /* Image Header Magic Number */
-        __be32 hcrc;    /* Image Header CRC Checksum */
-        __be32 time;    /* Image Creation Timestamp  */
-        __be32 size;    /* Image Data Size           */
-        __be32 load;    /* Data Load Address         */
-        __be32 ep;      /* Entry Point Address       */
-        __be32 dcrc;    /* Image Data CRC Checksum   */
-        uint8_t os;     /* Operating System          */
-        uint8_t arch;   /* CPU architecture          */
-        uint8_t type;   /* Image Type                */
-        uint8_t comp;   /* Compression Type          */
+        __be32 magic; /* Image Header Magic Number */
+        __be32 hcrc; /* Image Header CRC Checksum */
+        __be32 time; /* Image Creation Timestamp  */
+        __be32 size; /* Image Data Size           */
+        __be32 load; /* Data Load Address         */
+        __be32 ep; /* Entry Point Address       */
+        __be32 dcrc; /* Image Data CRC Checksum   */
+        uint8_t os; /* Operating System          */
+        uint8_t arch; /* CPU architecture          */
+        uint8_t type; /* Image Type                */
+        uint8_t comp; /* Compression Type          */
         uint8_t name[UIMAGE_NMLEN]; /* Image Name  */
     } uimage;
 
@@ -309,8 +310,8 @@ static int __init kernel_uimage_probe(struct kernel_info *info,
     /* Only gzip compression is supported. */
     if ( uimage.comp && uimage.comp != IH_COMP_GZIP )
     {
-        printk(XENLOG_ERR
-               "Unsupported uImage compression type %"PRIu8"\n", uimage.comp);
+        printk(XENLOG_ERR "Unsupported uImage compression type %" PRIu8 "\n",
+               uimage.comp);
         return -EOPNOTSUPP;
     }
 
@@ -327,9 +328,10 @@ static int __init kernel_uimage_probe(struct kernel_info *info,
         printk(XENLOG_INFO
                "No load address provided. Xen will decide where to load it.\n");
     else
-        printk(XENLOG_INFO
-               "Provided load address: %"PRIpaddr" and entry address: %"PRIpaddr"\n",
-               info->zimage.start, info->entry);
+        printk(XENLOG_INFO "Provided load address: %" PRIpaddr
+                           " and entry address: %" PRIpaddr "\n",
+               info->zimage.start,
+               info->entry);
 
     /*
      * If the image supports position independent execution, then user cannot
@@ -338,8 +340,7 @@ static int __init kernel_uimage_probe(struct kernel_info *info,
      */
     if ( (info->zimage.start == 0) && (info->entry != 0) )
     {
-        printk(XENLOG_ERR
-               "Entry point cannot be non zero for PIE image.\n");
+        printk(XENLOG_ERR "Entry point cannot be non zero for PIE image.\n");
         return -EINVAL;
     }
 
@@ -398,14 +399,14 @@ static int __init kernel_uimage_probe(struct kernel_info *info,
 /*
  * Check if the image is a 64-bit Image.
  */
-static int __init kernel_zimage64_probe(struct kernel_info *info,
-                                        paddr_t addr, paddr_t size)
+static int __init kernel_zimage64_probe(struct kernel_info *info, paddr_t addr,
+                                        paddr_t size)
 {
     /* linux/Documentation/arm64/booting.txt */
     struct {
         uint32_t magic0;
         uint32_t res0;
-        uint64_t text_offset;  /* Image load offset */
+        uint64_t text_offset; /* Image load offset */
         uint64_t res1;
         uint64_t res2;
         /* zImage V1 only from here */
@@ -415,6 +416,7 @@ static int __init kernel_zimage64_probe(struct kernel_info *info,
         uint32_t magic1;
         uint32_t res6;
     } zimage;
+
     uint64_t start, end;
 
     if ( size < sizeof(zimage) )
@@ -453,10 +455,10 @@ static int __init kernel_zimage64_probe(struct kernel_info *info,
 /*
  * Check if the image is a 32-bit zImage and setup kernel_info
  */
-static int __init kernel_zimage32_probe(struct kernel_info *info,
-                                        paddr_t addr, paddr_t size)
+static int __init kernel_zimage32_probe(struct kernel_info *info, paddr_t addr,
+                                        paddr_t size)
 {
-    uint32_t zimage[ZIMAGE32_HEADER_LEN/4];
+    uint32_t zimage[ZIMAGE32_HEADER_LEN / 4];
     uint32_t start, end;
     struct minimal_dtb_header dtb_hdr;
 
@@ -465,11 +467,11 @@ static int __init kernel_zimage32_probe(struct kernel_info *info,
 
     copy_from_paddr(zimage, addr, sizeof(zimage));
 
-    if (zimage[ZIMAGE32_MAGIC_OFFSET/4] != ZIMAGE32_MAGIC)
+    if ( zimage[ZIMAGE32_MAGIC_OFFSET / 4] != ZIMAGE32_MAGIC )
         return -EINVAL;
 
-    start = zimage[ZIMAGE32_START_OFFSET/4];
-    end = zimage[ZIMAGE32_END_OFFSET/4];
+    start = zimage[ZIMAGE32_START_OFFSET / 4];
+    end = zimage[ZIMAGE32_END_OFFSET / 4];
 
     if ( (end - start) > size )
         return -EINVAL;
@@ -480,7 +482,8 @@ static int __init kernel_zimage32_probe(struct kernel_info *info,
     if ( addr + end - start + sizeof(dtb_hdr) <= size )
     {
         copy_from_paddr(&dtb_hdr, addr + end - start, sizeof(dtb_hdr));
-        if (be32_to_cpu(dtb_hdr.magic) == DTB_MAGIC) {
+        if ( be32_to_cpu(dtb_hdr.magic) == DTB_MAGIC )
+        {
             end += be32_to_cpu(dtb_hdr.total_size);
 
             if ( end > addr + size )
@@ -547,8 +550,8 @@ int __init kernel_probe(struct kernel_info *info,
 
                 val = dt_get_property(node, "reg", &len);
                 dt_get_range(&val, node, &kernel_addr, &size);
-                mod = boot_module_find_by_addr_and_kind(
-                        BOOTMOD_KERNEL, kernel_addr);
+                mod = boot_module_find_by_addr_and_kind(BOOTMOD_KERNEL,
+                                                        kernel_addr);
                 info->kernel_bootmodule = mod;
             }
             else if ( dt_device_is_compatible(node, "multiboot,ramdisk") )
@@ -558,8 +561,9 @@ int __init kernel_probe(struct kernel_info *info,
 
                 val = dt_get_property(node, "reg", &len);
                 dt_get_range(&val, node, &initrd_addr, &size);
-                info->initrd_bootmodule = boot_module_find_by_addr_and_kind(
-                        BOOTMOD_RAMDISK, initrd_addr);
+                info->initrd_bootmodule =
+                    boot_module_find_by_addr_and_kind(BOOTMOD_RAMDISK,
+                                                      initrd_addr);
             }
             else if ( dt_device_is_compatible(node, "multiboot,device-tree") )
             {
@@ -570,8 +574,9 @@ int __init kernel_probe(struct kernel_info *info,
                 if ( val == NULL )
                     continue;
                 dt_get_range(&val, node, &dtb_addr, &size);
-                info->dtb_bootmodule = boot_module_find_by_addr_and_kind(
-                        BOOTMOD_GUEST_DTB, dtb_addr);
+                info->dtb_bootmodule =
+                    boot_module_find_by_addr_and_kind(BOOTMOD_GUEST_DTB,
+                                                      dtb_addr);
             }
             else
                 continue;
@@ -587,10 +592,11 @@ int __init kernel_probe(struct kernel_info *info,
         return -ENOENT;
     }
 
-    printk("Loading %pd kernel from boot module @ %"PRIpaddr"\n",
-           info->d, info->kernel_bootmodule->start);
+    printk("Loading %pd kernel from boot module @ %" PRIpaddr "\n",
+           info->d,
+           info->kernel_bootmodule->start);
     if ( info->initrd_bootmodule )
-        printk("Loading ramdisk from boot module @ %"PRIpaddr"\n",
+        printk("Loading ramdisk from boot module @ %" PRIpaddr "\n",
                info->initrd_bootmodule->start);
 
     /*
@@ -614,7 +620,7 @@ int __init kernel_probe(struct kernel_info *info,
 
 #ifdef CONFIG_ARM_64
     rc = kernel_zimage64_probe(info, mod->start, mod->size);
-    if (rc < 0)
+    if ( rc < 0 )
 #endif
         rc = kernel_zimage32_probe(info, mod->start, mod->size);
 

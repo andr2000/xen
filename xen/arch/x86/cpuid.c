@@ -13,7 +13,7 @@
 bool recheck_cpu_features(unsigned int cpu)
 {
     bool okay = true;
-    struct cpuinfo_x86 c = {0};
+    struct cpuinfo_x86 c = { 0 };
     const struct cpuinfo_x86 *bsp = &boot_cpu_data;
     unsigned int i;
 
@@ -25,15 +25,18 @@ bool recheck_cpu_features(unsigned int cpu)
             continue;
 
         printk(XENLOG_ERR "CPU%u: cap[%2u] is %08x (expected %08x)\n",
-               cpu, i, c.x86_capability[i], bsp->x86_capability[i]);
+               cpu,
+               i,
+               c.x86_capability[i],
+               bsp->x86_capability[i]);
         okay = false;
     }
 
     return okay;
 }
 
-void guest_cpuid(const struct vcpu *v, uint32_t leaf,
-                 uint32_t subleaf, struct cpuid_leaf *res)
+void guest_cpuid(const struct vcpu *v, uint32_t leaf, uint32_t subleaf,
+                 struct cpuid_leaf *res)
 {
     const struct domain *d = v->domain;
     const struct cpu_policy *p = d->arch.cpu_policy;
@@ -51,8 +54,8 @@ void guest_cpuid(const struct vcpu *v, uint32_t leaf,
     {
     case 0 ... CPUID_GUEST_NR_BASIC - 1:
         ASSERT(p->basic.max_leaf < ARRAY_SIZE(p->basic.raw));
-        if ( leaf > min_t(uint32_t, p->basic.max_leaf,
-                          ARRAY_SIZE(p->basic.raw) - 1) )
+        if ( leaf >
+             min_t(uint32_t, p->basic.max_leaf, ARRAY_SIZE(p->basic.raw) - 1) )
             return;
 
         switch ( leaf )
@@ -66,7 +69,8 @@ void guest_cpuid(const struct vcpu *v, uint32_t leaf,
 
         case 0x7:
             ASSERT(p->feat.max_subleaf < ARRAY_SIZE(p->feat.raw));
-            if ( subleaf > min_t(uint32_t, p->feat.max_subleaf,
+            if ( subleaf > min_t(uint32_t,
+                                 p->feat.max_subleaf,
                                  ARRAY_SIZE(p->feat.raw) - 1) )
                 return;
 
@@ -107,7 +111,8 @@ void guest_cpuid(const struct vcpu *v, uint32_t leaf,
 
     case 0x80000000U ... 0x80000000U + CPUID_GUEST_NR_EXTD - 1:
         ASSERT((p->extd.max_leaf & 0xffff) < ARRAY_SIZE(p->extd.raw));
-        if ( (leaf & 0xffff) > min_t(uint32_t, p->extd.max_leaf & 0xffff,
+        if ( (leaf & 0xffff) > min_t(uint32_t,
+                                     p->extd.max_leaf & 0xffff,
                                      ARRAY_SIZE(p->extd.raw) - 1) )
             return;
 
@@ -144,8 +149,7 @@ void guest_cpuid(const struct vcpu *v, uint32_t leaf,
             res->b |= (v->vcpu_id * 2) << 24;
 
         /* TODO: Rework vPMU control in terms of toolstack choices. */
-        if ( vpmu_available(v) &&
-             vpmu_is_set(vcpu_vpmu(v), VPMU_CPU_HAS_DS) )
+        if ( vpmu_available(v) && vpmu_is_set(vcpu_vpmu(v), VPMU_CPU_HAS_DS) )
         {
             res->d |= cpufeat_mask(X86_FEATURE_DS);
             if ( cpu_has(&current_cpu_data, X86_FEATURE_DTES64) )
@@ -217,8 +221,7 @@ void guest_cpuid(const struct vcpu *v, uint32_t leaf,
              */
             /* OSXSAVE clear in policy.  Fast-forward CR4 back in. */
             if ( (v->arch.pv.ctrlreg[4] & X86_CR4_OSXSAVE) ||
-                 (p->basic.xsave &&
-                  regs->entry_vector == X86_EXC_UD &&
+                 (p->basic.xsave && regs->entry_vector == X86_EXC_UD &&
                   guest_kernel_mode(v, regs) &&
                   (read_cr4() & X86_CR4_OSXSAVE)) )
                 res->c |= cpufeat_mask(X86_FEATURE_OSXSAVE);
@@ -288,9 +291,9 @@ void guest_cpuid(const struct vcpu *v, uint32_t leaf,
         {
         case 0:
             /* OSPKE clear in policy.  Fast-forward CR4 back in. */
-            if ( (is_pv_domain(d)
-                  ? v->arch.pv.ctrlreg[4]
-                  : v->arch.hvm.guest_cr[4]) & X86_CR4_PKE )
+            if ( (is_pv_domain(d) ? v->arch.pv.ctrlreg[4]
+                                  : v->arch.hvm.guest_cr[4]) &
+                 X86_CR4_PKE )
                 res->c |= cpufeat_mask(X86_FEATURE_OSPKE);
             break;
         }
@@ -344,8 +347,8 @@ void guest_cpuid(const struct vcpu *v, uint32_t leaf,
 
     case 0x80000001U:
         /* SYSCALL is hidden outside of long mode on Intel. */
-        if ( p->x86_vendor == X86_VENDOR_INTEL &&
-             is_hvm_domain(d) && !hvm_long_mode_active(v) )
+        if ( p->x86_vendor == X86_VENDOR_INTEL && is_hvm_domain(d) &&
+             !hvm_long_mode_active(v) )
             res->d &= ~cpufeat_mask(X86_FEATURE_SYSCALL);
 
     common_leaf1_adjustments:

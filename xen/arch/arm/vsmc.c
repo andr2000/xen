@@ -6,7 +6,6 @@
  * ARM SMC calling convention
  */
 
-
 #include <xen/lib.h>
 #include <xen/types.h>
 #include <public/arch-arm/smccc.h>
@@ -37,7 +36,7 @@ static bool fill_uid(struct cpu_user_regs *regs, xen_uuid_t uuid)
      * first byte is stored in low-order bits of a register.
      * (ARM DEN 0028B page 14)
      */
-    for (n = 0; n < 4; n++)
+    for ( n = 0; n < 4; n++ )
     {
         const uint8_t *bytes = uuid.a + n * 4;
         uint32_t r;
@@ -54,7 +53,7 @@ static bool fill_uid(struct cpu_user_regs *regs, xen_uuid_t uuid)
 }
 
 static bool fill_revision(struct cpu_user_regs *regs, uint32_t major,
-                         uint32_t minor)
+                          uint32_t minor)
 {
     /*
      * Revision is returned in registers r0 and r1.
@@ -174,7 +173,8 @@ static bool handle_hypervisor(struct cpu_user_regs *regs)
     case ARM_SMCCC_CALL_UID_FID(HYPERVISOR):
         return fill_uid(regs, XEN_SMCCC_UID);
     case ARM_SMCCC_REVISION_FID(HYPERVISOR):
-        return fill_revision(regs, XEN_SMCCC_MAJOR_REVISION,
+        return fill_revision(regs,
+                             XEN_SMCCC_MAJOR_REVISION,
                              XEN_SMCCC_MINOR_REVISION);
     default:
         return false;
@@ -217,7 +217,8 @@ static bool handle_sssc(struct cpu_user_regs *regs)
         return fill_uid(regs, SSSC_SMCCC_UID);
 
     case ARM_SMCCC_REVISION_FID(STANDARD):
-        return fill_revision(regs, SSSC_SMCCC_MAJOR_REVISION,
+        return fill_revision(regs,
+                             SSSC_SMCCC_MAJOR_REVISION,
                              SSSC_SMCCC_MINOR_REVISION);
 
     default:
@@ -260,7 +261,7 @@ static bool vsmccc_handle_call(struct cpu_user_regs *regs)
     case HSR_EC_HVC64:
     case HSR_EC_SMC64:
 #endif
-        if ( (hsr.iss & HSR_XXC_IMM_MASK) != 0)
+        if ( (hsr.iss & HSR_XXC_IMM_MASK) != 0 )
             return false;
         break;
     case HSR_EC_SMC32:

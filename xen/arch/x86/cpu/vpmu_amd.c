@@ -39,37 +39,25 @@ static bool __read_mostly k7_counters_mirrored;
 #define MAX_NUM_COUNTERS    F15H_NUM_COUNTERS
 
 /* PMU Counter MSRs. */
-static const u32 AMD_F10H_COUNTERS[] = {
-    MSR_K7_PERFCTR0,
-    MSR_K7_PERFCTR1,
-    MSR_K7_PERFCTR2,
-    MSR_K7_PERFCTR3
-};
+static const u32 AMD_F10H_COUNTERS[] = { MSR_K7_PERFCTR0,
+                                         MSR_K7_PERFCTR1,
+                                         MSR_K7_PERFCTR2,
+                                         MSR_K7_PERFCTR3 };
 
 /* PMU Control MSRs. */
-static const u32 AMD_F10H_CTRLS[] = {
-    MSR_K7_EVNTSEL0,
-    MSR_K7_EVNTSEL1,
-    MSR_K7_EVNTSEL2,
-    MSR_K7_EVNTSEL3
-};
+static const u32 AMD_F10H_CTRLS[] = { MSR_K7_EVNTSEL0,
+                                      MSR_K7_EVNTSEL1,
+                                      MSR_K7_EVNTSEL2,
+                                      MSR_K7_EVNTSEL3 };
 
 static const u32 AMD_F15H_COUNTERS[] = {
-    MSR_AMD_FAM15H_PERFCTR0,
-    MSR_AMD_FAM15H_PERFCTR1,
-    MSR_AMD_FAM15H_PERFCTR2,
-    MSR_AMD_FAM15H_PERFCTR3,
-    MSR_AMD_FAM15H_PERFCTR4,
-    MSR_AMD_FAM15H_PERFCTR5
+    MSR_AMD_FAM15H_PERFCTR0, MSR_AMD_FAM15H_PERFCTR1, MSR_AMD_FAM15H_PERFCTR2,
+    MSR_AMD_FAM15H_PERFCTR3, MSR_AMD_FAM15H_PERFCTR4, MSR_AMD_FAM15H_PERFCTR5
 };
 
 static const u32 AMD_F15H_CTRLS[] = {
-    MSR_AMD_FAM15H_EVNTSEL0,
-    MSR_AMD_FAM15H_EVNTSEL1,
-    MSR_AMD_FAM15H_EVNTSEL2,
-    MSR_AMD_FAM15H_EVNTSEL3,
-    MSR_AMD_FAM15H_EVNTSEL4,
-    MSR_AMD_FAM15H_EVNTSEL5
+    MSR_AMD_FAM15H_EVNTSEL0, MSR_AMD_FAM15H_EVNTSEL1, MSR_AMD_FAM15H_EVNTSEL2,
+    MSR_AMD_FAM15H_EVNTSEL3, MSR_AMD_FAM15H_EVNTSEL4, MSR_AMD_FAM15H_EVNTSEL5
 };
 
 /* Bits [63:42], [39:36], 21 and 19 are reserved */
@@ -101,10 +89,10 @@ static inline int get_pmu_reg_type(u32 addr, unsigned int *idx)
     }
 
     if ( (addr >= MSR_AMD_FAM15H_EVNTSEL0) &&
-         (addr <= MSR_AMD_FAM15H_PERFCTR5 ) )
+         (addr <= MSR_AMD_FAM15H_PERFCTR5) )
     {
         *idx = (addr - MSR_AMD_FAM15H_EVNTSEL0) >> 1;
-        if (addr & 1)
+        if ( addr & 1 )
             return MSR_TYPE_COUNTER;
         else
             return MSR_TYPE_CTRL;
@@ -144,7 +132,8 @@ static inline u32 get_fam15h_addr(u32 addr)
 static void amd_vpmu_init_regs(struct xen_pmu_amd_ctxt *ctxt)
 {
     memset(&ctxt->regs[0], 0, num_counters * sizeof(ctxt->regs[0]));
-    memcpy(&ctxt->regs[num_counters], &ctrl_rsvd[0],
+    memcpy(&ctxt->regs[num_counters],
+           &ctrl_rsvd[0],
            num_counters * sizeof(ctxt->regs[0]));
 }
 
@@ -226,7 +215,8 @@ static int cf_check amd_vpmu_load(struct vcpu *v, bool from_guest)
         ctxt = vpmu->context;
         ctrl_regs = vpmu_reg_pointer(ctxt, ctrls);
 
-        memcpy(&ctxt->regs[0], &guest_ctxt->regs[0],
+        memcpy(&ctxt->regs[0],
+               &guest_ctxt->regs[0],
                2 * num_counters * sizeof(ctxt->regs[0]));
 
         for ( i = 0; i < num_counters; i++ )
@@ -270,7 +260,7 @@ static inline void context_save(struct vcpu *v)
         rdmsrl(counters[i], counter_regs[i]);
 }
 
-static int cf_check amd_vpmu_save(struct vcpu *v,  bool to_guest)
+static int cf_check amd_vpmu_save(struct vcpu *v, bool to_guest)
 {
     struct vpmu_struct *vpmu = vcpu_vpmu(v);
     unsigned int i;
@@ -301,7 +291,8 @@ static int cf_check amd_vpmu_save(struct vcpu *v,  bool to_guest)
         ASSERT(!has_vlapic(v->domain));
         ctxt = vpmu->context;
         guest_ctxt = &vpmu->xenpmu_data->pmu.c.amd;
-        memcpy(&guest_ctxt->regs[0], &ctxt->regs[0],
+        memcpy(&guest_ctxt->regs[0],
+               &ctxt->regs[0],
                2 * num_counters * sizeof(ctxt->regs[0]));
     }
 
@@ -318,19 +309,19 @@ static void context_update(unsigned int msr, u64 msr_content)
     uint64_t *ctrl_regs = vpmu_reg_pointer(ctxt, ctrls);
 
     if ( k7_counters_mirrored &&
-        ((msr >= MSR_K7_EVNTSEL0) && (msr <= MSR_K7_PERFCTR3)) )
+         ((msr >= MSR_K7_EVNTSEL0) && (msr <= MSR_K7_PERFCTR3)) )
     {
         msr = get_fam15h_addr(msr);
     }
 
     for ( i = 0; i < num_counters; i++ )
     {
-       if ( msr == ctrls[i] )
-       {
-           ctrl_regs[i] = msr_content;
-           return;
-       }
-        else if (msr == counters[i] )
+        if ( msr == ctrls[i] )
+        {
+            ctrl_regs[i] = msr_content;
+            return;
+        }
+        else if ( msr == counters[i] )
         {
             counter_regs[i] = msr_content;
             return;
@@ -345,7 +336,7 @@ static int cf_check amd_vpmu_do_wrmsr(unsigned int msr, uint64_t msr_content)
     unsigned int idx = 0;
     int type = get_pmu_reg_type(msr, &idx);
 
-    if ( (type == MSR_TYPE_CTRL ) &&
+    if ( (type == MSR_TYPE_CTRL) &&
          ((msr_content & CTRL_RSVD_MASK) != ctrl_rsvd[idx]) )
         return -EINVAL;
 
@@ -357,29 +348,29 @@ static int cf_check amd_vpmu_do_wrmsr(unsigned int msr, uint64_t msr_content)
     }
 
     /* check if the first counter is enabled */
-    if ( (type == MSR_TYPE_CTRL) &&
-        is_pmu_enabled(msr_content) && !vpmu_is_set(vpmu, VPMU_RUNNING) )
+    if ( (type == MSR_TYPE_CTRL) && is_pmu_enabled(msr_content) &&
+         !vpmu_is_set(vpmu, VPMU_RUNNING) )
     {
         if ( !acquire_pmu_ownership(PMU_OWNER_HVM) )
             return 0;
         vpmu_set(vpmu, VPMU_RUNNING);
 
         if ( is_svm_vcpu(v) && is_msr_bitmap_on(vpmu) )
-             amd_vpmu_set_msr_bitmap(v);
+            amd_vpmu_set_msr_bitmap(v);
     }
 
     /* stop saving & restore if guest stops first counter */
-    if ( (type == MSR_TYPE_CTRL) &&
-        (is_pmu_enabled(msr_content) == 0) && vpmu_is_set(vpmu, VPMU_RUNNING) )
+    if ( (type == MSR_TYPE_CTRL) && (is_pmu_enabled(msr_content) == 0) &&
+         vpmu_is_set(vpmu, VPMU_RUNNING) )
     {
         vpmu_reset(vpmu, VPMU_RUNNING);
         if ( is_svm_vcpu(v) && is_msr_bitmap_on(vpmu) )
-             amd_vpmu_unset_msr_bitmap(v);
+            amd_vpmu_unset_msr_bitmap(v);
         release_pmu_ownership(PMU_OWNER_HVM);
     }
 
-    if ( !vpmu_is_set(vpmu, VPMU_CONTEXT_LOADED)
-        || vpmu_is_set(vpmu, VPMU_FROZEN) )
+    if ( !vpmu_is_set(vpmu, VPMU_CONTEXT_LOADED) ||
+         vpmu_is_set(vpmu, VPMU_FROZEN) )
     {
         context_load(v);
         vpmu_set(vpmu, VPMU_CONTEXT_LOADED);
@@ -399,8 +390,8 @@ static int cf_check amd_vpmu_do_rdmsr(unsigned int msr, uint64_t *msr_content)
     struct vcpu *v = current;
     struct vpmu_struct *vpmu = vcpu_vpmu(v);
 
-    if ( !vpmu_is_set(vpmu, VPMU_CONTEXT_LOADED)
-        || vpmu_is_set(vpmu, VPMU_FROZEN) )
+    if ( !vpmu_is_set(vpmu, VPMU_CONTEXT_LOADED) ||
+         vpmu_is_set(vpmu, VPMU_FROZEN) )
     {
         context_load(v);
         vpmu_set(vpmu, VPMU_CONTEXT_LOADED);
@@ -441,8 +432,8 @@ static void cf_check amd_vpmu_dump(const struct vcpu *v)
     printk("    VPMU state: 0x%x ", vpmu->flags);
     if ( !vpmu_is_set(vpmu, VPMU_CONTEXT_ALLOCATED) )
     {
-         printk("\n");
-         return;
+        printk("\n");
+        return;
     }
 
     printk("(");
@@ -465,8 +456,12 @@ static void cf_check amd_vpmu_dump(const struct vcpu *v)
         rdmsrl(ctrls[i], ctrl);
         rdmsrl(counters[i], cntr);
         printk("      %#x: %#lx (%#lx in HW)    %#x: %#lx (%#lx in HW)\n",
-               ctrls[i], ctrl_regs[i], ctrl,
-               counters[i], counter_regs[i], cntr);
+               ctrls[i],
+               ctrl_regs[i],
+               ctrl,
+               counters[i],
+               counter_regs[i],
+               cntr);
     }
 }
 
@@ -478,13 +473,14 @@ static int cf_check amd_vpmu_initialise(struct vcpu *v)
     if ( !counters )
         return -EINVAL;
 
-    ctxt = xmalloc_flex_struct(struct xen_pmu_amd_ctxt, regs,
-                               2 * num_counters);
+    ctxt = xmalloc_flex_struct(struct xen_pmu_amd_ctxt, regs, 2 * num_counters);
     if ( !ctxt )
     {
-        printk(XENLOG_G_WARNING "Insufficient memory for PMU, "
-               " PMU feature is unavailable on domain %d vcpu %d.\n",
-               v->vcpu_id, v->domain->domain_id);
+        printk(
+            XENLOG_G_WARNING
+            "Insufficient memory for PMU, " " PMU feature is unavailable on domain %d vcpu %d.\n",
+            v->vcpu_id,
+            v->domain->domain_id);
         return -ENOMEM;
     }
 
@@ -499,7 +495,8 @@ static int cf_check amd_vpmu_initialise(struct vcpu *v)
     {
         /* Copy register offsets to shared area */
         ASSERT(vpmu->xenpmu_data);
-        memcpy(&vpmu->xenpmu_data->pmu.c.amd, ctxt,
+        memcpy(&vpmu->xenpmu_data->pmu.c.amd,
+               ctxt,
                offsetof(struct xen_pmu_amd_ctxt, regs));
     }
 
@@ -542,8 +539,8 @@ static const struct arch_vpmu_ops *__init common_init(void)
         return ERR_PTR(-EINVAL);
     }
 
-    if ( sizeof(struct xen_pmu_data) +
-         2 * sizeof(uint64_t) * num_counters > PAGE_SIZE )
+    if ( sizeof(struct xen_pmu_data) + 2 * sizeof(uint64_t) * num_counters >
+         PAGE_SIZE )
     {
         printk(XENLOG_WARNING
                "VPMU: Register bank does not fit into VPMU shared page\n");

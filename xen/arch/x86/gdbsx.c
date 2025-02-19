@@ -27,8 +27,8 @@ typedef unsigned long dbgva_t;
 typedef unsigned char dbgbyte_t;
 
 /* Returns: mfn for the given (hvm guest) vaddr */
-static mfn_t
-dbg_hvm_va2mfn(dbgva_t vaddr, struct domain *dp, int toaddr, gfn_t *gfn)
+static mfn_t dbg_hvm_va2mfn(dbgva_t vaddr, struct domain *dp, int toaddr,
+                            gfn_t *gfn)
 {
     mfn_t mfn;
     uint32_t pfec = PFEC_page_present;
@@ -64,8 +64,7 @@ dbg_hvm_va2mfn(dbgva_t vaddr, struct domain *dp, int toaddr, gfn_t *gfn)
  *       mode.
  * Returns: mfn for the given (pv guest) vaddr 
  */
-static mfn_t
-dbg_pv_va2mfn(dbgva_t vaddr, struct domain *dp, uint64_t pgd3val)
+static mfn_t dbg_pv_va2mfn(dbgva_t vaddr, struct domain *dp, uint64_t pgd3val)
 {
     l4_pgentry_t l4e, *l4t;
     l3_pgentry_t l3e, *l3t;
@@ -123,14 +122,13 @@ static unsigned int dbg_rw_guest_mem(struct domain *dp, unsigned long addr,
 
         pagecnt = min_t(long, PAGE_SIZE - (addr & ~PAGE_MASK), len);
 
-        mfn = (is_hvm_domain(dp)
-               ? dbg_hvm_va2mfn(addr, dp, toaddr, &gfn)
-               : dbg_pv_va2mfn(addr, dp, pgd3));
+        mfn = (is_hvm_domain(dp) ? dbg_hvm_va2mfn(addr, dp, toaddr, &gfn)
+                                 : dbg_pv_va2mfn(addr, dp, pgd3));
         if ( mfn_eq(mfn, INVALID_MFN) )
             break;
 
         va = map_domain_page(mfn);
-        va = va + (addr & (PAGE_SIZE-1));
+        va = va + (addr & (PAGE_SIZE - 1));
 
         if ( toaddr )
         {
@@ -152,14 +150,17 @@ static unsigned int dbg_rw_guest_mem(struct domain *dp, unsigned long addr,
     return len;
 }
 
-static int gdbsx_guest_mem_io(
-    struct domain *d, struct xen_domctl_gdbsx_memio *iop)
+static int gdbsx_guest_mem_io(struct domain *d,
+                              struct xen_domctl_gdbsx_memio *iop)
 {
     if ( d && !d->is_dying )
     {
-        iop->remain = dbg_rw_guest_mem(
-            d, iop->gva, guest_handle_from_ptr(iop->uva, void),
-            iop->len, iop->gwr, iop->pgd3val);
+        iop->remain = dbg_rw_guest_mem(d,
+                                       iop->gva,
+                                       guest_handle_from_ptr(iop->uva, void),
+                                       iop->len,
+                                       iop->gwr,
+                                       iop->pgd3val);
     }
     else
         iop->remain = iop->len;
@@ -213,7 +214,8 @@ int gdbsx_domctl(struct domain *d, struct xen_domctl *domctl, bool *copyback)
         if ( ret == -EINVAL )
             printk(XENLOG_G_WARNING
                    "WARN: %pd attempting to unpause %pv which is not paused\n",
-                   current->domain, v);
+                   current->domain,
+                   v);
         break;
 
     case XEN_DOMCTL_gdbsx_domstatus:
@@ -222,7 +224,7 @@ int gdbsx_domctl(struct domain *d, struct xen_domctl *domctl, bool *copyback)
         domctl->u.gdbsx_domstatus.paused = d->controller_pause_count > 0;
         if ( domctl->u.gdbsx_domstatus.paused )
         {
-            for_each_vcpu ( d, v )
+            for_each_vcpu(d, v)
             {
                 if ( v->arch.gdbsx_vcpu_event )
                 {

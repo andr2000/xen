@@ -25,8 +25,7 @@ static void cf_check mce_checkregs(void *info)
     struct mca_summary bs;
     static uint64_t dumpcount = 0;
 
-    mctc = mcheck_mca_logout(MCA_POLLER, this_cpu( poll_bankmask),
-                             &bs, NULL);
+    mctc = mcheck_mca_logout(MCA_POLLER, this_cpu(poll_bankmask), &bs, NULL);
 
     if ( bs.errcnt && mctc != NULL )
     {

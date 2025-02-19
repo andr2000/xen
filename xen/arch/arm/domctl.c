@@ -26,7 +26,7 @@ void arch_get_domain_info(const struct domain *d,
     info->gpaddr_bits = p2m_ipa_bits;
 }
 
-static int handle_vuart_init(struct domain *d, 
+static int handle_vuart_init(struct domain *d,
                              struct xen_domctl_vuart_op *vuart_op)
 {
     int rc;
@@ -60,7 +60,7 @@ long arch_do_domctl(struct xen_domctl *domctl, struct domain *d,
         gfn_t e = gfn_add(s, domctl->u.cacheflush.nr_pfns);
         int rc;
 
-        if ( domctl->u.cacheflush.nr_pfns > (1U<<MAX_ORDER) )
+        if ( domctl->u.cacheflush.nr_pfns > (1U << MAX_ORDER) )
             return -EINVAL;
 
         if ( gfn_x(e) < gfn_x(s) )
@@ -161,7 +161,7 @@ long arch_do_domctl(struct xen_domctl *domctl, struct domain *d,
             if ( vuart_op->pad[i] )
                 return -EINVAL;
 
-        switch( vuart_op->cmd )
+        switch ( vuart_op->cmd )
         {
         case XEN_DOMCTL_VUART_OP_INIT:
             rc = handle_vuart_init(d, vuart_op);

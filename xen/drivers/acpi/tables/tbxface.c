@@ -65,12 +65,11 @@ ACPI_MODULE_NAME("tbxface")
 
 acpi_status __init acpi_allocate_root_table(u32 initial_table_count)
 {
+    acpi_gbl_root_table_list.size = initial_table_count -
+                                    ACPI_ROOT_TABLE_SIZE_INCREMENT;
+    acpi_gbl_root_table_list.flags = ACPI_ROOT_ALLOW_RESIZE;
 
-	acpi_gbl_root_table_list.size = initial_table_count -
-					ACPI_ROOT_TABLE_SIZE_INCREMENT;
-	acpi_gbl_root_table_list.flags = ACPI_ROOT_ALLOW_RESIZE;
-
-	return (acpi_tb_resize_root_table_list());
+    return (acpi_tb_resize_root_table_list());
 }
 
 /*******************************************************************************
@@ -100,54 +99,58 @@ acpi_status __init acpi_allocate_root_table(u32 initial_table_count)
  ******************************************************************************/
 
 acpi_status __init
-acpi_initialize_tables(struct acpi_table_desc * initial_table_array,
-		       u32 initial_table_count, u8 allow_resize)
+acpi_initialize_tables(struct acpi_table_desc *initial_table_array,
+                       u32 initial_table_count, u8 allow_resize)
 {
-	acpi_physical_address rsdp_address;
-	acpi_status status;
+    acpi_physical_address rsdp_address;
+    acpi_status status;
 
-	ACPI_FUNCTION_TRACE(acpi_initialize_tables);
+    ACPI_FUNCTION_TRACE(acpi_initialize_tables);
 
-	/*
+    /*
 	 * Set up the Root Table Array
 	 * Allocate the table array if requested
 	 */
-	if (!initial_table_array) {
-		status = acpi_allocate_root_table(initial_table_count);
-		if (ACPI_FAILURE(status)) {
-			return_ACPI_STATUS(status);
-		}
-	} else {
-		/* Root Table Array has been statically allocated by the host */
+    if ( !initial_table_array )
+    {
+        status = acpi_allocate_root_table(initial_table_count);
+        if ( ACPI_FAILURE(status) )
+        {
+            return_ACPI_STATUS(status);
+        }
+    }
+    else
+    {
+        /* Root Table Array has been statically allocated by the host */
 
-		ACPI_MEMSET(initial_table_array, 0,
-			    initial_table_count *
-			    sizeof(struct acpi_table_desc));
+        ACPI_MEMSET(initial_table_array,
+                    0,
+                    initial_table_count * sizeof(struct acpi_table_desc));
 
-		acpi_gbl_root_table_list.tables = initial_table_array;
-		acpi_gbl_root_table_list.size = initial_table_count;
-		acpi_gbl_root_table_list.flags = ACPI_ROOT_ORIGIN_UNKNOWN;
-		if (allow_resize) {
-			acpi_gbl_root_table_list.flags |=
-			    ACPI_ROOT_ALLOW_RESIZE;
-		}
-	}
+        acpi_gbl_root_table_list.tables = initial_table_array;
+        acpi_gbl_root_table_list.size = initial_table_count;
+        acpi_gbl_root_table_list.flags = ACPI_ROOT_ORIGIN_UNKNOWN;
+        if ( allow_resize )
+        {
+            acpi_gbl_root_table_list.flags |= ACPI_ROOT_ALLOW_RESIZE;
+        }
+    }
 
-	/* Get the address of the RSDP */
+    /* Get the address of the RSDP */
 
-	rsdp_address = acpi_os_get_root_pointer();
-	if (!rsdp_address) {
-		return_ACPI_STATUS(AE_NOT_FOUND);
-	}
+    rsdp_address = acpi_os_get_root_pointer();
+    if ( !rsdp_address )
+    {
+        return_ACPI_STATUS(AE_NOT_FOUND);
+    }
 
-	/*
+    /*
 	 * Get the root table (RSDT or XSDT) and extract all entries to the local
 	 * Root Table Array. This array contains the information of the RSDT/XSDT
 	 * in a common, more useable format.
 	 */
-	status =
-	    acpi_tb_parse_root_table(rsdp_address, ACPI_TABLE_ORIGIN_MAPPED);
-	return_ACPI_STATUS(status);
+    status = acpi_tb_parse_root_table(rsdp_address, ACPI_TABLE_ORIGIN_MAPPED);
+    return_ACPI_STATUS(status);
 }
 
 /*******************************************************************************
@@ -163,46 +166,49 @@ acpi_initialize_tables(struct acpi_table_desc * initial_table_array,
  * DESCRIPTION: Finds and verifies an ACPI table.
  *
  *****************************************************************************/
-acpi_status __init
-acpi_get_table(const char *signature,
-	       acpi_native_uint instance, struct acpi_table_header **out_table)
+acpi_status __init acpi_get_table(const char *signature,
+                                  acpi_native_uint instance,
+                                  struct acpi_table_header **out_table)
 {
-	acpi_native_uint i;
-	acpi_native_uint j;
-	acpi_status status;
+    acpi_native_uint i;
+    acpi_native_uint j;
+    acpi_status status;
 
-	/* Parameter validation */
+    /* Parameter validation */
 
-	if (!signature || !out_table) {
-		return (AE_BAD_PARAMETER);
-	}
+    if ( !signature || !out_table )
+    {
+        return (AE_BAD_PARAMETER);
+    }
 
-	/*
+    /*
 	 * Walk the root table list
 	 */
-	for (i = 0, j = 0; i < acpi_gbl_root_table_list.count; i++) {
-		if (!ACPI_COMPARE_NAME
-		    (&(acpi_gbl_root_table_list.tables[i].signature),
-		     signature)) {
-			continue;
-		}
+    for ( i = 0, j = 0; i < acpi_gbl_root_table_list.count; i++ )
+    {
+        if ( !ACPI_COMPARE_NAME(&(acpi_gbl_root_table_list.tables[i].signature),
+                                signature) )
+        {
+            continue;
+        }
 
-		if (++j < instance) {
-			continue;
-		}
+        if ( ++j < instance )
+        {
+            continue;
+        }
 
-		status =
-		    acpi_tb_verify_table(&acpi_gbl_root_table_list.tables[i]);
-		if (ACPI_SUCCESS(status)) {
-			*out_table = acpi_gbl_root_table_list.tables[i].pointer;
-		}
+        status = acpi_tb_verify_table(&acpi_gbl_root_table_list.tables[i]);
+        if ( ACPI_SUCCESS(status) )
+        {
+            *out_table = acpi_gbl_root_table_list.tables[i].pointer;
+        }
 
-		acpi_gbl_root_table_list.tables[i].pointer = NULL;
+        acpi_gbl_root_table_list.tables[i].pointer = NULL;
 
-		return (status);
-	}
+        return (status);
+    }
 
-	return (AE_NOT_FOUND);
+    return (AE_NOT_FOUND);
 }
 
 /******************************************************************************
@@ -219,36 +225,37 @@ acpi_get_table(const char *signature,
  * DESCRIPTION: Finds physical address and length of ACPI table
  *
  *****************************************************************************/
-acpi_status __init
-acpi_get_table_phys(const char *signature, acpi_native_uint instance,
-		     acpi_physical_address *addr, acpi_native_uint *len)
+acpi_status __init acpi_get_table_phys(const char *signature,
+                                       acpi_native_uint instance,
+                                       acpi_physical_address *addr,
+                                       acpi_native_uint *len)
 {
-	acpi_native_uint i, j;
-	acpi_status status;
+    acpi_native_uint i, j;
+    acpi_status status;
 
-	if (!signature || !addr || !len)
-		return AE_BAD_PARAMETER;
+    if ( !signature || !addr || !len )
+        return AE_BAD_PARAMETER;
 
-	for (i = j = 0; i < acpi_gbl_root_table_list.count; i++) {
-		if (!ACPI_COMPARE_NAME(
-				&acpi_gbl_root_table_list.tables[i].signature,
-				signature))
-			continue;
+    for ( i = j = 0; i < acpi_gbl_root_table_list.count; i++ )
+    {
+        if ( !ACPI_COMPARE_NAME(&acpi_gbl_root_table_list.tables[i].signature,
+                                signature) )
+            continue;
 
-		if (++j < instance)
-			continue;
+        if ( ++j < instance )
+            continue;
 
-		status =
-		    acpi_tb_verify_table(&acpi_gbl_root_table_list.tables[i]);
-		if (ACPI_SUCCESS(status)) {
-			*addr = acpi_gbl_root_table_list.tables[i].address;
-			*len = acpi_gbl_root_table_list.tables[i].length;
-		}
+        status = acpi_tb_verify_table(&acpi_gbl_root_table_list.tables[i]);
+        if ( ACPI_SUCCESS(status) )
+        {
+            *addr = acpi_gbl_root_table_list.tables[i].address;
+            *len = acpi_gbl_root_table_list.tables[i].length;
+        }
 
-		acpi_gbl_root_table_list.tables[i].pointer = NULL;
+        acpi_gbl_root_table_list.tables[i].pointer = NULL;
 
-		return status;
-	}
+        return status;
+    }
 
-	return AE_NOT_FOUND;
+    return AE_NOT_FOUND;
 }

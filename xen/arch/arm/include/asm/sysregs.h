@@ -2,11 +2,11 @@
 #define __ASM_ARM_SYSREGS_H
 
 #if defined(CONFIG_ARM_32)
-# include <asm/arm32/sysregs.h>
+#include <asm/arm32/sysregs.h>
 #elif defined(CONFIG_ARM_64)
-# include <asm/arm64/sysregs.h>
+#include <asm/arm64/sysregs.h>
 #else
-# error "unknown ARM variant"
+#error "unknown ARM variant"
 #endif
 
 #ifndef __ASSEMBLY__
@@ -22,11 +22,15 @@ static inline register_t read_sysreg_par(void)
      * DMB SY before and after accessing it, as part of the workaround for the
      * errata 1508412.
      */
-    asm volatile(ALTERNATIVE("nop", "dmb sy", ARM64_WORKAROUND_1508412,
-                 CONFIG_ARM64_ERRATUM_1508412));
+    asm volatile(ALTERNATIVE("nop",
+                             "dmb sy",
+                             ARM64_WORKAROUND_1508412,
+                             CONFIG_ARM64_ERRATUM_1508412));
     par_el1 = READ_SYSREG64(PAR_EL1);
-    asm volatile(ALTERNATIVE("nop", "dmb sy", ARM64_WORKAROUND_1508412,
-                 CONFIG_ARM64_ERRATUM_1508412));
+    asm volatile(ALTERNATIVE("nop",
+                             "dmb sy",
+                             ARM64_WORKAROUND_1508412,
+                             CONFIG_ARM64_ERRATUM_1508412));
 
     return par_el1;
 }
@@ -42,5 +46,3 @@ static inline register_t read_sysreg_par(void)
  * indent-tabs-mode: nil
  * End:
  */
-
-

@@ -32,7 +32,7 @@
 #include "../../../common/xz/crc32.c"
 
 /* Constant to indicate "Xen" in unicode u16 format */
-static const CHAR16 xen_efi_fw_vendor[] = {0x0058, 0x0065, 0x006E, 0x0000};
+static const CHAR16 xen_efi_fw_vendor[] = { 0x0058, 0x0065, 0x006E, 0x0000 };
 
 size_t __init estimate_efi_size(unsigned int mem_nr_banks)
 {
@@ -61,12 +61,12 @@ void __init acpi_create_efi_system_table(struct domain *d,
     EFI_CONFIGURATION_TABLE *efi_conf_tbl;
     EFI_SYSTEM_TABLE *efi_sys_tbl;
 
-    table_addr = d->arch.efi_acpi_gpa
-                 + acpi_get_table_offset(tbl_add, TBL_EFIT);
-    table_size = sizeof(EFI_SYSTEM_TABLE) + sizeof(EFI_CONFIGURATION_TABLE)
-                 + sizeof(xen_efi_fw_vendor);
-    base_ptr = d->arch.efi_acpi_table
-               + acpi_get_table_offset(tbl_add, TBL_EFIT);
+    table_addr = d->arch.efi_acpi_gpa +
+                 acpi_get_table_offset(tbl_add, TBL_EFIT);
+    table_size = sizeof(EFI_SYSTEM_TABLE) + sizeof(EFI_CONFIGURATION_TABLE) +
+                 sizeof(xen_efi_fw_vendor);
+    base_ptr = d->arch.efi_acpi_table +
+               acpi_get_table_offset(tbl_add, TBL_EFIT);
     efi_sys_tbl = (EFI_SYSTEM_TABLE *)base_ptr;
 
     efi_sys_tbl->Hdr.Signature = EFI_SYSTEM_TABLE_SIGNATURE;
@@ -84,11 +84,11 @@ void __init acpi_create_efi_system_table(struct domain *d,
     efi_conf_tbl = (EFI_CONFIGURATION_TABLE *)(base_ptr + offset);
     efi_conf_tbl->VendorGuid = (EFI_GUID)ACPI_20_TABLE_GUID;
     efi_conf_tbl->VendorTable = (VOID *)tbl_add[TBL_RSDP].start;
-    efi_sys_tbl->ConfigurationTable = (EFI_CONFIGURATION_TABLE *)(table_addr
-                                                                  + offset);
+    efi_sys_tbl->ConfigurationTable =
+        (EFI_CONFIGURATION_TABLE *)(table_addr + offset);
     xz_crc32_init();
-    efi_sys_tbl->Hdr.CRC32 = xz_crc32((uint8_t *)efi_sys_tbl,
-                                      efi_sys_tbl->Hdr.HeaderSize, 0);
+    efi_sys_tbl->Hdr.CRC32 =
+        xz_crc32((uint8_t *)efi_sys_tbl, efi_sys_tbl->Hdr.HeaderSize, 0);
 
     tbl_add[TBL_EFIT].start = table_addr;
     tbl_add[TBL_EFIT].size = table_size;
@@ -115,26 +115,31 @@ void __init acpi_create_efi_mmap_table(struct domain *d,
     unsigned int i;
     u8 *base_ptr;
 
-    base_ptr = d->arch.efi_acpi_table
-               + acpi_get_table_offset(tbl_add, TBL_MMAP);
+    base_ptr = d->arch.efi_acpi_table +
+               acpi_get_table_offset(tbl_add, TBL_MMAP);
     desc = (EFI_MEMORY_DESCRIPTOR *)base_ptr;
 
     for ( i = 0; i < mem->nr_banks; i++, desc++ )
-        fill_efi_memory_descriptor(desc, EfiConventionalMemory,
-                                   mem->bank[i].start, mem->bank[i].size);
+        fill_efi_memory_descriptor(desc,
+                                   EfiConventionalMemory,
+                                   mem->bank[i].start,
+                                   mem->bank[i].size);
 
     for ( i = 0; i < acpi->nr_banks; i++, desc++ )
-        fill_efi_memory_descriptor(desc, EfiACPIReclaimMemory,
+        fill_efi_memory_descriptor(desc,
+                                   EfiACPIReclaimMemory,
                                    acpi->bank[i].start,
                                    acpi->bank[i].size);
 
-    fill_efi_memory_descriptor(desc, EfiACPIReclaimMemory,
-                               d->arch.efi_acpi_gpa, d->arch.efi_acpi_len);
+    fill_efi_memory_descriptor(desc,
+                               EfiACPIReclaimMemory,
+                               d->arch.efi_acpi_gpa,
+                               d->arch.efi_acpi_len);
 
-    tbl_add[TBL_MMAP].start = d->arch.efi_acpi_gpa
-                              + acpi_get_table_offset(tbl_add, TBL_MMAP);
-    tbl_add[TBL_MMAP].size = sizeof(EFI_MEMORY_DESCRIPTOR)
-                             * (mem->nr_banks + acpi->nr_banks + 1);
+    tbl_add[TBL_MMAP].start = d->arch.efi_acpi_gpa +
+                              acpi_get_table_offset(tbl_add, TBL_MMAP);
+    tbl_add[TBL_MMAP].size = sizeof(EFI_MEMORY_DESCRIPTOR) *
+                             (mem->nr_banks + acpi->nr_banks + 1);
 }
 
 /* Create /hypervisor/uefi node for efi properties. */
@@ -146,22 +151,21 @@ int __init acpi_make_efi_nodes(void *fdt, struct membank tbl_add[])
     if ( res )
         return res;
 
-    res = fdt_property_u64(fdt, "xen,uefi-system-table",
-                           tbl_add[TBL_EFIT].start);
+    res =
+        fdt_property_u64(fdt, "xen,uefi-system-table", tbl_add[TBL_EFIT].start);
     if ( res )
         return res;
 
-    res = fdt_property_u64(fdt, "xen,uefi-mmap-start",
-                           tbl_add[TBL_MMAP].start);
+    res = fdt_property_u64(fdt, "xen,uefi-mmap-start", tbl_add[TBL_MMAP].start);
     if ( res )
         return res;
 
-    res = fdt_property_u32(fdt, "xen,uefi-mmap-size",
-                           tbl_add[TBL_MMAP].size);
+    res = fdt_property_u32(fdt, "xen,uefi-mmap-size", tbl_add[TBL_MMAP].size);
     if ( res )
         return res;
 
-    res = fdt_property_u32(fdt, "xen,uefi-mmap-desc-size",
+    res = fdt_property_u32(fdt,
+                           "xen,uefi-mmap-desc-size",
                            sizeof(EFI_MEMORY_DESCRIPTOR));
     if ( res )
         return res;

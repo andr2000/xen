@@ -34,7 +34,7 @@ struct sk_buff;
 
 /* Auxiliary data to use in generating the audit record. */
 struct avc_audit_data {
-    char    type;
+    char type;
 #define AVC_AUDIT_DATA_NONE  0
 #define AVC_AUDIT_DATA_DEV   1
 #define AVC_AUDIT_DATA_IRQ   2
@@ -43,31 +43,34 @@ struct avc_audit_data {
 #define AVC_AUDIT_DATA_DTDEV 5
     const struct domain *sdom;
     const struct domain *tdom;
+
     union {
         unsigned long device;
         int irq;
+
         struct {
             unsigned long start;
             unsigned long end;
         } range;
+
         struct {
             unsigned long pte;
             unsigned long mfn;
         } memory;
+
         const char *dtdev;
     };
 };
 
 /* Initialize an AVC audit data structure. */
-#define AVC_AUDIT_DATA_INIT(_d,_t) \
+#define AVC_AUDIT_DATA_INIT(_d, _t) \
         { memset((_d), 0, sizeof(struct avc_audit_data)); \
          (_d)->type = AVC_AUDIT_DATA_##_t; }
 
 /*
  * AVC statistics
  */
-struct avc_cache_stats
-{
+struct avc_cache_stats {
     unsigned int lookups;
     unsigned int hits;
     unsigned int misses;
@@ -83,13 +86,14 @@ struct avc_cache_stats
 void avc_init(void);
 
 void avc_audit(u32 ssid, u32 tsid, u16 tclass, u32 requested,
-        struct av_decision *avd, int result, struct avc_audit_data *auditdata);
+               struct av_decision *avd, int result,
+               struct avc_audit_data *auditdata);
 
 int avc_has_perm_noaudit(u32 ssid, u32 tsid, u16 tclass, u32 requested,
-                                                     struct av_decision *avd);
+                         struct av_decision *avd);
 
 int avc_has_perm(u32 ssid, u32 tsid, u16 tclass, u32 requested,
-                                             struct avc_audit_data *auditdata);
+                 struct avc_audit_data *auditdata);
 
 /* Exported to selinuxfs */
 struct xen_flask_hash_stats;
@@ -101,4 +105,3 @@ DECLARE_PER_CPU(struct avc_cache_stats, avc_cache_stats);
 #endif
 
 #endif /* _FLASK_AVC_H_ */
-

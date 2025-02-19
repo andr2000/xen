@@ -18,8 +18,8 @@
  * Adds a notifier to a raw notifier chain.
  * All locking must be provided by the caller.
  */
-void __init notifier_chain_register(
-    struct notifier_head *nh, struct notifier_block *n)
+void __init notifier_chain_register(struct notifier_head *nh,
+                                    struct notifier_block *n)
 {
     struct list_head *chain = &nh->head;
     struct notifier_block *nb;
@@ -43,8 +43,8 @@ void __init notifier_chain_register(
  * Removes a notifier from a raw notifier chain.
  * All locking must be provided by the caller.
  */
-void __init notifier_chain_unregister(
-    struct notifier_head *nh, struct notifier_block *n)
+void __init notifier_chain_unregister(struct notifier_head *nh,
+                                      struct notifier_block *n)
 {
     list_del(&n->chain);
 }
@@ -65,9 +65,8 @@ void __init notifier_chain_unregister(
  * the notifier function which halted execution. Otherwise the return value is
  * the return value of the last notifier function called.
  */
-int notifier_call_chain(
-    struct notifier_head *nh, unsigned long val, void *v,
-    struct notifier_block **pcursor)
+int notifier_call_chain(struct notifier_head *nh, unsigned long val, void *v,
+                        struct notifier_block **pcursor)
 {
     int ret = NOTIFY_DONE;
     struct list_head *cursor;
@@ -76,7 +75,8 @@ int notifier_call_chain(
 
     cursor = pcursor && *pcursor ? &(*pcursor)->chain : &nh->head;
 
-    do {
+    do
+    {
         cursor = reverse ? cursor->prev : cursor->next;
         if ( cursor == &nh->head )
             break;

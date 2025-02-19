@@ -20,6 +20,7 @@
  * @arg == pointer to physdev_eoi structure.
  */
 #define PHYSDEVOP_eoi                   12
+
 struct physdev_eoi {
     /* IN */
     uint32_t irq;
@@ -43,6 +44,7 @@ DEFINE_XEN_GUEST_HANDLE(physdev_eoi_t);
  * Xen's PIRQ value.
  */
 #define PHYSDEVOP_pirq_eoi_gmfn_v2       28
+
 struct physdev_pirq_eoi_gmfn {
     /* IN */
     xen_pfn_t gmfn;
@@ -55,6 +57,7 @@ DEFINE_XEN_GUEST_HANDLE(physdev_pirq_eoi_gmfn_t);
  * @arg == pointer to physdev_irq_status_query structure.
  */
 #define PHYSDEVOP_irq_status_query       5
+
 struct physdev_irq_status_query {
     /* IN */
     uint32_t irq;
@@ -66,17 +69,18 @@ DEFINE_XEN_GUEST_HANDLE(physdev_irq_status_query_t);
 
 /* Need to call PHYSDEVOP_eoi when the IRQ has been serviced? */
 #define _XENIRQSTAT_needs_eoi   (0)
-#define  XENIRQSTAT_needs_eoi   (1U<<_XENIRQSTAT_needs_eoi)
+#define XENIRQSTAT_needs_eoi   (1U<<_XENIRQSTAT_needs_eoi)
 
 /* IRQ shared by multiple guests? */
 #define _XENIRQSTAT_shared      (1)
-#define  XENIRQSTAT_shared      (1U<<_XENIRQSTAT_shared)
+#define XENIRQSTAT_shared      (1U<<_XENIRQSTAT_shared)
 
 /*
  * Set the current VCPU's I/O privilege level.
  * @arg == pointer to physdev_set_iopl structure.
  */
 #define PHYSDEVOP_set_iopl               6
+
 struct physdev_set_iopl {
     /* IN */
     uint32_t iopl;
@@ -92,6 +96,7 @@ DEFINE_XEN_GUEST_HANDLE(physdev_set_iopl_t);
  * reads 2 bytes from @bitmap, which might be one byte beyond @nr_ports.
  */
 #define PHYSDEVOP_set_iobitmap           7
+
 struct physdev_set_iobitmap {
     /* IN */
 #if __XEN_INTERFACE_VERSION__ >= 0x00030205
@@ -110,6 +115,7 @@ DEFINE_XEN_GUEST_HANDLE(physdev_set_iobitmap_t);
  */
 #define PHYSDEVOP_apic_read              8
 #define PHYSDEVOP_apic_write             9
+
 struct physdev_apic {
     /* IN */
     unsigned long apic_physbase;
@@ -126,6 +132,7 @@ DEFINE_XEN_GUEST_HANDLE(physdev_apic_t);
  */
 #define PHYSDEVOP_alloc_irq_vector      10
 #define PHYSDEVOP_free_irq_vector       11
+
 struct physdev_irq {
     /* IN */
     uint32_t irq;
@@ -142,6 +149,7 @@ DEFINE_XEN_GUEST_HANDLE(physdev_irq_t);
 #define MAP_PIRQ_TYPE_MULTI_MSI         0x4
 
 #define PHYSDEVOP_map_pirq               13
+
 struct physdev_map_pirq {
     domid_t domid;
     /* IN */
@@ -163,6 +171,7 @@ typedef struct physdev_map_pirq physdev_map_pirq_t;
 DEFINE_XEN_GUEST_HANDLE(physdev_map_pirq_t);
 
 #define PHYSDEVOP_unmap_pirq             14
+
 struct physdev_unmap_pirq {
     domid_t domid;
     /* IN */
@@ -174,6 +183,7 @@ DEFINE_XEN_GUEST_HANDLE(physdev_unmap_pirq_t);
 
 #define PHYSDEVOP_manage_pci_add         15
 #define PHYSDEVOP_manage_pci_remove      16
+
 struct physdev_manage_pci {
     /* IN */
     uint8_t bus;
@@ -184,6 +194,7 @@ typedef struct physdev_manage_pci physdev_manage_pci_t;
 DEFINE_XEN_GUEST_HANDLE(physdev_manage_pci_t);
 
 #define PHYSDEVOP_restore_msi            19
+
 struct physdev_restore_msi {
     /* IN */
     uint8_t bus;
@@ -193,12 +204,14 @@ typedef struct physdev_restore_msi physdev_restore_msi_t;
 DEFINE_XEN_GUEST_HANDLE(physdev_restore_msi_t);
 
 #define PHYSDEVOP_manage_pci_add_ext     20
+
 struct physdev_manage_pci_ext {
     /* IN */
     uint8_t bus;
     uint8_t devfn;
     uint32_t is_extfn;
     uint32_t is_virtfn;
+
     struct {
         uint8_t bus;
         uint8_t devfn;
@@ -214,18 +227,20 @@ DEFINE_XEN_GUEST_HANDLE(physdev_manage_pci_ext_t);
  */
 struct physdev_op {
     uint32_t cmd;
+
     union {
         physdev_irq_status_query_t irq_status_query;
-        physdev_set_iopl_t         set_iopl;
-        physdev_set_iobitmap_t     set_iobitmap;
-        physdev_apic_t             apic_op;
-        physdev_irq_t              irq_op;
+        physdev_set_iopl_t set_iopl;
+        physdev_set_iobitmap_t set_iobitmap;
+        physdev_apic_t apic_op;
+        physdev_irq_t irq_op;
     } u;
 };
 typedef struct physdev_op physdev_op_t;
 DEFINE_XEN_GUEST_HANDLE(physdev_op_t);
 
 #define PHYSDEVOP_setup_gsi    21
+
 struct physdev_setup_gsi {
     int gsi;
     /* IN */
@@ -243,6 +258,7 @@ DEFINE_XEN_GUEST_HANDLE(physdev_setup_gsi_t);
 /* type is MAP_PIRQ_TYPE_GSI or MAP_PIRQ_TYPE_MSI
  * the hypercall returns a free pirq */
 #define PHYSDEVOP_get_free_pirq    23
+
 struct physdev_get_free_pirq {
     /* IN */
     int type;
@@ -256,6 +272,7 @@ DEFINE_XEN_GUEST_HANDLE(physdev_get_free_pirq_t);
 #define XEN_PCI_MMCFG_RESERVED         0x1
 
 #define PHYSDEVOP_pci_mmcfg_reserved    24
+
 struct physdev_pci_mmcfg_reserved {
     uint64_t address;
     uint16_t segment;
@@ -271,16 +288,19 @@ DEFINE_XEN_GUEST_HANDLE(physdev_pci_mmcfg_reserved_t);
 #define XEN_PCI_DEV_PXM                0x4
 
 #define PHYSDEVOP_pci_device_add        25
+
 struct physdev_pci_device_add {
     /* IN */
     uint16_t seg;
     uint8_t bus;
     uint8_t devfn;
     uint32_t flags;
+
     struct {
         uint8_t bus;
         uint8_t devfn;
     } physfn;
+
     /*
      * Optional parameters array.
      * First element ([0]) is PXM domain associated with the device (if
@@ -332,10 +352,12 @@ struct pci_device_reset {
 #define PHYSDEVOP_DBGP_BUS_PCI          1
 
 #define PHYSDEVOP_dbgp_op               29
+
 struct physdev_dbgp_op {
     /* IN */
     uint8_t op;
     uint8_t bus;
+
     union {
         physdev_pci_device_t pci;
     } u;

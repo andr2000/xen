@@ -125,7 +125,8 @@ static void __init __maybe_unused build_assertions(void)
 #ifdef CONFIG_ARM_32
     CHECK_SAME_SLOT(first, TEMPORARY_XEN_VIRT_START, DOMHEAP_VIRT_START);
     CHECK_DIFFERENT_SLOT(first, XEN_VIRT_START, TEMPORARY_XEN_VIRT_START);
-    CHECK_SAME_SLOT(first, TEMPORARY_XEN_VIRT_START,
+    CHECK_SAME_SLOT(first,
+                    TEMPORARY_XEN_VIRT_START,
                     TEMPORARY_FIXMAP_VIRT_START);
     CHECK_SAME_SLOT(second, XEN_VIRT_START, TEMPORARY_XEN_VIRT_START);
     CHECK_SAME_SLOT(second, FIXMAP_VIRT_START, TEMPORARY_FIXMAP_VIRT_START);
@@ -149,7 +150,7 @@ lpae_t __init pte_of_xenaddr(vaddr_t va)
     return mfn_to_xen_entry(virt_to_mfn(va), MT_NORMAL);
 }
 
-void * __init early_fdt_map(paddr_t fdt_paddr)
+void *__init early_fdt_map(paddr_t fdt_paddr)
 {
     /* We are using 2MB superpage for mapping the FDT */
     paddr_t base_paddr = fdt_paddr & SECOND_MASK;
@@ -172,12 +173,12 @@ void * __init early_fdt_map(paddr_t fdt_paddr)
     /* The FDT is mapped using 2MB superpage */
     BUILD_BUG_ON(BOOT_FDT_VIRT_START % SZ_2M);
 
-    rc = map_pages_to_xen(BOOT_FDT_VIRT_START, maddr_to_mfn(base_paddr),
+    rc = map_pages_to_xen(BOOT_FDT_VIRT_START,
+                          maddr_to_mfn(base_paddr),
                           SZ_2M >> PAGE_SHIFT,
                           PAGE_HYPERVISOR_RO | _PAGE_BLOCK);
     if ( rc )
         panic("Unable to map the device-tree.\n");
-
 
     offset = fdt_paddr % SECOND_SIZE;
     fdt_virt = (void *)BOOT_FDT_VIRT_START + offset;
@@ -238,9 +239,8 @@ static void xen_pt_enforce_wnx(void)
  * For non-recursive callers first_mod should normally be 0 (all
  * modules and Xen itself) or 1 (all modules but not Xen).
  */
-paddr_t __init consider_modules(paddr_t s, paddr_t e,
-                                uint32_t size, paddr_t align,
-                                int first_mod)
+paddr_t __init consider_modules(paddr_t s, paddr_t e, uint32_t size,
+                                paddr_t align, int first_mod)
 {
     const struct membanks *reserved_mem = bootinfo_get_reserved_mem();
 #ifdef CONFIG_STATIC_SHM
@@ -250,10 +250,10 @@ paddr_t __init consider_modules(paddr_t s, paddr_t e,
     int i;
     int nr;
 
-    s = (s+align-1) & ~(align-1);
-    e = e & ~(align-1);
+    s = (s + align - 1) & ~(align - 1);
+    e = e & ~(align - 1);
 
-    if ( s > e ||  e - s < size )
+    if ( s > e || e - s < size )
         return 0;
 
     /* First check the boot modules */
@@ -264,11 +264,11 @@ paddr_t __init consider_modules(paddr_t s, paddr_t e,
 
         if ( s < mod_e && mod_s < e )
         {
-            mod_e = consider_modules(mod_e, e, size, align, i+1);
+            mod_e = consider_modules(mod_e, e, size, align, i + 1);
             if ( mod_e )
                 return mod_e;
 
-            return consider_modules(s, mod_s, size, align, i+1);
+            return consider_modules(s, mod_s, size, align, i + 1);
         }
     }
 
@@ -331,7 +331,7 @@ static void __init create_llc_coloring_mappings(void)
     struct bootmodule *xen_bootmodule = boot_module_find_by_kind(BOOTMOD_XEN);
     mfn_t start_mfn = maddr_to_mfn(xen_bootmodule->start), mfn;
 
-    for_each_xen_colored_mfn ( start_mfn, mfn, i )
+    for_each_xen_colored_mfn(start_mfn, mfn, i)
     {
         pte = mfn_to_xen_entry(mfn, MT_NORMAL);
         pte.pt.table = 1; /* level 3 mappings always have this bit set */
@@ -342,9 +342,9 @@ static void __init create_llc_coloring_mappings(void)
     {
         vaddr_t va = BOOT_RELOC_VIRT_START + (i << XEN_PT_LEVEL_SHIFT(2));
 
-        pte = mfn_to_xen_entry(virt_to_mfn(xen_xenmap +
-                                           i * XEN_PT_LPAE_ENTRIES),
-                               MT_NORMAL);
+        pte =
+            mfn_to_xen_entry(virt_to_mfn(xen_xenmap + i * XEN_PT_LPAE_ENTRIES),
+                             MT_NORMAL);
         pte.pt.table = 1;
         write_pte(&boot_second[second_table_offset(va)], pte);
     }
@@ -376,9 +376,9 @@ void __init setup_pagetables(void)
     pte.pt.xn = 0;
     xen_pgtable[zeroeth_table_offset(XEN_VIRT_START)] = pte;
 
-    p = (void *) xen_first;
+    p = (void *)xen_first;
 #else
-    p = (void *) cpu0_pgtable;
+    p = (void *)cpu0_pgtable;
 #endif
 
     /* Map xen second level page-table */
@@ -485,7 +485,8 @@ void free_init_memory(void)
     int rc;
 
     rc = modify_xen_mappings((unsigned long)__init_begin,
-                             (unsigned long)__init_end, PAGE_HYPERVISOR_RW);
+                             (unsigned long)__init_end,
+                             PAGE_HYPERVISOR_RW);
     if ( rc )
         panic("Unable to map RW the init section (rc = %d)\n", rc);
 
@@ -514,7 +515,7 @@ void free_init_memory(void)
     {
         init_domheap_pages(pa, pa + len);
         printk("Freed %ldkB init memory.\n",
-               (long)(__init_end-__init_begin) >> 10);
+               (long)(__init_end - __init_begin) >> 10);
     }
 }
 
@@ -528,7 +529,8 @@ void __init copy_from_paddr(void *dst, paddr_t paddr, unsigned long len)
 {
     void *src = (void *)FIXMAP_ADDR(FIX_MISC);
 
-    while (len) {
+    while ( len )
+    {
         unsigned long l, s;
 
         s = paddr & (PAGE_SIZE - 1);

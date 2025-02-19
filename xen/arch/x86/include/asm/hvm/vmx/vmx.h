@@ -21,23 +21,24 @@ extern int8_t opt_ept_exec_sp;
 
 typedef union {
     struct {
-        u64 r       :   1,  /* bit 0 - Read permission */
-        w           :   1,  /* bit 1 - Write permission */
-        x           :   1,  /* bit 2 - Execute permission */
-        emt         :   3,  /* bits 5:3 - EPT Memory type */
-        ipat        :   1,  /* bit 6 - Ignore PAT memory type */
-        sp          :   1,  /* bit 7 - Is this a superpage? */
-        a           :   1,  /* bit 8 - Access bit */
-        d           :   1,  /* bit 9 - Dirty bit */
-        recalc      :   1,  /* bit 10 - Software available 1 */
-        snp         :   1,  /* bit 11 - VT-d snoop control in shared
+        u64 r:1, /* bit 0 - Read permission */
+            w:1, /* bit 1 - Write permission */
+            x:1, /* bit 2 - Execute permission */
+            emt:3, /* bits 5:3 - EPT Memory type */
+            ipat:1, /* bit 6 - Ignore PAT memory type */
+            sp:1, /* bit 7 - Is this a superpage? */
+            a:1, /* bit 8 - Access bit */
+            d:1, /* bit 9 - Dirty bit */
+            recalc:1, /* bit 10 - Software available 1 */
+            snp:1, /* bit 11 - VT-d snoop control in shared
                                EPT/VT-d usage */
-        mfn         :   40, /* bits 51:12 - Machine physical frame number */
-        sa_p2mt     :   6,  /* bits 57:52 - Software available 2 */
-        pw          :   1,  /* bit 58 - Paging-write access */
-        access      :   4,  /* bits 62:59 - p2m_access_t */
-        suppress_ve :   1;  /* bit 63 - suppress #VE */
+            mfn:40, /* bits 51:12 - Machine physical frame number */
+            sa_p2mt:6, /* bits 57:52 - Software available 2 */
+            pw:1, /* bit 58 - Paging-write access */
+            access:4, /* bits 62:59 - p2m_access_t */
+            suppress_ve:1; /* bit 63 - suppress #VE */
     };
+
     u64 epte;
 } ept_entry_t;
 
@@ -47,14 +48,14 @@ typedef struct {
 } ept_walk_t;
 
 typedef enum {
-    ept_access_n     = 0, /* No access permissions allowed */
-    ept_access_r     = 1, /* Read only */
-    ept_access_w     = 2, /* Write only */
-    ept_access_rw    = 3, /* Read & Write */
-    ept_access_x     = 4, /* Exec Only */
-    ept_access_rx    = 5, /* Read & Exec */
-    ept_access_wx    = 6, /* Write & Exec*/
-    ept_access_all   = 7, /* Full permissions */
+    ept_access_n = 0, /* No access permissions allowed */
+    ept_access_r = 1, /* Read only */
+    ept_access_w = 2, /* Write only */
+    ept_access_rw = 3, /* Read & Write */
+    ept_access_x = 4, /* Exec Only */
+    ept_access_rx = 5, /* Read & Exec */
+    ept_access_wx = 6, /* Write & Exec*/
+    ept_access_all = 7, /* Full permissions */
 } ept_access_t;
 
 #define EPT_TABLE_ORDER         9
@@ -84,6 +85,7 @@ void vmx_update_tertiary_exec_control(const struct vcpu *v);
 
 #define POSTED_INTR_ON  0
 #define POSTED_INTR_SN  1
+
 static inline int pi_test_and_set_pir(uint8_t vector, struct pi_desc *pi_desc)
 {
     return test_and_set_bit(vector, pi_desc->pir);
@@ -230,17 +232,16 @@ enum {
     VMX_CR_ACCESS_TYPE_CLTS,
     VMX_CR_ACCESS_TYPE_LMSW,
 };
+
 typedef union cr_access_qual {
     unsigned long raw;
+
     struct {
-        uint16_t cr:4,
-                 access_type:2,  /* VMX_CR_ACCESS_TYPE_* */
-                 lmsw_op_type:1, /* 0 => reg, 1 => mem   */
-                 :1,
-                 gpr:4,
-                 :4;
+        uint16_t cr:4, access_type:2, /* VMX_CR_ACCESS_TYPE_* */
+            lmsw_op_type:1, /* 0 => reg, 1 => mem   */
+            :1, gpr:4, :4;
         uint16_t lmsw_data;
-        uint32_t :32;
+        uint32_t:32;
     };
 } __transparent__ cr_access_qual_t;
 
@@ -311,98 +312,90 @@ extern uint8_t posted_intr_vector;
 #define INVVPID_SINGLE_CONTEXT_RETAINING_GLOBAL 3
 
 #ifdef HAVE_AS_VMX
-# define GAS_VMX_OP(yes, no) yes
+#define GAS_VMX_OP(yes, no) yes
 #else
-# define GAS_VMX_OP(yes, no) no
+#define GAS_VMX_OP(yes, no) no
 #endif
 
 static always_inline void __vmptrld(u64 addr)
 {
-    asm volatile (
+    asm volatile(
 #ifdef HAVE_AS_VMX
-                   "vmptrld %0\n"
+        "vmptrld %0\n"
 #else
-                   VMPTRLD_OPCODE MODRM_EAX_06
+        VMPTRLD_OPCODE MODRM_EAX_06
 #endif
-                   /* CF==1 or ZF==1 --> BUG() */
-                   UNLIKELY_START(be, vmptrld)
-                   _ASM_BUGFRAME_TEXT(0)
-                   UNLIKELY_END_SECTION
-                   :
+        /* CF==1 or ZF==1 --> BUG() */
+        UNLIKELY_START(be, vmptrld) _ASM_BUGFRAME_TEXT(0) UNLIKELY_END_SECTION
+        :
 #ifdef HAVE_AS_VMX
-                   : "m" (addr),
+        : "m"(addr),
 #else
-                   : "a" (&addr),
+        : "a"(&addr),
 #endif
-                     _ASM_BUGFRAME_INFO(BUGFRAME_bug, __LINE__, __FILE__, 0)
-                   : "memory");
+          _ASM_BUGFRAME_INFO(BUGFRAME_bug, __LINE__, __FILE__, 0)
+        : "memory");
 }
 
 static always_inline void __vmpclear(u64 addr)
 {
-    asm volatile (
+    asm volatile(
 #ifdef HAVE_AS_VMX
-                   "vmclear %0\n"
+        "vmclear %0\n"
 #else
-                   VMCLEAR_OPCODE MODRM_EAX_06
+        VMCLEAR_OPCODE MODRM_EAX_06
 #endif
-                   /* CF==1 or ZF==1 --> BUG() */
-                   UNLIKELY_START(be, vmclear)
-                   _ASM_BUGFRAME_TEXT(0)
-                   UNLIKELY_END_SECTION
-                   :
+        /* CF==1 or ZF==1 --> BUG() */
+        UNLIKELY_START(be, vmclear) _ASM_BUGFRAME_TEXT(0) UNLIKELY_END_SECTION
+        :
 #ifdef HAVE_AS_VMX
-                   : "m" (addr),
+        : "m"(addr),
 #else
-                   : "a" (&addr),
+        : "a"(&addr),
 #endif
-                     _ASM_BUGFRAME_INFO(BUGFRAME_bug, __LINE__, __FILE__, 0)
-                   : "memory");
+          _ASM_BUGFRAME_INFO(BUGFRAME_bug, __LINE__, __FILE__, 0)
+        : "memory");
 }
 
 static always_inline void __vmread(unsigned long field, unsigned long *value)
 {
-    asm volatile (
+    asm volatile(
 #ifdef HAVE_AS_VMX
-                   "vmread %1, %0\n\t"
+        "vmread %1, %0\n\t"
 #else
-                   VMREAD_OPCODE MODRM_EAX_ECX
+        VMREAD_OPCODE MODRM_EAX_ECX
 #endif
-                   /* CF==1 or ZF==1 --> BUG() */
-                   UNLIKELY_START(be, vmread)
-                   _ASM_BUGFRAME_TEXT(0)
-                   UNLIKELY_END_SECTION
+        /* CF==1 or ZF==1 --> BUG() */
+        UNLIKELY_START(be, vmread) _ASM_BUGFRAME_TEXT(0) UNLIKELY_END_SECTION
 #ifdef HAVE_AS_VMX
-                   : "=rm" (*value)
-                   : "r" (field),
+        : "=rm"(*value)
+        : "r"(field),
 #else
-                   : "=c" (*value)
-                   : "a" (field),
+        : "=c"(*value)
+        : "a"(field),
 #endif
-                     _ASM_BUGFRAME_INFO(BUGFRAME_bug, __LINE__, __FILE__, 0)
-        );
+          _ASM_BUGFRAME_INFO(BUGFRAME_bug, __LINE__, __FILE__, 0));
 }
 
 static always_inline void __vmwrite(unsigned long field, unsigned long value)
 {
-    asm volatile (
+    asm volatile(
 #ifdef HAVE_AS_VMX
-                   "vmwrite %1, %0\n"
+        "vmwrite %1, %0\n"
 #else
-                   VMWRITE_OPCODE MODRM_EAX_ECX
+        VMWRITE_OPCODE MODRM_EAX_ECX
 #endif
-                   /* CF==1 or ZF==1 --> BUG() */
-                   UNLIKELY_START(be, vmwrite)
-                   _ASM_BUGFRAME_TEXT(0)
-                   UNLIKELY_END_SECTION
-                   :
+        /* CF==1 or ZF==1 --> BUG() */
+        UNLIKELY_START(be, vmwrite) _ASM_BUGFRAME_TEXT(0) UNLIKELY_END_SECTION
+        :
 #ifdef HAVE_AS_VMX
-                   : "r" (field) , "rm" (value),
+        : "r"(field),
+          "rm"(value),
 #else
-                   : "a" (field) , "c" (value),
+        : "a"(field),
+          "c"(value),
 #endif
-                     _ASM_BUGFRAME_INFO(BUGFRAME_bug, __LINE__, __FILE__, 0)
-        );
+          _ASM_BUGFRAME_INFO(BUGFRAME_bug, __LINE__, __FILE__, 0));
 }
 
 static inline enum vmx_insn_errno vmread_safe(unsigned long field,
@@ -411,14 +404,14 @@ static inline enum vmx_insn_errno vmread_safe(unsigned long field,
     unsigned long ret = VMX_INSN_SUCCEED;
     bool fail_invalid, fail_valid;
 
-    asm volatile ( GAS_VMX_OP("vmread %[field], %[value]\n\t",
-                              VMREAD_OPCODE MODRM_EAX_ECX)
-                   ASM_FLAG_OUT(, "setc %[invalid]\n\t")
-                   ASM_FLAG_OUT(, "setz %[valid]\n\t")
-                   : ASM_FLAG_OUT("=@ccc", [invalid] "=rm") (fail_invalid),
-                     ASM_FLAG_OUT("=@ccz", [valid] "=rm") (fail_valid),
-                     [value] GAS_VMX_OP("=rm", "=c") (*value)
-                   : [field] GAS_VMX_OP("r", "a") (field));
+    asm volatile(GAS_VMX_OP("vmread %[field], %[value]\n\t",
+                            VMREAD_OPCODE MODRM_EAX_ECX)
+                     ASM_FLAG_OUT(, "setc %[invalid]\n\t")
+                         ASM_FLAG_OUT(, "setz %[valid]\n\t")
+                 : ASM_FLAG_OUT("=@ccc", [invalid] "=rm")(fail_invalid),
+                   ASM_FLAG_OUT("=@ccz", [valid] "=rm")(fail_valid),
+                   [value] GAS_VMX_OP("=rm", "=c")(*value)
+                 : [field] GAS_VMX_OP("r", "a")(field));
 
     if ( unlikely(fail_invalid) )
         ret = VMX_INSN_FAIL_INVALID;
@@ -434,14 +427,14 @@ static inline enum vmx_insn_errno vmwrite_safe(unsigned long field,
     unsigned long ret = VMX_INSN_SUCCEED;
     bool fail_invalid, fail_valid;
 
-    asm volatile ( GAS_VMX_OP("vmwrite %[value], %[field]\n\t",
-                              VMWRITE_OPCODE MODRM_EAX_ECX)
-                   ASM_FLAG_OUT(, "setc %[invalid]\n\t")
-                   ASM_FLAG_OUT(, "setz %[valid]\n\t")
-                   : ASM_FLAG_OUT("=@ccc", [invalid] "=rm") (fail_invalid),
-                     ASM_FLAG_OUT("=@ccz", [valid] "=rm") (fail_valid)
-                   : [field] GAS_VMX_OP("r", "a") (field),
-                     [value] GAS_VMX_OP("rm", "c") (value));
+    asm volatile(GAS_VMX_OP("vmwrite %[value], %[field]\n\t",
+                            VMWRITE_OPCODE MODRM_EAX_ECX)
+                     ASM_FLAG_OUT(, "setc %[invalid]\n\t")
+                         ASM_FLAG_OUT(, "setz %[valid]\n\t")
+                 : ASM_FLAG_OUT("=@ccc", [invalid] "=rm")(fail_invalid),
+                   ASM_FLAG_OUT("=@ccz", [valid] "=rm")(fail_valid)
+                 : [field] GAS_VMX_OP("r", "a")(field),
+                   [value] GAS_VMX_OP("rm", "c")(value));
 
     if ( unlikely(fail_invalid) )
         ret = VMX_INSN_FAIL_INVALID;
@@ -465,24 +458,24 @@ static always_inline void __invept(unsigned long type, uint64_t eptp)
          !cpu_has_vmx_ept_invept_single_context )
         type = INVEPT_ALL_CONTEXT;
 
-    asm volatile (
+    asm volatile(
 #ifdef HAVE_AS_EPT
-                   "invept %0, %1\n"
+        "invept %0, %1\n"
 #else
-                   INVEPT_OPCODE MODRM_EAX_08
+        INVEPT_OPCODE MODRM_EAX_08
 #endif
-                   /* CF==1 or ZF==1 --> BUG() */
-                   UNLIKELY_START(be, invept)
-                   _ASM_BUGFRAME_TEXT(0)
-                   UNLIKELY_END_SECTION
-                   :
+        /* CF==1 or ZF==1 --> BUG() */
+        UNLIKELY_START(be, invept) _ASM_BUGFRAME_TEXT(0) UNLIKELY_END_SECTION
+        :
 #ifdef HAVE_AS_EPT
-                   : "m" (operand), "r" (type),
+        : "m"(operand),
+          "r"(type),
 #else
-                   : "a" (&operand), "c" (type),
+        : "a"(&operand),
+          "c"(type),
 #endif
-                     _ASM_BUGFRAME_INFO(BUGFRAME_bug, __LINE__, __FILE__, 0)
-                   : "memory" );
+          _ASM_BUGFRAME_INFO(BUGFRAME_bug, __LINE__, __FILE__, 0)
+        : "memory");
 }
 
 static always_inline void __invvpid(unsigned long type, u16 vpid, u64 gva)
@@ -491,29 +484,28 @@ static always_inline void __invvpid(unsigned long type, u16 vpid, u64 gva)
         u64 vpid:16;
         u64 rsvd:48;
         u64 gva;
-    }  operand = {vpid, 0, gva};
+    } operand = { vpid, 0, gva };
 
     /* Fix up #UD exceptions which occur when TLBs are flushed before VMXON. */
-    asm volatile ( "1: "
+    asm volatile("1: "
 #ifdef HAVE_AS_EPT
-                   "invvpid %0, %1\n"
+                 "invvpid %0, %1\n"
 #else
-                   INVVPID_OPCODE MODRM_EAX_08
+                 INVVPID_OPCODE MODRM_EAX_08
 #endif
-                   /* CF==1 or ZF==1 --> BUG() */
-                   UNLIKELY_START(be, invvpid)
-                   _ASM_BUGFRAME_TEXT(0)
-                   UNLIKELY_END_SECTION "\n"
-                   "2:"
-                   _ASM_EXTABLE(1b, 2b)
-                   :
+                 /* CF==1 or ZF==1 --> BUG() */
+                 UNLIKELY_START(be, invvpid) _ASM_BUGFRAME_TEXT(0)
+                     UNLIKELY_END_SECTION "\n" "2:" _ASM_EXTABLE(1b, 2b)
+                 :
 #ifdef HAVE_AS_EPT
-                   : "m" (operand), "r" (type),
+                 : "m"(operand),
+                   "r"(type),
 #else
-                   : "a" (&operand), "c" (type),
+                 : "a"(&operand),
+                   "c"(type),
 #endif
-                     _ASM_BUGFRAME_INFO(BUGFRAME_bug, __LINE__, __FILE__, 0)
-                   : "memory" );
+                   _ASM_BUGFRAME_INFO(BUGFRAME_bug, __LINE__, __FILE__, 0)
+                 : "memory");
 }
 
 static inline void ept_sync_all(void)
@@ -554,25 +546,20 @@ static inline void vpid_sync_all(void)
 
 static inline void __vmxoff(void)
 {
-    asm volatile (
-        VMXOFF_OPCODE
-        : : : "memory" );
+    asm volatile(VMXOFF_OPCODE : : : "memory");
 }
 
 static inline int __vmxon(u64 addr)
 {
     int rc;
 
-    asm volatile ( 
-        "1: " VMXON_OPCODE MODRM_EAX_06 "\n"
-        "   setna %b0 ; neg %0\n" /* CF==1 or ZF==1 --> rc = -1 */
-        "2:\n"
-        ".section .fixup,\"ax\"\n"
-        "3: sub $2,%0 ; jmp 2b\n"    /* #UD or #GP --> rc = -2 */
-        ".previous\n"
-        _ASM_EXTABLE(1b, 3b)
-        : "=q" (rc)
-        : "0" (0), "a" (&addr)
+    asm volatile(
+        "1: " VMXON_OPCODE MODRM_EAX_06
+        "\n" "   setna %b0 ; neg %0\n" /* CF==1 or ZF==1 --> rc = -1 */
+        "2:\n" ".section .fixup,\"ax\"\n" "3: sub $2,%0 ; jmp 2b\n" /* #UD or #GP --> rc = -2 */
+        ".previous\n" _ASM_EXTABLE(1b, 3b)
+        : "=q"(rc)
+        : "0"(0), "a"(&addr)
         : "memory");
 
     return rc;
@@ -604,6 +591,7 @@ void vmx_pi_hooks_assign(struct domain *d);
 void vmx_pi_hooks_deassign(struct domain *d);
 #else
 static inline void vmx_pi_hooks_assign(struct domain *d) {}
+
 static inline void vmx_pi_hooks_deassign(struct domain *d) {}
 #endif
 
@@ -612,10 +600,10 @@ static inline void vmx_pi_hooks_deassign(struct domain *d) {}
 /* EPT violation qualifications definitions */
 typedef union ept_qual {
     unsigned long raw;
+
     struct {
-        bool read:1, write:1, fetch:1,
-            eff_read:1, eff_write:1, eff_exec:1, /* eff_user_exec */:1,
-            gla_valid:1,
+        bool read:1, write:1, fetch:1, eff_read:1, eff_write:1, eff_exec:1,
+            /* eff_user_exec */:1, gla_valid:1,
             gla_fault:1; /* Valid iff gla_valid. */
         unsigned long /* pad */:55;
     };
@@ -637,42 +625,44 @@ typedef struct {
 /* VM-Exit instruction info for LIDT, LGDT, SIDT, SGDT */
 typedef union idt_or_gdt_instr_info {
     unsigned long raw;
+
     struct {
-        unsigned long scaling   :2,  /* bits 0:1 - Scaling */
-                                :5,  /* bits 6:2 - Undefined */
-        addr_size               :3,  /* bits 9:7 - Address size */
-                                :1,  /* bit 10 - Cleared to 0 */
-        operand_size            :1,  /* bit 11 - Operand size */
-                                :3,  /* bits 14:12 - Undefined */
-        segment_reg             :3,  /* bits 17:15 - Segment register */
-        index_reg               :4,  /* bits 21:18 - Index register */
-        index_reg_invalid       :1,  /* bit 22 - Index register invalid */
-        base_reg                :4,  /* bits 26:23 - Base register */
-        base_reg_invalid        :1,  /* bit 27 - Base register invalid */
-        instr_identity          :1,  /* bit 28 - 0:GDT, 1:IDT */
-        instr_write             :1,  /* bit 29 - 0:store, 1:load */
-                                :34; /* bits 30:63 - Undefined */
+        unsigned long scaling:2, /* bits 0:1 - Scaling */
+            :5, /* bits 6:2 - Undefined */
+            addr_size:3, /* bits 9:7 - Address size */
+            :1, /* bit 10 - Cleared to 0 */
+            operand_size:1, /* bit 11 - Operand size */
+            :3, /* bits 14:12 - Undefined */
+            segment_reg:3, /* bits 17:15 - Segment register */
+            index_reg:4, /* bits 21:18 - Index register */
+            index_reg_invalid:1, /* bit 22 - Index register invalid */
+            base_reg:4, /* bits 26:23 - Base register */
+            base_reg_invalid:1, /* bit 27 - Base register invalid */
+            instr_identity:1, /* bit 28 - 0:GDT, 1:IDT */
+            instr_write:1, /* bit 29 - 0:store, 1:load */
+            :34; /* bits 30:63 - Undefined */
     };
 } idt_or_gdt_instr_info_t;
 
 /* VM-Exit instruction info for LLDT, LTR, SLDT, STR */
 typedef union ldt_or_tr_instr_info {
     unsigned long raw;
+
     struct {
-        unsigned long scaling   :2,  /* bits 0:1 - Scaling */
-                                :1,  /* bit 2 - Undefined */
-        reg1                    :4,  /* bits 6:3 - Reg1 */
-        addr_size               :3,  /* bits 9:7 - Address size */
-        mem_reg                 :1,  /* bit 10 - Mem/Reg */
-                                :4,  /* bits 14:11 - Undefined */
-        segment_reg             :3,  /* bits 17:15 - Segment register */
-        index_reg               :4,  /* bits 21:18 - Index register */
-        index_reg_invalid       :1,  /* bit 22 - Index register invalid */
-        base_reg                :4,  /* bits 26:23 - Base register */
-        base_reg_invalid        :1,  /* bit 27 - Base register invalid */
-        instr_identity          :1,  /* bit 28 - 0:LDT, 1:TR */
-        instr_write             :1,  /* bit 29 - 0:store, 1:load */
-                                :34; /* bits 31:63 - Undefined */
+        unsigned long scaling:2, /* bits 0:1 - Scaling */
+            :1, /* bit 2 - Undefined */
+            reg1:4, /* bits 6:3 - Reg1 */
+            addr_size:3, /* bits 9:7 - Address size */
+            mem_reg:1, /* bit 10 - Mem/Reg */
+            :4, /* bits 14:11 - Undefined */
+            segment_reg:3, /* bits 17:15 - Segment register */
+            index_reg:4, /* bits 21:18 - Index register */
+            index_reg_invalid:1, /* bit 22 - Index register invalid */
+            base_reg:4, /* bits 26:23 - Base register */
+            base_reg_invalid:1, /* bit 27 - Base register invalid */
+            instr_identity:1, /* bit 28 - 0:LDT, 1:TR */
+            instr_write:1, /* bit 29 - 0:store, 1:load */
+            :34; /* bits 31:63 - Undefined */
     };
 } ldt_or_tr_instr_info_t;
 

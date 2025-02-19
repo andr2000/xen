@@ -37,6 +37,7 @@ static inline int _get_lock_level(void)
 }
 
 #define MM_LOCK_ORDER_MAX                    64
+
 /*
  * Return the lock level taking the domain bias into account. If the domain is
  * privileged a bias of MM_LOCK_ORDER_MAX is applied to the lock level, so that
@@ -95,8 +96,8 @@ static inline void _mm_enforce_order_lock_pre(const struct domain *d, int level)
     _check_lock_level(d, level);
 }
 
-static inline void _mm_enforce_order_lock_post(const struct domain *d, int level,
-                                               int *unlock_level,
+static inline void _mm_enforce_order_lock_post(const struct domain *d,
+                                               int level, int *unlock_level,
                                                unsigned short *recurse_count)
 {
     if ( recurse_count )
@@ -105,12 +106,13 @@ static inline void _mm_enforce_order_lock_post(const struct domain *d, int level
         {
             *unlock_level = _get_lock_level();
         }
-    } else {
+    }
+    else
+    {
         *unlock_level = _get_lock_level();
     }
     _set_lock_level(_lock_level(d, level));
 }
-
 
 static inline void mm_rwlock_init(mm_rwlock_t *l)
 {
@@ -206,7 +208,7 @@ static inline void mm_unlock(mm_lock_t *l)
 }
 
 static inline void mm_enforce_order_unlock(int unlock_level,
-                                            unsigned short *recurse_count)
+                                           unsigned short *recurse_count)
 {
     if ( recurse_count )
     {
@@ -215,7 +217,9 @@ static inline void mm_enforce_order_unlock(int unlock_level,
         {
             _set_lock_level(unlock_level);
         }
-    } else {
+    }
+    else
+    {
         _set_lock_level(unlock_level);
     }
 }
@@ -265,7 +269,7 @@ declare_mm_lock(nestedp2m)
  */
 
 #define MM_LOCK_ORDER_p2m                    16
-declare_mm_rwlock(p2m);
+    declare_mm_rwlock(p2m);
 
 /* Sharing per page lock
  *
@@ -293,7 +297,7 @@ declare_mm_order_constraint(per_page_sharing)
  */
 
 #define MM_LOCK_ORDER_altp2mlist             32
-declare_mm_lock(altp2mlist)
+    declare_mm_lock(altp2mlist)
 #define altp2m_list_lock(d)   mm_lock(altp2mlist, d, \
                                       &(d)->arch.altp2m_list_lock)
 #define altp2m_list_unlock(d) mm_unlock(&(d)->arch.altp2m_list_lock)
@@ -309,7 +313,7 @@ declare_mm_lock(altp2mlist)
  */
 
 #define MM_LOCK_ORDER_altp2m                 40
-declare_mm_rwlock(altp2m);
+        declare_mm_rwlock(altp2m);
 
 static always_inline void p2m_lock(struct p2m_domain *p)
 {
@@ -328,12 +332,12 @@ static inline void p2m_unlock(struct p2m_domain *p)
         mm_write_unlock(&p->lock);
 }
 
-#define gfn_lock(p,g,o)       p2m_lock(p)
-#define gfn_unlock(p,g,o)     p2m_unlock(p)
+#define gfn_lock(p, g, o)       p2m_lock(p)
+#define gfn_unlock(p, g, o)     p2m_unlock(p)
 #define p2m_read_lock(p)      mm_read_lock(p2m, (p)->domain, &(p)->lock)
 #define p2m_read_unlock(p)    mm_read_unlock(&(p)->lock)
 #define p2m_locked_by_me(p)   mm_write_locked_by_me(&(p)->lock)
-#define gfn_locked_by_me(p,g) p2m_locked_by_me(p)
+#define gfn_locked_by_me(p, g) p2m_locked_by_me(p)
 
 static always_inline void gfn_lock_if(bool condition, struct p2m_domain *p2m,
                                       gfn_t gfn, unsigned int order)
@@ -365,7 +369,7 @@ declare_mm_lock(pod)
  * The lock is not recursive. */
 
 #define MM_LOCK_ORDER_page_alloc             56
-declare_mm_order_constraint(page_alloc)
+    declare_mm_order_constraint(page_alloc)
 #define page_alloc_mm_pre_lock(d)  mm_enforce_order_lock_pre_page_alloc(d)
 #define page_alloc_mm_post_lock(d, l) \
         mm_enforce_order_lock_post_page_alloc(d, &(l), NULL)
@@ -387,7 +391,7 @@ declare_mm_order_constraint(page_alloc)
  * teardowns, etc). */
 
 #define MM_LOCK_ORDER_paging                 64
-declare_mm_lock(paging)
+        declare_mm_lock(paging)
 #define paging_lock(d)         mm_lock(paging, d, &(d)->arch.paging.lock)
 #define paging_lock_recursive(d) \
                     mm_lock_recursive(paging, d, &(d)->arch.paging.lock)

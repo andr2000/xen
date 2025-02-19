@@ -21,10 +21,9 @@ struct vgic_register_region {
     unsigned int len;
     unsigned int bits_per_irq;
     unsigned int access_flags;
-    unsigned long (*read)(struct vcpu *vcpu, paddr_t addr,
-                          unsigned int len);
-    void (*write)(struct vcpu *vcpu, paddr_t addr,
-                  unsigned int len, unsigned long val);
+    unsigned long (*read)(struct vcpu *vcpu, paddr_t addr, unsigned int len);
+    void (*write)(struct vcpu *vcpu, paddr_t addr, unsigned int len,
+                  unsigned long val);
 };
 
 extern struct mmio_handler_ops vgic_io_ops;
@@ -77,61 +76,53 @@ extern struct mmio_handler_ops vgic_io_ops;
         .write = wr,                                            \
     }
 
-unsigned long vgic_mmio_read_raz(struct vcpu *vcpu,
-                                 paddr_t addr, unsigned int len);
+unsigned long vgic_mmio_read_raz(struct vcpu *vcpu, paddr_t addr,
+                                 unsigned int len);
 
-unsigned long vgic_mmio_read_rao(struct vcpu *vcpu,
-                                 paddr_t addr, unsigned int len);
+unsigned long vgic_mmio_read_rao(struct vcpu *vcpu, paddr_t addr,
+                                 unsigned int len);
 
-void vgic_mmio_write_wi(struct vcpu *vcpu, paddr_t addr,
-                        unsigned int len, unsigned long val);
+void vgic_mmio_write_wi(struct vcpu *vcpu, paddr_t addr, unsigned int len,
+                        unsigned long val);
 
-unsigned long vgic_mmio_read_enable(struct vcpu *vcpu,
-                                    paddr_t addr, unsigned int len);
+unsigned long vgic_mmio_read_enable(struct vcpu *vcpu, paddr_t addr,
+                                    unsigned int len);
 
-void vgic_mmio_write_senable(struct vcpu *vcpu,
-                             paddr_t addr, unsigned int len,
+void vgic_mmio_write_senable(struct vcpu *vcpu, paddr_t addr, unsigned int len,
                              unsigned long val);
 
-void vgic_mmio_write_cenable(struct vcpu *vcpu,
-                             paddr_t addr, unsigned int len,
+void vgic_mmio_write_cenable(struct vcpu *vcpu, paddr_t addr, unsigned int len,
                              unsigned long val);
 
-unsigned long vgic_mmio_read_pending(struct vcpu *vcpu,
-                                     paddr_t addr, unsigned int len);
+unsigned long vgic_mmio_read_pending(struct vcpu *vcpu, paddr_t addr,
+                                     unsigned int len);
 
-void vgic_mmio_write_spending(struct vcpu *vcpu,
-                              paddr_t addr, unsigned int len,
+void vgic_mmio_write_spending(struct vcpu *vcpu, paddr_t addr, unsigned int len,
                               unsigned long val);
 
-void vgic_mmio_write_cpending(struct vcpu *vcpu,
-                              paddr_t addr, unsigned int len,
+void vgic_mmio_write_cpending(struct vcpu *vcpu, paddr_t addr, unsigned int len,
                               unsigned long val);
 
-unsigned long vgic_mmio_read_active(struct vcpu *vcpu,
-                                    paddr_t addr, unsigned int len);
+unsigned long vgic_mmio_read_active(struct vcpu *vcpu, paddr_t addr,
+                                    unsigned int len);
 
-void vgic_mmio_write_cactive(struct vcpu *vcpu,
-                             paddr_t addr, unsigned int len,
+void vgic_mmio_write_cactive(struct vcpu *vcpu, paddr_t addr, unsigned int len,
                              unsigned long val);
 
-void vgic_mmio_write_sactive(struct vcpu *vcpu,
-                             paddr_t addr, unsigned int len,
+void vgic_mmio_write_sactive(struct vcpu *vcpu, paddr_t addr, unsigned int len,
                              unsigned long val);
 
-unsigned long vgic_mmio_read_priority(struct vcpu *vcpu,
-                      paddr_t addr, unsigned int len);
+unsigned long vgic_mmio_read_priority(struct vcpu *vcpu, paddr_t addr,
+                                      unsigned int len);
 
-void vgic_mmio_write_priority(struct vcpu *vcpu,
-                  paddr_t addr, unsigned int len,
-                  unsigned long val);
+void vgic_mmio_write_priority(struct vcpu *vcpu, paddr_t addr, unsigned int len,
+                              unsigned long val);
 
-unsigned long vgic_mmio_read_config(struct vcpu *vcpu,
-                    paddr_t addr, unsigned int len);
+unsigned long vgic_mmio_read_config(struct vcpu *vcpu, paddr_t addr,
+                                    unsigned int len);
 
-void vgic_mmio_write_config(struct vcpu *vcpu,
-                paddr_t addr, unsigned int len,
-                unsigned long val);
+void vgic_mmio_write_config(struct vcpu *vcpu, paddr_t addr, unsigned int len,
+                            unsigned long val);
 
 unsigned int vgic_v2_init_dist_iodev(struct vgic_io_device *dev);
 

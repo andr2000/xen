@@ -89,7 +89,7 @@ void consoled_guest_rx(void)
     ACCESS_ONCE(cons_ring->out_cons) = cons;
     pv_shim_inject_evtchn(pv_console_evtchn());
 
- out:
+out:
     spin_unlock(&rx_lock);
 }
 
@@ -122,7 +122,7 @@ void consoled_guest_tx(char c)
     smp_wmb();
     ACCESS_ONCE(cons_ring->in_prod) = prod;
 
- notify:
+notify:
     /* Always notify the guest: prevents receive path from getting stuck. */
     pv_shim_inject_evtchn(pv_console_evtchn());
 }

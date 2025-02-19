@@ -1,7 +1,6 @@
 #ifndef __ARM_STRING_H__
 #define __ARM_STRING_H__
 
-
 /*
  * We don't do inline string functions, since the
  * optimised inline asm versions are not small.

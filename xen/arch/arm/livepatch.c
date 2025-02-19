@@ -43,7 +43,8 @@ int arch_livepatch_quiesce(void)
 
     if ( !vmap_of_xen_text )
     {
-        printk(XENLOG_ERR LIVEPATCH "Failed to setup vmap of hypervisor! (order=%u)\n",
+        printk(XENLOG_ERR LIVEPATCH
+               "Failed to setup vmap of hypervisor! (order=%u)\n",
                text_order);
         return -ENOMEM;
     }
@@ -69,7 +70,7 @@ int arch_livepatch_verify_func(const struct livepatch_func *func)
 {
     /* If NOPing only do up to maximum amount we can put in the ->opaque. */
     if ( !func->new_addr && (func->new_size > LIVEPATCH_OPAQUE_SIZE ||
-         func->new_size % ARCH_PATCH_INSN_SIZE) )
+                             func->new_size % ARCH_PATCH_INSN_SIZE) )
         return -EOPNOTSUPP;
 
     if ( func->old_size < ARCH_PATCH_INSN_SIZE )
@@ -127,7 +128,7 @@ bool arch_livepatch_symbol_ok(const struct livepatch_elf *elf,
         char p = sym->name[1];
         size_t len = strlen(sym->name);
 
-        if ( (len >= 3 && (sym->name[2] == '.' )) || (len == 2) )
+        if ( (len >= 3 && (sym->name[2] == '.')) || (len == 2) )
         {
             if ( p == 'd' ||
 #ifdef CONFIG_ARM_32
@@ -135,7 +136,7 @@ bool arch_livepatch_symbol_ok(const struct livepatch_elf *elf,
 #else
                  p == 'x'
 #endif
-               )
+            )
                 return false;
         }
     }

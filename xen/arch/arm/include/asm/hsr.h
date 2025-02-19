@@ -4,79 +4,80 @@
 #include <xen/types.h>
 
 #if defined(CONFIG_ARM_64)
-# include <asm/arm64/hsr.h>
+#include <asm/arm64/hsr.h>
 #endif
 
 /* HSR data abort size definition */
 enum dabt_size {
-    DABT_BYTE        = 0,
-    DABT_HALF_WORD   = 1,
-    DABT_WORD        = 2,
+    DABT_BYTE = 0,
+    DABT_HALF_WORD = 1,
+    DABT_WORD = 2,
     DABT_DOUBLE_WORD = 3,
 };
 
 union hsr {
     register_t bits;
+
     struct {
-        unsigned long iss:25;  /* Instruction Specific Syndrome */
-        unsigned long len:1;   /* Instruction length */
-        unsigned long ec:6;    /* Exception Class */
+        unsigned long iss:25; /* Instruction Specific Syndrome */
+        unsigned long len:1; /* Instruction length */
+        unsigned long ec:6; /* Exception Class */
     };
 
     /* Common to all conditional exception classes (0x0N, except 0x00). */
     struct hsr_cond {
-        unsigned long iss:20;  /* Instruction Specific Syndrome */
-        unsigned long cc:4;    /* Condition Code */
-        unsigned long ccvalid:1;/* CC Valid */
-        unsigned long len:1;   /* Instruction length */
-        unsigned long ec:6;    /* Exception Class */
+        unsigned long iss:20; /* Instruction Specific Syndrome */
+        unsigned long cc:4; /* Condition Code */
+        unsigned long ccvalid:1; /* CC Valid */
+        unsigned long len:1; /* Instruction length */
+        unsigned long ec:6; /* Exception Class */
     } cond;
 
     struct hsr_wfi_wfe {
-        unsigned long ti:1;    /* Trapped instruction */
+        unsigned long ti:1; /* Trapped instruction */
         unsigned long sbzp:19;
-        unsigned long cc:4;    /* Condition Code */
-        unsigned long ccvalid:1;/* CC Valid */
-        unsigned long len:1;   /* Instruction length */
-        unsigned long ec:6;    /* Exception Class */
+        unsigned long cc:4; /* Condition Code */
+        unsigned long ccvalid:1; /* CC Valid */
+        unsigned long len:1; /* Instruction length */
+        unsigned long ec:6; /* Exception Class */
     } wfi_wfe;
 
     /* reg, reg0, reg1 are 4 bits on AArch32, the fifth bit is sbzp. */
     struct hsr_cp32 {
-        unsigned long read:1;  /* Direction */
-        unsigned long crm:4;   /* CRm */
-        unsigned long reg:5;   /* Rt */
-        unsigned long crn:4;   /* CRn */
-        unsigned long op1:3;   /* Op1 */
-        unsigned long op2:3;   /* Op2 */
-        unsigned long cc:4;    /* Condition Code */
-        unsigned long ccvalid:1;/* CC Valid */
-        unsigned long len:1;   /* Instruction length */
-        unsigned long ec:6;    /* Exception Class */
+        unsigned long read:1; /* Direction */
+        unsigned long crm:4; /* CRm */
+        unsigned long reg:5; /* Rt */
+        unsigned long crn:4; /* CRn */
+        unsigned long op1:3; /* Op1 */
+        unsigned long op2:3; /* Op2 */
+        unsigned long cc:4; /* Condition Code */
+        unsigned long ccvalid:1; /* CC Valid */
+        unsigned long len:1; /* Instruction length */
+        unsigned long ec:6; /* Exception Class */
     } cp32; /* HSR_EC_CP15_32, CP14_32, CP10 */
 
     struct hsr_cp64 {
-        unsigned long read:1;   /* Direction */
-        unsigned long crm:4;    /* CRm */
-        unsigned long reg1:5;   /* Rt1 */
-        unsigned long reg2:5;   /* Rt2 */
+        unsigned long read:1; /* Direction */
+        unsigned long crm:4; /* CRm */
+        unsigned long reg1:5; /* Rt1 */
+        unsigned long reg2:5; /* Rt2 */
         unsigned long sbzp2:1;
-        unsigned long op1:4;    /* Op1 */
-        unsigned long cc:4;     /* Condition Code */
-        unsigned long ccvalid:1;/* CC Valid */
-        unsigned long len:1;    /* Instruction length */
-        unsigned long ec:6;     /* Exception Class */
+        unsigned long op1:4; /* Op1 */
+        unsigned long cc:4; /* Condition Code */
+        unsigned long ccvalid:1; /* CC Valid */
+        unsigned long len:1; /* Instruction length */
+        unsigned long ec:6; /* Exception Class */
     } cp64; /* HSR_EC_CP15_64, HSR_EC_CP14_64 */
 
-     struct hsr_cp {
+    struct hsr_cp {
         unsigned long coproc:4; /* Number of coproc accessed */
         unsigned long sbz0p:1;
-        unsigned long tas:1;    /* Trapped Advanced SIMD */
+        unsigned long tas:1; /* Trapped Advanced SIMD */
         unsigned long res0:14;
-        unsigned long cc:4;     /* Condition Code */
-        unsigned long ccvalid:1;/* CC Valid */
-        unsigned long len:1;    /* Instruction length */
-        unsigned long ec:6;     /* Exception Class */
+        unsigned long cc:4; /* Condition Code */
+        unsigned long ccvalid:1; /* CC Valid */
+        unsigned long len:1; /* Instruction length */
+        unsigned long ec:6; /* Exception Class */
     } cp; /* HSR_EC_CP */
 
     /*
@@ -88,82 +89,82 @@ union hsr {
      * check was passed or instruction was unconditional.
      */
     struct hsr_smc32 {
-        unsigned long res0:19;  /* Reserved */
+        unsigned long res0:19; /* Reserved */
         unsigned long ccknownpass:1; /* Instruction passed conditional check */
-        unsigned long cc:4;    /* Condition Code */
-        unsigned long ccvalid:1;/* CC Valid */
-        unsigned long len:1;   /* Instruction length */
-        unsigned long ec:6;    /* Exception Class */
+        unsigned long cc:4; /* Condition Code */
+        unsigned long ccvalid:1; /* CC Valid */
+        unsigned long len:1; /* Instruction length */
+        unsigned long ec:6; /* Exception Class */
     } smc32; /* HSR_EC_SMC32 */
 
 #ifdef CONFIG_ARM_64
     struct hsr_sysreg {
-        unsigned long read:1;   /* Direction */
-        unsigned long crm:4;    /* CRm */
-        unsigned long reg:5;    /* Rt */
-        unsigned long crn:4;    /* CRn */
-        unsigned long op1:3;    /* Op1 */
-        unsigned long op2:3;    /* Op2 */
-        unsigned long op0:2;    /* Op0 */
+        unsigned long read:1; /* Direction */
+        unsigned long crm:4; /* CRm */
+        unsigned long reg:5; /* Rt */
+        unsigned long crn:4; /* CRn */
+        unsigned long op1:3; /* Op1 */
+        unsigned long op2:3; /* Op2 */
+        unsigned long op0:2; /* Op0 */
         unsigned long res0:3;
-        unsigned long len:1;    /* Instruction length */
+        unsigned long len:1; /* Instruction length */
         unsigned long ec:6;
     } sysreg; /* HSR_EC_SYSREG */
 #endif
 
     struct hsr_iabt {
-        unsigned long ifsc:6;  /* Instruction fault status code */
-        unsigned long res0:1;  /* RES0 */
+        unsigned long ifsc:6; /* Instruction fault status code */
+        unsigned long res0:1; /* RES0 */
         unsigned long s1ptw:1; /* Stage 2 fault during stage 1 translation */
-        unsigned long res1:1;  /* RES0 */
-        unsigned long eat:1;   /* External abort type */
-        unsigned long fnv:1;   /* FAR not Valid */
+        unsigned long res1:1; /* RES0 */
+        unsigned long eat:1; /* External abort type */
+        unsigned long fnv:1; /* FAR not Valid */
         unsigned long res2:14;
-        unsigned long len:1;   /* Instruction length */
-        unsigned long ec:6;    /* Exception Class */
+        unsigned long len:1; /* Instruction length */
+        unsigned long ec:6; /* Exception Class */
     } iabt; /* HSR_EC_INSTR_ABORT_* */
 
     struct hsr_dabt {
-        unsigned long dfsc:6;  /* Data Fault Status Code */
+        unsigned long dfsc:6; /* Data Fault Status Code */
         unsigned long write:1; /* Write / not Read */
         unsigned long s1ptw:1; /* Stage 2 fault during stage 1 translation */
         unsigned long cache:1; /* Cache Maintenance */
-        unsigned long eat:1;   /* External Abort Type */
-        unsigned long fnv:1;   /* FAR not Valid */
+        unsigned long eat:1; /* External Abort Type */
+        unsigned long fnv:1; /* FAR not Valid */
 #ifdef CONFIG_ARM_32
         unsigned long sbzp0:5;
 #else
         unsigned long sbzp0:3;
-        unsigned long ar:1;    /* Acquire Release */
-        unsigned long sf:1;    /* Sixty Four bit register */
+        unsigned long ar:1; /* Acquire Release */
+        unsigned long sf:1; /* Sixty Four bit register */
 #endif
-        unsigned long reg:5;   /* Register */
-        unsigned long sign:1;  /* Sign extend */
-        unsigned long size:2;  /* Access Size */
+        unsigned long reg:5; /* Register */
+        unsigned long sign:1; /* Sign extend */
+        unsigned long size:2; /* Access Size */
         unsigned long valid:1; /* Syndrome Valid */
-        unsigned long len:1;   /* Instruction length */
-        unsigned long ec:6;    /* Exception Class */
+        unsigned long len:1; /* Instruction length */
+        unsigned long ec:6; /* Exception Class */
     } dabt; /* HSR_EC_DATA_ABORT_* */
 
     /* Contain the common bits between DABT and IABT */
     struct hsr_xabt {
-        unsigned long fsc:6;    /* Fault status code */
-        unsigned long pad1:1;   /* Not common */
-        unsigned long s1ptw:1;  /* Stage 2 fault during stage 1 translation */
-        unsigned long pad2:1;   /* Not common */
-        unsigned long eat:1;    /* External abort type */
-        unsigned long fnv:1;    /* FAR not Valid */
-        unsigned long pad3:14;  /* Not common */
-        unsigned long len:1;    /* Instruction length */
-        unsigned long ec:6;     /* Exception Class */
+        unsigned long fsc:6; /* Fault status code */
+        unsigned long pad1:1; /* Not common */
+        unsigned long s1ptw:1; /* Stage 2 fault during stage 1 translation */
+        unsigned long pad2:1; /* Not common */
+        unsigned long eat:1; /* External abort type */
+        unsigned long fnv:1; /* FAR not Valid */
+        unsigned long pad3:14; /* Not common */
+        unsigned long len:1; /* Instruction length */
+        unsigned long ec:6; /* Exception Class */
     } xabt;
 
 #ifdef CONFIG_ARM_64
     struct hsr_brk {
-        unsigned long comment:16;   /* Comment */
+        unsigned long comment:16; /* Comment */
         unsigned long res0:9;
-        unsigned long len:1;        /* Instruction length */
-        unsigned long ec:6;         /* Exception Class */
+        unsigned long len:1; /* Instruction length */
+        unsigned long ec:6; /* Exception Class */
     } brk;
 #endif
 };

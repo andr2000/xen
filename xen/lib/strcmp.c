@@ -9,18 +9,19 @@
  * @cs: One string
  * @ct: Another string
  */
-int (strcmp)(const char *cs, const char *ct)
+int(strcmp)(const char *cs, const char *ct)
 {
-	unsigned char *csu = (unsigned char *)cs;
-	unsigned char *ctu = (unsigned char *)ct;
-	int res;
+    unsigned char *csu = (unsigned char *)cs;
+    unsigned char *ctu = (unsigned char *)ct;
+    int res;
 
-	while (1) {
-		if ((res = *csu - *ctu++) != 0 || !*csu++)
-			break;
-	}
+    while ( 1 )
+    {
+        if ( (res = *csu - *ctu++) != 0 || !*csu++ )
+            break;
+    }
 
-	return res;
+    return res;
 }
 
 /*

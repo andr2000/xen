@@ -24,17 +24,23 @@
 #include <asm/shared.h>
 #include <asm/hvm/hvm.h>
 
-
 static void print_xen_info(void)
 {
     char taint_str[TAINT_STRING_MAX_LEN];
 
     printk("----[ Xen-%d.%d%s  x86_64  %s  %s ]----\n",
-           xen_major_version(), xen_minor_version(), xen_extra_version(),
-           xen_build_info(), print_tainted(taint_str));
+           xen_major_version(),
+           xen_minor_version(),
+           xen_extra_version(),
+           xen_build_info(),
+           print_tainted(taint_str));
 }
 
-enum context { CTXT_hypervisor, CTXT_pv_guest, CTXT_hvm_guest };
+enum context {
+    CTXT_hypervisor,
+    CTXT_pv_guest,
+    CTXT_hvm_guest
+};
 
 /* (ab)use crs[5..7] for fs/gs bases. */
 static void read_registers(struct cpu_user_regs *regs, unsigned long crs[8])
@@ -82,14 +88,14 @@ static void get_hvm_registers(struct vcpu *v, struct cpu_user_regs *regs,
     crs[7] = hvm_get_reg(v, MSR_SHADOW_GS_BASE);
 }
 
-static void _show_registers(
-    const struct cpu_user_regs *regs, unsigned long crs[8],
-    enum context context, const struct vcpu *v)
+static void _show_registers(const struct cpu_user_regs *regs,
+                            unsigned long crs[8], enum context context,
+                            const struct vcpu *v)
 {
     static const char *const context_names[] = {
         [CTXT_hypervisor] = "hypervisor",
-        [CTXT_pv_guest]   = "pv guest",
-        [CTXT_hvm_guest]  = "hvm guest"
+        [CTXT_pv_guest] = "pv guest",
+        [CTXT_hvm_guest] = "hvm guest"
     };
 
     printk("RIP:    %04x:[<%016lx>]", regs->cs, regs->rip);
@@ -103,24 +109,39 @@ static void _show_registers(
         printk(" (%pv)", v);
 
     printk("\nrax: %016lx   rbx: %016lx   rcx: %016lx\n",
-           regs->rax, regs->rbx, regs->rcx);
+           regs->rax,
+           regs->rbx,
+           regs->rcx);
     printk("rdx: %016lx   rsi: %016lx   rdi: %016lx\n",
-           regs->rdx, regs->rsi, regs->rdi);
+           regs->rdx,
+           regs->rsi,
+           regs->rdi);
     printk("rbp: %016lx   rsp: %016lx   r8:  %016lx\n",
-           regs->rbp, regs->rsp, regs->r8);
+           regs->rbp,
+           regs->rsp,
+           regs->r8);
     printk("r9:  %016lx   r10: %016lx   r11: %016lx\n",
-           regs->r9,  regs->r10, regs->r11);
+           regs->r9,
+           regs->r10,
+           regs->r11);
     printk("r12: %016lx   r13: %016lx   r14: %016lx\n",
-           regs->r12, regs->r13, regs->r14);
+           regs->r12,
+           regs->r13,
+           regs->r14);
     printk("r15: %016lx   cr0: %016lx   cr4: %016lx\n",
-           regs->r15, crs[0], crs[4]);
+           regs->r15,
+           crs[0],
+           crs[4]);
     printk("cr3: %016lx   cr2: %016lx\n", crs[3], crs[2]);
-    printk("fsb: %016lx   gsb: %016lx   gss: %016lx\n",
-           crs[5], crs[6], crs[7]);
-    printk("ds: %04x   es: %04x   fs: %04x   gs: %04x   "
-           "ss: %04x   cs: %04x\n",
-           regs->ds, regs->es, regs->fs,
-           regs->gs, regs->ss, regs->cs);
+    printk("fsb: %016lx   gsb: %016lx   gss: %016lx\n", crs[5], crs[6], crs[7]);
+    printk(
+        "ds: %04x   es: %04x   fs: %04x   gs: %04x   " "ss: %04x   cs: %04x\n",
+        regs->ds,
+        regs->es,
+        regs->fs,
+        regs->gs,
+        regs->ss,
+        regs->cs);
 }
 
 void show_registers(const struct cpu_user_regs *regs)
@@ -163,10 +184,12 @@ void show_registers(const struct cpu_user_regs *regs)
         rdmsrl(ler_msr + 1, to);
 
         /* Upper bits may store metadata.  Re-canonicalise for printing. */
-        printk("ler: from %016"PRIx64" [%ps]\n",
-               from, _p(canonicalise_addr(from)));
-        printk("       to %016"PRIx64" [%ps]\n",
-               to, _p(canonicalise_addr(to)));
+        printk("ler: from %016" PRIx64 " [%ps]\n",
+               from,
+               _p(canonicalise_addr(from)));
+        printk("       to %016" PRIx64 " [%ps]\n",
+               to,
+               _p(canonicalise_addr(to)));
     }
 }
 
@@ -190,9 +213,8 @@ void vcpu_show_registers(const struct vcpu *v)
 
         crs[0] = v->arch.pv.ctrlreg[0];
         crs[2] = arch_get_cr2(v);
-        crs[3] = pagetable_get_paddr(kernel ?
-                                     v->arch.guest_table :
-                                     v->arch.guest_table_user);
+        crs[3] = pagetable_get_paddr(kernel ? v->arch.guest_table
+                                            : v->arch.guest_table_user);
         crs[4] = v->arch.pv.ctrlreg[4];
         crs[5] = v->arch.pv.fs_base;
         crs[6 + !kernel] = v->arch.pv.gs_base_kernel;
@@ -220,50 +242,59 @@ void show_page_walk(unsigned long addr)
     l4e = l4t[l4_table_offset(addr)];
     unmap_domain_page(l4t);
     mfn = l4e_get_pfn(l4e);
-    pfn = mfn_valid(_mfn(mfn)) && machine_to_phys_mapping_valid ?
-          get_gpfn_from_mfn(mfn) : INVALID_M2P_ENTRY;
-    printk(" L4[0x%03lx] = %"PRIpte" %016lx\n",
-           l4_table_offset(addr), l4e_get_intpte(l4e), pfn);
-    if ( !(l4e_get_flags(l4e) & _PAGE_PRESENT) ||
-         !mfn_valid(_mfn(mfn)) )
+    pfn = mfn_valid(_mfn(mfn)) && machine_to_phys_mapping_valid
+              ? get_gpfn_from_mfn(mfn)
+              : INVALID_M2P_ENTRY;
+    printk(" L4[0x%03lx] = %" PRIpte " %016lx\n",
+           l4_table_offset(addr),
+           l4e_get_intpte(l4e),
+           pfn);
+    if ( !(l4e_get_flags(l4e) & _PAGE_PRESENT) || !mfn_valid(_mfn(mfn)) )
         return;
 
     l3t = map_domain_page(_mfn(mfn));
     l3e = l3t[l3_table_offset(addr)];
     unmap_domain_page(l3t);
     mfn = l3e_get_pfn(l3e);
-    pfn = mfn_valid(_mfn(mfn)) && machine_to_phys_mapping_valid ?
-          get_gpfn_from_mfn(mfn) : INVALID_M2P_ENTRY;
-    printk(" L3[0x%03lx] = %"PRIpte" %016lx%s\n",
-           l3_table_offset(addr), l3e_get_intpte(l3e), pfn,
+    pfn = mfn_valid(_mfn(mfn)) && machine_to_phys_mapping_valid
+              ? get_gpfn_from_mfn(mfn)
+              : INVALID_M2P_ENTRY;
+    printk(" L3[0x%03lx] = %" PRIpte " %016lx%s\n",
+           l3_table_offset(addr),
+           l3e_get_intpte(l3e),
+           pfn,
            (l3e_get_flags(l3e) & _PAGE_PSE) ? " (PSE)" : "");
     if ( !(l3e_get_flags(l3e) & _PAGE_PRESENT) ||
-         (l3e_get_flags(l3e) & _PAGE_PSE) ||
-         !mfn_valid(_mfn(mfn)) )
+         (l3e_get_flags(l3e) & _PAGE_PSE) || !mfn_valid(_mfn(mfn)) )
         return;
 
     l2t = map_domain_page(_mfn(mfn));
     l2e = l2t[l2_table_offset(addr)];
     unmap_domain_page(l2t);
     mfn = l2e_get_pfn(l2e);
-    pfn = mfn_valid(_mfn(mfn)) && machine_to_phys_mapping_valid ?
-          get_gpfn_from_mfn(mfn) : INVALID_M2P_ENTRY;
-    printk(" L2[0x%03lx] = %"PRIpte" %016lx%s\n",
-           l2_table_offset(addr), l2e_get_intpte(l2e), pfn,
+    pfn = mfn_valid(_mfn(mfn)) && machine_to_phys_mapping_valid
+              ? get_gpfn_from_mfn(mfn)
+              : INVALID_M2P_ENTRY;
+    printk(" L2[0x%03lx] = %" PRIpte " %016lx%s\n",
+           l2_table_offset(addr),
+           l2e_get_intpte(l2e),
+           pfn,
            (l2e_get_flags(l2e) & _PAGE_PSE) ? " (PSE)" : "");
     if ( !(l2e_get_flags(l2e) & _PAGE_PRESENT) ||
-         (l2e_get_flags(l2e) & _PAGE_PSE) ||
-         !mfn_valid(_mfn(mfn)) )
+         (l2e_get_flags(l2e) & _PAGE_PSE) || !mfn_valid(_mfn(mfn)) )
         return;
 
     l1t = map_domain_page(_mfn(mfn));
     l1e = l1t[l1_table_offset(addr)];
     unmap_domain_page(l1t);
     mfn = l1e_get_pfn(l1e);
-    pfn = mfn_valid(_mfn(mfn)) && machine_to_phys_mapping_valid ?
-          get_gpfn_from_mfn(mfn) : INVALID_M2P_ENTRY;
-    printk(" L1[0x%03lx] = %"PRIpte" %016lx\n",
-           l1_table_offset(addr), l1e_get_intpte(l1e), pfn);
+    pfn = mfn_valid(_mfn(mfn)) && machine_to_phys_mapping_valid
+              ? get_gpfn_from_mfn(mfn)
+              : INVALID_M2P_ENTRY;
+    printk(" L1[0x%03lx] = %" PRIpte " %016lx\n",
+           l1_table_offset(addr),
+           l1e_get_intpte(l1e),
+           pfn);
 }
 
 void asmlinkage do_double_fault(struct cpu_user_regs *regs)
@@ -273,8 +304,9 @@ void asmlinkage do_double_fault(struct cpu_user_regs *regs)
 
     console_force_unlock();
 
-    asm ( "lsll %[sel], %[limit]" : [limit] "=r" (cpu)
-                                  : [sel] "r" (PER_CPU_SELECTOR) );
+    asm("lsll %[sel], %[limit]"
+        : [limit] "=r"(cpu)
+        : [sel] "r"(PER_CPU_SELECTOR));
 
     /* Find information saved during fault and dump it to the console. */
     printk("*** DOUBLE FAULT ***\n");
@@ -290,9 +322,10 @@ void asmlinkage do_double_fault(struct cpu_user_regs *regs)
     panic("DOUBLE FAULT -- system shutdown\n");
 }
 
-static unsigned int write_stub_trampoline(
-    unsigned char *stub, unsigned long stub_va,
-    unsigned long stack_bottom, unsigned long target_va)
+static unsigned int write_stub_trampoline(unsigned char *stub,
+                                          unsigned long stub_va,
+                                          unsigned long stack_bottom,
+                                          unsigned long target_va)
 {
     unsigned char *p = stub;
 
@@ -359,7 +392,8 @@ void subarch_percpu_traps_init(void)
      */
     wrmsrl(MSR_LSTAR, stub_va);
     offset = write_stub_trampoline(stub_page + (stub_va & ~PAGE_MASK),
-                                   stub_va, stack_bottom,
+                                   stub_va,
+                                   stack_bottom,
                                    (unsigned long)lstar_enter);
     stub_va += offset;
 
@@ -374,7 +408,8 @@ void subarch_percpu_traps_init(void)
     /* Trampoline for SYSCALL entry from compatibility mode. */
     wrmsrl(MSR_CSTAR, stub_va);
     offset += write_stub_trampoline(stub_page + (stub_va & ~PAGE_MASK),
-                                    stub_va, stack_bottom,
+                                    stub_va,
+                                    stack_bottom,
                                     (unsigned long)cstar_enter);
 
     /* Don't consume more than half of the stub space here. */

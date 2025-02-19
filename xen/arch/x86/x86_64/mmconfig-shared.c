@@ -34,7 +34,8 @@ static int __init cf_check parse_mmcfg(const char *s)
     const char *ss;
     int rc = 0;
 
-    do {
+    do
+    {
         ss = strchr(s, ',');
         if ( !ss )
             ss = strchr(s, '\0');
@@ -60,6 +61,7 @@ static int __init cf_check parse_mmcfg(const char *s)
 
     return rc;
 }
+
 custom_param("mmcfg", parse_mmcfg);
 
 static const char *__init cf_check pci_mmcfg_e7520(void)
@@ -68,12 +70,13 @@ static const char *__init cf_check pci_mmcfg_e7520(void)
     win = pci_conf_read16(PCI_SBDF(0, 0, 0, 0), 0xce);
 
     win = win & 0xf000;
-    if(win == 0x0000 || win == 0xf000)
+    if ( win == 0x0000 || win == 0xf000 )
         pci_mmcfg_config_num = 0;
-    else {
+    else
+    {
         pci_mmcfg_config_num = 1;
         pci_mmcfg_config = xzalloc(struct acpi_mcfg_allocation);
-        if (!pci_mmcfg_config)
+        if ( !pci_mmcfg_config )
             return NULL;
         pci_mmcfg_config[0].address = win << 16;
         pci_mmcfg_config[0].pci_segment = 0;
@@ -93,22 +96,23 @@ static const char *__init cf_check pci_mmcfg_intel_945(void)
     pciexbar = pci_conf_read32(PCI_SBDF(0, 0, 0, 0), 0x48);
 
     /* Enable bit */
-    if (!(pciexbar & 1))
+    if ( !(pciexbar & 1) )
         pci_mmcfg_config_num = 0;
 
     /* Size bits */
-    switch ((pciexbar >> 1) & 3) {
+    switch ( (pciexbar >> 1) & 3 )
+    {
     case 0:
         mask = 0xf0000000U;
-        len  = 0x10000000U;
+        len = 0x10000000U;
         break;
     case 1:
         mask = 0xf8000000U;
-        len  = 0x08000000U;
+        len = 0x08000000U;
         break;
     case 2:
         mask = 0xfc000000U;
-        len  = 0x04000000U;
+        len = 0x04000000U;
         break;
     default:
         pci_mmcfg_config_num = 0;
@@ -118,16 +122,17 @@ static const char *__init cf_check pci_mmcfg_intel_945(void)
     /* Errata #2, things break when not aligned on a 256Mb boundary */
     /* Can only happen in 64M/128M mode */
 
-    if ((pciexbar & mask) & 0x0fffffffU)
+    if ( (pciexbar & mask) & 0x0fffffffU )
         pci_mmcfg_config_num = 0;
 
     /* Don't hit the APIC registers and their friends */
-    if ((pciexbar & mask) >= 0xf0000000U)
+    if ( (pciexbar & mask) >= 0xf0000000U )
         pci_mmcfg_config_num = 0;
 
-    if (pci_mmcfg_config_num) {
+    if ( pci_mmcfg_config_num )
+    {
         pci_mmcfg_config = xzalloc(struct acpi_mcfg_allocation);
-        if (!pci_mmcfg_config)
+        if ( !pci_mmcfg_config )
             return NULL;
         pci_mmcfg_config[0].address = pciexbar & mask;
         pci_mmcfg_config[0].pci_segment = 0;
@@ -145,31 +150,32 @@ static const char *__init cf_check pci_mmcfg_amd_fam10h(void)
     int i;
     unsigned segnbits = 0, busnbits;
 
-    if (!(pci_probe & PCI_CHECK_ENABLE_AMD_MMCONF))
+    if ( !(pci_probe & PCI_CHECK_ENABLE_AMD_MMCONF) )
         return NULL;
 
     address = MSR_FAM10H_MMIO_CONF_BASE;
-    if (rdmsr_safe(address, msr_content))
+    if ( rdmsr_safe(address, msr_content) )
         return NULL;
 
     /* mmconfig is not enable */
-    if (!(msr_content & FAM10H_MMIO_CONF_ENABLE))
+    if ( !(msr_content & FAM10H_MMIO_CONF_ENABLE) )
         return NULL;
 
     base = msr_content &
-        (FAM10H_MMIO_CONF_BASE_MASK<<FAM10H_MMIO_CONF_BASE_SHIFT);
+           (FAM10H_MMIO_CONF_BASE_MASK << FAM10H_MMIO_CONF_BASE_SHIFT);
 
     busnbits = (msr_content >> FAM10H_MMIO_CONF_BUSRANGE_SHIFT) &
-                FAM10H_MMIO_CONF_BUSRANGE_MASK;
+               FAM10H_MMIO_CONF_BUSRANGE_MASK;
 
     /*
      * only handle bus 0 ?
      * need to skip it
      */
-    if (!busnbits)
+    if ( !busnbits )
         return NULL;
 
-    if (busnbits > 8) {
+    if ( busnbits > 8 )
+    {
         segnbits = busnbits - 8;
         busnbits = 8;
     }
@@ -177,10 +183,11 @@ static const char *__init cf_check pci_mmcfg_amd_fam10h(void)
     pci_mmcfg_config_num = (1 << segnbits);
     pci_mmcfg_config = xmalloc_array(struct acpi_mcfg_allocation,
                                      pci_mmcfg_config_num);
-    if (!pci_mmcfg_config)
+    if ( !pci_mmcfg_config )
         return NULL;
 
-    for (i = 0; i < (1 << segnbits); i++) {
+    for ( i = 0; i < (1 << segnbits); i++ )
+    {
         pci_mmcfg_config[i].address = base + ((unsigned long)i << 28);
         pci_mmcfg_config[i].pci_segment = i;
         pci_mmcfg_config[i].start_bus_number = 0;
@@ -196,22 +203,23 @@ static const char *__init cf_check pci_mmcfg_nvidia_mcp55(void)
     static bool __initdata mcp55_checked;
     int bus, i;
 
-    static const u32 extcfg_regnum      = 0x90;
+    static const u32 extcfg_regnum = 0x90;
     static const u32 extcfg_enable_mask = 1u << 31;
-    static const u32 extcfg_start_mask  = 0xffu << 16;
+    static const u32 extcfg_start_mask = 0xffu << 16;
     static const int extcfg_start_shift = 16;
-    static const u32 extcfg_size_mask   = 3u << 28;
-    static const int extcfg_size_shift  = 28;
-    static const int extcfg_sizebus[]   = {0xff, 0x7f, 0x3f, 0x1f};
-    static const u32 extcfg_base_mask[] = {0x7ff8, 0x7ffc, 0x7ffe, 0x7fff};
+    static const u32 extcfg_size_mask = 3u << 28;
+    static const int extcfg_size_shift = 28;
+    static const int extcfg_sizebus[] = { 0xff, 0x7f, 0x3f, 0x1f };
+    static const u32 extcfg_base_mask[] = { 0x7ff8, 0x7ffc, 0x7ffe, 0x7fff };
     static const int extcfg_base_lshift = 25;
 
     /* check if amd fam10h already took over */
-    if (!acpi_disabled || pci_mmcfg_config_num || mcp55_checked)
+    if ( !acpi_disabled || pci_mmcfg_config_num || mcp55_checked )
         return NULL;
 
     mcp55_checked = 1;
-    for (i = bus = 0; bus < 256; bus++) {
+    for ( i = bus = 0; bus < 256; bus++ )
+    {
         u32 l, extcfg;
         u16 vendor, device;
 
@@ -219,23 +227,24 @@ static const char *__init cf_check pci_mmcfg_nvidia_mcp55(void)
         vendor = l & 0xffff;
         device = (l >> 16) & 0xffff;
 
-        if (PCI_VENDOR_ID_NVIDIA != vendor || 0x0369 != device)
+        if ( PCI_VENDOR_ID_NVIDIA != vendor || 0x0369 != device )
             continue;
 
         extcfg = pci_conf_read32(PCI_SBDF(0, bus, 0, 0), extcfg_regnum);
 
-        if (extcfg & extcfg_enable_mask)
+        if ( extcfg & extcfg_enable_mask )
             i++;
     }
 
-    if (!i)
+    if ( !i )
         return NULL;
 
     pci_mmcfg_config_num = i;
     pci_mmcfg_config = xmalloc_array(struct acpi_mcfg_allocation,
                                      pci_mmcfg_config_num);
 
-    for (i = bus = 0; bus < 256; bus++) {
+    for ( i = bus = 0; bus < 256; bus++ )
+    {
         u64 base;
         u32 l, extcfg;
         u16 vendor, device;
@@ -245,15 +254,15 @@ static const char *__init cf_check pci_mmcfg_nvidia_mcp55(void)
         vendor = l & 0xffff;
         device = (l >> 16) & 0xffff;
 
-        if (PCI_VENDOR_ID_NVIDIA != vendor || 0x0369 != device)
+        if ( PCI_VENDOR_ID_NVIDIA != vendor || 0x0369 != device )
             continue;
 
         extcfg = pci_conf_read32(PCI_SBDF(0, bus, 0, 0), extcfg_regnum);
 
-        if (!(extcfg & extcfg_enable_mask))
+        if ( !(extcfg & extcfg_enable_mask) )
             continue;
 
-        if (i >= pci_mmcfg_config_num)
+        if ( i >= pci_mmcfg_config_num )
             break;
 
         size_index = (extcfg & extcfg_size_mask) >> extcfg_size_shift;
@@ -261,14 +270,14 @@ static const char *__init cf_check pci_mmcfg_nvidia_mcp55(void)
         /* base could be > 4G */
         pci_mmcfg_config[i].address = base << extcfg_base_lshift;
         pci_mmcfg_config[i].pci_segment = 0;
-        pci_mmcfg_config[i].start_bus_number =
-            (extcfg & extcfg_start_mask) >> extcfg_start_shift;
+        pci_mmcfg_config[i].start_bus_number = (extcfg & extcfg_start_mask) >>
+                                               extcfg_start_shift;
         pci_mmcfg_config[i].end_bus_number =
             pci_mmcfg_config[i].start_bus_number + extcfg_sizebus[size_index];
         i++;
     }
 
-    if (bus == 256)
+    if ( bus == 256 )
         return "nVidia MCP55";
 
     pci_mmcfg_config_num = 0;
@@ -287,16 +296,17 @@ struct pci_mmcfg_hostbridge_probe {
 };
 
 static struct pci_mmcfg_hostbridge_probe pci_mmcfg_probes[] __initdata = {
-    { 0, PCI_DEVFN(0, 0), PCI_VENDOR_ID_INTEL,
-      PCI_DEVICE_ID_INTEL_E7520_MCH, pci_mmcfg_e7520 },
-    { 0, PCI_DEVFN(0, 0), PCI_VENDOR_ID_INTEL,
-      PCI_DEVICE_ID_INTEL_82945G_HB, pci_mmcfg_intel_945 },
-    { 0, PCI_DEVFN(0x18, 0), PCI_VENDOR_ID_AMD,
-      0x1200, pci_mmcfg_amd_fam10h },
-    { 0xff, PCI_DEVFN(0, 0), PCI_VENDOR_ID_AMD,
-      0x1200, pci_mmcfg_amd_fam10h },
-    { 0, PCI_DEVFN(0, 0), PCI_VENDOR_ID_NVIDIA,
-      0x0369, pci_mmcfg_nvidia_mcp55 },
+    { 0,
+     PCI_DEVFN(0,           0),
+     PCI_VENDOR_ID_INTEL,                             PCI_DEVICE_ID_INTEL_E7520_MCH,
+     pci_mmcfg_e7520                                                                                        },
+    { 0,
+     PCI_DEVFN(0,           0),
+     PCI_VENDOR_ID_INTEL,                             PCI_DEVICE_ID_INTEL_82945G_HB,
+     pci_mmcfg_intel_945                                                                                    },
+    { 0,    PCI_DEVFN(0x18, 0), PCI_VENDOR_ID_AMD,    0x1200,                        pci_mmcfg_amd_fam10h   },
+    { 0xff, PCI_DEVFN(0,    0), PCI_VENDOR_ID_AMD,    0x1200,                        pci_mmcfg_amd_fam10h   },
+    { 0,    PCI_DEVFN(0,    0), PCI_VENDOR_ID_NVIDIA, 0x0369,                        pci_mmcfg_nvidia_mcp55 },
 };
 
 static int __init pci_mmcfg_check_hostbridge(void)
@@ -311,51 +321,59 @@ static int __init pci_mmcfg_check_hostbridge(void)
     pci_mmcfg_config = NULL;
     name = NULL;
 
-    for (i = 0; !name && i < ARRAY_SIZE(pci_mmcfg_probes); i++) {
-        bus =  pci_mmcfg_probes[i].bus;
+    for ( i = 0; !name && i < ARRAY_SIZE(pci_mmcfg_probes); i++ )
+    {
+        bus = pci_mmcfg_probes[i].bus;
         devfn = pci_mmcfg_probes[i].devfn;
         l = pci_conf_read32(PCI_SBDF(0, bus, devfn), 0);
         vendor = l & 0xffff;
         device = (l >> 16) & 0xffff;
 
-        if (pci_mmcfg_probes[i].vendor == vendor &&
-            pci_mmcfg_probes[i].device == device)
+        if ( pci_mmcfg_probes[i].vendor == vendor &&
+             pci_mmcfg_probes[i].device == device )
             name = pci_mmcfg_probes[i].probe();
     }
 
-    if (name) {
+    if ( name )
+    {
         printk(KERN_INFO "PCI: Found %s %s MMCONFIG support.\n",
-            name, pci_mmcfg_config_num ? "with" : "without");
+               name,
+               pci_mmcfg_config_num ? "with" : "without");
     }
 
     return name != NULL;
 }
 
-static int __init is_mmconf_reserved(
-    u64 addr, u64 size, int i,
-    typeof(pci_mmcfg_config[0]) *cfg)
+static int __init is_mmconf_reserved(u64 addr, u64 size, int i,
+                                     typeof(pci_mmcfg_config[0]) *cfg)
 {
     u64 old_size = size;
     int valid = 0;
 
-    while (!e820_all_mapped(addr, addr + size, E820_RESERVED)) {
+    while ( !e820_all_mapped(addr, addr + size, E820_RESERVED) )
+    {
         size >>= 1;
-        if (size < (16UL<<20))
+        if ( size < (16UL << 20) )
             break;
     }
 
-    if (size >= (16UL<<20) || size == old_size) {
+    if ( size >= (16UL << 20) || size == old_size )
+    {
         printk(KERN_NOTICE "PCI: MCFG area at %lx reserved in E820\n", addr);
         valid = 1;
 
-        if (old_size != size) {
+        if ( old_size != size )
+        {
             /* update end_bus_number */
-            cfg->end_bus_number = cfg->start_bus_number + ((size>>20) - 1);
-            printk(KERN_NOTICE "PCI: updated MCFG configuration %d: base %lx "
-                   "segment %hu buses %u - %u\n",
-                   i, (unsigned long)cfg->address, cfg->pci_segment,
-                   (unsigned int)cfg->start_bus_number,
-                   (unsigned int)cfg->end_bus_number);
+            cfg->end_bus_number = cfg->start_bus_number + ((size >> 20) - 1);
+            printk(
+                KERN_NOTICE
+                "PCI: updated MCFG configuration %d: base %lx " "segment %hu buses %u - %u\n",
+                i,
+                (unsigned long)cfg->address,
+                cfg->pci_segment,
+                (unsigned int)cfg->start_bus_number,
+                (unsigned int)cfg->end_bus_number);
         }
     }
 
@@ -368,12 +386,12 @@ static bool __init pci_mmcfg_reject_broken(void)
     int i;
     bool valid = true;
 
-    if ((pci_mmcfg_config_num == 0) ||
-        (pci_mmcfg_config == NULL) ||
-        (pci_mmcfg_config[0].address == 0))
+    if ( (pci_mmcfg_config_num == 0) || (pci_mmcfg_config == NULL) ||
+         (pci_mmcfg_config[0].address == 0) )
         return 0;
 
-    for (i = 0; i < pci_mmcfg_config_num; i++) {
+    for ( i = 0; i < pci_mmcfg_config_num; i++ )
+    {
         u64 addr, size;
 
         cfg = &pci_mmcfg_config[i];
@@ -382,14 +400,18 @@ static bool __init pci_mmcfg_reject_broken(void)
         addr += cfg->address;
         size = cfg->end_bus_number + 1 - cfg->start_bus_number;
         size <<= 20;
-        printk(KERN_NOTICE "PCI: MCFG configuration %d: base %lx "
-               "segment %04x buses %02x - %02x\n",
-               i, (unsigned long)cfg->address, cfg->pci_segment,
-               (unsigned int)cfg->start_bus_number,
-               (unsigned int)cfg->end_bus_number);
+        printk(
+            KERN_NOTICE
+            "PCI: MCFG configuration %d: base %lx " "segment %04x buses %02x - %02x\n",
+            i,
+            (unsigned long)cfg->address,
+            cfg->pci_segment,
+            (unsigned int)cfg->start_bus_number,
+            (unsigned int)cfg->end_bus_number);
 
-        if (!is_mmconf_reserved(addr, size, i, cfg) ||
-            pci_mmcfg_arch_enable(i)) {
+        if ( !is_mmconf_reserved(addr, size, i, cfg) ||
+             pci_mmcfg_arch_enable(i) )
+        {
             pci_mmcfg_arch_disable(i);
             valid = 0;
         }
@@ -405,32 +427,34 @@ void __init acpi_mmcfg_init(void)
     pci_segments_init();
 
     /* MMCONFIG disabled */
-    if ((pci_probe & PCI_PROBE_MMCONF) == 0)
+    if ( (pci_probe & PCI_PROBE_MMCONF) == 0 )
         return;
 
     /* MMCONFIG already enabled */
-    if (!(pci_probe & PCI_PROBE_MASK & ~PCI_PROBE_MMCONF))
+    if ( !(pci_probe & PCI_PROBE_MASK & ~PCI_PROBE_MMCONF) )
         return;
 
-    if (pci_mmcfg_check_hostbridge()) {
+    if ( pci_mmcfg_check_hostbridge() )
+    {
         unsigned int i;
 
         pci_mmcfg_arch_init();
-        for (i = 0; i < pci_mmcfg_config_num; ++i)
-            if (pci_mmcfg_arch_enable(i))
+        for ( i = 0; i < pci_mmcfg_config_num; ++i )
+            if ( pci_mmcfg_arch_enable(i) )
                 valid = 0;
-    } else {
+    }
+    else
+    {
         acpi_table_parse(ACPI_SIG_MCFG, acpi_parse_mcfg);
         pci_mmcfg_arch_init();
         valid = pci_mmcfg_reject_broken();
     }
 
-    if ((pci_mmcfg_config_num == 0) ||
-        (pci_mmcfg_config == NULL) ||
-        (pci_mmcfg_config[0].address == 0))
+    if ( (pci_mmcfg_config_num == 0) || (pci_mmcfg_config == NULL) ||
+         (pci_mmcfg_config[0].address == 0) )
         return;
 
-    if (valid)
+    if ( valid )
         pci_probe = (pci_probe & ~PCI_PROBE_MASK) | PCI_PROBE_MMCONF;
 }
 
@@ -440,24 +464,32 @@ int pci_mmcfg_reserved(uint64_t address, unsigned int segment,
 {
     unsigned int i;
 
-    if (flags & ~XEN_PCI_MMCFG_RESERVED)
+    if ( flags & ~XEN_PCI_MMCFG_RESERVED )
         return -EINVAL;
 
-    for (i = 0; i < pci_mmcfg_config_num; ++i) {
+    for ( i = 0; i < pci_mmcfg_config_num; ++i )
+    {
         const typeof(pci_mmcfg_config[0]) *cfg = &pci_mmcfg_config[i];
 
-        if (cfg->pci_segment == segment &&
-            cfg->start_bus_number == start_bus &&
-            cfg->end_bus_number == end_bus) {
-            if (cfg->address != address) {
-                printk(KERN_WARNING
-                       "Base address presented for segment %04x bus %02x-%02x"
-                       " (%08" PRIx64 ") does not match previously obtained"
-                       " one (%08" PRIx64 ")\n",
-                       segment, start_bus, end_bus, address, cfg->address);
+        if ( cfg->pci_segment == segment &&
+             cfg->start_bus_number == start_bus &&
+             cfg->end_bus_number == end_bus )
+        {
+            if ( cfg->address != address )
+            {
+                printk(
+                    KERN_WARNING
+                    "Base address presented for segment %04x bus %02x-%02x" " (%08" PRIx64
+                    ") does not match previously obtained" " one (%08" PRIx64
+                    ")\n",
+                    segment,
+                    start_bus,
+                    end_bus,
+                    address,
+                    cfg->address);
                 return -EIO;
             }
-            if (flags & XEN_PCI_MMCFG_RESERVED)
+            if ( flags & XEN_PCI_MMCFG_RESERVED )
                 return pci_mmcfg_arch_enable(i);
             pci_mmcfg_arch_disable(i);
             return 0;

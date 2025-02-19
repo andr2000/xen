@@ -52,9 +52,9 @@
 
 #ifdef CONFIG_LIVEPATCH
 /* Must keep for livepatches to resolve alternative calls. */
-# define __alt_call_maybe_initdata __ro_after_init
+#define __alt_call_maybe_initdata __ro_after_init
 #else
-# define __alt_call_maybe_initdata __initdata
+#define __alt_call_maybe_initdata __initdata
 #endif
 
 #else

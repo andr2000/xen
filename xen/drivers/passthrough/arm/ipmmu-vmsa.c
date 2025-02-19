@@ -124,7 +124,7 @@ struct ipmmu_vmsa_device {
     struct ipmmu_vmsa_device *root;
     struct list_head list;
     unsigned int num_ctx;
-    spinlock_t lock;    /* Protects ctx and domains[] */
+    spinlock_t lock; /* Protects ctx and domains[] */
     DECLARE_BITMAP(ctx, IPMMU_CTX_MAX);
     struct ipmmu_vmsa_domain *domains[IPMMU_CTX_MAX];
     unsigned int utlb_refcount[IPMMU_UTLB_MAX];
@@ -233,8 +233,9 @@ static struct ipmmu_vmsa_device *to_ipmmu(struct device *dev)
 {
     struct iommu_fwspec *fwspec = dev_iommu_fwspec_get(dev);
 
-    return fwspec && fwspec->iommu_priv ?
-        ((struct ipmmu_vmsa_xen_device *)fwspec->iommu_priv)->mmu : NULL;
+    return fwspec && fwspec->iommu_priv
+               ? ((struct ipmmu_vmsa_xen_device *)fwspec->iommu_priv)->mmu
+               : NULL;
 }
 
 static void set_ipmmu(struct device *dev, struct ipmmu_vmsa_device *mmu)
@@ -248,8 +249,9 @@ static struct ipmmu_vmsa_domain *to_domain(struct device *dev)
 {
     struct iommu_fwspec *fwspec = dev_iommu_fwspec_get(dev);
 
-    return fwspec && fwspec->iommu_priv ?
-        ((struct ipmmu_vmsa_xen_device *)fwspec->iommu_priv)->domain : NULL;
+    return fwspec && fwspec->iommu_priv
+               ? ((struct ipmmu_vmsa_xen_device *)fwspec->iommu_priv)->domain
+               : NULL;
 }
 
 static void set_domain(struct device *dev, struct ipmmu_vmsa_domain *domain)
@@ -266,7 +268,7 @@ static struct ipmmu_vmsa_device *ipmmu_find_mmu_by_dev(struct device *dev)
 
     spin_lock(&ipmmu_devices_lock);
 
-    list_for_each_entry ( mmu, &ipmmu_devices, list )
+    list_for_each_entry(mmu, &ipmmu_devices, list)
     {
         if ( mmu->dev == dev )
         {
@@ -293,7 +295,7 @@ static struct ipmmu_vmsa_device *ipmmu_find_root(void)
 
     spin_lock(&ipmmu_devices_lock);
 
-    list_for_each_entry( mmu, &ipmmu_devices, list )
+    list_for_each_entry(mmu, &ipmmu_devices, list)
     {
         if ( ipmmu_is_root(mmu) )
         {
@@ -349,8 +351,8 @@ static uint32_t ipmmu_ctx_read_root(struct ipmmu_vmsa_domain *domain,
     return ipmmu_ctx_read(domain->mmu->root, domain->context_id, reg);
 }
 
-static void ipmmu_ctx_write_root(struct ipmmu_vmsa_domain *domain,
-                                 uint32_t reg, uint32_t data)
+static void ipmmu_ctx_write_root(struct ipmmu_vmsa_domain *domain, uint32_t reg,
+                                 uint32_t data)
 {
     ipmmu_ctx_write(domain->mmu->root, domain->context_id, reg, data);
 }
@@ -363,7 +365,9 @@ static void ipmmu_ctx_write_cache(struct ipmmu_vmsa_domain *domain,
 
     /* Mask fields which are implemented in IPMMU-MM only. */
     if ( !ipmmu_is_root(domain->mmu) )
-        ipmmu_ctx_write(domain->mmu, domain->context_id, reg,
+        ipmmu_ctx_write(domain->mmu,
+                        domain->context_id,
+                        reg,
                         data & IMCTR_COMMON_MASK);
 }
 
@@ -371,13 +375,13 @@ static void ipmmu_ctx_write_cache(struct ipmmu_vmsa_domain *domain,
  * Write the context to both Root IPMMU and all Cache IPMMUs assigned
  * to this Xen domain.
  */
-static void ipmmu_ctx_write_all(struct ipmmu_vmsa_domain *domain,
-                                uint32_t reg, uint32_t data)
+static void ipmmu_ctx_write_all(struct ipmmu_vmsa_domain *domain, uint32_t reg,
+                                uint32_t data)
 {
     struct ipmmu_vmsa_xen_domain *xen_domain = dom_iommu(domain->d)->arch.priv;
     struct ipmmu_vmsa_domain *cache_domain;
 
-    list_for_each_entry( cache_domain, &xen_domain->cache_domains, list )
+    list_for_each_entry(cache_domain, &xen_domain->cache_domains, list)
         ipmmu_ctx_write_cache(cache_domain, reg, data);
 
     ipmmu_ctx_write_root(domain, reg, data);
@@ -394,8 +398,8 @@ static void ipmmu_imuasid_write(struct ipmmu_vmsa_device *mmu,
     ipmmu_write(mmu, ipmmu_utlb_reg(mmu, IMUASID(utlb)), data);
 }
 
-static void ipmmu_imuctr_write(struct ipmmu_vmsa_device *mmu,
-                               unsigned int utlb, uint32_t data)
+static void ipmmu_imuctr_write(struct ipmmu_vmsa_device *mmu, unsigned int utlb,
+                               uint32_t data)
 {
     ipmmu_write(mmu, ipmmu_utlb_reg(mmu, IMUCTR(utlb)), data);
 }
@@ -418,7 +422,8 @@ static void ipmmu_tlb_sync(struct ipmmu_vmsa_domain *domain)
         cpu_relax();
         if ( ++count == TLB_LOOP_TIMEOUT )
         {
-            dev_err_ratelimited(domain->mmu->dev, "TLB sync timed out -- MMU may be deadlocked\n");
+            dev_err_ratelimited(domain->mmu->dev,
+                                "TLB sync timed out -- MMU may be deadlocked\n");
             return;
         }
         udelay(1);
@@ -459,11 +464,13 @@ static int ipmmu_utlb_enable(struct ipmmu_vmsa_domain *domain,
         unsigned int context_id;
 
         context_id = (imuctr & mmu->features->imuctr_ttsel_mask) >>
-            IMUCTR_TTSEL_SHIFT;
+                     IMUCTR_TTSEL_SHIFT;
         if ( domain->context_id != context_id )
         {
-            dev_err(mmu->dev, "Micro-TLB %u already assigned to IPMMU context %u\n",
-                    utlb, context_id);
+            dev_err(mmu->dev,
+                    "Micro-TLB %u already assigned to IPMMU context %u\n",
+                    utlb,
+                    context_id);
             return -EINVAL;
         }
     }
@@ -477,8 +484,10 @@ static int ipmmu_utlb_enable(struct ipmmu_vmsa_domain *domain,
     if ( mmu->utlb_refcount[utlb]++ == 0 )
     {
         ipmmu_imuasid_write(mmu, utlb, 0);
-        ipmmu_imuctr_write(mmu, utlb, imuctr |
-                           IMUCTR_TTSEL_MMU(domain->context_id) | IMUCTR_MMUEN);
+        ipmmu_imuctr_write(mmu,
+                           utlb,
+                           imuctr | IMUCTR_TTSEL_MMU(domain->context_id) |
+                               IMUCTR_MMUEN);
     }
 
     return 0;
@@ -552,8 +561,11 @@ static int ipmmu_domain_init_context(struct ipmmu_vmsa_domain *domain)
     ASSERT(domain->d != NULL);
     ttbr = page_to_maddr(domain->d->arch.p2m.root);
 
-    dev_info(domain->mmu->root->dev, "%pd: Set IPMMU context %u (pgd 0x%"PRIx64")\n",
-             domain->d, domain->context_id, ttbr);
+    dev_info(domain->mmu->root->dev,
+             "%pd: Set IPMMU context %u (pgd 0x%" PRIx64 ")\n",
+             domain->d,
+             domain->context_id,
+             ttbr);
 
     ipmmu_ctx_write_root(domain, IMTTLBR0, ttbr & IMTTLBR0_TTBR_MASK);
     ipmmu_ctx_write_root(domain, IMTTUBR0, (ttbr >> 32) & IMTTUBR0_TTBR_MASK);
@@ -565,8 +577,9 @@ static int ipmmu_domain_init_context(struct ipmmu_vmsa_domain *domain)
      * Always bypass stage 1 translation.
      */
     tsz0 = (64 - p2m_ipa_bits) << IMTTBCR_TSZ0_SHIFT;
-    ipmmu_ctx_write_root(domain, IMTTBCR, IMTTBCR_EAE | IMTTBCR_PMB |
-                         IMTTBCR_SL0_LVL_1 | tsz0);
+    ipmmu_ctx_write_root(domain,
+                         IMTTBCR,
+                         IMTTBCR_EAE | IMTTBCR_PMB | IMTTBCR_SL0_LVL_1 | tsz0);
 
     /*
      * IMSTR
@@ -582,7 +595,8 @@ static int ipmmu_domain_init_context(struct ipmmu_vmsa_domain *domain)
      * Enable the context for Root IPMMU only. Flush the TLB as required
      * when modifying the context registers.
      */
-    ipmmu_ctx_write_root(domain, IMCTR,
+    ipmmu_ctx_write_root(domain,
+                         IMCTR,
                          IMCTR_VA64 | IMCTR_INTEN | IMCTR_FLUSH | IMCTR_MMUEN);
 
     return 0;
@@ -616,7 +630,7 @@ static void ipmmu_domain_irq(struct ipmmu_vmsa_domain *domain)
         return;
 
     iova = ipmmu_ctx_read_root(domain, IMELAR) |
-        ((uint64_t)ipmmu_ctx_read_root(domain, IMEUAR) << 32);
+           ((uint64_t)ipmmu_ctx_read_root(domain, IMEUAR) << 32);
 
     /*
      * Clear the error status flags. Unlike traditional interrupt flag
@@ -628,18 +642,26 @@ static void ipmmu_domain_irq(struct ipmmu_vmsa_domain *domain)
 
     /* Log fatal errors. */
     if ( status & IMSTR_MHIT )
-        dev_err_ratelimited(mmu->dev, "%pd: Multiple TLB hits @0x%"PRIx64"\n",
-                            domain->d, iova);
+        dev_err_ratelimited(mmu->dev,
+                            "%pd: Multiple TLB hits @0x%" PRIx64 "\n",
+                            domain->d,
+                            iova);
     if ( status & IMSTR_ABORT )
-        dev_err_ratelimited(mmu->dev, "%pd: Page Table Walk Abort @0x%"PRIx64"\n",
-                            domain->d, iova);
+        dev_err_ratelimited(mmu->dev,
+                            "%pd: Page Table Walk Abort @0x%" PRIx64 "\n",
+                            domain->d,
+                            iova);
 
     /* Return if it is neither Permission Fault nor Translation Fault. */
     if ( !(status & (IMSTR_PF | IMSTR_TF)) )
         return;
 
-    dev_err_ratelimited(mmu->dev, "%pd: Unhandled fault: status 0x%08x iova 0x%"PRIx64"\n",
-                        domain->d, status, iova);
+    dev_err_ratelimited(mmu->dev,
+                        "%pd: Unhandled fault: status 0x%08x iova 0x%" PRIx64
+                        "\n",
+                        domain->d,
+                        status,
+                        iova);
 }
 
 static void ipmmu_irq(int irq, void *dev)
@@ -690,7 +712,8 @@ static int ipmmu_attach_device(struct ipmmu_vmsa_domain *domain,
          * Enable the context for Cache IPMMU only. Flush the TLB as required
          * when modifying the context registers.
          */
-        ipmmu_ctx_write_cache(domain, IMCTR,
+        ipmmu_ctx_write_cache(domain,
+                              IMCTR,
                               ipmmu_ctx_read_root(domain, IMCTR) | IMCTR_FLUSH);
 
         dev_info(dev, "Using IPMMU context %u\n", domain->context_id);
@@ -701,8 +724,10 @@ static int ipmmu_attach_device(struct ipmmu_vmsa_domain *domain,
          * Something is wrong, we can't attach two master devices using
          * different IOMMUs to the same IPMMU domain.
          */
-        dev_err(dev, "Can't attach IPMMU %s to domain on IPMMU %s\n",
-                dev_name(mmu->dev), dev_name(domain->mmu->dev));
+        dev_err(dev,
+                "Can't attach IPMMU %s to domain on IPMMU %s\n",
+                dev_name(mmu->dev),
+                dev_name(domain->mmu->dev));
         return -EINVAL;
     }
     else
@@ -851,32 +876,31 @@ static __init bool ipmmu_stage2_supported(void)
     return stage2_supported;
 }
 
-static const struct dt_device_match ipmmu_dt_match[] __initconst =
-{
+static const struct dt_device_match ipmmu_dt_match[] __initconst = {
     {
-        .compatible = "renesas,ipmmu-r8a7795",
-        .data = &ipmmu_features_rcar_gen3,
-    },
+     .compatible = "renesas,ipmmu-r8a7795",
+     .data = &ipmmu_features_rcar_gen3,
+     },
     {
-        .compatible = "renesas,ipmmu-r8a77965",
-        .data = &ipmmu_features_rcar_gen3,
-    },
+     .compatible = "renesas,ipmmu-r8a77965",
+     .data = &ipmmu_features_rcar_gen3,
+     },
     {
-        .compatible = "renesas,ipmmu-r8a7796",
-        .data = &ipmmu_features_rcar_gen3,
-    },
+     .compatible = "renesas,ipmmu-r8a7796",
+     .data = &ipmmu_features_rcar_gen3,
+     },
     {
-        .compatible = "renesas,ipmmu-r8a77961",
-        .data = &ipmmu_features_rcar_gen3,
-    },
+     .compatible = "renesas,ipmmu-r8a77961",
+     .data = &ipmmu_features_rcar_gen3,
+     },
     {
-        .compatible = "renesas,ipmmu-r8a779f0",
-        .data = &ipmmu_features_rcar_gen4,
-    },
+     .compatible = "renesas,ipmmu-r8a779f0",
+     .data = &ipmmu_features_rcar_gen4,
+     },
     {
-        .compatible = "renesas,ipmmu-r8a779g0",
-        .data = &ipmmu_features_rcar_gen4,
-    },
+     .compatible = "renesas,ipmmu-r8a779g0",
+     .data = &ipmmu_features_rcar_gen4,
+     },
     { /* sentinel */ },
 };
 
@@ -921,8 +945,11 @@ static int ipmmu_probe(struct dt_device_node *node)
     mmu->base = ioremap_nocache(addr, size);
     if ( !mmu->base )
     {
-        dev_err(&node->dev, "Failed to ioremap MMIO (addr 0x%"PRIx64" size 0x%"PRIx64")\n",
-                addr, size);
+        dev_err(&node->dev,
+                "Failed to ioremap MMIO (addr 0x%" PRIx64 " size 0x%" PRIx64
+                ")\n",
+                addr,
+                size);
         ret = -ENOMEM;
         goto out;
     }
@@ -948,7 +975,9 @@ static int ipmmu_probe(struct dt_device_node *node)
     {
         if ( !ipmmu_stage2_supported() )
         {
-            printk(XENLOG_ERR "ipmmu: P2M sharing is not supported in current SoC revision\n");
+            printk(
+                XENLOG_ERR
+                "ipmmu: P2M sharing is not supported in current SoC revision\n");
             ret = -ENODEV;
             goto out;
         }
@@ -992,7 +1021,8 @@ static int ipmmu_probe(struct dt_device_node *node)
     list_add(&mmu->list, &ipmmu_devices);
     spin_unlock(&ipmmu_devices_lock);
 
-    dev_info(&node->dev, "Registered %s IPMMU\n",
+    dev_info(&node->dev,
+             "Registered %s IPMMU\n",
              ipmmu_is_root(mmu) ? "Root" : "Cache");
 
     return 0;
@@ -1040,7 +1070,7 @@ static struct ipmmu_vmsa_domain *ipmmu_get_cache_domain(struct domain *d,
      * Loop through all Cache IPMMU domains associated with this Xen domain
      * to locate an IPMMU domain this IPMMU device is assigned to.
      */
-    list_for_each_entry( domain, &xen_domain->cache_domains, list )
+    list_for_each_entry(domain, &xen_domain->cache_domains, list)
     {
         if ( domain->mmu == mmu )
             return domain;
@@ -1234,8 +1264,8 @@ static int ipmmu_deassign_device(struct domain *d, struct device *dev)
     return 0;
 }
 
-static int ipmmu_reassign_device(struct domain *s, struct domain *t,
-                                 u8 devfn,  struct device *dev)
+static int ipmmu_reassign_device(struct domain *s, struct domain *t, u8 devfn,
+                                 struct device *dev)
 {
     int ret = 0;
 
@@ -1303,8 +1333,10 @@ static int ipmmu_add_device(u8 devfn, struct device *dev)
     /* Let Xen know that the master device is protected by an IOMMU. */
     dt_device_set_protected(dev_to_dt(dev));
 
-    dev_info(dev, "Added master device (IPMMU %s micro-TLBs %u)\n",
-             dev_name(fwspec->iommu_dev), fwspec->num_ids);
+    dev_info(dev,
+             "Added master device (IPMMU %s micro-TLBs %u)\n",
+             dev_name(fwspec->iommu_dev),
+             fwspec->num_ids);
 
     return 0;
 }
@@ -1355,19 +1387,18 @@ static void ipmmu_iommu_domain_teardown(struct domain *d)
     dom_iommu(d)->arch.priv = NULL;
 }
 
-static const struct iommu_ops ipmmu_iommu_ops =
-{
-    .page_sizes      = PAGE_SIZE_4K,
-    .init            = ipmmu_iommu_domain_init,
-    .hwdom_init      = arch_iommu_hwdom_init,
-    .teardown        = ipmmu_iommu_domain_teardown,
-    .iotlb_flush     = ipmmu_iotlb_flush,
-    .assign_device   = ipmmu_assign_device,
+static const struct iommu_ops ipmmu_iommu_ops = {
+    .page_sizes = PAGE_SIZE_4K,
+    .init = ipmmu_iommu_domain_init,
+    .hwdom_init = arch_iommu_hwdom_init,
+    .teardown = ipmmu_iommu_domain_teardown,
+    .iotlb_flush = ipmmu_iotlb_flush,
+    .assign_device = ipmmu_assign_device,
     .reassign_device = ipmmu_reassign_device,
-    .map_page        = arm_iommu_map_page,
-    .unmap_page      = arm_iommu_unmap_page,
-    .dt_xlate        = ipmmu_dt_xlate,
-    .add_device      = ipmmu_add_device,
+    .map_page = arm_iommu_map_page,
+    .unmap_page = arm_iommu_unmap_page,
+    .dt_xlate = ipmmu_dt_xlate,
+    .add_device = ipmmu_add_device,
 };
 
 static __init int ipmmu_init(struct dt_device_node *node, const void *data)
@@ -1393,8 +1424,7 @@ static __init int ipmmu_init(struct dt_device_node *node, const void *data)
 }
 
 DT_DEVICE_START(ipmmu, "Renesas IPMMU-VMSA", DEVICE_IOMMU)
-    .dt_match = ipmmu_dt_match,
-    .init = ipmmu_init,
+    .dt_match = ipmmu_dt_match, .init = ipmmu_init,
 DT_DEVICE_END
 
 /*

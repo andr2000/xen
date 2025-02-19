@@ -57,7 +57,8 @@ static int assign_virtual_sbdf(struct pci_dev *pdev)
      */
     if ( pdev->sbdf.fn )
     {
-        gdprintk(XENLOG_ERR, "%pp: only function 0 passthrough supported\n",
+        gdprintk(XENLOG_ERR,
+                 "%pp: only function 0 passthrough supported\n",
                  &pdev->sbdf);
         return -EOPNOTSUPP;
     }
@@ -101,9 +102,8 @@ void vpci_deassign_device(struct pci_dev *pdev)
     spin_lock(&pdev->vpci->lock);
     while ( !list_empty(&pdev->vpci->handlers) )
     {
-        struct vpci_register *r = list_first_entry(&pdev->vpci->handlers,
-                                                   struct vpci_register,
-                                                   node);
+        struct vpci_register *r =
+            list_first_entry(&pdev->vpci->handlers, struct vpci_register, node);
 
         list_del(&r->node);
         xfree(r);
@@ -166,7 +166,8 @@ int vpci_assign_device(struct pci_dev *pdev)
             break;
     }
 
- out: __maybe_unused;
+out:
+    __maybe_unused;
     if ( rc )
         vpci_deassign_device(pdev);
 
@@ -191,43 +192,43 @@ static int vpci_register_cmp(const struct vpci_register *r1,
 }
 
 /* Dummy hooks, writes are ignored, reads return 1's */
-static uint32_t cf_check vpci_ignored_read(
-    const struct pci_dev *pdev, unsigned int reg, void *data)
+static uint32_t cf_check vpci_ignored_read(const struct pci_dev *pdev,
+                                           unsigned int reg, void *data)
 {
     return ~(uint32_t)0;
 }
 
-static void cf_check vpci_ignored_write(
-    const struct pci_dev *pdev, unsigned int reg, uint32_t val, void *data)
-{
-}
+static void cf_check vpci_ignored_write(const struct pci_dev *pdev,
+                                        unsigned int reg, uint32_t val,
+                                        void *data)
+{}
 
-uint32_t cf_check vpci_read_val(
-    const struct pci_dev *pdev, unsigned int reg, void *data)
+uint32_t cf_check vpci_read_val(const struct pci_dev *pdev, unsigned int reg,
+                                void *data)
 {
     return (uintptr_t)data;
 }
 
-uint32_t cf_check vpci_hw_read8(
-    const struct pci_dev *pdev, unsigned int reg, void *data)
+uint32_t cf_check vpci_hw_read8(const struct pci_dev *pdev, unsigned int reg,
+                                void *data)
 {
     return pci_conf_read8(pdev->sbdf, reg);
 }
 
-uint32_t cf_check vpci_hw_read16(
-    const struct pci_dev *pdev, unsigned int reg, void *data)
+uint32_t cf_check vpci_hw_read16(const struct pci_dev *pdev, unsigned int reg,
+                                 void *data)
 {
     return pci_conf_read16(pdev->sbdf, reg);
 }
 
-uint32_t cf_check vpci_hw_read32(
-    const struct pci_dev *pdev, unsigned int reg, void *data)
+uint32_t cf_check vpci_hw_read32(const struct pci_dev *pdev, unsigned int reg,
+                                 void *data)
 {
     return pci_conf_read32(pdev->sbdf, reg);
 }
 
-void cf_check vpci_hw_write16(
-    const struct pci_dev *pdev, unsigned int reg, uint32_t val, void *data)
+void cf_check vpci_hw_write16(const struct pci_dev *pdev, unsigned int reg,
+                              uint32_t val, void *data)
 {
     pci_conf_write16(pdev->sbdf, reg, val);
 }
@@ -271,7 +272,7 @@ int vpci_add_register_mask(struct vpci *vpci, vpci_read_t *read_handler,
     spin_lock(&vpci->lock);
 
     /* The list of handlers must be kept sorted at all times. */
-    list_for_each ( prev, &vpci->handlers )
+    list_for_each(prev, &vpci->handlers)
     {
         const struct vpci_register *this =
             list_entry(prev, const struct vpci_register, node);
@@ -300,7 +301,7 @@ int vpci_remove_register(struct vpci *vpci, unsigned int offset,
     struct vpci_register *rm;
 
     spin_lock(&vpci->lock);
-    list_for_each_entry ( rm, &vpci->handlers, node )
+    list_for_each_entry(rm, &vpci->handlers, node)
     {
         int cmp = vpci_register_cmp(&r, rm);
 
@@ -429,7 +430,7 @@ static uint32_t merge_result(uint32_t data, uint32_t new, unsigned int size,
 {
     uint32_t mask = 0xffffffffU >> (32 - 8 * size);
 
-    return (data & ~(mask << (offset * 8))) | ((new & mask) << (offset * 8));
+    return (data & ~(mask << (offset * 8))) | ((new &mask) << (offset * 8));
 }
 
 uint32_t vpci_read(pci_sbdf_t sbdf, unsigned int reg, unsigned int size)
@@ -465,12 +466,10 @@ uint32_t vpci_read(pci_sbdf_t sbdf, unsigned int reg, unsigned int size)
     spin_lock(&pdev->vpci->lock);
 
     /* Read from the hardware or the emulated register handlers. */
-    list_for_each_entry ( r, &pdev->vpci->handlers, node )
+    list_for_each_entry(r, &pdev->vpci->handlers, node)
     {
-        const struct vpci_register emu = {
-            .offset = reg + data_offset,
-            .size = size - data_offset
-        };
+        const struct vpci_register emu = { .offset = reg + data_offset,
+                                           .size = size - data_offset };
         int cmp = vpci_register_cmp(&emu, r);
         uint32_t val;
         unsigned int read_size;
@@ -512,8 +511,8 @@ uint32_t vpci_read(pci_sbdf_t sbdf, unsigned int reg, unsigned int size)
     if ( data_offset < size )
     {
         /* Tailing gap, read the remaining. */
-        uint32_t tmp_data = vpci_read_hw(sbdf, reg + data_offset,
-                                         size - data_offset);
+        uint32_t tmp_data =
+            vpci_read_hw(sbdf, reg + data_offset, size - data_offset);
 
         data = merge_result(data, tmp_data, size - data_offset, data_offset);
     }
@@ -543,7 +542,9 @@ static void vpci_write_helper(const struct pci_dev *pdev,
     data &= ~(preserved_mask | r->rsvdz_mask);
     data |= curval & preserved_mask;
 
-    r->write(pdev, r->offset, data & (0xffffffffU >> (32 - 8 * r->size)),
+    r->write(pdev,
+             r->offset,
+             data & (0xffffffffU >> (32 - 8 * r->size)),
              r->private);
 }
 
@@ -589,12 +590,10 @@ void vpci_write(pci_sbdf_t sbdf, unsigned int reg, unsigned int size,
     spin_lock(&pdev->vpci->lock);
 
     /* Write the value to the hardware or emulated registers. */
-    list_for_each_entry ( r, &pdev->vpci->handlers, node )
+    list_for_each_entry(r, &pdev->vpci->handlers, node)
     {
-        const struct vpci_register emu = {
-            .offset = reg + data_offset,
-            .size = size - data_offset
-        };
+        const struct vpci_register emu = { .offset = reg + data_offset,
+                                           .size = size - data_offset };
         int cmp = vpci_register_cmp(&emu, r);
         unsigned int write_size;
 
@@ -606,7 +605,9 @@ void vpci_write(pci_sbdf_t sbdf, unsigned int reg, unsigned int size,
         if ( emu.offset < r->offset )
         {
             /* Heading gap, write partial content to hardware. */
-            vpci_write_hw(sbdf, emu.offset, r->offset - emu.offset,
+            vpci_write_hw(sbdf,
+                          emu.offset,
+                          r->offset - emu.offset,
                           data >> (data_offset * 8));
             data_offset += r->offset - emu.offset;
         }
@@ -614,7 +615,10 @@ void vpci_write(pci_sbdf_t sbdf, unsigned int reg, unsigned int size,
         /* Find the intersection size between the two sets. */
         write_size = min(emu.offset + emu.size, r->offset + r->size) -
                      max(emu.offset, r->offset);
-        vpci_write_helper(pdev, r, write_size, reg + data_offset - r->offset,
+        vpci_write_helper(pdev,
+                          r,
+                          write_size,
+                          reg + data_offset - r->offset,
                           data >> (data_offset * 8));
         data_offset += write_size;
         if ( data_offset == size )
@@ -626,7 +630,9 @@ void vpci_write(pci_sbdf_t sbdf, unsigned int reg, unsigned int size,
 
     if ( data_offset < size )
         /* Tailing gap, write the remaining. */
-        vpci_write_hw(sbdf, reg + data_offset, size - data_offset,
+        vpci_write_hw(sbdf,
+                      reg + data_offset,
+                      size - data_offset,
                       data >> (data_offset * 8));
 }
 
@@ -651,7 +657,7 @@ bool vpci_access_allowed(unsigned int reg, unsigned int len)
 }
 
 bool vpci_ecam_write(pci_sbdf_t sbdf, unsigned int reg, unsigned int len,
-                         unsigned long data)
+                     unsigned long data)
 {
     if ( !vpci_access_allowed(reg, len) ||
          (reg + len) > PCI_CFG_SPACE_EXP_SIZE )
@@ -667,7 +673,7 @@ bool vpci_ecam_write(pci_sbdf_t sbdf, unsigned int reg, unsigned int len,
 }
 
 bool vpci_ecam_read(pci_sbdf_t sbdf, unsigned int reg, unsigned int len,
-                        unsigned long *data)
+                    unsigned long *data)
 {
     if ( !vpci_access_allowed(reg, len) ||
          (reg + len) > PCI_CFG_SPACE_EXP_SIZE )

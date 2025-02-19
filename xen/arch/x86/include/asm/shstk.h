@@ -19,16 +19,14 @@ static inline unsigned long rdssp(void)
 {
     unsigned long ssp;
 
-    asm volatile ( "rdsspq %0" : "=r" (ssp) : "0" (SSP_NO_SHSTK) );
+    asm volatile("rdsspq %0" : "=r"(ssp) : "0"(SSP_NO_SHSTK));
 
     return ssp;
 }
 
 static inline void wrss(unsigned long val, unsigned long *ptr)
 {
-    asm ( "wrssq %[val], %[ptr]"
-          : [ptr] "=m" (*ptr)
-          : [val] "r" (val) );
+    asm("wrssq %[val], %[ptr]" : [ptr] "=m"(*ptr) : [val] "r"(val));
 }
 
 #endif /* XEN_ASM_SHSTK_H */

@@ -32,8 +32,9 @@ u32 __read_mostly acpi_smi_cmd;
 u8 __read_mostly acpi_enable_value;
 u8 __read_mostly acpi_disable_value;
 
-u32 __read_mostly x86_acpiid_to_apicid[MAX_MADT_ENTRIES] =
-    {[0 ... MAX_MADT_ENTRIES - 1] = BAD_APICID };
+u32 __read_mostly x86_acpiid_to_apicid[MAX_MADT_ENTRIES] = {
+    [0 ... MAX_MADT_ENTRIES - 1] = BAD_APICID
+};
 
 /*
  * Important Safety Note:  The fixed ACPI page numbers are *subtracted*
@@ -42,108 +43,108 @@ u32 __read_mostly x86_acpiid_to_apicid[MAX_MADT_ENTRIES] =
  */
 char *__acpi_map_table(paddr_t phys, unsigned long size)
 {
-	unsigned long base, offset, mapped_size;
-	int idx;
+    unsigned long base, offset, mapped_size;
+    int idx;
 
-	/* XEN: RAM holes above 1MB are not permanently mapped. */
-	if ((phys + size) <= (1 * 1024 * 1024))
-		return __va(phys);
+    /* XEN: RAM holes above 1MB are not permanently mapped. */
+    if ( (phys + size) <= (1 * 1024 * 1024) )
+        return __va(phys);
 
-	/* No further arch specific implementation after early boot */
-	if (system_state >= SYS_STATE_boot)
-		return NULL;
+    /* No further arch specific implementation after early boot */
+    if ( system_state >= SYS_STATE_boot )
+        return NULL;
 
-	offset = phys & (PAGE_SIZE - 1);
-	mapped_size = PAGE_SIZE - offset;
-	set_fixmap(FIX_ACPI_END, phys);
-	base = __fix_to_virt(FIX_ACPI_END);
+    offset = phys & (PAGE_SIZE - 1);
+    mapped_size = PAGE_SIZE - offset;
+    set_fixmap(FIX_ACPI_END, phys);
+    base = __fix_to_virt(FIX_ACPI_END);
 
-	/*
+    /*
 	 * Most cases can be covered by the below.
 	 */
-	idx = FIX_ACPI_END;
-	while (mapped_size < size) {
-		if (--idx < FIX_ACPI_BEGIN)
-			return NULL;	/* cannot handle this */
-		phys += PAGE_SIZE;
-		set_fixmap(idx, phys);
-		mapped_size += PAGE_SIZE;
-	}
+    idx = FIX_ACPI_END;
+    while ( mapped_size < size )
+    {
+        if ( --idx < FIX_ACPI_BEGIN )
+            return NULL; /* cannot handle this */
+        phys += PAGE_SIZE;
+        set_fixmap(idx, phys);
+        mapped_size += PAGE_SIZE;
+    }
 
-	return ((char *) base + offset);
+    return ((char *)base + offset);
 }
 
 bool __acpi_unmap_table(const void *ptr, unsigned long size)
 {
-	unsigned long vaddr = (unsigned long)ptr;
+    unsigned long vaddr = (unsigned long)ptr;
 
-	if ((vaddr >= DIRECTMAP_VIRT_START) &&
-	    (vaddr < DIRECTMAP_VIRT_END)) {
-		ASSERT(!((__pa(ptr) + size - 1) >> 20));
-		return true;
-	}
+    if ( (vaddr >= DIRECTMAP_VIRT_START) && (vaddr < DIRECTMAP_VIRT_END) )
+    {
+        ASSERT(!((__pa(ptr) + size - 1) >> 20));
+        return true;
+    }
 
-	return ((vaddr >= __fix_to_virt(FIX_ACPI_END)) &&
-		(vaddr < (__fix_to_virt(FIX_ACPI_BEGIN) + PAGE_SIZE)));
+    return ((vaddr >= __fix_to_virt(FIX_ACPI_END)) &&
+            (vaddr < (__fix_to_virt(FIX_ACPI_BEGIN) + PAGE_SIZE)));
 }
 
 unsigned int acpi_get_processor_id(unsigned int cpu)
 {
-	unsigned int acpiid, apicid;
+    unsigned int acpiid, apicid;
 
-	if ((apicid = x86_cpu_to_apicid[cpu]) == BAD_APICID)
-		return INVALID_ACPIID;
+    if ( (apicid = x86_cpu_to_apicid[cpu]) == BAD_APICID )
+        return INVALID_ACPIID;
 
-	for (acpiid = 0; acpiid < ARRAY_SIZE(x86_acpiid_to_apicid); acpiid++)
-		if (x86_acpiid_to_apicid[acpiid] == apicid)
-			return acpiid;
+    for ( acpiid = 0; acpiid < ARRAY_SIZE(x86_acpiid_to_apicid); acpiid++ )
+        if ( x86_acpiid_to_apicid[acpiid] == apicid )
+            return acpiid;
 
-	return INVALID_ACPIID;
+    return INVALID_ACPIID;
 }
 
 static void cf_check get_mwait_ecx(void *info)
 {
-	*(u32 *)info = cpuid_ecx(CPUID_MWAIT_LEAF);
+    *(u32 *)info = cpuid_ecx(CPUID_MWAIT_LEAF);
 }
 
 int arch_acpi_set_pdc_bits(u32 acpi_id, u32 *pdc, u32 mask)
 {
-	unsigned int cpu = get_cpu_id(acpi_id);
-	struct cpuinfo_x86 *c;
-	u32 ecx;
+    unsigned int cpu = get_cpu_id(acpi_id);
+    struct cpuinfo_x86 *c;
+    u32 ecx;
 
-	if (!(acpi_id + 1))
-		c = &boot_cpu_data;
-	else if (cpu >= nr_cpu_ids || !cpu_online(cpu))
-		return -EINVAL;
-	else
-		c = cpu_data + cpu;
+    if ( !(acpi_id + 1) )
+        c = &boot_cpu_data;
+    else if ( cpu >= nr_cpu_ids || !cpu_online(cpu) )
+        return -EINVAL;
+    else
+        c = cpu_data + cpu;
 
-	pdc[2] |= ACPI_PDC_C_CAPABILITY_SMP & mask;
+    pdc[2] |= ACPI_PDC_C_CAPABILITY_SMP & mask;
 
-	if (cpu_has(c, X86_FEATURE_EIST))
-		pdc[2] |= ACPI_PDC_EST_CAPABILITY_SWSMP & mask;
+    if ( cpu_has(c, X86_FEATURE_EIST) )
+        pdc[2] |= ACPI_PDC_EST_CAPABILITY_SWSMP & mask;
 
-	if (cpu_has(c, X86_FEATURE_ACPI))
-		pdc[2] |= ACPI_PDC_T_FFH & mask;
+    if ( cpu_has(c, X86_FEATURE_ACPI) )
+        pdc[2] |= ACPI_PDC_T_FFH & mask;
 
-	/*
+    /*
 	 * If mwait/monitor or its break-on-interrupt extension are
 	 * unsupported, Cx_FFH will be disabled.
 	 */
-	if (!cpu_has(c, X86_FEATURE_MONITOR) ||
-	    c->cpuid_level < CPUID_MWAIT_LEAF)
-		ecx = 0;
-	else if (c == &boot_cpu_data || cpu == smp_processor_id())
-		ecx = cpuid_ecx(CPUID_MWAIT_LEAF);
-	else
-		on_selected_cpus(cpumask_of(cpu), get_mwait_ecx, &ecx, 1);
-	if (!(ecx & CPUID5_ECX_EXTENSIONS_SUPPORTED) ||
-	    !(ecx & CPUID5_ECX_INTERRUPT_BREAK))
-		pdc[2] &= ~(ACPI_PDC_C_C1_FFH | ACPI_PDC_C_C2C3_FFH);
+    if ( !cpu_has(c, X86_FEATURE_MONITOR) || c->cpuid_level < CPUID_MWAIT_LEAF )
+        ecx = 0;
+    else if ( c == &boot_cpu_data || cpu == smp_processor_id() )
+        ecx = cpuid_ecx(CPUID_MWAIT_LEAF);
+    else
+        on_selected_cpus(cpumask_of(cpu), get_mwait_ecx, &ecx, 1);
+    if ( !(ecx & CPUID5_ECX_EXTENSIONS_SUPPORTED) ||
+         !(ecx & CPUID5_ECX_INTERRUPT_BREAK) )
+        pdc[2] &= ~(ACPI_PDC_C_C1_FFH | ACPI_PDC_C_C2C3_FFH);
 
-	if (hwp_active())
-		pdc[2] |= ACPI_PDC_CPPC_NATIVE_INTR;
+    if ( hwp_active() )
+        pdc[2] |= ACPI_PDC_CPPC_NATIVE_INTR;
 
-	return 0;
+    return 0;
 }

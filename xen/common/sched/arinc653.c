@@ -69,42 +69,39 @@
  * The arinc653_unit_t structure holds ARINC 653-scheduler-specific
  * information for all non-idle UNITs
  */
-typedef struct arinc653_unit_s
-{
+typedef struct arinc653_unit_s {
     /* unit points to Xen's struct sched_unit so we can get to it from an
      * arinc653_unit_t pointer. */
-    struct sched_unit * unit;
+    struct sched_unit *unit;
     /* awake holds whether the UNIT has been woken with vcpu_wake() */
-    bool                awake;
+    bool awake;
     /* list holds the linked list information for the list this UNIT
      * is stored in */
-    struct list_head    list;
+    struct list_head list;
 } arinc653_unit_t;
 
 /**
  * The sched_entry_t structure holds a single entry of the
  * ARINC 653 schedule.
  */
-typedef struct sched_entry_s
-{
+typedef struct sched_entry_s {
     /* dom_handle holds the handle ("UUID") for the domain that this
      * schedule entry refers to. */
     xen_domain_handle_t dom_handle;
     /* unit_id holds the UNIT number for the UNIT that this schedule
      * entry refers to. */
-    int                 unit_id;
+    int unit_id;
     /* runtime holds the number of nanoseconds that the UNIT for this
      * schedule entry should be allowed to run per major frame. */
-    s_time_t            runtime;
+    s_time_t runtime;
     /* unit holds a pointer to the Xen sched_unit structure */
-    struct sched_unit * unit;
+    struct sched_unit *unit;
 } sched_entry_t;
 
 /**
  * This structure defines data that is global to an instance of the scheduler
  */
-typedef struct a653sched_priv_s
-{
+typedef struct a653sched_priv_s {
     /* lock for the whole pluggable scheduler, nests inside cpupool_lock */
     spinlock_t lock;
 
@@ -180,17 +177,15 @@ static int dom_handle_cmp(const xen_domain_handle_t h1,
  *                  <li> NULL otherwise
  *                  </ul>
  */
-static struct sched_unit *find_unit(
-    const struct scheduler *ops,
-    xen_domain_handle_t handle,
-    int unit_id)
+static struct sched_unit *find_unit(const struct scheduler *ops,
+                                    xen_domain_handle_t handle, int unit_id)
 {
     arinc653_unit_t *aunit;
 
     /* loop through the unit_list looking for the specified UNIT */
-    list_for_each_entry ( aunit, &SCHED_PRIV(ops)->unit_list, list )
-        if ( (dom_handle_cmp(aunit->unit->domain->handle, handle) == 0)
-             && (unit_id == aunit->unit->unit_id) )
+    list_for_each_entry(aunit, &SCHED_PRIV(ops)->unit_list, list)
+        if ( (dom_handle_cmp(aunit->unit->domain->handle, handle) == 0) &&
+             (unit_id == aunit->unit->unit_id) )
             return aunit->unit;
 
     return NULL;
@@ -225,10 +220,8 @@ static void update_schedule_units(const struct scheduler *ops)
  *                  <li> !0 = error
  *                  </ul>
  */
-static int
-arinc653_sched_set(
-    const struct scheduler *ops,
-    struct xen_sysctl_arinc653_schedule *schedule)
+static int arinc653_sched_set(const struct scheduler *ops,
+                              struct xen_sysctl_arinc653_schedule *schedule)
 {
     a653sched_priv_t *sched_priv = SCHED_PRIV(ops);
     s_time_t total_runtime = 0;
@@ -239,9 +232,8 @@ arinc653_sched_set(
     spin_lock_irqsave(&sched_priv->lock, flags);
 
     /* Check for valid major frame and number of schedule entries. */
-    if ( (schedule->major_frame <= 0)
-         || (schedule->num_sched_entries < 1)
-         || (schedule->num_sched_entries > ARINC653_MAX_DOMAINS_PER_SCHEDULE) )
+    if ( (schedule->major_frame <= 0) || (schedule->num_sched_entries < 1) ||
+         (schedule->num_sched_entries > ARINC653_MAX_DOMAINS_PER_SCHEDULE) )
         goto fail;
 
     for ( i = 0; i < schedule->num_sched_entries; i++ )
@@ -269,10 +261,8 @@ arinc653_sched_set(
         memcpy(sched_priv->schedule[i].dom_handle,
                schedule->sched_entries[i].dom_handle,
                sizeof(sched_priv->schedule[i].dom_handle));
-        sched_priv->schedule[i].unit_id =
-            schedule->sched_entries[i].vcpu_id;
-        sched_priv->schedule[i].runtime =
-            schedule->sched_entries[i].runtime;
+        sched_priv->schedule[i].unit_id = schedule->sched_entries[i].vcpu_id;
+        sched_priv->schedule[i].runtime = schedule->sched_entries[i].runtime;
     }
     update_schedule_units(ops);
 
@@ -287,7 +277,7 @@ arinc653_sched_set(
 
     rc = 0;
 
- fail:
+fail:
     spin_unlock_irqrestore(&sched_priv->lock, flags);
     return rc;
 }
@@ -302,10 +292,8 @@ arinc653_sched_set(
  *                  <li> !0 = error
  *                  </ul>
  */
-static int
-arinc653_sched_get(
-    const struct scheduler *ops,
-    struct xen_sysctl_arinc653_schedule *schedule)
+static int arinc653_sched_get(const struct scheduler *ops,
+                              struct xen_sysctl_arinc653_schedule *schedule)
 {
     a653sched_priv_t *sched_priv = SCHED_PRIV(ops);
     unsigned int i;
@@ -343,8 +331,7 @@ arinc653_sched_get(
  *                  <li> !0 = error
  *                  </ul>
  */
-static int cf_check
-a653sched_init(struct scheduler *ops)
+static int cf_check a653sched_init(struct scheduler *ops)
 {
     a653sched_priv_t *prv;
 
@@ -366,8 +353,7 @@ a653sched_init(struct scheduler *ops)
  *
  * @param ops       Pointer to this instance of the scheduler structure
  */
-static void cf_check
-a653sched_deinit(struct scheduler *ops)
+static void cf_check a653sched_deinit(struct scheduler *ops)
 {
     xfree(SCHED_PRIV(ops));
     ops->sched_data = NULL;
@@ -381,9 +367,8 @@ a653sched_deinit(struct scheduler *ops)
  *
  * @return          Pointer to the allocated data
  */
-static void *cf_check
-a653sched_alloc_udata(const struct scheduler *ops, struct sched_unit *unit,
-                      void *dd)
+static void *cf_check a653sched_alloc_udata(const struct scheduler *ops,
+                                            struct sched_unit *unit, void *dd)
 {
     a653sched_priv_t *sched_priv = SCHED_PRIV(ops);
     arinc653_unit_t *svc;
@@ -442,14 +427,14 @@ a653sched_alloc_udata(const struct scheduler *ops, struct sched_unit *unit,
  *
  * @param ops       Pointer to this instance of the scheduler structure
  */
-static void cf_check
-a653sched_free_udata(const struct scheduler *ops, void *priv)
+static void cf_check a653sched_free_udata(const struct scheduler *ops,
+                                          void *priv)
 {
     a653sched_priv_t *sched_priv = SCHED_PRIV(ops);
     arinc653_unit_t *av = priv;
     unsigned long flags;
 
-    if (av == NULL)
+    if ( av == NULL )
         return;
 
     spin_lock_irqsave(&sched_priv->lock, flags);
@@ -469,8 +454,8 @@ a653sched_free_udata(const struct scheduler *ops, void *priv)
  * @param ops       Pointer to this instance of the scheduler structure
  * @param unit      Pointer to struct sched_unit
  */
-static void cf_check
-a653sched_unit_sleep(const struct scheduler *ops, struct sched_unit *unit)
+static void cf_check a653sched_unit_sleep(const struct scheduler *ops,
+                                          struct sched_unit *unit)
 {
     if ( AUNIT(unit) != NULL )
         AUNIT(unit)->awake = false;
@@ -489,8 +474,8 @@ a653sched_unit_sleep(const struct scheduler *ops, struct sched_unit *unit)
  * @param ops       Pointer to this instance of the scheduler structure
  * @param unit      Pointer to struct sched_unit
  */
-static void cf_check
-a653sched_unit_wake(const struct scheduler *ops, struct sched_unit *unit)
+static void cf_check a653sched_unit_wake(const struct scheduler *ops,
+                                         struct sched_unit *unit)
 {
     if ( AUNIT(unit) != NULL )
         AUNIT(unit)->awake = true;
@@ -505,12 +490,10 @@ a653sched_unit_wake(const struct scheduler *ops, struct sched_unit *unit)
  * @param ops       Pointer to this instance of the scheduler structure
  * @param now       Current time
  */
-static void cf_check
-a653sched_do_schedule(
-    const struct scheduler *ops,
-    struct sched_unit *prev,
-    s_time_t now,
-    bool tasklet_work_scheduled)
+static void cf_check a653sched_do_schedule(const struct scheduler *ops,
+                                           struct sched_unit *prev,
+                                           s_time_t now,
+                                           bool tasklet_work_scheduled)
 {
     struct sched_unit *new_task = NULL;
     static unsigned int sched_index = 0;
@@ -534,8 +517,8 @@ a653sched_do_schedule(
     }
     else
     {
-        while ( (now >= next_switch_time)
-                && (sched_index < sched_priv->num_schedule_entries) )
+        while ( (now >= next_switch_time) &&
+                (sched_index < sched_priv->num_schedule_entries) )
         {
             /* time to switch to the next domain in this major frame */
             sched_index++;
@@ -557,14 +540,12 @@ a653sched_do_schedule(
      * sched_unit structure.
      */
     new_task = (sched_index < sched_priv->num_schedule_entries)
-        ? sched_priv->schedule[sched_index].unit
-        : IDLETASK(cpu);
+                   ? sched_priv->schedule[sched_index].unit
+                   : IDLETASK(cpu);
 
     /* Check to see if the new task can be run (awake & runnable). */
-    if ( !((new_task != NULL)
-           && (AUNIT(new_task) != NULL)
-           && AUNIT(new_task)->awake
-           && unit_runnable_state(new_task)) )
+    if ( !((new_task != NULL) && (AUNIT(new_task) != NULL) &&
+           AUNIT(new_task)->awake && unit_runnable_state(new_task)) )
         new_task = IDLETASK(cpu);
     BUG_ON(new_task == NULL);
 
@@ -581,8 +562,7 @@ a653sched_do_schedule(
         new_task = IDLETASK(cpu);
 
     /* Running this task would result in a migration */
-    if ( !is_idle_unit(new_task)
-         && (sched_unit_master(new_task) != cpu) )
+    if ( !is_idle_unit(new_task) && (sched_unit_master(new_task) != cpu) )
         new_task = IDLETASK(cpu);
 
     /*
@@ -604,9 +584,8 @@ a653sched_do_schedule(
  *
  * @return          Scheduler resource to run on
  */
-static struct sched_resource *cf_check
-a653sched_pick_resource(const struct scheduler *ops,
-                        const struct sched_unit *unit)
+static struct sched_resource *cf_check a653sched_pick_resource(
+    const struct scheduler *ops, const struct sched_unit *unit)
 {
     const cpumask_t *online;
     unsigned int cpu;
@@ -619,8 +598,8 @@ a653sched_pick_resource(const struct scheduler *ops,
 
     cpu = cpumask_first(online);
 
-    if ( cpumask_test_cpu(sched_unit_master(unit), online)
-         || (cpu >= nr_cpu_ids) )
+    if ( cpumask_test_cpu(sched_unit_master(unit), online) ||
+         (cpu >= nr_cpu_ids) )
         cpu = sched_unit_master(unit);
 
     return get_sched_res(cpu);
@@ -634,9 +613,9 @@ a653sched_pick_resource(const struct scheduler *ops,
  * @param pdata     scheduler specific PCPU data (we don't have any)
  * @param vdata     scheduler specific UNIT data of the idle unit
  */
-static spinlock_t *cf_check
-a653_switch_sched(struct scheduler *new_ops, unsigned int cpu,
-                  void *pdata, void *vdata)
+static spinlock_t *cf_check a653_switch_sched(struct scheduler *new_ops,
+                                              unsigned int cpu, void *pdata,
+                                              void *vdata)
 {
     struct sched_resource *sr = get_sched_res(cpu);
     const arinc653_unit_t *svc = vdata;
@@ -656,9 +635,8 @@ a653_switch_sched(struct scheduler *new_ops, unsigned int cpu,
  * @param ops       Pointer to this instance of the scheduler structure
  * @param sc        Pointer to the scheduler operation specified by Domain 0
  */
-static int cf_check
-a653sched_adjust_global(const struct scheduler *ops,
-                        struct xen_sysctl_scheduler_op *sc)
+static int cf_check a653sched_adjust_global(const struct scheduler *ops,
+                                            struct xen_sysctl_scheduler_op *sc)
 {
     struct xen_sysctl_arinc653_schedule local_sched;
     int rc = -EINVAL;
@@ -695,35 +673,35 @@ a653sched_adjust_global(const struct scheduler *ops,
  * The symbol must be visible to the rest of Xen at link time.
  */
 static const struct scheduler sched_arinc653_def = {
-    .name           = "ARINC 653 Scheduler",
-    .opt_name       = "arinc653",
-    .sched_id       = XEN_SCHEDULER_ARINC653,
-    .sched_data     = NULL,
+    .name = "ARINC 653 Scheduler",
+    .opt_name = "arinc653",
+    .sched_id = XEN_SCHEDULER_ARINC653,
+    .sched_data = NULL,
 
-    .init           = a653sched_init,
-    .deinit         = a653sched_deinit,
+    .init = a653sched_init,
+    .deinit = a653sched_deinit,
 
-    .free_udata     = a653sched_free_udata,
-    .alloc_udata    = a653sched_alloc_udata,
+    .free_udata = a653sched_free_udata,
+    .alloc_udata = a653sched_alloc_udata,
 
-    .insert_unit    = NULL,
-    .remove_unit    = NULL,
+    .insert_unit = NULL,
+    .remove_unit = NULL,
 
-    .sleep          = a653sched_unit_sleep,
-    .wake           = a653sched_unit_wake,
-    .yield          = NULL,
-    .context_saved  = NULL,
+    .sleep = a653sched_unit_sleep,
+    .wake = a653sched_unit_wake,
+    .yield = NULL,
+    .context_saved = NULL,
 
-    .do_schedule    = a653sched_do_schedule,
+    .do_schedule = a653sched_do_schedule,
 
-    .pick_resource  = a653sched_pick_resource,
+    .pick_resource = a653sched_pick_resource,
 
-    .switch_sched   = a653_switch_sched,
+    .switch_sched = a653_switch_sched,
 
-    .adjust         = NULL,
-    .adjust_global  = a653sched_adjust_global,
+    .adjust = NULL,
+    .adjust_global = a653sched_adjust_global,
 
-    .dump_settings  = NULL,
+    .dump_settings = NULL,
     .dump_cpu_state = NULL,
 };
 

@@ -10,7 +10,7 @@ void machine_halt(void)
     /* TODO: Cope with sbi_shutdown() not being implemented. */
 
     for ( ;; )
-        asm volatile ( "wfi" );
+        asm volatile("wfi");
 
     unreachable();
 }

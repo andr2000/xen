@@ -9,17 +9,24 @@
 
 #include <public/sysctl.h>
 
-#define PERFCOUNTER( var, name )              { name, TYPE_SINGLE, 0 },
-#define PERFCOUNTER_ARRAY( var, name, size )  { name, TYPE_ARRAY,  size },
-#define PERFSTATUS( var, name )               { name, TYPE_S_SINGLE, 0 },
-#define PERFSTATUS_ARRAY( var, name, size )   { name, TYPE_S_ARRAY,  size },
+#define PERFCOUNTER(var, name)              { name, TYPE_SINGLE, 0 },
+#define PERFCOUNTER_ARRAY(var, name, size)  { name, TYPE_ARRAY,  size },
+#define PERFSTATUS(var, name)               { name, TYPE_S_SINGLE, 0 },
+#define PERFSTATUS_ARRAY(var, name, size)   { name, TYPE_S_ARRAY,  size },
+
 static const struct {
     const char *name;
-    enum { TYPE_SINGLE, TYPE_ARRAY,
-           TYPE_S_SINGLE, TYPE_S_ARRAY
+
+    enum {
+        TYPE_SINGLE,
+        TYPE_ARRAY,
+        TYPE_S_SINGLE,
+        TYPE_S_ARRAY
     } type;
+
     unsigned int nr_elements;
 } perfc_info[] = {
+
 #include <xen/perfc_defn.h>
 };
 
@@ -32,31 +39,33 @@ void cf_check perfc_printall(unsigned char key)
     unsigned int i, j;
     s_time_t now = NOW();
 
-    printk("Xen performance counters SHOW  (now = %"PRI_stime")\n", now);
+    printk("Xen performance counters SHOW  (now = %" PRI_stime ")\n", now);
 
     for ( i = j = 0; i < NR_PERFCTRS; i++ )
     {
         unsigned int k, cpu;
         unsigned long long sum = 0;
 
-        printk("%-32s  ",  perfc_info[i].name);
+        printk("%-32s  ", perfc_info[i].name);
         switch ( perfc_info[i].type )
         {
         case TYPE_SINGLE:
         case TYPE_S_SINGLE:
-            for_each_online_cpu ( cpu )
+            for_each_online_cpu(cpu)
                 sum += per_cpu(perfcounters, cpu)[j];
             if ( perfc_info[i].type == TYPE_S_SINGLE )
-                sum = (perfc_t) sum;
+                sum = (perfc_t)sum;
             printk("TOTAL[%12Lu]", sum);
             if ( sum )
             {
                 k = 0;
-                for_each_online_cpu ( cpu )
+                for_each_online_cpu(cpu)
                 {
                     if ( k > 0 && (k % 4) == 0 )
                         printk("\n%53s", "");
-                    printk("  CPU%02u[%10u]", cpu, per_cpu(perfcounters, cpu)[j]);
+                    printk("  CPU%02u[%10u]",
+                           cpu,
+                           per_cpu(perfcounters, cpu)[j]);
                     ++k;
                 }
             }
@@ -64,7 +73,7 @@ void cf_check perfc_printall(unsigned char key)
             break;
         case TYPE_ARRAY:
         case TYPE_S_ARRAY:
-            for_each_online_cpu ( cpu )
+            for_each_online_cpu(cpu)
             {
                 perfc_t *counters = per_cpu(perfcounters, cpu) + j;
 
@@ -72,25 +81,25 @@ void cf_check perfc_printall(unsigned char key)
                     sum += counters[k];
             }
             if ( perfc_info[i].type == TYPE_S_ARRAY )
-                sum = (perfc_t) sum;
+                sum = (perfc_t)sum;
             printk("TOTAL[%12Lu]", sum);
-            if (sum)
+            if ( sum )
             {
 #ifdef CONFIG_PERF_ARRAYS
                 for ( k = 0; k < perfc_info[i].nr_elements; k++ )
                 {
                     sum = 0;
-                    for_each_online_cpu ( cpu )
+                    for_each_online_cpu(cpu)
                         sum += per_cpu(perfcounters, cpu)[j + k];
                     if ( perfc_info[i].type == TYPE_S_ARRAY )
-                        sum = (perfc_t) sum;
+                        sum = (perfc_t)sum;
                     if ( (k % 4) == 0 )
                         printk("\n%16s", "");
                     printk("  ARR%02u[%10Lu]", k, sum);
                 }
 #else
                 k = 0;
-                for_each_online_cpu ( cpu )
+                for_each_online_cpu(cpu)
                 {
                     perfc_t *counters = per_cpu(perfcounters, cpu) + j;
                     unsigned int n;
@@ -99,7 +108,7 @@ void cf_check perfc_printall(unsigned char key)
                     for ( n = 0; n < perfc_info[i].nr_elements; n++ )
                         sum += counters[n];
                     if ( perfc_info[i].type == TYPE_S_ARRAY )
-                        sum = (perfc_t) sum;
+                        sum = (perfc_t)sum;
                     if ( k > 0 && (k % 4) == 0 )
                         printk("\n%53s", "");
                     printk("  CPU%02u[%10Lu]", cpu, sum);
@@ -120,7 +129,7 @@ void cf_check perfc_reset(unsigned char key)
     s_time_t now = NOW();
 
     if ( key != '\0' )
-        printk("Xen performance counters RESET (now = %"PRI_stime")\n", now);
+        printk("Xen performance counters RESET (now = %" PRI_stime ")\n", now);
 
     /* leave STATUS counters alone -- don't reset */
 
@@ -131,15 +140,16 @@ void cf_check perfc_reset(unsigned char key)
         switch ( perfc_info[i].type )
         {
         case TYPE_SINGLE:
-            for_each_online_cpu ( cpu )
+            for_each_online_cpu(cpu)
                 per_cpu(perfcounters, cpu)[j] = 0;
             fallthrough;
         case TYPE_S_SINGLE:
             ++j;
             break;
         case TYPE_ARRAY:
-            for_each_online_cpu ( cpu )
-                memset(per_cpu(perfcounters, cpu) + j, 0,
+            for_each_online_cpu(cpu)
+                memset(per_cpu(perfcounters, cpu) + j,
+                       0,
                        perfc_info[i].nr_elements * sizeof(perfc_t));
             fallthrough;
         case TYPE_S_ARRAY:
@@ -151,8 +161,8 @@ void cf_check perfc_reset(unsigned char key)
 
 static struct xen_sysctl_perfc_desc perfc_d[NR_PERFCTRS];
 static xen_sysctl_perfc_val_t *perfc_vals;
-static unsigned int      perfc_nbr_vals;
-static cpumask_t         perfc_cpumap;
+static unsigned int perfc_nbr_vals;
+static cpumask_t perfc_cpumap;
 
 static int perfc_copy_info(XEN_GUEST_HANDLE_64(xen_sysctl_perfc_desc_t) desc,
                            XEN_GUEST_HANDLE_64(xen_sysctl_perfc_val_t) val)
@@ -205,14 +215,14 @@ static int perfc_copy_info(XEN_GUEST_HANDLE_64(xen_sysctl_perfc_desc_t) desc,
         {
         case TYPE_SINGLE:
         case TYPE_S_SINGLE:
-            for_each_cpu ( cpu, &perfc_cpumap )
+            for_each_cpu(cpu, &perfc_cpumap)
                 perfc_vals[v++] = per_cpu(perfcounters, cpu)[j];
             ++j;
             break;
         case TYPE_ARRAY:
         case TYPE_S_ARRAY:
             memset(perfc_vals + v, 0, perfc_d[i].nr_vals * sizeof(*perfc_vals));
-            for_each_cpu ( cpu, &perfc_cpumap )
+            for_each_cpu(cpu, &perfc_cpumap)
             {
                 perfc_t *counters = per_cpu(perfcounters, cpu) + j;
                 unsigned int k;

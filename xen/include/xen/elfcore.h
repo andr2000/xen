@@ -16,18 +16,18 @@
 
 #define NT_PRSTATUS     1
 
-typedef struct
-{
-    int signo;                       /* signal number */
-    int code;                        /* extra code */
-    int errno;                       /* errno */
+typedef struct {
+    int signo; /* signal number */
+    int code; /* extra code */
+    int errno; /* errno */
 } ELF_Signifo;
 
 /* These seem to be the same length on all architectures on Linux */
 typedef int ELF_Pid;
+
 typedef struct {
-	long tv_sec;
-	long tv_usec;
+    long tv_sec;
+    long tv_usec;
 } ELF_Timeval;
 
 /*
@@ -38,22 +38,21 @@ typedef struct {
  * the SVR4 structure, but more Linuxy, with things that Linux does
  * not support and which gdb doesn't really use excluded.
  */
-typedef struct
-{
-    ELF_Signifo pr_info;         /* Info associated with signal */
-    short pr_cursig;             /* Current signal */
-    unsigned long pr_sigpend;    /* Set of pending signals */
-    unsigned long pr_sighold;    /* Set of held signals */
+typedef struct {
+    ELF_Signifo pr_info; /* Info associated with signal */
+    short pr_cursig; /* Current signal */
+    unsigned long pr_sigpend; /* Set of pending signals */
+    unsigned long pr_sighold; /* Set of held signals */
     ELF_Pid pr_pid;
     ELF_Pid pr_ppid;
     ELF_Pid pr_pgrp;
     ELF_Pid pr_sid;
-    ELF_Timeval pr_utime;        /* User time */
-    ELF_Timeval pr_stime;        /* System time */
-    ELF_Timeval pr_cutime;       /* Cumulative user time */
-    ELF_Timeval pr_cstime;       /* Cumulative system time */
-    ELF_Gregset pr_reg;          /* GP registers - from asm header file */
-    int pr_fpvalid;              /* True if math co-processor being used.  */
+    ELF_Timeval pr_utime; /* User time */
+    ELF_Timeval pr_stime; /* System time */
+    ELF_Timeval pr_cutime; /* Cumulative user time */
+    ELF_Timeval pr_cstime; /* Cumulative system time */
+    ELF_Gregset pr_reg; /* GP registers - from asm header file */
+    int pr_fpvalid; /* True if math co-processor being used.  */
 } ELF_Prstatus;
 
 typedef struct crash_xen_info {

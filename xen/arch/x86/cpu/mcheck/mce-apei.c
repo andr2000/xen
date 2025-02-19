@@ -48,82 +48,83 @@
  * byte-packed.
  */
 struct __packed cper_mce_record {
-	struct cper_record_header hdr;
-	struct cper_section_descriptor sec_hdr;
-	struct mce mce;
+    struct cper_record_header hdr;
+    struct cper_section_descriptor sec_hdr;
+    struct mce mce;
 };
 
 int apei_write_mce(struct mce *m)
 {
-	struct cper_mce_record rcd;
+    struct cper_mce_record rcd;
 
-	if (!m)
-		return -EINVAL;
+    if ( !m )
+        return -EINVAL;
 
-	memset(&rcd, 0, sizeof(rcd));
-	memcpy(rcd.hdr.signature, CPER_SIG_RECORD, CPER_SIG_SIZE);
-	rcd.hdr.revision = CPER_RECORD_REV;
-	rcd.hdr.signature_end = CPER_SIG_END;
-	rcd.hdr.section_count = 1;
-	rcd.hdr.error_severity = CPER_SER_FATAL;
-	/* timestamp, platform_id, partition_id are all invalid */
-	rcd.hdr.validation_bits = 0;
-	rcd.hdr.record_length = sizeof(rcd);
-	rcd.hdr.creator_id = CPER_CREATOR_MCE;
-	rcd.hdr.notification_type = CPER_NOTIFY_MCE;
-	rcd.hdr.record_id = cper_next_record_id();
-	rcd.hdr.flags = CPER_HW_ERROR_FLAGS_PREVERR;
+    memset(&rcd, 0, sizeof(rcd));
+    memcpy(rcd.hdr.signature, CPER_SIG_RECORD, CPER_SIG_SIZE);
+    rcd.hdr.revision = CPER_RECORD_REV;
+    rcd.hdr.signature_end = CPER_SIG_END;
+    rcd.hdr.section_count = 1;
+    rcd.hdr.error_severity = CPER_SER_FATAL;
+    /* timestamp, platform_id, partition_id are all invalid */
+    rcd.hdr.validation_bits = 0;
+    rcd.hdr.record_length = sizeof(rcd);
+    rcd.hdr.creator_id = CPER_CREATOR_MCE;
+    rcd.hdr.notification_type = CPER_NOTIFY_MCE;
+    rcd.hdr.record_id = cper_next_record_id();
+    rcd.hdr.flags = CPER_HW_ERROR_FLAGS_PREVERR;
 
-	rcd.sec_hdr.section_offset = (void *)&rcd.mce - (void *)&rcd;
-	rcd.sec_hdr.section_length = sizeof(rcd.mce);
-	rcd.sec_hdr.revision = CPER_SEC_REV;
-	/* fru_id and fru_text is invalid */
-	rcd.sec_hdr.validation_bits = 0;
-	rcd.sec_hdr.flags = CPER_SEC_PRIMARY;
-	rcd.sec_hdr.section_type = CPER_SECTION_TYPE_MCE;
-	rcd.sec_hdr.section_severity = CPER_SER_FATAL;
+    rcd.sec_hdr.section_offset = (void *)&rcd.mce - (void *)&rcd;
+    rcd.sec_hdr.section_length = sizeof(rcd.mce);
+    rcd.sec_hdr.revision = CPER_SEC_REV;
+    /* fru_id and fru_text is invalid */
+    rcd.sec_hdr.validation_bits = 0;
+    rcd.sec_hdr.flags = CPER_SEC_PRIMARY;
+    rcd.sec_hdr.section_type = CPER_SECTION_TYPE_MCE;
+    rcd.sec_hdr.section_severity = CPER_SER_FATAL;
 
-	memcpy(&rcd.mce, m, sizeof(*m));
+    memcpy(&rcd.mce, m, sizeof(*m));
 
-	return erst_write(&rcd.hdr);
+    return erst_write(&rcd.hdr);
 }
 
 #ifndef NDEBUG /* currently dead code */
 
 ssize_t apei_read_mce(struct mce *m, u64 *record_id)
 {
-	struct cper_mce_record rcd;
-	ssize_t len;
+    struct cper_mce_record rcd;
+    ssize_t len;
 
-	if (!m || !record_id)
-		return -EINVAL;
+    if ( !m || !record_id )
+        return -EINVAL;
 
-	len = erst_read_next(&rcd.hdr, sizeof(rcd));
-	if (len <= 0)
-		return len;
-	/* Can not skip other records in storage via ERST unless clear them */
-	else if (len != sizeof(rcd) ||
-		 uuid_le_cmp(rcd.hdr.creator_id, CPER_CREATOR_MCE)) {
-		printk(KERN_WARNING
-			"MCE-APEI: Can not skip the unknown record in ERST");
-		return -EIO;
-	}
+    len = erst_read_next(&rcd.hdr, sizeof(rcd));
+    if ( len <= 0 )
+        return len;
+    /* Can not skip other records in storage via ERST unless clear them */
+    else if ( len != sizeof(rcd) ||
+              uuid_le_cmp(rcd.hdr.creator_id, CPER_CREATOR_MCE) )
+    {
+        printk(KERN_WARNING
+               "MCE-APEI: Can not skip the unknown record in ERST");
+        return -EIO;
+    }
 
-	memcpy(m, &rcd.mce, sizeof(*m));
-	*record_id = rcd.hdr.record_id;
+    memcpy(m, &rcd.mce, sizeof(*m));
+    *record_id = rcd.hdr.record_id;
 
-	return sizeof(*m);
+    return sizeof(*m);
 }
 
 /* Check whether there is record in ERST */
 bool apei_check_mce(void)
 {
-	return erst_get_record_count() > 0;
+    return erst_get_record_count() > 0;
 }
 
 int apei_clear_mce(u64 record_id)
 {
-	return erst_clear(record_id);
+    return erst_clear(record_id);
 }
 
 #endif /* currently dead code */

@@ -15,8 +15,7 @@ static inline bool evtchn_is_busy(const struct domain *d,
            d->evtchn_port_ops->is_busy(d, evtchn);
 }
 
-static inline void evtchn_port_unmask(struct domain *d,
-                                      struct evtchn *evtchn)
+static inline void evtchn_port_unmask(struct domain *d, struct evtchn *evtchn)
 {
     if ( evtchn_usable(evtchn) )
         d->evtchn_port_ops->unmask(d, evtchn);

@@ -16,8 +16,10 @@ unsigned int copy_from_guest_pv(void *to, const void __user *from,
                                 unsigned int n);
 
 /* Handles exceptions in both to and from, but doesn't do access_ok */
-unsigned int copy_to_guest_ll(void __user*to, const void *from, unsigned int n);
-unsigned int copy_from_guest_ll(void *to, const void __user *from, unsigned int n);
+unsigned int copy_to_guest_ll(void __user *to, const void *from,
+                              unsigned int n);
+unsigned int copy_from_guest_ll(void *to, const void __user *from,
+                                unsigned int n);
 unsigned int copy_to_unsafe_ll(void *to, const void *from, unsigned int n);
 unsigned int copy_from_unsafe_ll(void *to, const void *from, unsigned int n);
 
@@ -145,7 +147,10 @@ void noreturn __put_user_bad(void);
 			       : -EFAULT;				\
 })
 
-struct __large_struct { unsigned long buf[100]; };
+struct __large_struct {
+    unsigned long buf[100];
+};
+
 #define __m(x) (*(const struct __large_struct *)(x))
 
 /*
@@ -255,7 +260,8 @@ __copy_to_guest_pv(void __user *to, const void *from, unsigned long n)
     {
         unsigned long ret;
 
-        switch (n) {
+        switch ( n )
+        {
         case 1:
             put_guest_size(*(const uint8_t *)from, to, 1, ret, 1);
             return ret;
@@ -296,7 +302,8 @@ __copy_from_guest_pv(void *to, const void __user *from, unsigned long n)
     {
         unsigned long ret;
 
-        switch (n) {
+        switch ( n )
+        {
         case 1:
             get_guest_size(*(uint8_t *)to, from, 1, ret, 1);
             return ret;
@@ -328,10 +335,12 @@ __copy_from_guest_pv(void *to, const void __user *from, unsigned long n)
 static always_inline unsigned int
 copy_to_unsafe(void __user *to, const void *from, unsigned int n)
 {
-    if (__builtin_constant_p(n)) {
+    if ( __builtin_constant_p(n) )
+    {
         unsigned long ret;
 
-        switch (n) {
+        switch ( n )
+        {
         case 1:
             put_unsafe_size(*(const uint8_t *)from, to, 1, UA_DROP, ret, 1);
             return ret;
@@ -404,9 +413,8 @@ copy_from_unsafe(void *to, const void __user *from, unsigned int n)
  * on our cache or tlb entries.
  */
 
-struct exception_table_entry
-{
-	int32_t addr, cont;
+struct exception_table_entry {
+    int32_t addr, cont;
 };
 extern struct exception_table_entry __start___ex_table[];
 extern struct exception_table_entry __stop___ex_table[];
@@ -418,6 +426,7 @@ union stub_exception_token {
         uint16_t ec;
         uint8_t trapnr;
     } fields;
+
     unsigned long raw;
 };
 

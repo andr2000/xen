@@ -64,6 +64,7 @@
  * Register a callback.
  */
 #define CALLBACKOP_register                0
+
 struct callback_register {
     uint16_t type;
     uint16_t flags;
@@ -79,6 +80,7 @@ DEFINE_XEN_GUEST_HANDLE(callback_register_t);
  * you attempt to unregister such a callback.
  */
 #define CALLBACKOP_unregister              1
+
 struct callback_unregister {
     uint16_t type;
     uint16_t _unused;

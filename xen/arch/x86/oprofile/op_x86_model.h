@@ -12,13 +12,13 @@
 #define OP_X86_MODEL_H
 
 struct op_msr {
-	unsigned long addr;
-	uint64_t value;
+    unsigned long addr;
+    uint64_t value;
 };
 
 struct op_msrs {
-	struct op_msr * counters;
-	struct op_msr * controls;
+    struct op_msr *counters;
+    struct op_msr *controls;
 };
 
 struct pt_regs;
@@ -27,20 +27,21 @@ struct pt_regs;
  * various x86 CPU model's perfctr support.
  */
 struct op_x86_model_spec {
-	unsigned int num_counters;
-	unsigned int num_controls;
-	void (*fill_in_addresses)(struct op_msrs * const msrs);
-	void (*setup_ctrs)(struct op_msrs const * const msrs);
-	int (*check_ctrs)(unsigned int const cpu, 
-			  struct op_msrs const * const msrs,
-			  struct cpu_user_regs const * const regs);
-	void (*start)(struct op_msrs const * const msrs);
-	void (*stop)(struct op_msrs const * const msrs);
-	int (*is_arch_pmu_msr)(u64 msr_index, int *type, int *index);
-	int (*allocated_msr)(struct vcpu *v);
-	void (*free_msr)(struct vcpu *v);
-	void (*load_msr)(struct vcpu * const v, int type, int index, u64 *msr_content);
-        void (*save_msr)(struct vcpu * const v, int type, int index, u64 msr_content);
+    unsigned int num_counters;
+    unsigned int num_controls;
+    void (*fill_in_addresses)(struct op_msrs *const msrs);
+    void (*setup_ctrs)(struct op_msrs const *const msrs);
+    int (*check_ctrs)(const unsigned int cpu, struct op_msrs const *const msrs,
+                      struct cpu_user_regs const *const regs);
+    void (*start)(struct op_msrs const *const msrs);
+    void (*stop)(struct op_msrs const *const msrs);
+    int (*is_arch_pmu_msr)(u64 msr_index, int *type, int *index);
+    int (*allocated_msr)(struct vcpu *v);
+    void (*free_msr)(struct vcpu *v);
+    void (*load_msr)(struct vcpu *const v, int type, int index,
+                     u64 *msr_content);
+    void (*save_msr)(struct vcpu *const v, int type, int index,
+                     u64 msr_content);
 };
 
 extern struct op_x86_model_spec op_ppro_spec;

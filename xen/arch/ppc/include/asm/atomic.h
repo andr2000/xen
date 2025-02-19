@@ -64,26 +64,30 @@ void __bad_atomic_size(void);
                        : "cc" );                                               \
     }
 
-build_atomic_read(read_u8_atomic, "lbz", uint8_t)
-build_atomic_read(read_u16_atomic, "lhz", uint16_t)
-build_atomic_read(read_u32_atomic, "lwz", uint32_t)
-build_atomic_read(read_u64_atomic, "ldz", uint64_t)
+build_atomic_read(read_u8_atomic, "lbz",
+                  uint8_t) build_atomic_read(read_u16_atomic, "lhz", uint16_t)
+    build_atomic_read(read_u32_atomic, "lwz", uint32_t)
+        build_atomic_read(read_u64_atomic, "ldz", uint64_t)
 
-build_atomic_write(write_u8_atomic, "stb", uint8_t)
-build_atomic_write(write_u16_atomic, "sth", uint16_t)
-build_atomic_write(write_u32_atomic, "stw", uint32_t)
-build_atomic_write(write_u64_atomic, "std", uint64_t)
+            build_atomic_write(write_u8_atomic, "stb", uint8_t)
+                build_atomic_write(write_u16_atomic, "sth", uint16_t)
+                    build_atomic_write(write_u32_atomic, "stw", uint32_t)
+                        build_atomic_write(write_u64_atomic, "std", uint64_t)
 
-build_add_sized(add_u8_sized, "lbarx", "stbcx.",uint8_t)
-build_add_sized(add_u16_sized, "lharx", "sthcx.", uint16_t)
-build_add_sized(add_u32_sized, "lwarx", "stwcx.", uint32_t)
+                            build_add_sized(add_u8_sized, "lbarx", "stbcx.",
+                                            uint8_t)
+                                build_add_sized(add_u16_sized, "lharx",
+                                                "sthcx.", uint16_t)
+                                    build_add_sized(add_u32_sized, "lwarx",
+                                                    "stwcx.", uint32_t)
 
 #undef build_atomic_read
 #undef build_atomic_write
 #undef build_add_sized
 
-static always_inline void read_atomic_size(const volatile void *p, void *res,
-                                           unsigned int size)
+                                        static
+    always_inline void read_atomic_size(const volatile void *p, void *res,
+                                        unsigned int size)
 {
     ASSERT(IS_ALIGNED((vaddr_t)p, size));
     switch ( size )
@@ -171,28 +175,23 @@ static inline void atomic_add(int a, atomic_t *v)
 {
     int t;
 
-    asm volatile ( "1: lwarx %0,0,%3\n"
-                   "add %0,%2,%0\n"
-                   "stwcx. %0,0,%3\n"
-                   "bne- 1b"
-                   : "=&r" (t), "+m" (v->counter)
-                   : "r" (a), "r" (&v->counter)
-                   : "cc" );
+    asm volatile(
+        "1: lwarx %0,0,%3\n" "add %0,%2,%0\n" "stwcx. %0,0,%3\n" "bne- 1b"
+        : "=&r"(t), "+m"(v->counter)
+        : "r"(a), "r"(&v->counter)
+        : "cc");
 }
 
 static inline int atomic_add_return(int a, atomic_t *v)
 {
     int t;
 
-    asm volatile ( PPC_ATOMIC_ENTRY_BARRIER
-                   "1: lwarx %0,0,%2\n"
-                   "add %0,%1,%0\n"
-                   "stwcx. %0,0,%2\n"
-                   "bne- 1b\n"
-                   PPC_ATOMIC_EXIT_BARRIER
-                   : "=&r" (t)
-                   : "r" (a), "r" (&v->counter)
-                   : "cc", "memory" );
+    asm volatile(
+        PPC_ATOMIC_ENTRY_BARRIER
+        "1: lwarx %0,0,%2\n" "add %0,%1,%0\n" "stwcx. %0,0,%2\n" "bne- 1b\n" PPC_ATOMIC_EXIT_BARRIER
+        : "=&r"(t)
+        : "r"(a), "r"(&v->counter)
+        : "cc", "memory");
 
     return t;
 }
@@ -201,28 +200,23 @@ static inline void atomic_sub(int a, atomic_t *v)
 {
     int t;
 
-    asm volatile ( "1: lwarx %0,0,%3\n"
-                   "subf %0,%2,%0\n"
-                   "stwcx. %0,0,%3\n"
-                   "bne- 1b"
-                   : "=&r" (t), "+m" (v->counter)
-                   : "r" (a), "r" (&v->counter)
-                   : "cc" );
+    asm volatile(
+        "1: lwarx %0,0,%3\n" "subf %0,%2,%0\n" "stwcx. %0,0,%3\n" "bne- 1b"
+        : "=&r"(t), "+m"(v->counter)
+        : "r"(a), "r"(&v->counter)
+        : "cc");
 }
 
 static inline int atomic_sub_return(int a, atomic_t *v)
 {
     int t;
 
-    asm volatile ( PPC_ATOMIC_ENTRY_BARRIER
-                   "1: lwarx %0,0,%2\n"
-                   "subf %0,%1,%0\n"
-                   "stwcx. %0,0,%2\n"
-                   "bne- 1b\n"
-                   PPC_ATOMIC_EXIT_BARRIER
-                   : "=&r" (t)
-                   : "r" (a), "r" (&v->counter)
-                   : "cc", "memory" );
+    asm volatile(
+        PPC_ATOMIC_ENTRY_BARRIER
+        "1: lwarx %0,0,%2\n" "subf %0,%1,%0\n" "stwcx. %0,0,%2\n" "bne- 1b\n" PPC_ATOMIC_EXIT_BARRIER
+        : "=&r"(t)
+        : "r"(a), "r"(&v->counter)
+        : "cc", "memory");
 
     return t;
 }
@@ -231,28 +225,23 @@ static inline void atomic_inc(atomic_t *v)
 {
     int t;
 
-    asm volatile ( "1: lwarx %0,0,%2\n"
-                   "addic %0,%0,1\n"
-                   "stwcx. %0,0,%2\n"
-                   "bne- 1b"
-                   : "=&r" (t), "+m" (v->counter)
-                   : "r" (&v->counter)
-                   : "cc" );
+    asm volatile(
+        "1: lwarx %0,0,%2\n" "addic %0,%0,1\n" "stwcx. %0,0,%2\n" "bne- 1b"
+        : "=&r"(t), "+m"(v->counter)
+        : "r"(&v->counter)
+        : "cc");
 }
 
 static inline int atomic_inc_return(atomic_t *v)
 {
     int t;
 
-    asm volatile ( PPC_ATOMIC_ENTRY_BARRIER
-                   "1: lwarx %0,0,%1\n"
-                   "addic %0,%0,1\n"
-                   "stwcx. %0,0,%1\n"
-                   "bne- 1b\n"
-                   PPC_ATOMIC_EXIT_BARRIER
-                   : "=&r" (t)
-                   : "r" (&v->counter)
-                   : "cc", "memory" );
+    asm volatile(
+        PPC_ATOMIC_ENTRY_BARRIER
+        "1: lwarx %0,0,%1\n" "addic %0,%0,1\n" "stwcx. %0,0,%1\n" "bne- 1b\n" PPC_ATOMIC_EXIT_BARRIER
+        : "=&r"(t)
+        : "r"(&v->counter)
+        : "cc", "memory");
 
     return t;
 }
@@ -261,28 +250,23 @@ static inline void atomic_dec(atomic_t *v)
 {
     int t;
 
-    asm volatile ( "1: lwarx %0,0,%2\n"
-                   "addic %0,%0,-1\n"
-                   "stwcx. %0,0,%2\n"
-                   "bne- 1b"
-                   : "=&r" (t), "+m" (v->counter)
-                   : "r" (&v->counter)
-                   : "cc" );
+    asm volatile(
+        "1: lwarx %0,0,%2\n" "addic %0,%0,-1\n" "stwcx. %0,0,%2\n" "bne- 1b"
+        : "=&r"(t), "+m"(v->counter)
+        : "r"(&v->counter)
+        : "cc");
 }
 
 static inline int atomic_dec_return(atomic_t *v)
 {
     int t;
 
-    asm volatile ( PPC_ATOMIC_ENTRY_BARRIER
-                   "1: lwarx %0,0,%1\n"
-                   "addic %0,%0,-1\n"
-                   "stwcx. %0,0,%1\n"
-                   "bne- 1b\n"
-                   PPC_ATOMIC_EXIT_BARRIER
-                   : "=&r" (t)
-                   : "r" (&v->counter)
-                   : "cc", "memory" );
+    asm volatile(
+        PPC_ATOMIC_ENTRY_BARRIER
+        "1: lwarx %0,0,%1\n" "addic %0,%0,-1\n" "stwcx. %0,0,%1\n" "bne- 1b\n" PPC_ATOMIC_EXIT_BARRIER
+        : "=&r"(t)
+        : "r"(&v->counter)
+        : "cc", "memory");
 
     return t;
 }
@@ -295,17 +279,13 @@ static inline int atomic_dec_if_positive(atomic_t *v)
 {
     int t;
 
-    asm volatile( PPC_ATOMIC_ENTRY_BARRIER
-                  "1: lwarx %0,0,%1 # atomic_dec_if_positive\n"
-                  "addic. %0,%0,-1\n"
-                  "blt- 2f\n"
-                  "stwcx. %0,0,%1\n"
-                  "bne- 1b\n"
-                  PPC_ATOMIC_EXIT_BARRIER
-                  "2:"
-                  : "=&r" (t)
-                  : "r" (&v->counter)
-                  : "cc", "memory" );
+    asm volatile(
+        PPC_ATOMIC_ENTRY_BARRIER
+        "1: lwarx %0,0,%1 # atomic_dec_if_positive\n" "addic. %0,%0,-1\n" "blt- 2f\n" "stwcx. %0,0,%1\n" "bne- 1b\n" PPC_ATOMIC_EXIT_BARRIER
+        "2:"
+        : "=&r"(t)
+        : "r"(&v->counter)
+        : "cc", "memory");
 
     return t;
 }
@@ -314,8 +294,8 @@ static inline atomic_t atomic_compareandswap(atomic_t old, atomic_t new,
                                              atomic_t *v)
 {
     atomic_t rc;
-    rc.counter = __cmpxchg(&v->counter, old.counter, new.counter,
-                           sizeof(v->counter));
+    rc.counter =
+        __cmpxchg(&v->counter, old.counter, new.counter, sizeof(v->counter));
     return rc;
 }
 
@@ -369,12 +349,12 @@ static inline int atomic_add_negative(int i, atomic_t *v)
 
 static inline int __atomic_add_unless(atomic_t *v, int a, int u)
 {
-	int c, old;
+    int c, old;
 
-	c = atomic_read(v);
-	while (c != u && (old = atomic_cmpxchg(v, c, c + a)) != c)
-		c = old;
-	return c;
+    c = atomic_read(v);
+    while ( c != u && (old = atomic_cmpxchg(v, c, c + a)) != c )
+        c = old;
+    return c;
 }
 
 static inline int atomic_add_unless(atomic_t *v, int a, int u)

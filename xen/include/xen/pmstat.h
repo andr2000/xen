@@ -3,16 +3,18 @@
 
 #include <xen/types.h>
 #include <public/platform.h> /* for struct xen_processor_power */
-#include <public/sysctl.h>   /* for struct pm_cx_stat */
+#include <public/sysctl.h> /* for struct pm_cx_stat */
 
 int set_px_pminfo(uint32_t acpi_id, struct xen_processor_performance *perf);
 long set_cx_pminfo(uint32_t acpi_id, struct xen_processor_power *power);
 
 #ifdef CONFIG_COMPAT
 struct compat_processor_performance;
-int compat_set_px_pminfo(uint32_t acpi_id, struct compat_processor_performance *perf);
+int compat_set_px_pminfo(uint32_t acpi_id,
+                         struct compat_processor_performance *perf);
 struct compat_processor_power;
-long compat_set_cx_pminfo(uint32_t acpi_id, struct compat_processor_power *power);
+long compat_set_cx_pminfo(uint32_t acpi_id,
+                          struct compat_processor_power *power);
 #endif
 
 uint32_t pmstat_get_cx_nr(unsigned int cpu);

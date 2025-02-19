@@ -20,8 +20,7 @@
 #endif
 #else
 #include <asm/asm-macros.h>
-asm ( "\t.equ CONFIG_INDIRECT_THUNK, "
-      __stringify(IS_ENABLED(CONFIG_INDIRECT_THUNK)) );
+asm("\t.equ CONFIG_INDIRECT_THUNK, " __stringify(IS_ENABLED(CONFIG_INDIRECT_THUNK)) );
 #endif
 
 #ifndef __ASSEMBLY__
@@ -32,10 +31,10 @@ asm ( "\t.equ CONFIG_INDIRECT_THUNK, "
  * gets set up by the containing function.
  */
 #ifdef CONFIG_FRAME_POINTER
-register unsigned long current_stack_pointer asm("rsp");
-# define ASM_CALL_CONSTRAINT , "+r" (current_stack_pointer)
+    register unsigned long current_stack_pointer asm("rsp");
+#define ASM_CALL_CONSTRAINT , "+r" (current_stack_pointer)
 #else
-# define ASM_CALL_CONSTRAINT
+#define ASM_CALL_CONSTRAINT
 #endif
 
 #endif
@@ -57,20 +56,20 @@ register unsigned long current_stack_pointer asm("rsp");
     ASSERT_INTERRUPT_STATUS(z, "INTERRUPTS DISABLED")
 
 #ifdef __ASSEMBLY__
-# define _ASM_EX(p) p-.
+#define _ASM_EX(p) p-.
 #else
-# define _ASM_EX(p) #p "-."
+#define _ASM_EX(p) #p "-."
 #endif
 
 /* Exception table entry */
 #ifdef __ASSEMBLY__
-# define _ASM__EXTABLE(sfx, from, to)             \
+#define _ASM__EXTABLE(sfx, from, to)             \
     .section .ex_table##sfx, "a" ;                \
     .balign 4 ;                                   \
     .long _ASM_EX(from), _ASM_EX(to) ;            \
     .previous
 #else
-# define _ASM__EXTABLE(sfx, from, to)             \
+#define _ASM__EXTABLE(sfx, from, to)             \
     " .section .ex_table" #sfx ",\"a\"\n"         \
     " .balign 4\n"                                \
     " .long " _ASM_EX(from) ", " _ASM_EX(to) "\n" \
@@ -82,11 +81,9 @@ register unsigned long current_stack_pointer asm("rsp");
 
 #ifdef __ASSEMBLY__
 
-.macro BUILD_BUG_ON condstr, cond:vararg
-        .if \cond
-        .error "Condition \"\condstr\" not satisfied"
-        .endif
-.endm
+.macro BUILD_BUG_ON condstr,
+    cond : vararg.if \cond.error "Condition \"\condstr\" not satisfied".endif
+               .endm
 /* preprocessor macro to make error message more user friendly */
 #define BUILD_BUG_ON(cond) BUILD_BUG_ON #cond, cond
 
@@ -124,22 +121,11 @@ register unsigned long current_stack_pointer asm("rsp");
         UNLIKELY_DONE(mp, tag);   \
         __UNLIKELY_END(tag)
 
-        .equ .Lrax, 0
-        .equ .Lrcx, 1
-        .equ .Lrdx, 2
-        .equ .Lrbx, 3
-        .equ .Lrsp, 4
-        .equ .Lrbp, 5
-        .equ .Lrsi, 6
-        .equ .Lrdi, 7
-        .equ .Lr8,  8
-        .equ .Lr9,  9
-        .equ .Lr10, 10
-        .equ .Lr11, 11
-        .equ .Lr12, 12
-        .equ .Lr13, 13
-        .equ .Lr14, 14
-        .equ .Lr15, 15
+               .equ.Lrax,
+    0 .equ.Lrcx, 1 .equ.Lrdx, 2 .equ.Lrbx, 3 .equ.Lrsp, 4 .equ.Lrbp,
+    5 .equ.Lrsi, 6 .equ.Lrdi, 7 .equ.Lr8, 8 .equ.Lr9, 9 .equ.Lr10, 10 .equ.Lr11,
+    11 .equ.Lr12, 12 .equ.Lr13, 13 .equ.Lr14, 14 .equ.Lr15,
+    15
 
 #define STACK_CPUINFO_FIELD(field) (1 - CPUINFO_sizeof + CPUINFO_##field)
 #define GET_STACK_END(reg)                        \
@@ -221,50 +207,35 @@ static always_inline void stac(void)
 #endif
 
 #ifdef __ASSEMBLY__
-.macro SAVE_ALL compat=0
-        addq  $-(UREGS_error_code-UREGS_r15), %rsp
-        cld
-        movq  %rdi,UREGS_rdi(%rsp)
-        xor   %edi, %edi
-        movq  %rsi,UREGS_rsi(%rsp)
-        xor   %esi, %esi
-        movq  %rdx,UREGS_rdx(%rsp)
-        xor   %edx, %edx
-        movq  %rcx,UREGS_rcx(%rsp)
-        xor   %ecx, %ecx
-        movq  %rax,UREGS_rax(%rsp)
-        xor   %eax, %eax
-.if !\compat
-        movq  %r8,UREGS_r8(%rsp)
-        movq  %r9,UREGS_r9(%rsp)
-        movq  %r10,UREGS_r10(%rsp)
-        movq  %r11,UREGS_r11(%rsp)
-.endif
-        xor   %r8d, %r8d
-        xor   %r9d, %r9d
-        xor   %r10d, %r10d
-        xor   %r11d, %r11d
-        movq  %rbx,UREGS_rbx(%rsp)
-        xor   %ebx, %ebx
-        movq  %rbp,UREGS_rbp(%rsp)
+        .macro SAVE_ALL
+            compat = 0 addq $ - (UREGS_error_code - UREGS_r15),
+            % rsp cld movq % rdi, UREGS_rdi(% rsp) xor % edi, % edi movq % rsi,
+            UREGS_rsi(% rsp) xor % esi, % esi movq % rdx,
+            UREGS_rdx(% rsp) xor % edx, % edx movq % rcx,
+            UREGS_rcx(% rsp) xor % ecx, % ecx movq % rax,
+            UREGS_rax(% rsp) xor % eax, % eax.if !\compat movq % r8,
+            UREGS_r8(% rsp) movq % r9, UREGS_r9(% rsp) movq % r10,
+            UREGS_r10(% rsp) movq % r11, UREGS_r11(% rsp).endif xor % r8d,
+            % r8d xor % r9d, % r9d xor % r10d, % r10d xor % r11d,
+            % r11d movq % rbx, UREGS_rbx(% rsp) xor % ebx, % ebx movq % rbp,
+            UREGS_rbp(% rsp)
 #ifdef CONFIG_FRAME_POINTER
-/* Indicate special exception stack frame by inverting the frame pointer. */
-        leaq  UREGS_rbp(%rsp), %rbp
-        notq  %rbp
+    /* Indicate special exception stack frame by inverting the frame pointer. */
+    leaq UREGS_rbp(% rsp),
+            % rbp notq %
+                rbp
 #else
-        xor   %ebp, %ebp
+                    xor
+                % ebp,
+            %
+                ebp
 #endif
-.if !\compat
-        movq  %r12,UREGS_r12(%rsp)
-        movq  %r13,UREGS_r13(%rsp)
-        movq  %r14,UREGS_r14(%rsp)
-        movq  %r15,UREGS_r15(%rsp)
-.endif
-        xor   %r12d, %r12d
-        xor   %r13d, %r13d
-        xor   %r14d, %r14d
-        xor   %r15d, %r15d
-.endm
+                    .if !\compat movq
+                % r12,
+            UREGS_r12(% rsp) movq % r13, UREGS_r13(% rsp) movq % r14,
+            UREGS_r14(% rsp) movq % r15, UREGS_r15(% rsp).endif xor % r12d,
+            % r12d xor % r13d, % r13d xor % r14d, % r14d xor % r15d,
+            % r15d.endm
 
 #define LOAD_ONE_REG(reg, compat) \
 .if !(compat); \
@@ -273,7 +244,7 @@ static always_inline void stac(void)
         movl  UREGS_r##reg(%rsp),%e##reg; \
 .endif
 
-/*
+                    /*
  * Restore all previously saved registers.
  *
  * @adj: extra stack pointer adjustment to be folded into the adjustment done
@@ -281,38 +252,21 @@ static always_inline void stac(void)
  * @compat: R8-R15 don't need reloading, but they are clobbered for added
  *          safety against information leaks.
  */
-.macro RESTORE_ALL adj=0, compat=0
-.if !\compat
-        movq  UREGS_r15(%rsp), %r15
-        movq  UREGS_r14(%rsp), %r14
-        movq  UREGS_r13(%rsp), %r13
-        movq  UREGS_r12(%rsp), %r12
-.else
-        xor %r15d, %r15d
-        xor %r14d, %r14d
-        xor %r13d, %r13d
-        xor %r12d, %r12d
-.endif
-        LOAD_ONE_REG(bp, \compat)
-        LOAD_ONE_REG(bx, \compat)
-.if !\compat
-        movq  UREGS_r11(%rsp),%r11
-        movq  UREGS_r10(%rsp),%r10
-        movq  UREGS_r9(%rsp),%r9
-        movq  UREGS_r8(%rsp),%r8
-.else
-        xor %r11d, %r11d
-        xor %r10d, %r10d
-        xor %r9d, %r9d
-        xor %r8d, %r8d
-.endif
-        LOAD_ONE_REG(ax, \compat)
-        LOAD_ONE_REG(cx, \compat)
-        LOAD_ONE_REG(dx, \compat)
-        LOAD_ONE_REG(si, \compat)
-        LOAD_ONE_REG(di, \compat)
-        subq  $-(UREGS_error_code-UREGS_r15+\adj), %rsp
-.endm
+                    .macro RESTORE_ALL adj = 0,
+            compat = 0 .if !\compat movq UREGS_r15(% rsp),
+            % r15 movq UREGS_r14(% rsp), % r14 movq UREGS_r13(% rsp),
+            % r13 movq UREGS_r12(% rsp), % r12.else xor % r15d,
+            % r15d xor % r14d, % r14d xor % r13d, % r13d xor % r12d,
+            % r12d.endif LOAD_ONE_REG(bp, \compat) LOAD_ONE_REG(bx, \compat)
+                    .if !\compat movq UREGS_r11(% rsp),
+            % r11 movq UREGS_r10(% rsp), % r10 movq UREGS_r9(% rsp),
+            % r9 movq UREGS_r8(% rsp), % r8.else xor % r11d, % r11d xor % r10d,
+            % r10d xor % r9d, % r9d xor % r8d,
+            % r8d.endif LOAD_ONE_REG(ax, \compat) LOAD_ONE_REG(cx, \compat)
+                        LOAD_ONE_REG(dx, \compat) LOAD_ONE_REG(si, \compat)
+                            LOAD_ONE_REG(di, \compat) subq $
+                - (UREGS_error_code - UREGS_r15 +\adj),
+            % rsp.endm
 
 #ifdef CONFIG_PV32
 #define CR4_PV32_RESTORE                               \

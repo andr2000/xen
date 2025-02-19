@@ -88,8 +88,9 @@ struct boot_info {
  *      Success - index in boot_module array
  *      Failure - a value greater than MAX_NR_BOOTMODS
  */
-static inline unsigned int __init next_boot_module_index(
-    const struct boot_info *bi, enum bootmod_type t, unsigned int start)
+static inline unsigned int __init
+next_boot_module_index(const struct boot_info *bi, enum bootmod_type t,
+                       unsigned int start)
 {
     unsigned int i;
 

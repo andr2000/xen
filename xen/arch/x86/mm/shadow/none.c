@@ -21,9 +21,9 @@ int shadow_domain_init(struct domain *d)
 {
     /* For HVM set up pointers for safety, then fail. */
     static const struct log_dirty_ops sh_none_ops = {
-        .enable  = _toggle_log_dirty,
+        .enable = _toggle_log_dirty,
         .disable = _toggle_log_dirty,
-        .clean   = _clean_dirty_bitmap,
+        .clean = _clean_dirty_bitmap,
     };
 
     paging_log_dirty_init(d, &sh_none_ops);
@@ -33,8 +33,8 @@ int shadow_domain_init(struct domain *d)
     return is_hvm_domain(d) ? -EOPNOTSUPP : 0;
 }
 
-static int cf_check _page_fault(
-    struct vcpu *v, unsigned long va, struct cpu_user_regs *regs)
+static int cf_check _page_fault(struct vcpu *v, unsigned long va,
+                                struct cpu_user_regs *regs)
 {
     ASSERT_UNREACHABLE();
     return 0;
@@ -47,8 +47,9 @@ static bool cf_check _invlpg(struct vcpu *v, unsigned long linear)
 }
 
 #ifdef CONFIG_HVM
-static unsigned long cf_check _gva_to_gfn(
-    struct vcpu *v, struct p2m_domain *p2m, unsigned long va, uint32_t *pfec)
+static unsigned long cf_check _gva_to_gfn(struct vcpu *v,
+                                          struct p2m_domain *p2m,
+                                          unsigned long va, uint32_t *pfec)
 {
     ASSERT_UNREACHABLE();
     return gfn_x(INVALID_GFN);
@@ -62,12 +63,12 @@ static pagetable_t cf_check _update_cr3(struct vcpu *v, bool noflush)
 }
 
 static const struct paging_mode sh_paging_none = {
-    .page_fault                    = _page_fault,
-    .invlpg                        = _invlpg,
+    .page_fault = _page_fault,
+    .invlpg = _invlpg,
 #ifdef CONFIG_HVM
-    .gva_to_gfn                    = _gva_to_gfn,
+    .gva_to_gfn = _gva_to_gfn,
 #endif
-    .update_cr3                    = _update_cr3,
+    .update_cr3 = _update_cr3,
 };
 
 void shadow_vcpu_init(struct vcpu *v)

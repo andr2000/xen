@@ -19,7 +19,6 @@
  * along with this program; If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #ifndef __VM_EVENT_H__
 #define __VM_EVENT_H__
 
@@ -27,8 +26,7 @@
 #include <public/vm_event.h>
 #include <asm/vm_event.h>
 
-struct vm_event_domain
-{
+struct vm_event_domain {
     spinlock_t lock;
     /* The ring has 64 entries */
     unsigned char foreign_producers;
@@ -71,6 +69,7 @@ bool vm_event_check_ring(struct vm_event_domain *ved);
  */
 int __vm_event_claim_slot(struct domain *d, struct vm_event_domain *ved,
                           bool allow_sleep);
+
 static inline int vm_event_claim_slot(struct domain *d,
                                       struct vm_event_domain *ved)
 {

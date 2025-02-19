@@ -94,6 +94,7 @@ static void page_sharing_dispose(struct page_info *page)
 #else
 
 #define audit_add_list(p)  ((void)0)
+
 static void page_sharing_dispose(struct page_info *page)
 {
     /* Unlikely given our thresholds, but we should be careful. */
@@ -124,12 +125,12 @@ static bool _page_lock(struct page_info *page)
 {
     unsigned long x, nx;
 
-    do {
+    do
+    {
         while ( (x = page->u.inuse.type_info) & PGT_locked )
             cpu_relax();
         nx = x + (1 | PGT_locked);
-        if ( !(x & PGT_validated) ||
-             !(x & PGT_count_mask) ||
+        if ( !(x & PGT_validated) || !(x & PGT_count_mask) ||
              !(nx & PGT_count_mask) )
             return false;
     } while ( cmpxchg(&page->u.inuse.type_info, x, nx) != x );
@@ -141,7 +142,8 @@ static void _page_unlock(struct page_info *page)
 {
     unsigned long x, nx, y = page->u.inuse.type_info;
 
-    do {
+    do
+    {
         x = y;
         ASSERT((x & PGT_count_mask) && (x & PGT_locked));
 
@@ -161,8 +163,7 @@ static bool mem_sharing_page_lock(struct page_info *pg)
     if ( rc )
     {
         preempt_disable();
-        page_sharing_mm_post_lock(&pld->mm_unlock_level,
-                                  &pld->recurse_count);
+        page_sharing_mm_post_lock(&pld->mm_unlock_level, &pld->recurse_count);
     }
     return rc;
 }
@@ -171,8 +172,7 @@ static void mem_sharing_page_unlock(struct page_info *pg)
 {
     pg_lock_data_t *pld = &(this_cpu(__pld));
 
-    page_sharing_mm_unlock(pld->mm_unlock_level,
-                           &pld->recurse_count);
+    page_sharing_mm_unlock(pld->mm_unlock_level, &pld->recurse_count);
     preempt_enable();
     _page_unlock(pg);
 }
@@ -182,8 +182,8 @@ static shr_handle_t get_next_handle(void)
     return arch_fetch_and_add(&next_handle, 1) + 1;
 }
 
-static atomic_t nr_saved_mfns   = ATOMIC_INIT(0);
-static atomic_t nr_shared_mfns  = ATOMIC_INIT(0);
+static atomic_t nr_saved_mfns = ATOMIC_INIT(0);
+static atomic_t nr_shared_mfns = ATOMIC_INIT(0);
 
 /*
  * Reverse map
@@ -194,8 +194,7 @@ static atomic_t nr_shared_mfns  = ATOMIC_INIT(0);
  * we use a hash table instead.
  */
 
-typedef struct gfn_info
-{
+typedef struct gfn_info {
     unsigned long gfn;
     domid_t domain;
     struct list_head list;
@@ -218,8 +217,8 @@ static void rmap_init(struct page_info *page)
 static inline int rmap_list_to_hash_table(struct page_info *page)
 {
     unsigned int i;
-    struct list_head *pos, *tmp, *b =
-        alloc_xenheap_pages(RMAP_HASHTAB_ORDER, 0);
+    struct list_head *pos, *tmp,
+        *b = alloc_xenheap_pages(RMAP_HASHTAB_ORDER, 0);
 
     if ( b == NULL )
         return -ENOMEM;
@@ -227,7 +226,7 @@ static inline int rmap_list_to_hash_table(struct page_info *page)
     for ( i = 0; i < RMAP_HASHTAB_SIZE; i++ )
         INIT_LIST_HEAD(b + i);
 
-    list_for_each_safe ( pos, tmp, &page->sharing->gfns )
+    list_for_each_safe(pos, tmp, &page->sharing->gfns)
     {
         gfn_info_t *gfn_info = list_entry(pos, gfn_info_t, list);
         struct list_head *bucket = b + HASH(gfn_info->domain, gfn_info->gfn);
@@ -237,7 +236,7 @@ static inline int rmap_list_to_hash_table(struct page_info *page)
     }
 
     page->sharing->hash_table.bucket = b;
-    page->sharing->hash_table.flag   = NULL;
+    page->sharing->hash_table.flag = NULL;
 
     return 0;
 }
@@ -253,7 +252,7 @@ static void rmap_hash_table_to_list(struct page_info *page)
     {
         struct list_head *pos, *tmp, *head = bucket + i;
 
-        list_for_each_safe ( pos, tmp, head )
+        list_for_each_safe(pos, tmp, head)
         {
             list_del(pos);
             list_add(pos, &page->sharing->gfns);
@@ -303,10 +302,9 @@ static void rmap_add(gfn_info_t *gfn_info, struct page_info *page)
          */
         (void)rmap_list_to_hash_table(page);
 
-    head = (RMAP_USES_HASHTAB(page)
-            ? page->sharing->hash_table.bucket + HASH(gfn_info->domain,
-                                                      gfn_info->gfn)
-            : &page->sharing->gfns);
+    head = (RMAP_USES_HASHTAB(page) ? page->sharing->hash_table.bucket +
+                                          HASH(gfn_info->domain, gfn_info->gfn)
+                                    : &page->sharing->gfns);
 
     INIT_LIST_HEAD(&gfn_info->list);
     list_add(&gfn_info->list, head);
@@ -319,10 +317,10 @@ static gfn_info_t *rmap_retrieve(uint16_t domain_id, unsigned long gfn,
     struct list_head *le, *head;
 
     head = (RMAP_USES_HASHTAB(page)
-            ? page->sharing->hash_table.bucket + HASH(domain_id, gfn)
-            : &page->sharing->gfns);
+                ? page->sharing->hash_table.bucket + HASH(domain_id, gfn)
+                : &page->sharing->gfns);
 
-    list_for_each ( le, head )
+    list_for_each(le, head)
     {
         gfn_info = list_entry(le, gfn_info_t, list);
         if ( (gfn_info->gfn == gfn) && (gfn_info->domain == domain_id) )
@@ -345,9 +343,8 @@ struct rmap_iterator {
 
 static void rmap_seed_iterator(struct page_info *page, struct rmap_iterator *ri)
 {
-    ri->curr = (RMAP_USES_HASHTAB(page)
-                ? page->sharing->hash_table.bucket
-                : &page->sharing->gfns);
+    ri->curr = (RMAP_USES_HASHTAB(page) ? page->sharing->hash_table.bucket
+                                        : &page->sharing->gfns);
     ri->next = ri->curr->next;
     ri->bucket = 0;
 }
@@ -355,12 +352,12 @@ static void rmap_seed_iterator(struct page_info *page, struct rmap_iterator *ri)
 static gfn_info_t *rmap_iterate(struct page_info *page,
                                 struct rmap_iterator *ri)
 {
-    struct list_head *head = (RMAP_USES_HASHTAB(page)
-                              ? page->sharing->hash_table.bucket + ri->bucket
-                              : &page->sharing->gfns);
+    struct list_head *head =
+        (RMAP_USES_HASHTAB(page) ? page->sharing->hash_table.bucket + ri->bucket
+                                 : &page->sharing->gfns);
 
- retry:
-    if ( ri->next == head)
+retry:
+    if ( ri->next == head )
     {
         if ( RMAP_USES_HASHTAB(page) )
         {
@@ -417,7 +414,7 @@ static void mem_sharing_gfn_destroy(struct page_info *page, struct domain *d,
 /* Deadlock-avoidance scheme when calling get_gfn on different gfn's */
 struct two_gfns {
     struct domain *first_domain, *second_domain;
-    gfn_t          first_gfn,     second_gfn;
+    gfn_t first_gfn, second_gfn;
 };
 
 /*
@@ -425,14 +422,14 @@ struct two_gfns {
  * of those can be NULL.
  */
 static void get_two_gfns(struct domain *rd, gfn_t rgfn, p2m_type_t *rt,
-                         p2m_access_t *ra, mfn_t *rmfn,
-                         struct domain *ld, gfn_t lgfn, p2m_type_t *lt,
-                         p2m_access_t *la, mfn_t *lmfn,
-                         p2m_query_t q, struct two_gfns *rval, bool lock)
+                         p2m_access_t *ra, mfn_t *rmfn, struct domain *ld,
+                         gfn_t lgfn, p2m_type_t *lt, p2m_access_t *la,
+                         mfn_t *lmfn, p2m_query_t q, struct two_gfns *rval,
+                         bool lock)
 {
-    mfn_t        *first_mfn, *second_mfn, scratch_mfn;
+    mfn_t *first_mfn, *second_mfn, scratch_mfn;
     p2m_access_t *first_a, *second_a, scratch_a;
-    p2m_type_t   *first_t, *second_t, scratch_t;
+    p2m_type_t *first_t, *second_t, scratch_t;
 
     /* Sort by domain, if same domain by gfn */
 
@@ -460,18 +457,26 @@ do {                                                    \
 #undef assign_pointers
 
     /* Now do the gets. */
-    *first_mfn  = p2m_get_gfn_type_access(p2m_get_hostp2m(rval->first_domain),
-                                          rval->first_gfn, first_t,
-                                          first_a, q, NULL, lock);
+    *first_mfn = p2m_get_gfn_type_access(p2m_get_hostp2m(rval->first_domain),
+                                         rval->first_gfn,
+                                         first_t,
+                                         first_a,
+                                         q,
+                                         NULL,
+                                         lock);
     *second_mfn = p2m_get_gfn_type_access(p2m_get_hostp2m(rval->second_domain),
-                                          rval->second_gfn, second_t,
-                                          second_a, q, NULL, lock);
+                                          rval->second_gfn,
+                                          second_t,
+                                          second_a,
+                                          q,
+                                          NULL,
+                                          lock);
 }
 
 static void put_two_gfns(const struct two_gfns *arg)
 {
     put_gfn(arg->second_domain, gfn_x(arg->second_gfn));
-    put_gfn(arg->first_domain,  gfn_x(arg->first_gfn));
+    put_gfn(arg->first_domain, gfn_x(arg->first_gfn));
 }
 
 static struct page_info *mem_sharing_lookup(unsigned long mfn)
@@ -511,7 +516,7 @@ static int audit(void)
 
     rcu_read_lock(&shr_audit_read_lock);
 
-    list_for_each_rcu ( ae, &shr_audit_list )
+    list_for_each_rcu(ae, &shr_audit_list)
     {
         struct page_sharing_info *pg_shared_info;
         unsigned long nr_gfns = 0;
@@ -529,7 +534,8 @@ static int audit(void)
         {
             gdprintk(XENLOG_ERR,
                      "mfn %lx in audit list, but cannot be locked (%lx)!\n",
-                     mfn_x(mfn), pg->u.inuse.type_info);
+                     mfn_x(mfn),
+                     pg->u.inuse.type_info);
             errors++;
             continue;
         }
@@ -539,7 +545,8 @@ static int audit(void)
         {
             gdprintk(XENLOG_ERR,
                      "mfn %lx in audit list, but not PGT_shared_page (%lx)!\n",
-                     mfn_x(mfn), pg->u.inuse.type_info & PGT_type_mask);
+                     mfn_x(mfn),
+                     pg->u.inuse.type_info & PGT_type_mask);
             errors++;
             continue;
         }
@@ -547,23 +554,28 @@ static int audit(void)
         /* Check the page owner. */
         if ( page_get_owner(pg) != dom_cow )
         {
-            gdprintk(XENLOG_ERR, "mfn %lx shared, but wrong owner (%pd)!\n",
-                     mfn_x(mfn), page_get_owner(pg));
+            gdprintk(XENLOG_ERR,
+                     "mfn %lx shared, but wrong owner (%pd)!\n",
+                     mfn_x(mfn),
+                     page_get_owner(pg));
             errors++;
         }
 
         /* Check the m2p entry */
         if ( !SHARED_M2P(get_gpfn_from_mfn(mfn_x(mfn))) )
         {
-            gdprintk(XENLOG_ERR, "mfn %lx shared, but wrong m2p entry (%lx)!\n",
-                     mfn_x(mfn), get_gpfn_from_mfn(mfn_x(mfn)));
+            gdprintk(XENLOG_ERR,
+                     "mfn %lx shared, but wrong m2p entry (%lx)!\n",
+                     mfn_x(mfn),
+                     get_gpfn_from_mfn(mfn_x(mfn)));
             errors++;
         }
 
         /* Check we have a list */
         if ( (!pg->sharing) || rmap_count(pg) == 0 )
         {
-            gdprintk(XENLOG_ERR, "mfn %lx shared, but empty gfn list!\n",
+            gdprintk(XENLOG_ERR,
+                     "mfn %lx shared, but empty gfn list!\n",
                      mfn_x(mfn));
             errors++;
             continue;
@@ -585,24 +597,34 @@ static int audit(void)
             {
                 gdprintk(XENLOG_ERR,
                          "Unknown dom: %d, for PFN=%lx, MFN=%lx\n",
-                         g->domain, g->gfn, mfn_x(mfn));
+                         g->domain,
+                         g->gfn,
+                         mfn_x(mfn));
                 errors++;
                 continue;
             }
             o_mfn = get_gfn_query_unlocked(d, g->gfn, &t);
             if ( !mfn_eq(o_mfn, mfn) )
             {
-                gdprintk(XENLOG_ERR, "Incorrect P2M for %pd, PFN=%lx."
-                         "Expecting MFN=%lx, got %lx\n",
-                         d, g->gfn, mfn_x(mfn), mfn_x(o_mfn));
+                gdprintk(
+                    XENLOG_ERR,
+                    "Incorrect P2M for %pd, PFN=%lx." "Expecting MFN=%lx, got %lx\n",
+                    d,
+                    g->gfn,
+                    mfn_x(mfn),
+                    mfn_x(o_mfn));
                 errors++;
             }
             if ( t != p2m_ram_shared )
             {
-                gdprintk(XENLOG_ERR,
-                         "Incorrect P2M type for %pd, PFN=%lx MFN=%lx."
-                         "Expecting t=%d, got %d\n",
-                         d, g->gfn, mfn_x(mfn), p2m_ram_shared, t);
+                gdprintk(
+                    XENLOG_ERR,
+                    "Incorrect P2M type for %pd, PFN=%lx MFN=%lx." "Expecting t=%d, got %d\n",
+                    d,
+                    g->gfn,
+                    mfn_x(mfn),
+                    p2m_ram_shared,
+                    t);
                 errors++;
             }
             rcu_unlock_domain(d);
@@ -611,10 +633,12 @@ static int audit(void)
         /* The type count has an extra ref because we have locked the page */
         if ( (nr_gfns + 1) != (pg->u.inuse.type_info & PGT_count_mask) )
         {
-            gdprintk(XENLOG_ERR, "Mismatched counts for MFN=%lx."
-                     "nr_gfns in list %lu, in type_info %lx\n",
-                     mfn_x(mfn), nr_gfns,
-                     (pg->u.inuse.type_info & PGT_count_mask));
+            gdprintk(
+                XENLOG_ERR,
+                "Mismatched counts for MFN=%lx." "nr_gfns in list %lu, in type_info %lx\n",
+                mfn_x(mfn),
+                nr_gfns,
+                (pg->u.inuse.type_info & PGT_count_mask));
             errors++;
         }
 
@@ -625,8 +649,10 @@ static int audit(void)
 
     if ( count_found != count_expected )
     {
-        gdprintk(XENLOG_ERR, "Expected %ld shared mfns, found %ld.",
-                 count_expected, count_found);
+        gdprintk(XENLOG_ERR,
+                 "Expected %ld shared mfns, found %ld.",
+                 count_expected,
+                 count_found);
         errors++;
     }
 
@@ -648,8 +674,7 @@ int mem_sharing_notify_enomem(struct domain *d, unsigned long gfn,
         .u.mem_sharing.p2mt = p2m_ram_shared,
     };
 
-    if ( (rc = __vm_event_claim_slot(
-              d, d->vm_event_share, allow_sleep)) < 0 )
+    if ( (rc = __vm_event_claim_slot(d, d->vm_event_share, allow_sleep)) < 0 )
         return rc;
 
     if ( v->domain == d )
@@ -674,10 +699,8 @@ unsigned int mem_sharing_get_nr_shared_mfns(void)
 }
 
 /* Functions that change a page's type and ownership */
-static int page_make_sharable(struct domain *d,
-                              struct page_info *page,
-                              unsigned int expected_refcnt,
-                              bool validate_only)
+static int page_make_sharable(struct domain *d, struct page_info *page,
+                              unsigned int expected_refcnt, bool validate_only)
 {
     int rc = 0;
     bool drop_dom_ref = false;
@@ -806,7 +829,7 @@ static int debug_mfn(mfn_t mfn)
     struct page_info *page;
     int num_refs;
 
-    if ( (page = __grab_shared_page(mfn)) == NULL)
+    if ( (page = __grab_shared_page(mfn)) == NULL )
     {
         gdprintk(XENLOG_ERR, "Invalid MFN=%lx\n", mfn_x(mfn));
         return -EINVAL;
@@ -814,11 +837,13 @@ static int debug_mfn(mfn_t mfn)
 
     gdprintk(XENLOG_ERR,
              "Debug page: MFN=%lx is ci=%lx, ti=%lx, owner_id=%pd\n",
-             mfn_x(page_to_mfn(page)), page->count_info,
-             page->u.inuse.type_info, page_get_owner(page));
+             mfn_x(page_to_mfn(page)),
+             page->count_info,
+             page->u.inuse.type_info,
+             page_get_owner(page));
 
     /* -1 because the page is locked and that's an additional type ref */
-    num_refs = ((int) (page->u.inuse.type_info & PGT_count_mask)) - 1;
+    num_refs = ((int)(page->u.inuse.type_info & PGT_count_mask)) - 1;
     mem_sharing_page_unlock(page);
     return num_refs;
 }
@@ -831,8 +856,7 @@ static int debug_gfn(struct domain *d, gfn_t gfn)
 
     mfn = get_gfn_query(d, gfn_x(gfn), &p2mt);
 
-    gdprintk(XENLOG_ERR, "Debug for %pd, gfn=%" PRI_gfn "\n",
-             d, gfn_x(gfn));
+    gdprintk(XENLOG_ERR, "Debug for %pd, gfn=%" PRI_gfn "\n", d, gfn_x(gfn));
 
     num_refs = debug_mfn(mfn);
     put_gfn(d, gfn_x(gfn));
@@ -849,13 +873,15 @@ static int debug_gref(struct domain *d, grant_ref_t ref)
     rc = mem_sharing_gref_to_gfn(d->grant_table, ref, &gfn, &status);
     if ( rc )
     {
-        gdprintk(XENLOG_ERR, "Asked to debug [%pd,gref=%u]: error %d.\n",
-                 d, ref, rc);
+        gdprintk(XENLOG_ERR,
+                 "Asked to debug [%pd,gref=%u]: error %d.\n",
+                 d,
+                 ref,
+                 rc);
         return rc;
     }
 
-    gdprintk(XENLOG_ERR, "==> Grant [%pd,ref=%d], status=%x. ",
-             d, ref, status);
+    gdprintk(XENLOG_ERR, "==> Grant [%pd,ref=%d], status=%x. ", d, ref, status);
 
     return debug_gfn(d, gfn);
 }
@@ -918,8 +944,13 @@ static int nominate_page(struct domain *d, gfn_t gfn,
             if ( !ap2m )
                 continue;
 
-            amfn = p2m_get_gfn_type_access(ap2m, gfn, &ap2mt, &ap2ma,
-                                           0, NULL, false);
+            amfn = p2m_get_gfn_type_access(ap2m,
+                                           gfn,
+                                           &ap2mt,
+                                           &ap2ma,
+                                           0,
+                                           NULL,
+                                           false);
             if ( mfn_valid(amfn) && (!mfn_eq(amfn, mfn) || ap2ma != p2ma) )
             {
                 altp2m_list_unlock(d);
@@ -996,8 +1027,19 @@ static int share_pages(struct domain *sd, gfn_t sgfn, shr_handle_t sh,
     struct rmap_iterator ri;
     unsigned long put_count = 0;
 
-    get_two_gfns(sd, sgfn, &smfn_type, NULL, &smfn,
-                 cd, cgfn, &cmfn_type, NULL, &cmfn, 0, &tg, true);
+    get_two_gfns(sd,
+                 sgfn,
+                 &smfn_type,
+                 NULL,
+                 &smfn,
+                 cd,
+                 cgfn,
+                 &cmfn_type,
+                 NULL,
+                 &cmfn,
+                 0,
+                 &tg,
+                 true);
 
     /*
      * This tricky business is to avoid two callers deadlocking if
@@ -1069,7 +1111,7 @@ static int share_pages(struct domain *sd, gfn_t sgfn, shr_handle_t sh,
 
     /* Merge the lists together */
     rmap_seed_iterator(cpage, &ri);
-    while ( (gfn = rmap_iterate(cpage, &ri)) != NULL)
+    while ( (gfn = rmap_iterate(cpage, &ri)) != NULL )
     {
         /*
          * Get the source page and type, this should never fail:
@@ -1137,9 +1179,9 @@ err_out:
  * TODO: to properly resolve this issue implement differentiation between the
  * two "hole" types.
  */
-static
-int add_to_physmap(struct domain *sd, unsigned long sgfn, shr_handle_t sh,
-                   struct domain *cd, unsigned long cgfn, bool lock)
+static int add_to_physmap(struct domain *sd, unsigned long sgfn,
+                          shr_handle_t sh, struct domain *cd,
+                          unsigned long cgfn, bool lock)
 {
     struct page_info *spage;
     int ret = -EINVAL;
@@ -1149,8 +1191,19 @@ int add_to_physmap(struct domain *sd, unsigned long sgfn, shr_handle_t sh,
     struct p2m_domain *p2m = p2m_get_hostp2m(cd);
     struct two_gfns tg;
 
-    get_two_gfns(sd, _gfn(sgfn), &smfn_type, NULL, &smfn,
-                 cd, _gfn(cgfn), &cmfn_type, NULL, &cmfn, 0, &tg, lock);
+    get_two_gfns(sd,
+                 _gfn(sgfn),
+                 &smfn_type,
+                 NULL,
+                 &smfn,
+                 cd,
+                 _gfn(cgfn),
+                 &cmfn_type,
+                 NULL,
+                 &cmfn,
+                 0,
+                 &tg,
+                 lock);
 
     /* Get the source shared page, check and lock */
     ret = XENMEM_SHARING_OP_S_HANDLE_INVALID;
@@ -1184,8 +1237,12 @@ int add_to_physmap(struct domain *sd, unsigned long sgfn, shr_handle_t sh,
         goto err_unlock;
     }
 
-    ret = p2m_set_entry(p2m, _gfn(cgfn), smfn, PAGE_ORDER_4K,
-                        p2m_ram_shared, p2m->default_access);
+    ret = p2m_set_entry(p2m,
+                        _gfn(cgfn),
+                        smfn,
+                        PAGE_ORDER_4K,
+                        p2m_ram_shared,
+                        p2m->default_access);
 
     /* Tempted to turn this into an assert */
     if ( ret )
@@ -1234,7 +1291,6 @@ err_out:
     return ret;
 }
 
-
 /*
  * A note on the rationale for unshare error handling:
  *  1. Unshare can only fail with ENOMEM. Any other error conditions BUG_ON()'s
@@ -1249,8 +1305,7 @@ err_out:
  *     4.3. do not corrupt guest memory
  *     4.4. let the guest deal with it if the error propagation will reach it
  */
-int __mem_sharing_unshare_page(struct domain *d,
-                               unsigned long gfn,
+int __mem_sharing_unshare_page(struct domain *d, unsigned long gfn,
                                bool destroy)
 {
     p2m_type_t p2mt;
@@ -1281,7 +1336,8 @@ int __mem_sharing_unshare_page(struct domain *d,
     page = __grab_shared_page(mfn);
     if ( page == NULL )
     {
-        gdprintk(XENLOG_ERR, "Domain p2m is shared, but page is not: %lx\n",
+        gdprintk(XENLOG_ERR,
+                 "Domain p2m is shared, but page is not: %lx\n",
                  gfn);
         BUG();
     }
@@ -1289,7 +1345,8 @@ int __mem_sharing_unshare_page(struct domain *d,
     gfn_info = rmap_retrieve(d->domain_id, gfn, page);
     if ( unlikely(gfn_info == NULL) )
     {
-        gdprintk(XENLOG_ERR, "Could not find gfn_info for shared gfn: %lx\n",
+        gdprintk(XENLOG_ERR,
+                 "Could not find gfn_info for shared gfn: %lx\n",
                  gfn);
         BUG();
     }
@@ -1360,11 +1417,13 @@ int __mem_sharing_unshare_page(struct domain *d,
     mem_sharing_page_unlock(old_page);
     put_page_and_type(old_page);
 
- private_page_found:
+private_page_found:
     if ( p2m_change_type_one(d, gfn, p2m_ram_shared, p2m_ram_rw) )
     {
-        gdprintk(XENLOG_ERR, "Could not change p2m type d %pd gfn %lx.\n",
-                 d, gfn);
+        gdprintk(XENLOG_ERR,
+                 "Could not change p2m type d %pd gfn %lx.\n",
+                 d,
+                 gfn);
         BUG();
     }
 
@@ -1378,7 +1437,7 @@ int __mem_sharing_unshare_page(struct domain *d,
     paging_mark_dirty(d, page_to_mfn(page));
     /* We do not need to unlock a private page */
 
- out:
+out:
     if ( unlikely(nestedhvm_enabled(d)) )
     {
         unsigned int i;
@@ -1402,8 +1461,8 @@ int relinquish_shared_pages(struct domain *d)
         return 0;
 
     p2m_lock(p2m);
-    for ( gfn = msd->next_shared_gfn_to_relinquish;
-          gfn <= p2m->max_mapped_pfn; gfn++ )
+    for ( gfn = msd->next_shared_gfn_to_relinquish; gfn <= p2m->max_mapped_pfn;
+          gfn++ )
     {
         p2m_access_t a;
         p2m_type_t t;
@@ -1423,8 +1482,13 @@ int relinquish_shared_pages(struct domain *d)
              * unshare.  Must succeed: we just read the old entry and
              * we hold the p2m lock.
              */
-            set_rc = p2m->set_entry(p2m, _gfn(gfn), INVALID_MFN, PAGE_ORDER_4K,
-                                    p2m_invalid, p2m_access_rwx, -1);
+            set_rc = p2m->set_entry(p2m,
+                                    _gfn(gfn),
+                                    INVALID_MFN,
+                                    PAGE_ORDER_4K,
+                                    p2m_invalid,
+                                    p2m_access_rwx,
+                                    -1);
             ASSERT(!set_rc);
             count += 0x10;
         }
@@ -1601,8 +1665,13 @@ int mem_sharing_fork_page(struct domain *d, gfn_t gfn, bool unsharing)
 
     put_gfn(parent, gfn_l);
 
-    return p2m->set_entry(p2m, gfn, new_mfn, PAGE_ORDER_4K, p2m_ram_rw,
-                          p2m->default_access, -1);
+    return p2m->set_entry(p2m,
+                          gfn,
+                          new_mfn,
+                          PAGE_ORDER_4K,
+                          p2m_ram_rw,
+                          p2m->default_access,
+                          -1);
 }
 
 static int bring_up_vcpus(struct domain *cd, struct domain *d)
@@ -1611,7 +1680,7 @@ static int bring_up_vcpus(struct domain *cd, struct domain *d)
     int ret = -EINVAL;
 
     if ( d->max_vcpus != cd->max_vcpus ||
-        (ret = cpupool_move_domain(cd, d->cpupool)) )
+         (ret = cpupool_move_domain(cd, d->cpupool)) )
         return ret;
 
     for ( i = 0; i < cd->max_vcpus; i++ )
@@ -1637,8 +1706,7 @@ static void copy_vcpu_nonreg_state(struct vcpu *d_vcpu, struct vcpu *cd_vcpu)
 
 static int copy_guest_area(struct guest_area *cd_area,
                            const struct guest_area *d_area,
-                           struct vcpu *cd_vcpu,
-                           const struct domain *d)
+                           struct vcpu *cd_vcpu, const struct domain *d)
 {
     unsigned int offset;
 
@@ -1647,10 +1715,12 @@ static int copy_guest_area(struct guest_area *cd_area,
         return 0;
 
     offset = PAGE_OFFSET(d_area->map);
-    return map_guest_area(cd_vcpu, gfn_to_gaddr(
-                                       mfn_to_gfn(d, page_to_mfn(d_area->pg))) +
-                                   offset,
-                          PAGE_SIZE - offset, cd_area, NULL);
+    return map_guest_area(cd_vcpu,
+                          gfn_to_gaddr(mfn_to_gfn(d, page_to_mfn(d_area->pg))) +
+                              offset,
+                          PAGE_SIZE - offset,
+                          cd_area,
+                          NULL);
 }
 
 static int copy_vpmu(struct vcpu *d_vcpu, struct vcpu *cd_vcpu)
@@ -1676,7 +1746,9 @@ static int copy_vpmu(struct vcpu *d_vcpu, struct vcpu *cd_vcpu)
         if ( d_vpmu->last_pcpu != pcpu )
         {
             on_selected_cpus(cpumask_of(d_vpmu->last_pcpu),
-                             vpmu_save_force, d_vcpu, 1);
+                             vpmu_save_force,
+                             d_vcpu,
+                             1);
             vpmu_reset(d_vpmu, VPMU_CONTEXT_LOADED);
         }
         else
@@ -1690,7 +1762,8 @@ static int copy_vpmu(struct vcpu *d_vcpu, struct vcpu *cd_vcpu)
     vpmu_reset(cd_vpmu, VPMU_CONTEXT_LOADED);
 
     memcpy(cd_vpmu->context, d_vpmu->context, d_vpmu->context_size);
-    memcpy(cd_vpmu->priv_context, d_vpmu->priv_context,
+    memcpy(cd_vpmu->priv_context,
+           d_vpmu->priv_context,
            d_vpmu->priv_context_size);
 
     return 0;
@@ -1714,15 +1787,21 @@ static int copy_vcpu_settings(struct domain *cd, const struct domain *d)
          * time info areas.
          */
         ret = copy_guest_area(&cd_vcpu->vcpu_info_area,
-                              &d_vcpu->vcpu_info_area, cd_vcpu, d);
+                              &d_vcpu->vcpu_info_area,
+                              cd_vcpu,
+                              d);
         if ( ret )
             return ret;
         ret = copy_guest_area(&cd_vcpu->runstate_guest_area,
-                              &d_vcpu->runstate_guest_area, cd_vcpu, d);
+                              &d_vcpu->runstate_guest_area,
+                              cd_vcpu,
+                              d);
         if ( ret )
             return ret;
         ret = copy_guest_area(&cd_vcpu->arch.time_guest_area,
-                              &d_vcpu->arch.time_guest_area, cd_vcpu, d);
+                              &d_vcpu->arch.time_guest_area,
+                              cd_vcpu,
+                              d);
         if ( ret )
             return ret;
 
@@ -1776,13 +1855,10 @@ static int copy_special_pages(struct domain *cd, struct domain *d)
     mfn_t new_mfn, old_mfn;
     gfn_t new_gfn, old_gfn;
     struct p2m_domain *p2m = p2m_get_hostp2m(cd);
-    static const unsigned int params[] =
-    {
-        HVM_PARAM_STORE_PFN,
-        HVM_PARAM_IOREQ_PFN,
-        HVM_PARAM_BUFIOREQ_PFN,
-        HVM_PARAM_CONSOLE_PFN
-    };
+    static const unsigned int params[] = { HVM_PARAM_STORE_PFN,
+                                           HVM_PARAM_IOREQ_PFN,
+                                           HVM_PARAM_BUFIOREQ_PFN,
+                                           HVM_PARAM_CONSOLE_PFN };
     unsigned int i;
     int rc;
 
@@ -1807,8 +1883,13 @@ static int copy_special_pages(struct domain *cd, struct domain *d)
             new_mfn = page_to_mfn(page);
             set_gpfn_from_mfn(mfn_x(new_mfn), value);
 
-            rc = p2m->set_entry(p2m, _gfn(value), new_mfn, PAGE_ORDER_4K,
-                                p2m_ram_rw, p2m->default_access, -1);
+            rc = p2m->set_entry(p2m,
+                                _gfn(value),
+                                new_mfn,
+                                PAGE_ORDER_4K,
+                                p2m_ram_rw,
+                                p2m->default_access,
+                                -1);
             if ( rc )
                 return rc;
         }
@@ -1828,8 +1909,13 @@ static int copy_special_pages(struct domain *cd, struct domain *d)
         if ( !gfn_eq(new_gfn, INVALID_GFN) )
         {
             /* if shared_info is mapped to a different gfn just remove it */
-            rc = p2m->set_entry(p2m, new_gfn, INVALID_MFN, PAGE_ORDER_4K,
-                                p2m_invalid, p2m->default_access, -1);
+            rc = p2m->set_entry(p2m,
+                                new_gfn,
+                                INVALID_MFN,
+                                PAGE_ORDER_4K,
+                                p2m_invalid,
+                                p2m->default_access,
+                                -1);
             if ( rc )
                 return rc;
         }
@@ -1837,8 +1923,13 @@ static int copy_special_pages(struct domain *cd, struct domain *d)
         if ( !gfn_eq(old_gfn, INVALID_GFN) )
         {
             /* now map it to the same gfn as the parent */
-            rc = p2m->set_entry(p2m, old_gfn, new_mfn, PAGE_ORDER_4K,
-                                p2m_ram_rw, p2m->default_access, -1);
+            rc = p2m->set_entry(p2m,
+                                old_gfn,
+                                new_mfn,
+                                PAGE_ORDER_4K,
+                                p2m_ram_rw,
+                                p2m->default_access,
+                                -1);
             if ( rc )
                 return rc;
 
@@ -1899,7 +1990,7 @@ static int fork(struct domain *cd, struct domain *d)
 
     rc = copy_settings(cd, d);
 
- done:
+done:
     if ( rc && rc != -ERESTART )
     {
         cd->parent = NULL;
@@ -1958,8 +2049,13 @@ int mem_sharing_fork_reset(struct domain *d, bool reset_state,
             continue;
 
         /* forked memory is 4k, not splitting large pages so this must work */
-        rc = p2m->set_entry(p2m, gfn, INVALID_MFN, PAGE_ORDER_4K,
-                            p2m_invalid, p2m_access_rwx, -1);
+        rc = p2m->set_entry(p2m,
+                            gfn,
+                            INVALID_MFN,
+                            PAGE_ORDER_4K,
+                            p2m_invalid,
+                            p2m_access_rwx,
+                            -1);
         ASSERT(!rc);
 
         put_page_alloc_ref(page);
@@ -1967,7 +2063,7 @@ int mem_sharing_fork_reset(struct domain *d, bool reset_state,
     }
     rspin_unlock(&d->page_alloc_lock);
 
- state:
+state:
     if ( reset_state )
     {
         rc = copy_settings(d, pd);
@@ -2005,8 +2101,7 @@ int mem_sharing_memop(XEN_GUEST_HANDLE_PARAM(xen_mem_sharing_op_t) arg)
     if ( rc )
         goto out;
 
-    if ( !mem_sharing_enabled(d) &&
-         (rc = mem_sharing_control(d, true, 0)) )
+    if ( !mem_sharing_enabled(d) && (rc = mem_sharing_control(d, true, 0)) )
         goto out;
 
     switch ( mso.op )
@@ -2041,8 +2136,7 @@ int mem_sharing_memop(XEN_GUEST_HANDLE_PARAM(xen_mem_sharing_op_t) arg)
         struct domain *cd;
         shr_handle_t sh, ch;
 
-        rc = rcu_lock_live_remote_domain_by_id(mso.u.share.client_domain,
-                                               &cd);
+        rc = rcu_lock_live_remote_domain_by_id(mso.u.share.client_domain, &cd);
         if ( rc )
             goto out;
 
@@ -2065,8 +2159,7 @@ int mem_sharing_memop(XEN_GUEST_HANDLE_PARAM(xen_mem_sharing_op_t) arg)
             grant_ref_t gref =
                 XENMEM_SHARING_OP_FIELD_GET_GREF(mso.u.share.source_gfn);
 
-            rc = mem_sharing_gref_to_gfn(d->grant_table, gref, &sgfn,
-                                         NULL);
+            rc = mem_sharing_gref_to_gfn(d->grant_table, gref, &sgfn, NULL);
             if ( rc < 0 )
             {
                 rcu_unlock_domain(cd);
@@ -2081,8 +2174,7 @@ int mem_sharing_memop(XEN_GUEST_HANDLE_PARAM(xen_mem_sharing_op_t) arg)
             grant_ref_t gref =
                 XENMEM_SHARING_OP_FIELD_GET_GREF(mso.u.share.client_gfn);
 
-            rc = mem_sharing_gref_to_gfn(cd->grant_table, gref, &cgfn,
-                                         NULL);
+            rc = mem_sharing_gref_to_gfn(cd->grant_table, gref, &cgfn, NULL);
             if ( rc < 0 )
             {
                 rcu_unlock_domain(cd);
@@ -2107,8 +2199,7 @@ int mem_sharing_memop(XEN_GUEST_HANDLE_PARAM(xen_mem_sharing_op_t) arg)
         struct domain *cd;
         shr_handle_t sh;
 
-        rc = rcu_lock_live_remote_domain_by_id(mso.u.share.client_domain,
-                                               &cd);
+        rc = rcu_lock_live_remote_domain_by_id(mso.u.share.client_domain, &cd);
         if ( rc )
             goto out;
 
@@ -2134,9 +2225,9 @@ int mem_sharing_memop(XEN_GUEST_HANDLE_PARAM(xen_mem_sharing_op_t) arg)
             goto out;
         }
 
-        sgfn    = mso.u.share.source_gfn;
-        sh      = mso.u.share.source_handle;
-        cgfn    = mso.u.share.client_gfn;
+        sgfn = mso.u.share.source_gfn;
+        sh = mso.u.share.source_handle;
+        cgfn = mso.u.share.client_gfn;
 
         rc = add_to_physmap(d, sgfn, sh, cd, cgfn, true);
 
@@ -2150,8 +2241,7 @@ int mem_sharing_memop(XEN_GUEST_HANDLE_PARAM(xen_mem_sharing_op_t) arg)
         struct domain *cd;
 
         rc = -EINVAL;
-        if ( mso.u.range._pad[0] || mso.u.range._pad[1] ||
-             mso.u.range._pad[2] )
+        if ( mso.u.range._pad[0] || mso.u.range._pad[1] || mso.u.range._pad[2] )
             goto out;
 
         /*
@@ -2165,8 +2255,7 @@ int mem_sharing_memop(XEN_GUEST_HANDLE_PARAM(xen_mem_sharing_op_t) arg)
               mso.u.range.opaque > mso.u.range.last_gfn) )
             goto out;
 
-        rc = rcu_lock_live_remote_domain_by_id(mso.u.range.client_domain,
-                                               &cd);
+        rc = rcu_lock_live_remote_domain_by_id(mso.u.range.client_domain, &cd);
         if ( rc )
             goto out;
 
@@ -2174,8 +2263,7 @@ int mem_sharing_memop(XEN_GUEST_HANDLE_PARAM(xen_mem_sharing_op_t) arg)
          * We reuse XENMEM_sharing_op_share XSM check here as this is
          * essentially the same concept repeated over multiple pages.
          */
-        rc = xsm_mem_sharing_op(XSM_DM_PRIV, d, cd,
-                                XENMEM_sharing_op_share);
+        rc = xsm_mem_sharing_op(XSM_DM_PRIV, d, cd, XENMEM_sharing_op_share);
         if ( rc )
         {
             rcu_unlock_domain(cd);
@@ -2193,8 +2281,7 @@ int mem_sharing_memop(XEN_GUEST_HANDLE_PARAM(xen_mem_sharing_op_t) arg)
          * Sanity check only, the client should keep the domains paused for
          * the duration of this op.
          */
-        if ( !atomic_read(&d->pause_count) ||
-             !atomic_read(&cd->pause_count) )
+        if ( !atomic_read(&d->pause_count) || !atomic_read(&cd->pause_count) )
         {
             rcu_unlock_domain(cd);
             rc = -EINVAL;
@@ -2223,7 +2310,8 @@ int mem_sharing_memop(XEN_GUEST_HANDLE_PARAM(xen_mem_sharing_op_t) arg)
                 rc = -EFAULT;
             else
                 rc = hypercall_create_continuation(__HYPERVISOR_memory_op,
-                                                   "lh", XENMEM_sharing_op,
+                                                   "lh",
+                                                   XENMEM_sharing_op,
                                                    arg);
         }
         else
@@ -2250,8 +2338,7 @@ int mem_sharing_memop(XEN_GUEST_HANDLE_PARAM(xen_mem_sharing_op_t) arg)
              ~(XENMEM_FORK_WITH_IOMMU_ALLOWED | XENMEM_FORK_BLOCK_INTERRUPTS) )
             goto out;
 
-        rc = rcu_lock_live_remote_domain_by_id(mso.u.fork.parent_domain,
-                                               &pd);
+        rc = rcu_lock_live_remote_domain_by_id(mso.u.fork.parent_domain, &pd);
         if ( rc )
             goto out;
 
@@ -2273,7 +2360,8 @@ int mem_sharing_memop(XEN_GUEST_HANDLE_PARAM(xen_mem_sharing_op_t) arg)
 
         if ( rc == -ERESTART )
             rc = hypercall_create_continuation(__HYPERVISOR_memory_op,
-                                               "lh", XENMEM_sharing_op,
+                                               "lh",
+                                               XENMEM_sharing_op,
                                                arg);
         else if ( !rc && (mso.u.fork.flags & XENMEM_FORK_BLOCK_INTERRUPTS) )
             d->arch.hvm.mem_sharing.block_interrupts = true;
@@ -2336,6 +2424,6 @@ int mem_sharing_domctl(struct domain *d, struct xen_domctl_mem_sharing_op *mec)
 void arch_dump_shared_mem_info(void)
 {
     printk("Shared frames %u -- Saved frames %u\n",
-            mem_sharing_get_nr_shared_mfns(),
-            mem_sharing_get_nr_saved_mfns());
+           mem_sharing_get_nr_shared_mfns(),
+           mem_sharing_get_nr_saved_mfns());
 }

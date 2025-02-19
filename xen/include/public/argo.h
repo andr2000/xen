@@ -34,28 +34,24 @@ typedef uint64_t xen_argo_gfn_t;
 */
 #define XEN_ARGO_MAXIOV          8U
 
-typedef struct xen_argo_iov
-{
+typedef struct xen_argo_iov {
     XEN_GUEST_HANDLE(uint8) iov_hnd;
     uint32_t iov_len;
     uint32_t pad;
 } xen_argo_iov_t;
 
-typedef struct xen_argo_addr
-{
+typedef struct xen_argo_addr {
     xen_argo_port_t aport;
     domid_t domain_id;
     uint16_t pad;
 } xen_argo_addr_t;
 
-typedef struct xen_argo_send_addr
-{
+typedef struct xen_argo_send_addr {
     xen_argo_addr_t src;
     xen_argo_addr_t dst;
 } xen_argo_send_addr_t;
 
-typedef struct xen_argo_ring
-{
+typedef struct xen_argo_ring {
     /* Guests should use atomic operations to access rx_ptr */
     uint32_t rx_ptr;
     /* Guests should use atomic operations to access tx_ptr */
@@ -68,16 +64,14 @@ typedef struct xen_argo_ring
     uint8_t ring[XEN_FLEX_ARRAY_DIM];
 } xen_argo_ring_t;
 
-typedef struct xen_argo_register_ring
-{
+typedef struct xen_argo_register_ring {
     xen_argo_port_t aport;
     domid_t partner_id;
     uint16_t pad;
     uint32_t len;
 } xen_argo_register_ring_t;
 
-typedef struct xen_argo_unregister_ring
-{
+typedef struct xen_argo_unregister_ring {
     xen_argo_port_t aport;
     domid_t partner_id;
     uint16_t pad;
@@ -102,8 +96,7 @@ typedef struct xen_argo_unregister_ring
 /* Too many domains waiting for available space signals for this ring */
 #define XEN_ARGO_RING_EBUSY             (1U << 5)
 
-typedef struct xen_argo_ring_data_ent
-{
+typedef struct xen_argo_ring_data_ent {
     xen_argo_addr_t ring;
     uint16_t flags;
     uint16_t pad;
@@ -111,15 +104,13 @@ typedef struct xen_argo_ring_data_ent
     uint32_t max_message_size;
 } xen_argo_ring_data_ent_t;
 
-typedef struct xen_argo_ring_data
-{
+typedef struct xen_argo_ring_data {
     uint32_t nent;
     uint32_t pad;
     xen_argo_ring_data_ent_t data[XEN_FLEX_ARRAY_DIM];
 } xen_argo_ring_data_t;
 
-struct xen_argo_ring_message_header
-{
+struct xen_argo_ring_message_header {
     uint32_t len;
     xen_argo_addr_t source;
     uint32_t message_type;

@@ -29,10 +29,10 @@ struct processor {
 };
 
 struct proc_info_list {
-    unsigned int        cpu_val;
-    unsigned int        cpu_mask;
-    void                (*cpu_init)(void);
-    struct processor    *processor;
+    unsigned int cpu_val;
+    unsigned int cpu_mask;
+    void (*cpu_init)(void);
+    struct processor *processor;
 };
 
 const struct proc_info_list *lookup_processor_type(void);

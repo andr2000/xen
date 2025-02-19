@@ -15,7 +15,7 @@
 #ifdef CONFIG_PV32
 extern int8_t opt_pv32;
 #else
-# define opt_pv32 false
+#define opt_pv32 false
 #endif
 
 /*
@@ -84,33 +84,46 @@ void pv_set_reg(struct vcpu *v, unsigned int reg, uint64_t val);
 
 bool xpti_pcid_enabled(void);
 
-#else  /* !CONFIG_PV */
+#else /* !CONFIG_PV */
 
 #include <xen/errno.h>
 
 static inline void pv_vcpu_destroy(struct vcpu *v) {}
-static inline int pv_vcpu_initialise(struct vcpu *v) { return -EOPNOTSUPP; }
-static inline void pv_domain_destroy(struct domain *d) {}
-static inline int pv_domain_initialise(struct domain *d) { return -EOPNOTSUPP; }
 
-static inline unsigned long pv_make_cr4(const struct vcpu *v) { return ~0UL; }
+static inline int pv_vcpu_initialise(struct vcpu *v)
+{
+    return -EOPNOTSUPP;
+}
+
+static inline void pv_domain_destroy(struct domain *d) {}
+
+static inline int pv_domain_initialise(struct domain *d)
+{
+    return -EOPNOTSUPP;
+}
+
+static inline unsigned long pv_make_cr4(const struct vcpu *v)
+{
+    return ~0UL;
+}
 
 static inline uint64_t pv_get_reg(struct vcpu *v, unsigned int reg)
 {
     ASSERT_UNREACHABLE();
     return 0;
 }
+
 static inline void pv_set_reg(struct vcpu *v, unsigned int reg, uint64_t val)
 {
     ASSERT_UNREACHABLE();
 }
 
-#endif	/* CONFIG_PV */
+#endif /* CONFIG_PV */
 
 void cf_check paravirt_ctxt_switch_from(struct vcpu *v);
 void cf_check paravirt_ctxt_switch_to(struct vcpu *v);
 
-#endif	/* __X86_PV_DOMAIN_H__ */
+#endif /* __X86_PV_DOMAIN_H__ */
 
 /*
  * Local variables:

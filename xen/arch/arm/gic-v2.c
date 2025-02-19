@@ -96,9 +96,9 @@ static LIST_HEAD(gicv2m_info);
 
 /* Global state */
 static struct {
-    void __iomem * map_dbase; /* IO mapped Address of distributor registers */
-    void __iomem * map_cbase; /* IO mapped Address of CPU interface registers */
-    void __iomem * map_hbase; /* IO Address of virtual interface registers */
+    void __iomem *map_dbase; /* IO mapped Address of distributor registers */
+    void __iomem *map_cbase; /* IO mapped Address of CPU interface registers */
+    void __iomem *map_hbase; /* IO Address of virtual interface registers */
     spinlock_t lock;
 } gicv2;
 
@@ -155,7 +155,7 @@ static unsigned int gicv2_cpu_mask(const cpumask_t *cpumask)
     cpumask_t possible_mask;
 
     cpumask_and(&possible_mask, cpumask, &cpu_possible_map);
-    for_each_cpu( cpu, &possible_mask )
+    for_each_cpu(cpu, &possible_mask)
     {
         ASSERT(cpu < NR_GIC_CPU_IF);
         mask |= per_cpu(gic_cpu_id, cpu);
@@ -200,8 +200,7 @@ static void gicv2_dump_state(const struct vcpu *v)
     if ( v == current )
     {
         for ( i = 0; i < gicv2_info.nr_lrs; i++ )
-            printk("   HW_LR[%d]=%x\n", i,
-                   readl_gich(GICH_LR + i * 4));
+            printk("   HW_LR[%d]=%x\n", i, readl_gich(GICH_LR + i * 4));
     }
     else
     {
@@ -297,24 +296,23 @@ static void gicv2_set_irq_type(struct irq_desc *desc, unsigned int type)
     writel_gicd(cfg, GICD_ICFGR + (irq / 16) * 4);
 
     actual = readl_gicd(GICD_ICFGR + (irq / 16) * 4);
-    if ( ( cfg & edgebit ) ^ ( actual & edgebit ) )
+    if ( (cfg & edgebit) ^ (actual & edgebit) )
     {
-        printk(XENLOG_WARNING "GICv2: WARNING: "
-               "CPU%d: Failed to configure IRQ%u as %s-triggered. "
-               "H/w forces to %s-triggered.\n",
-               smp_processor_id(), desc->irq,
-               cfg & edgebit ? "Edge" : "Level",
-               actual & edgebit ? "Edge" : "Level");
-        desc->arch.type = actual & edgebit ?
-            IRQ_TYPE_EDGE_RISING :
-            IRQ_TYPE_LEVEL_HIGH;
+        printk(
+            XENLOG_WARNING
+            "GICv2: WARNING: " "CPU%d: Failed to configure IRQ%u as %s-triggered. " "H/w forces to %s-triggered.\n",
+            smp_processor_id(),
+            desc->irq,
+            cfg & edgebit ? "Edge" : "Level",
+            actual & edgebit ? "Edge" : "Level");
+        desc->arch.type = actual & edgebit ? IRQ_TYPE_EDGE_RISING
+                                           : IRQ_TYPE_LEVEL_HIGH;
     }
 
     spin_unlock(&gicv2.lock);
 }
 
-static void gicv2_set_irq_priority(struct irq_desc *desc,
-                                   unsigned int priority)
+static void gicv2_set_irq_priority(struct irq_desc *desc, unsigned int priority)
 {
     unsigned int irq = desc->irq;
 
@@ -349,7 +347,9 @@ static void __init gicv2_dist_init(void)
 
     gic_cpus = 1 + ((type & GICD_TYPE_CPUS) >> 5);
     printk("GICv2: %d lines, %d cpu%s%s (IID %8.8x).\n",
-           nr_lines, gic_cpus, (gic_cpus == 1) ? "" : "s",
+           nr_lines,
+           gic_cpus,
+           (gic_cpus == 1) ? "" : "s",
            (type & GICD_TYPE_SEC) ? ", secure" : "",
            readl_gicd(GICD_IIDR));
 
@@ -403,7 +403,7 @@ static void gicv2_cpu_init(void)
     /* Finest granularity of priority */
     writel_gicc(0x0, GICC_BPR);
     /* Turn on delivery */
-    writel_gicc(GICC_CTL_ENABLE|GICC_CTL_EOI, GICC_CTLR);
+    writel_gicc(GICC_CTL_ENABLE | GICC_CTL_EOI, GICC_CTLR);
 }
 
 static void gicv2_cpu_disable(void)
@@ -417,7 +417,7 @@ static void gicv2_hyp_init(void)
     uint8_t nr_lrs;
 
     vtr = readl_gich(GICH_VTR);
-    nr_lrs  = (vtr & GICH_V2_VTR_NRLRGS) + 1;
+    nr_lrs = (vtr & GICH_V2_VTR_NRLRGS) + 1;
     gicv2_info.nr_lrs = nr_lrs;
 }
 
@@ -461,8 +461,8 @@ static void gicv2_send_SGI(enum gic_sgi sgi, enum gic_sgi_mode irqmode,
     case SGI_TARGET_LIST:
         cpumask_and(&online_mask, cpu_mask, &cpu_online_map);
         mask = gicv2_cpu_mask(&online_mask);
-        writel_gicd(GICD_SGI_TARGET_LIST |
-                    (mask << GICD_SGI_TARGET_SHIFT) | sgi,
+        writel_gicd(GICD_SGI_TARGET_LIST | (mask << GICD_SGI_TARGET_SHIFT) |
+                        sgi,
                     GICD_SGIR);
         break;
     default:
@@ -487,13 +487,13 @@ static void gicv2_update_lr(int lr, unsigned int virq, uint8_t priority,
     BUG_ON(lr >= gicv2_info.nr_lrs);
     BUG_ON(lr < 0);
 
-    lr_reg = (((state & GICH_V2_LR_STATE_MASK) << GICH_V2_LR_STATE_SHIFT)  |
+    lr_reg = (((state & GICH_V2_LR_STATE_MASK) << GICH_V2_LR_STATE_SHIFT) |
               ((GIC_PRI_TO_GUEST(priority) & GICH_V2_LR_PRIORITY_MASK)
-                                          << GICH_V2_LR_PRIORITY_SHIFT) |
+               << GICH_V2_LR_PRIORITY_SHIFT) |
               ((virq & GICH_V2_LR_VIRTUAL_MASK) << GICH_V2_LR_VIRTUAL_SHIFT));
 
     if ( hw_irq != INVALID_IRQ )
-        lr_reg |= GICH_V2_LR_HW | ((hw_irq & GICH_V2_LR_PHYSICAL_MASK )
+        lr_reg |= GICH_V2_LR_HW | ((hw_irq & GICH_V2_LR_PHYSICAL_MASK)
                                    << GICH_V2_LR_PHYSICAL_SHIFT);
 
     writel_gich(lr_reg, GICH_LR + lr * 4);
@@ -508,9 +508,10 @@ static void gicv2_read_lr(int lr, struct gic_lr *lr_reg)
 {
     uint32_t lrv;
 
-    lrv          = readl_gich(GICH_LR + lr * 4);
+    lrv = readl_gich(GICH_LR + lr * 4);
     lr_reg->virq = (lrv >> GICH_V2_LR_VIRTUAL_SHIFT) & GICH_V2_LR_VIRTUAL_MASK;
-    lr_reg->priority = (lrv >> GICH_V2_LR_PRIORITY_SHIFT) & GICH_V2_LR_PRIORITY_MASK;
+    lr_reg->priority = (lrv >> GICH_V2_LR_PRIORITY_SHIFT) &
+                       GICH_V2_LR_PRIORITY_MASK;
     lr_reg->pending = lrv & GICH_V2_LR_PENDING;
     lr_reg->active = lrv & GICH_V2_LR_ACTIVE;
     lr_reg->hw_status = lrv & GICH_V2_LR_HW;
@@ -527,8 +528,8 @@ static void gicv2_read_lr(int lr, struct gic_lr *lr_reg)
          * This is only valid for SGI, but it does not matter to always
          * read it as it should be 0 by default.
          */
-        lr_reg->virt.source = (lrv >> GICH_V2_LR_CPUID_SHIFT)
-            & GICH_V2_LR_CPUID_MASK;
+        lr_reg->virt.source = (lrv >> GICH_V2_LR_CPUID_SHIFT) &
+                              GICH_V2_LR_CPUID_MASK;
     }
 }
 
@@ -536,9 +537,10 @@ static void gicv2_write_lr(int lr, const struct gic_lr *lr_reg)
 {
     uint32_t lrv = 0;
 
-    lrv = (((lr_reg->virq & GICH_V2_LR_VIRTUAL_MASK) << GICH_V2_LR_VIRTUAL_SHIFT)   |
-          ((uint32_t)(lr_reg->priority & GICH_V2_LR_PRIORITY_MASK)
-                                      << GICH_V2_LR_PRIORITY_SHIFT) );
+    lrv = (((lr_reg->virq & GICH_V2_LR_VIRTUAL_MASK)
+            << GICH_V2_LR_VIRTUAL_SHIFT) |
+           ((uint32_t)(lr_reg->priority & GICH_V2_LR_PRIORITY_MASK)
+            << GICH_V2_LR_PRIORITY_SHIFT));
 
     if ( lr_reg->active )
         lrv |= GICH_V2_LR_ACTIVE;
@@ -580,13 +582,13 @@ static void gicv2_hcr_status(uint32_t flag, bool status)
 
 static unsigned int gicv2_read_vmcr_priority(void)
 {
-   return ((readl_gich(GICH_VMCR) >> GICH_V2_VMCR_PRIORITY_SHIFT)
-           & GICH_V2_VMCR_PRIORITY_MASK);
+    return ((readl_gich(GICH_VMCR) >> GICH_V2_VMCR_PRIORITY_SHIFT) &
+            GICH_V2_VMCR_PRIORITY_MASK);
 }
 
 static unsigned int gicv2_read_apr(int apr_reg)
 {
-   return readl_gich(GICH_APR);
+    return readl_gich(GICH_APR);
 }
 
 static bool gicv2_read_pending_state(struct irq_desc *irqd)
@@ -653,7 +655,8 @@ static void gicv2_guest_irq_end(struct irq_desc *desc)
     /* Deactivation happens in maintenance interrupt / via GICV */
 }
 
-static void gicv2_irq_set_affinity(struct irq_desc *desc, const cpumask_t *cpu_mask)
+static void gicv2_irq_set_affinity(struct irq_desc *desc,
+                                   const cpumask_t *cpu_mask)
 {
     unsigned int mask;
 
@@ -674,16 +677,21 @@ static int gicv2_map_hwdom_extra_mappings(struct domain *d)
     const struct v2m_data *v2m_data;
 
     /* For the moment, we'll assign all v2m frames to the hardware domain. */
-    list_for_each_entry( v2m_data, &gicv2m_info, entry )
+    list_for_each_entry(v2m_data, &gicv2m_info, entry)
     {
         int ret;
         u32 spi;
 
-        printk("GICv2: Mapping v2m frame to d%d: addr=0x%"PRIpaddr" size=0x%"PRIpaddr" spi_base=%u num_spis=%u\n",
-               d->domain_id, v2m_data->addr, v2m_data->size,
-               v2m_data->spi_start, v2m_data->nr_spis);
+        printk("GICv2: Mapping v2m frame to d%d: addr=0x%" PRIpaddr
+               " size=0x%" PRIpaddr " spi_base=%u num_spis=%u\n",
+               d->domain_id,
+               v2m_data->addr,
+               v2m_data->size,
+               v2m_data->spi_start,
+               v2m_data->nr_spis);
 
-        ret = map_mmio_regions(d, gaddr_to_gfn(v2m_data->addr),
+        ret = map_mmio_regions(d,
+                               gaddr_to_gfn(v2m_data->addr),
                                PFN_UP(v2m_data->size),
                                maddr_to_mfn(v2m_data->addr));
         if ( ret )
@@ -698,7 +706,8 @@ static int gicv2_map_hwdom_extra_mappings(struct domain *d)
          * domain.
          */
         for ( spi = v2m_data->spi_start;
-              spi < (v2m_data->spi_start + v2m_data->nr_spis); spi++ )
+              spi < (v2m_data->spi_start + v2m_data->nr_spis);
+              spi++ )
         {
             /*
              * MSIs are always edge-triggered. Configure the associated SPIs
@@ -708,7 +717,8 @@ static int gicv2_map_hwdom_extra_mappings(struct domain *d)
             if ( ret )
             {
                 printk(XENLOG_ERR
-                       "GICv2: Failed to set v2m MSI SPI[%d] type.\n", spi);
+                       "GICv2: Failed to set v2m MSI SPI[%d] type.\n",
+                       spi);
                 return ret;
             }
 
@@ -718,7 +728,8 @@ static int gicv2_map_hwdom_extra_mappings(struct domain *d)
             {
                 printk(XENLOG_ERR
                        "GICv2: Failed to route v2m MSI SPI[%d] to Dom%d.\n",
-                       spi, d->domain_id);
+                       spi,
+                       d->domain_id);
                 return ret;
             }
 
@@ -727,7 +738,8 @@ static int gicv2_map_hwdom_extra_mappings(struct domain *d)
             {
                 printk(XENLOG_ERR
                        "GICv2: Failed to reserve v2m MSI SPI[%d] for Dom%d.\n",
-                       spi, d->domain_id);
+                       spi,
+                       d->domain_id);
                 return -EINVAL;
             }
         }
@@ -742,8 +754,7 @@ static int gicv2_map_hwdom_extra_mappings(struct domain *d)
  * https://www.kernel.org/doc/Documentation/devicetree/bindings/interrupt-controller/arm,gic.txt
  */
 static int gicv2m_make_dt_node(const struct domain *d,
-                               const struct dt_device_node *gic,
-                               void *fdt)
+                               const struct dt_device_node *gic, void *fdt)
 {
     u32 len;
     int res;
@@ -767,13 +778,17 @@ static int gicv2m_make_dt_node(const struct domain *d,
     if ( res )
         return res;
 
-    list_for_each_entry( v2m_data, &gicv2m_info, entry )
+    list_for_each_entry(v2m_data, &gicv2m_info, entry)
     {
         v2m = v2m_data->dt_node;
 
-        printk("GICv2: Creating v2m DT node for d%d: addr=0x%"PRIpaddr" size=0x%"PRIpaddr" spi_base=%u num_spis=%u\n",
-               d->domain_id, v2m_data->addr, v2m_data->size,
-               v2m_data->spi_start, v2m_data->nr_spis);
+        printk("GICv2: Creating v2m DT node for d%d: addr=0x%" PRIpaddr
+               " size=0x%" PRIpaddr " spi_base=%u num_spis=%u\n",
+               d->domain_id,
+               v2m_data->addr,
+               v2m_data->size,
+               v2m_data->spi_start,
+               v2m_data->nr_spis);
 
         res = fdt_begin_node(fdt, v2m->name);
         if ( res )
@@ -835,8 +850,7 @@ static int gicv2m_make_dt_node(const struct domain *d,
 }
 
 static int gicv2_make_hwdom_dt_node(const struct domain *d,
-                                    const struct dt_device_node *gic,
-                                    void *fdt)
+                                    const struct dt_device_node *gic, void *fdt)
 {
     const void *compatible = NULL;
     u32 len;
@@ -846,7 +860,8 @@ static int gicv2_make_hwdom_dt_node(const struct domain *d,
     compatible = dt_get_property(gic, "compatible", &len);
     if ( !compatible )
     {
-        dprintk(XENLOG_ERR, "Can't find compatible property for the gic node\n");
+        dprintk(XENLOG_ERR,
+                "Can't find compatible property for the gic node\n");
         return -FDT_ERR_XEN(ENOENT);
     }
 
@@ -880,24 +895,24 @@ static int gicv2_make_hwdom_dt_node(const struct domain *d,
 
 /* XXX different for level vs edge */
 static hw_irq_controller gicv2_host_irq_type = {
-    .typename     = "gic-v2",
-    .startup      = gicv2_irq_startup,
-    .shutdown     = gicv2_irq_shutdown,
-    .enable       = gicv2_irq_enable,
-    .disable      = gicv2_irq_disable,
-    .ack          = gicv2_irq_ack,
-    .end          = gicv2_host_irq_end,
+    .typename = "gic-v2",
+    .startup = gicv2_irq_startup,
+    .shutdown = gicv2_irq_shutdown,
+    .enable = gicv2_irq_enable,
+    .disable = gicv2_irq_disable,
+    .ack = gicv2_irq_ack,
+    .end = gicv2_host_irq_end,
     .set_affinity = gicv2_irq_set_affinity,
 };
 
 static hw_irq_controller gicv2_guest_irq_type = {
-    .typename     = "gic-v2",
-    .startup      = gicv2_irq_startup,
-    .shutdown     = gicv2_irq_shutdown,
-    .enable       = gicv2_irq_enable,
-    .disable      = gicv2_irq_disable,
-    .ack          = gicv2_irq_ack,
-    .end          = gicv2_guest_irq_end,
+    .typename = "gic-v2",
+    .startup = gicv2_irq_startup,
+    .shutdown = gicv2_irq_shutdown,
+    .enable = gicv2_irq_enable,
+    .disable = gicv2_irq_disable,
+    .ack = gicv2_irq_ack,
+    .end = gicv2_guest_irq_end,
     .set_affinity = gicv2_irq_set_affinity,
 };
 
@@ -948,9 +963,10 @@ static void gicv2_add_v2m_frame_to_list(paddr_t addr, paddr_t size,
     if ( spi_start < V2M_MIN_SPI )
         panic("GICv2: Invalid v2m base SPI:%u\n", spi_start);
 
-    if ( ( nr_spis == 0 ) || ( spi_start + nr_spis > V2M_MAX_SPI ) )
+    if ( (nr_spis == 0) || (spi_start + nr_spis > V2M_MAX_SPI) )
         panic("GICv2: Number of v2m SPIs (%u) exceed maximum (%u)\n",
-              nr_spis, V2M_MAX_SPI - V2M_MIN_SPI + 1);
+              nr_spis,
+              V2M_MAX_SPI - V2M_MIN_SPI + 1);
 
     /* Allocate an entry to record new v2m frame information. */
     v2m_data = xzalloc(struct v2m_data);
@@ -964,13 +980,13 @@ static void gicv2_add_v2m_frame_to_list(paddr_t addr, paddr_t size,
     v2m_data->nr_spis = nr_spis;
     v2m_data->dt_node = v2m;
 
-    printk("GICv2m extension register frame:\n"
-           "        gic_v2m_addr=%"PRIpaddr"\n"
-           "        gic_v2m_size=%"PRIpaddr"\n"
-           "        gic_v2m_spi_base=%u\n"
-           "        gic_v2m_num_spis=%u\n",
-           v2m_data->addr, v2m_data->size,
-           v2m_data->spi_start, v2m_data->nr_spis);
+    printk("GICv2m extension register frame:\n" "        gic_v2m_addr=%" PRIpaddr
+           "\n" "        gic_v2m_size=%" PRIpaddr
+           "\n" "        gic_v2m_spi_base=%u\n" "        gic_v2m_num_spis=%u\n",
+           v2m_data->addr,
+           v2m_data->size,
+           v2m_data->spi_start,
+           v2m_data->nr_spis);
 
     list_add_tail(&v2m_data->entry, &gicv2m_info);
 }
@@ -1001,8 +1017,10 @@ static void gicv2_extension_dt_init(const struct dt_device_node *node)
          */
         if ( dt_property_read_u32(v2m, "arm,msi-base-spi", &spi_start) &&
              dt_property_read_u32(v2m, "arm,msi-num-spis", &nr_spis) )
-            printk("GICv2: DT overriding v2m hardware setting (base:%u, num:%u)\n",
-                   spi_start, nr_spis);
+            printk(
+                "GICv2: DT overriding v2m hardware setting (base:%u, num:%u)\n",
+                spi_start,
+                nr_spis);
 
         /* Add this v2m frame information to list. */
         gicv2_add_v2m_frame_to_list(addr, size, spi_start, nr_spis, v2m);
@@ -1047,14 +1065,17 @@ static void __init gicv2_dt_init(void)
      */
     if ( csize < SZ_8K )
     {
-        printk(XENLOG_WARNING "GICv2: WARNING: "
-               "The GICC size is too small: %#"PRIpaddr" expected %#x\n",
-               csize, SZ_8K);
+        printk(XENLOG_WARNING
+               "GICv2: WARNING: " "The GICC size is too small: %#" PRIpaddr
+               " expected %#x\n",
+               csize,
+               SZ_8K);
         if ( platform_has_quirk(PLATFORM_QUIRK_GIC_64K_STRIDE) )
         {
             printk(XENLOG_WARNING "GICv2: enable platform quirk: 64K stride\n");
             vsize = csize = SZ_128K;
-        } else
+        }
+        else
             csize = SZ_8K;
     }
 
@@ -1063,8 +1084,10 @@ static void __init gicv2_dt_init(void)
      * same size.
      */
     if ( csize != vsize )
-        panic("GICv2: Sizes of GICC (%#"PRIpaddr") and GICV (%#"PRIpaddr") don't match\n",
-               csize, vsize);
+        panic("GICv2: Sizes of GICC (%#" PRIpaddr ") and GICV (%#" PRIpaddr
+              ") don't match\n",
+              csize,
+              vsize);
 
     /*
      * Check whether this GIC implements the v2m extension. If so,
@@ -1118,8 +1141,8 @@ static int gicv2_make_hwdom_madt(const struct domain *d, u32 offset)
         return -EINVAL;
     }
 
-    host_gicc = container_of(header, struct acpi_madt_generic_interrupt,
-                             header);
+    host_gicc =
+        container_of(header, struct acpi_madt_generic_interrupt, header);
 
     size = ACPI_MADT_GICC_LENGTH;
     /* Add Generic Interrupt */
@@ -1142,13 +1165,12 @@ static int gicv2_make_hwdom_madt(const struct domain *d, u32 offset)
     return table_len;
 }
 
-static int __init
-gic_acpi_parse_madt_cpu(struct acpi_subtable_header *header,
-                        const unsigned long end)
+static int __init gic_acpi_parse_madt_cpu(struct acpi_subtable_header *header,
+                                          const unsigned long end)
 {
     static int cpu_base_assigned = 0;
     struct acpi_madt_generic_interrupt *processor =
-               container_of(header, struct acpi_madt_generic_interrupt, header);
+        container_of(header, struct acpi_madt_generic_interrupt, header);
 
     if ( BAD_MADT_GICC_ENTRY(processor, end) )
         return -EINVAL;
@@ -1171,10 +1193,10 @@ gic_acpi_parse_madt_cpu(struct acpi_subtable_header *header,
     }
     else
     {
-        if ( cbase != processor->base_address
-             || hbase != processor->gich_base_address
-             || vbase != processor->gicv_base_address
-             || gicv2_info.maintenance_irq != processor->vgic_interrupt )
+        if ( cbase != processor->base_address ||
+             hbase != processor->gich_base_address ||
+             vbase != processor->gicv_base_address ||
+             gicv2_info.maintenance_irq != processor->vgic_interrupt )
         {
             printk("GICv2: GICC entries are not same in MADT table\n");
             return -EINVAL;
@@ -1189,7 +1211,7 @@ gic_acpi_parse_madt_distributor(struct acpi_subtable_header *header,
                                 const unsigned long end)
 {
     struct acpi_madt_generic_distributor *dist =
-             container_of(header, struct acpi_madt_generic_distributor, header);
+        container_of(header, struct acpi_madt_generic_distributor, header);
 
     if ( BAD_MADT_ENTRY(dist, end) )
         return -EINVAL;
@@ -1215,9 +1237,12 @@ static void __init gicv2_acpi_init(void)
     }
 
     /* Collect CPU base addresses */
-    count = acpi_parse_entries(ACPI_SIG_MADT, sizeof(struct acpi_table_madt),
-                               gic_acpi_parse_madt_cpu, table,
-                               ACPI_MADT_TYPE_GENERIC_INTERRUPT, 0);
+    count = acpi_parse_entries(ACPI_SIG_MADT,
+                               sizeof(struct acpi_table_madt),
+                               gic_acpi_parse_madt_cpu,
+                               table,
+                               ACPI_MADT_TYPE_GENERIC_INTERRUPT,
+                               0);
     if ( count <= 0 )
         panic("GICv2: No valid GICC entries exists\n");
 
@@ -1225,14 +1250,17 @@ static void __init gicv2_acpi_init(void)
      * Find distributor base address. We expect one distributor entry since
      * ACPI 5.0 spec neither support multi-GIC instances nor GIC cascade.
      */
-    count = acpi_parse_entries(ACPI_SIG_MADT, sizeof(struct acpi_table_madt),
-                               gic_acpi_parse_madt_distributor, table,
-                               ACPI_MADT_TYPE_GENERIC_DISTRIBUTOR, 0);
+    count = acpi_parse_entries(ACPI_SIG_MADT,
+                               sizeof(struct acpi_table_madt),
+                               gic_acpi_parse_madt_distributor,
+                               table,
+                               ACPI_MADT_TYPE_GENERIC_DISTRIBUTOR,
+                               0);
     if ( count <= 0 )
         panic("GICv2: No valid GICD entries exists\n");
 }
 #else
-static void __init gicv2_acpi_init(void) { }
+static void __init gicv2_acpi_init(void) {}
 #endif
 
 static int __init gicv2_init(void)
@@ -1244,17 +1272,19 @@ static int __init gicv2_init(void)
     else
         gicv2_acpi_init();
 
-    printk("GICv2 initialization:\n"
-              "        gic_dist_addr=%"PRIpaddr"\n"
-              "        gic_cpu_addr=%"PRIpaddr"\n"
-              "        gic_hyp_addr=%"PRIpaddr"\n"
-              "        gic_vcpu_addr=%"PRIpaddr"\n"
-              "        gic_maintenance_irq=%u\n",
-              dbase, cbase, hbase, vbase,
-              gicv2_info.maintenance_irq);
+    printk("GICv2 initialization:\n" "        gic_dist_addr=%" PRIpaddr
+           "\n" "        gic_cpu_addr=%" PRIpaddr
+           "\n" "        gic_hyp_addr=%" PRIpaddr
+           "\n" "        gic_vcpu_addr=%" PRIpaddr
+           "\n" "        gic_maintenance_irq=%u\n",
+           dbase,
+           cbase,
+           hbase,
+           vbase,
+           gicv2_info.maintenance_irq);
 
-    if ( (dbase & ~PAGE_MASK) || (cbase & ~PAGE_MASK) ||
-         (hbase & ~PAGE_MASK) || (vbase & ~PAGE_MASK) )
+    if ( (dbase & ~PAGE_MASK) || (cbase & ~PAGE_MASK) || (hbase & ~PAGE_MASK) ||
+         (vbase & ~PAGE_MASK) )
         panic("GICv2 interfaces not page aligned\n");
 
     gicv2.map_dbase = ioremap_nocache(dbase, PAGE_SIZE);
@@ -1279,11 +1309,12 @@ static int __init gicv2_init(void)
         gicv2.map_cbase += aliased_offset;
 
         printk(XENLOG_WARNING
-               "GICv2: Adjusting CPU interface base to %#"PRIpaddr"\n",
+               "GICv2: Adjusting CPU interface base to %#" PRIpaddr "\n",
                cbase + aliased_offset);
-    } else if ( csize == SZ_128K )
-        printk(XENLOG_WARNING
-               "GICv2: GICC size=%#"PRIpaddr" but not aliased\n",
+    }
+    else if ( csize == SZ_128K )
+        printk(XENLOG_WARNING "GICv2: GICC size=%#" PRIpaddr
+                              " but not aliased\n",
                csize);
 
     gicv2.map_hbase = ioremap_nocache(hbase, PAGE_SIZE);
@@ -1311,40 +1342,40 @@ static void gicv2_do_LPI(unsigned int lpi)
     BUG();
 }
 
-const static struct gic_hw_operations gicv2_ops = {
-    .info                = &gicv2_info,
-    .init                = gicv2_init,
-    .secondary_init      = gicv2_secondary_cpu_init,
-    .save_state          = gicv2_save_state,
-    .restore_state       = gicv2_restore_state,
-    .dump_state          = gicv2_dump_state,
-    .gic_host_irq_type   = &gicv2_host_irq_type,
-    .gic_guest_irq_type  = &gicv2_guest_irq_type,
-    .eoi_irq             = gicv2_eoi_irq,
-    .deactivate_irq      = gicv2_dir_irq,
-    .read_irq            = gicv2_read_irq,
-    .set_active_state    = gicv2_set_active_state,
-    .set_pending_state   = gicv2_set_pending_state,
-    .set_irq_type        = gicv2_set_irq_type,
-    .set_irq_priority    = gicv2_set_irq_priority,
-    .send_SGI            = gicv2_send_SGI,
-    .disable_interface   = gicv2_disable_interface,
-    .update_lr           = gicv2_update_lr,
-    .update_hcr_status   = gicv2_hcr_status,
-    .clear_lr            = gicv2_clear_lr,
-    .read_lr             = gicv2_read_lr,
-    .write_lr            = gicv2_write_lr,
-    .read_vmcr_priority  = gicv2_read_vmcr_priority,
-    .read_apr            = gicv2_read_apr,
-    .read_pending_state  = gicv2_read_pending_state,
-    .make_hwdom_dt_node  = gicv2_make_hwdom_dt_node,
+static const struct gic_hw_operations gicv2_ops = {
+    .info = &gicv2_info,
+    .init = gicv2_init,
+    .secondary_init = gicv2_secondary_cpu_init,
+    .save_state = gicv2_save_state,
+    .restore_state = gicv2_restore_state,
+    .dump_state = gicv2_dump_state,
+    .gic_host_irq_type = &gicv2_host_irq_type,
+    .gic_guest_irq_type = &gicv2_guest_irq_type,
+    .eoi_irq = gicv2_eoi_irq,
+    .deactivate_irq = gicv2_dir_irq,
+    .read_irq = gicv2_read_irq,
+    .set_active_state = gicv2_set_active_state,
+    .set_pending_state = gicv2_set_pending_state,
+    .set_irq_type = gicv2_set_irq_type,
+    .set_irq_priority = gicv2_set_irq_priority,
+    .send_SGI = gicv2_send_SGI,
+    .disable_interface = gicv2_disable_interface,
+    .update_lr = gicv2_update_lr,
+    .update_hcr_status = gicv2_hcr_status,
+    .clear_lr = gicv2_clear_lr,
+    .read_lr = gicv2_read_lr,
+    .write_lr = gicv2_write_lr,
+    .read_vmcr_priority = gicv2_read_vmcr_priority,
+    .read_apr = gicv2_read_apr,
+    .read_pending_state = gicv2_read_pending_state,
+    .make_hwdom_dt_node = gicv2_make_hwdom_dt_node,
 #ifdef CONFIG_ACPI
-    .make_hwdom_madt     = gicv2_make_hwdom_madt,
+    .make_hwdom_madt = gicv2_make_hwdom_madt,
     .get_hwdom_extra_madt_size = gicv2_get_hwdom_extra_madt_size,
 #endif
     .map_hwdom_extra_mappings = gicv2_map_hwdom_extra_mappings,
-    .iomem_deny_access   = gicv2_iomem_deny_access,
-    .do_LPI              = gicv2_do_LPI,
+    .iomem_deny_access = gicv2_iomem_deny_access,
+    .do_LPI = gicv2_do_LPI,
 };
 
 /* Set up the GIC */
@@ -1359,15 +1390,13 @@ static int __init gicv2_dt_preinit(struct dt_device_node *node,
     return 0;
 }
 
-static const struct dt_device_match gicv2_dt_match[] __initconst =
-{
+static const struct dt_device_match gicv2_dt_match[] __initconst = {
     DT_MATCH_GIC_V2,
     { /* sentinel */ },
 };
 
 DT_DEVICE_START(gicv2, "GICv2", DEVICE_INTERRUPT_CONTROLLER)
-        .dt_match = gicv2_dt_match,
-        .init = gicv2_dt_preinit,
+    .dt_match = gicv2_dt_match, .init = gicv2_dt_preinit,
 DT_DEVICE_END
 
 #ifdef CONFIG_ACPI
@@ -1381,8 +1410,7 @@ static int __init gicv2_acpi_preinit(const void *data)
 }
 
 ACPI_DEVICE_START(agicv2, "GICv2", DEVICE_INTERRUPT_CONTROLLER)
-        .class_type = ACPI_MADT_GIC_VERSION_V2,
-        .init = gicv2_acpi_preinit,
+    .class_type = ACPI_MADT_GIC_VERSION_V2, .init = gicv2_acpi_preinit,
 ACPI_DEVICE_END
 #endif
 /*

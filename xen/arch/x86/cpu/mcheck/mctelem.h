@@ -10,7 +10,7 @@
 
 #ifndef _MCTELEM_H
 
-#define	_MCTELEM_H
+#define _MCTELEM_H
 
 #include <xen/init.h>
 #include <xen/smp.h>

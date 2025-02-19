@@ -14,14 +14,16 @@
 union lock_debug {
     uint32_t val;
 #define LOCK_DEBUG_INITVAL 0xffffffffU
+
     struct {
-        unsigned int cpu:SPINLOCK_CPU_BITS;
+        unsigned int cpu : SPINLOCK_CPU_BITS;
 #define LOCK_DEBUG_PAD_BITS (30 - SPINLOCK_CPU_BITS)
-        unsigned int :LOCK_DEBUG_PAD_BITS;
+        unsigned int : LOCK_DEBUG_PAD_BITS;
         bool irq_safe:1;
         bool unseen:1;
     };
 };
+
 #define LOCK_DEBUG_ { .val = LOCK_DEBUG_INITVAL }
 void check_lock(union lock_debug *debug, bool try);
 void lock_enter(const union lock_debug *debug);
@@ -29,7 +31,8 @@ void lock_exit(const union lock_debug *debug);
 void spin_debug_enable(void);
 void spin_debug_disable(void);
 #else
-union lock_debug { };
+union lock_debug {};
+
 #define LOCK_DEBUG_ { }
 #define check_lock(l, t) ((void)0)
 #define lock_enter(l) ((void)0)
@@ -79,24 +82,26 @@ union lock_debug { };
 struct spinlock;
 
 struct lock_profile {
-    struct lock_profile *next;       /* forward link */
-    const char          *name;       /* lock name */
+    struct lock_profile *next; /* forward link */
+    const char *name; /* lock name */
+
     union {
-        struct spinlock *lock;       /* the lock itself */
-        struct rspinlock *rlock;     /* the recursive lock itself */
+        struct spinlock *lock; /* the lock itself */
+        struct rspinlock *rlock; /* the recursive lock itself */
     } ptr;
-    uint64_t            lock_cnt;    /* # of complete locking ops */
-    uint64_t            block_cnt:63; /* # of complete wait for lock */
-    bool                is_rlock:1;  /* use rlock pointer */
-    s_time_t            time_hold;   /* cumulated lock time */
-    s_time_t            time_block;  /* cumulated wait time */
-    s_time_t            time_locked; /* system time of last locking */
+
+    uint64_t lock_cnt; /* # of complete locking ops */
+    uint64_t block_cnt:63; /* # of complete wait for lock */
+    bool is_rlock:1; /* use rlock pointer */
+    s_time_t time_hold; /* cumulated lock time */
+    s_time_t time_block; /* cumulated wait time */
+    s_time_t time_locked; /* system time of last locking */
 };
 
 struct lock_profile_qhead {
     struct lock_profile_qhead *head_q; /* next head of this type */
-    struct lock_profile       *elem_q; /* first element in q */
-    int32_t                   idx;     /* index for printout */
+    struct lock_profile *elem_q; /* first element in q */
+    int32_t idx; /* index for printout */
 };
 
 #define LOCK_PROFILE_(lockname) { .name = #lockname, .ptr.lock = &(lockname), }
@@ -154,10 +159,11 @@ struct lock_profile_qhead {
         (s)->l.recurse_cnt = 0;                                               \
     } while (0)
 
-void _lock_profile_register_struct(
-    int32_t type, struct lock_profile_qhead *qhead, int32_t idx);
+void _lock_profile_register_struct(int32_t type,
+                                   struct lock_profile_qhead *qhead,
+                                   int32_t idx);
 void _lock_profile_deregister_struct(int32_t type,
-    struct lock_profile_qhead *qhead);
+                                     struct lock_profile_qhead *qhead);
 
 #define lock_profile_register_struct(type, ptr, idx)                          \
     _lock_profile_register_struct(type, &((ptr)->profile_head), idx)
@@ -170,8 +176,9 @@ extern void cf_check spinlock_profile_reset(unsigned char key);
 
 #else
 
-struct lock_profile_qhead { };
-struct lock_profile { };
+struct lock_profile_qhead {};
+
+struct lock_profile {};
 
 #define SPIN_LOCK_UNLOCKED {                                                  \
     .debug = LOCK_DEBUG_,                                                     \
@@ -193,6 +200,7 @@ struct lock_profile { };
 
 typedef union {
     uint32_t head_tail;
+
     struct {
         uint16_t head;
         uint16_t tail;

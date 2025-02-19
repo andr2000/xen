@@ -109,7 +109,7 @@ unsigned int __ro_after_init pfn_pdx_hole_shift = 0;
 /* Sets all bits from the most-significant 1-bit down to the LSB */
 static uint64_t fill_mask(uint64_t mask)
 {
-    while (mask & (mask + 1))
+    while ( mask & (mask + 1) )
         mask |= mask + 1;
 
     return mask;
@@ -124,8 +124,8 @@ bool pdx_is_region_compressible(paddr_t base, unsigned long npages)
 /* We don't want to compress the low MAX_ORDER bits of the addresses. */
 uint64_t __init pdx_init_mask(uint64_t base_addr)
 {
-    return fill_mask(max(base_addr,
-                         (uint64_t)1 << (MAX_ORDER + PAGE_SHIFT)) - 1);
+    return fill_mask(max(base_addr, (uint64_t)1 << (MAX_ORDER + PAGE_SHIFT)) -
+                     1);
 }
 
 uint64_t pdx_region_mask(uint64_t base, uint64_t len)
@@ -156,7 +156,7 @@ void __init pfn_pdx_hole_setup(unsigned long mask)
      * If the logic changes here, we might have to update the ARM specific
      * init_pdx too.
      */
-    for ( j = MAX_ORDER-1; ; )
+    for ( j = MAX_ORDER - 1;; )
     {
         i = find_next_zero_bit(&mask, BITS_PER_LONG, j + 1);
         if ( i >= BITS_PER_LONG )
@@ -174,14 +174,15 @@ void __init pfn_pdx_hole_setup(unsigned long mask)
         return;
 
     printk(KERN_INFO "PFN compression on bits %u...%u\n",
-           bottom_shift, bottom_shift + hole_shift - 1);
+           bottom_shift,
+           bottom_shift + hole_shift - 1);
 
-    pfn_pdx_hole_shift  = hole_shift;
+    pfn_pdx_hole_shift = hole_shift;
     pfn_pdx_bottom_mask = (1UL << bottom_shift) - 1;
-    ma_va_bottom_mask   = (PAGE_SIZE << bottom_shift) - 1;
-    pfn_hole_mask       = ((1UL << hole_shift) - 1) << bottom_shift;
-    pfn_top_mask        = ~(pfn_pdx_bottom_mask | pfn_hole_mask);
-    ma_top_mask         = pfn_top_mask << PAGE_SHIFT;
+    ma_va_bottom_mask = (PAGE_SIZE << bottom_shift) - 1;
+    pfn_hole_mask = ((1UL << hole_shift) - 1) << bottom_shift;
+    pfn_top_mask = ~(pfn_pdx_bottom_mask | pfn_hole_mask);
+    ma_top_mask = pfn_top_mask << PAGE_SHIFT;
 }
 
 #endif /* CONFIG_PDX_COMPRESSION */

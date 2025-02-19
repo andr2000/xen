@@ -4,14 +4,16 @@
 uint64_t muldiv64(uint64_t a, uint32_t b, uint32_t c)
 {
 #ifdef CONFIG_X86
-    asm ( "mulq %1; divq %2" : "+a" (a)
-                             : "rm" ((uint64_t)b), "rm" ((uint64_t)c)
-                             : "rdx" );
+    asm("mulq %1; divq %2"
+        : "+a"(a)
+        : "rm"((uint64_t)b), "rm"((uint64_t)c)
+        : "rdx");
 
     return a;
 #else
     union {
         uint64_t ll;
+
         struct {
 #ifdef WORDS_BIGENDIAN
             uint32_t high, low;
@@ -20,6 +22,7 @@ uint64_t muldiv64(uint64_t a, uint32_t b, uint32_t c)
 #endif
         } l;
     } u, res;
+
     uint64_t rl, rh;
 
     u.ll = a;

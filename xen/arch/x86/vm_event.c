@@ -27,7 +27,7 @@ int vm_event_init_domain(struct domain *d)
 {
     struct vcpu *v;
 
-    for_each_vcpu ( d, v )
+    for_each_vcpu(d, v)
     {
         if ( v->arch.vm_event )
             continue;
@@ -49,7 +49,7 @@ void vm_event_cleanup_domain(struct domain *d)
 {
     struct vcpu *v;
 
-    for_each_vcpu ( d, v )
+    for_each_vcpu(d, v)
     {
         xfree(v->arch.vm_event);
         v->arch.vm_event = NULL;
@@ -61,8 +61,8 @@ void vm_event_cleanup_domain(struct domain *d)
 void vm_event_toggle_singlestep(struct domain *d, struct vcpu *v,
                                 vm_event_response_t *rsp)
 {
-    if ( !(rsp->flags & (VM_EVENT_FLAG_TOGGLE_SINGLESTEP |
-                         VM_EVENT_FLAG_FAST_SINGLESTEP)) )
+    if ( !(rsp->flags &
+           (VM_EVENT_FLAG_TOGGLE_SINGLESTEP | VM_EVENT_FLAG_FAST_SINGLESTEP)) )
         return;
 
     if ( !is_hvm_domain(d) )
@@ -216,8 +216,8 @@ void vm_event_fill_regs(vm_event_request_t *req)
     req->data.regs.x86.rsi = regs->rsi;
     req->data.regs.x86.rdi = regs->rdi;
 
-    req->data.regs.x86.r8  = regs->r8;
-    req->data.regs.x86.r9  = regs->r9;
+    req->data.regs.x86.r8 = regs->r8;
+    req->data.regs.x86.r9 = regs->r9;
     req->data.regs.x86.r10 = regs->r10;
     req->data.regs.x86.r11 = regs->r11;
     req->data.regs.x86.r12 = regs->r12;
@@ -226,7 +226,7 @@ void vm_event_fill_regs(vm_event_request_t *req)
     req->data.regs.x86.r15 = regs->r15;
 
     req->data.regs.x86.rflags = regs->rflags;
-    req->data.regs.x86.rip    = regs->rip;
+    req->data.regs.x86.rip = regs->rip;
 
     req->data.regs.x86.dr7 = curr->arch.dr7;
     req->data.regs.x86.cr0 = curr->arch.hvm.guest_cr[0];
@@ -253,7 +253,8 @@ void vm_event_fill_regs(vm_event_request_t *req)
     req->data.regs.x86.shadow_gs = ctxt.shadow_gs;
     req->data.regs.x86.dr6 = ctxt.dr6;
 
-    if ( hvm_vmtrace_output_position(curr, &req->data.regs.x86.vmtrace_pos) != 1 )
+    if ( hvm_vmtrace_output_position(curr, &req->data.regs.x86.vmtrace_pos) !=
+         1 )
         req->data.regs.x86.vmtrace_pos = ~0;
 #endif
 }

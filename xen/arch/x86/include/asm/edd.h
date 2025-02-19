@@ -27,13 +27,14 @@
 
 struct __packed edd_info {
     /* Int13, Fn48: Check Extensions Present. */
-    u8 device;                   /* %dl: device */
-    u8 version;                  /* %ah: major version */
-    u16 interface_support;       /* %cx: interface support bitmap */
+    u8 device; /* %dl: device */
+    u8 version; /* %ah: major version */
+    u16 interface_support; /* %cx: interface support bitmap */
     /* Int13, Fn08: Legacy Get Device Parameters. */
-    u16 legacy_max_cylinder;     /* %cl[7:6]:%ch: maximum cylinder number */
-    u8 legacy_max_head;          /* %dh: maximum head number */
+    u16 legacy_max_cylinder; /* %cl[7:6]:%ch: maximum cylinder number */
+    u8 legacy_max_head; /* %dh: maximum head number */
     u8 legacy_sectors_per_track; /* %cl[5:0]: maximum sector number */
+
     /* Int13, Fn41: Get Device Parameters (as filled into %ds:%esi). */
     struct __packed edd_device_params {
         u16 length;
@@ -43,19 +44,21 @@ struct __packed edd_info {
         u32 sectors_per_track;
         u64 number_of_sectors;
         u16 bytes_per_sector;
-        u32 dpte_ptr;            /* 0xFFFFFFFF for our purposes */
-        u16 key;                 /* = 0xBEDD */
+        u32 dpte_ptr; /* 0xFFFFFFFF for our purposes */
+        u16 key; /* = 0xBEDD */
         u8 device_path_info_length;
         u8 reserved2;
         u16 reserved3;
         u8 host_bus_type[4];
         u8 interface_type[8];
+
         union {
             struct __packed {
                 u16 base_address;
                 u16 reserved1;
                 u32 reserved2;
             } isa;
+
             struct __packed {
                 u8 bus;
                 u8 slot;
@@ -63,20 +66,25 @@ struct __packed edd_info {
                 u8 channel;
                 u32 reserved;
             } pci;
+
             /* pcix is same as pci */
             struct __packed {
                 u64 reserved;
             } ibnd;
+
             struct __packed {
                 u64 reserved;
             } xprs;
+
             struct __packed {
                 u64 reserved;
             } htpt;
+
             struct __packed {
                 u64 reserved;
             } unknown;
         } interface_path;
+
         union {
             struct __packed {
                 u8 device;
@@ -85,6 +93,7 @@ struct __packed edd_info {
                 u32 reserved3;
                 u64 reserved4;
             } ata;
+
             struct __packed {
                 u8 device;
                 u8 lun;
@@ -93,33 +102,40 @@ struct __packed edd_info {
                 u32 reserved3;
                 u64 reserved4;
             } atapi;
+
             struct __packed {
                 u16 id;
                 u64 lun;
                 u16 reserved1;
                 u32 reserved2;
             } scsi;
+
             struct __packed {
                 u64 serial_number;
                 u64 reserved;
             } usb;
+
             struct __packed {
                 u64 eui;
                 u64 reserved;
             } i1394;
+
             struct __packed {
                 u64 wwid;
                 u64 lun;
             } fibre;
+
             struct __packed {
                 u64 identity_tag;
                 u64 reserved;
             } i2o;
+
             struct __packed {
                 u32 array_number;
                 u32 reserved1;
                 u64 reserved2;
             } raid;
+
             struct __packed {
                 u8 device;
                 u8 reserved1;
@@ -127,14 +143,16 @@ struct __packed edd_info {
                 u32 reserved3;
                 u64 reserved4;
             } sata;
+
             struct __packed {
                 u64 reserved1;
                 u64 reserved2;
             } unknown;
         } device_path;
+
         u8 reserved4;
         u8 checksum;
-    }  edd_device_params;
+    } edd_device_params;
 };
 
 struct __packed mbr_signature {

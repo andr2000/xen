@@ -11,10 +11,8 @@
 
 #include "emulate.h"
 
-static int read_gate_descriptor(unsigned int gate_sel,
-                                const struct vcpu *v,
-                                unsigned int *sel,
-                                unsigned long *off,
+static int read_gate_descriptor(unsigned int gate_sel, const struct vcpu *v,
+                                unsigned int *sel, unsigned long *off,
                                 unsigned int *ar)
 {
     seg_desc_t desc;
@@ -26,8 +24,7 @@ static int read_gate_descriptor(unsigned int gate_sel,
           * seg_desc_t for 32-bit and a consecutive pair of them for 64-bit.
           */
          ((gate_sel >> 3) + !is_pv_32bit_vcpu(v) >=
-          (gate_sel & 4 ? v->arch.pv.ldt_ents
-                        : v->arch.pv.gdt_ents)) ||
+          (gate_sel & 4 ? v->arch.pv.ldt_ents : v->arch.pv.gdt_ents)) ||
          get_unsafe(desc, pdesc) )
         return 0;
 
@@ -47,8 +44,7 @@ static int read_gate_descriptor(unsigned int gate_sel,
     {
         if ( (*ar & 0x1f00) != 0x0c00 ||
              /* Limit check done above already. */
-             get_unsafe(desc, pdesc + 1) ||
-             (desc.b & 0x1f00) )
+             get_unsafe(desc, pdesc + 1) || (desc.b & 0x1f00) )
             return 0;
 
         *off |= (unsigned long)desc.a << 32;
@@ -78,15 +74,17 @@ static inline bool check_stack_limit(unsigned int ar, unsigned int limit,
 
 struct gate_op_ctxt {
     struct x86_emulate_ctxt ctxt;
+
     struct {
         unsigned long base, limit;
     } cs;
+
     bool insn_fetch;
 };
 
-static int cf_check read_mem(
-    enum x86_segment seg, unsigned long offset, void *p_data,
-    unsigned int bytes, struct x86_emulate_ctxt *ctxt)
+static int cf_check read_mem(enum x86_segment seg, unsigned long offset,
+                             void *p_data, unsigned int bytes,
+                             struct x86_emulate_ctxt *ctxt)
 {
     const struct gate_op_ctxt *goc =
         container_of(ctxt, struct gate_op_ctxt, ctxt);
@@ -123,8 +121,7 @@ static int cf_check read_mem(
 
         ASSERT(!goc->insn_fetch);
         if ( !pv_emul_read_descriptor(sel, current, &addr, &limit, &ar, 0) ||
-             !(ar & _SEGMENT_S) ||
-             !(ar & _SEGMENT_P) ||
+             !(ar & _SEGMENT_S) || !(ar & _SEGMENT_P) ||
              ((ar & _SEGMENT_CODE) && !(ar & _SEGMENT_WR)) )
             return X86EMUL_UNHANDLEABLE;
         addr += offset;
@@ -188,11 +185,13 @@ void pv_emulate_gate_op(struct cpu_user_regs *regs)
      * Decode instruction (and perhaps operand) to determine RPL,
      * whether this is a jump or a call, and the call return offset.
      */
-    if ( !pv_emul_read_descriptor(regs->cs, v, &ctxt.cs.base, &ctxt.cs.limit,
-                                  &ar, 0) ||
-         !(ar & _SEGMENT_S) ||
-         !(ar & _SEGMENT_P) ||
-         !(ar & _SEGMENT_CODE) )
+    if ( !pv_emul_read_descriptor(regs->cs,
+                                  v,
+                                  &ctxt.cs.base,
+                                  &ctxt.cs.limit,
+                                  &ar,
+                                  0) ||
+         !(ar & _SEGMENT_S) || !(ar & _SEGMENT_P) || !(ar & _SEGMENT_CODE) )
     {
         pv_inject_hw_exception(X86_EXC_GP, regs->error_code);
         return;
@@ -235,8 +234,11 @@ void pv_emulate_gate_op(struct cpu_user_regs *regs)
         case 3:
             ++jump;
             base = x86_insn_operand_ea(state, &seg);
-            rc = read_mem(seg, base + (x86_insn_opsize(state) >> 3),
-                          &opnd_sel, sizeof(opnd_sel), &ctxt.ctxt);
+            rc = read_mem(seg,
+                          base + (x86_insn_opsize(state) >> 3),
+                          &opnd_sel,
+                          sizeof(opnd_sel),
+                          &ctxt.ctxt);
             break;
         }
         break;
@@ -251,21 +253,17 @@ void pv_emulate_gate_op(struct cpu_user_regs *regs)
         return;
     }
 
-    if ( rc != X86EMUL_OKAY ||
-         jump < 0 ||
-         (opnd_sel & ~3) != regs->error_code ||
-         dpl < (opnd_sel & 3) )
+    if ( rc != X86EMUL_OKAY || jump < 0 ||
+         (opnd_sel & ~3) != regs->error_code || dpl < (opnd_sel & 3) )
     {
         pv_inject_hw_exception(X86_EXC_GP, regs->error_code);
         return;
     }
 
     if ( !pv_emul_read_descriptor(sel, v, &base, &limit, &ar, 0) ||
-         !(ar & _SEGMENT_S) ||
-         !(ar & _SEGMENT_CODE) ||
-         (!jump || (ar & _SEGMENT_EC) ?
-          ((ar >> 13) & 3) > (regs->cs & 3) :
-          ((ar >> 13) & 3) != (regs->cs & 3)) )
+         !(ar & _SEGMENT_S) || !(ar & _SEGMENT_CODE) ||
+         (!jump || (ar & _SEGMENT_EC) ? ((ar >> 13) & 3) > (regs->cs & 3)
+                                      : ((ar >> 13) & 3) != (regs->cs & 3)) )
     {
         pv_inject_hw_exception(X86_EXC_GP, sel);
         return;
@@ -311,10 +309,8 @@ void pv_emulate_gate_op(struct cpu_user_regs *regs)
             ss = v->arch.pv.kernel_ss;
             if ( (ss & 3) != (sel & 3) ||
                  !pv_emul_read_descriptor(ss, v, &base, &limit, &ar, 0) ||
-                 ((ar >> 13) & 3) != (sel & 3) ||
-                 !(ar & _SEGMENT_S) ||
-                 (ar & _SEGMENT_CODE) ||
-                 !(ar & _SEGMENT_WR) )
+                 ((ar >> 13) & 3) != (sel & 3) || !(ar & _SEGMENT_S) ||
+                 (ar & _SEGMENT_CODE) || !(ar & _SEGMENT_WR) )
             {
                 pv_inject_hw_exception(X86_EXC_TS, ss & ~3);
                 return;
@@ -337,16 +333,18 @@ void pv_emulate_gate_op(struct cpu_user_regs *regs)
             {
                 const unsigned int *ustkp;
 
-                if ( !pv_emul_read_descriptor(regs->ss, v, &base,
-                                              &limit, &ar, 0) ||
-                     ((ar >> 13) & 3) != (regs->cs & 3) ||
-                     !(ar & _SEGMENT_S) ||
-                     (ar & _SEGMENT_CODE) ||
-                     !(ar & _SEGMENT_WR) ||
+                if ( !pv_emul_read_descriptor(regs->ss,
+                                              v,
+                                              &base,
+                                              &limit,
+                                              &ar,
+                                              0) ||
+                     ((ar >> 13) & 3) != (regs->cs & 3) || !(ar & _SEGMENT_S) ||
+                     (ar & _SEGMENT_CODE) || !(ar & _SEGMENT_WR) ||
                      !check_stack_limit(ar, limit, esp + nparm * 4, nparm * 4) )
                     return pv_inject_hw_exception(X86_EXC_GP, regs->error_code);
-                ustkp = (unsigned int *)(unsigned long)
-                        ((unsigned int)base + regs->esp + nparm * 4);
+                ustkp = (unsigned int *)(unsigned long)((unsigned int)base +
+                                                        regs->esp + nparm * 4);
                 if ( !compat_access_ok(ustkp - nparm, 0 + nparm * 4) )
                 {
                     pv_inject_hw_exception(X86_EXC_GP, regs->error_code);
@@ -360,7 +358,8 @@ void pv_emulate_gate_op(struct cpu_user_regs *regs)
                     rc = __get_guest(parm, ustkp);
                     if ( rc )
                     {
-                        pv_inject_page_fault(0, (unsigned long)(ustkp + 1) - rc);
+                        pv_inject_page_fault(0,
+                                             (unsigned long)(ustkp + 1) - rc);
                         return;
                     }
                     push(parm);

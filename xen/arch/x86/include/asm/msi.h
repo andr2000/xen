@@ -15,22 +15,22 @@
  */
 
 #define MSI_DATA_VECTOR_SHIFT		0
-#define  MSI_DATA_VECTOR_MASK		0x000000ff
-#define	 MSI_DATA_VECTOR(v)		(((v) << MSI_DATA_VECTOR_SHIFT) & MSI_DATA_VECTOR_MASK)
+#define MSI_DATA_VECTOR_MASK		0x000000ff
+#define MSI_DATA_VECTOR(v)		(((v) << MSI_DATA_VECTOR_SHIFT) & MSI_DATA_VECTOR_MASK)
 
 #define MSI_DATA_DELIVERY_MODE_SHIFT	8
-#define  MSI_DATA_DELIVERY_FIXED	(0 << MSI_DATA_DELIVERY_MODE_SHIFT)
-#define  MSI_DATA_DELIVERY_LOWPRI	(1 << MSI_DATA_DELIVERY_MODE_SHIFT)
-#define  MSI_DATA_DELIVERY_MODE_MASK    0x00000700
+#define MSI_DATA_DELIVERY_FIXED	(0 << MSI_DATA_DELIVERY_MODE_SHIFT)
+#define MSI_DATA_DELIVERY_LOWPRI	(1 << MSI_DATA_DELIVERY_MODE_SHIFT)
+#define MSI_DATA_DELIVERY_MODE_MASK    0x00000700
 
 #define MSI_DATA_LEVEL_SHIFT		14
-#define	 MSI_DATA_LEVEL_DEASSERT	(0 << MSI_DATA_LEVEL_SHIFT)
-#define	 MSI_DATA_LEVEL_ASSERT		(1 << MSI_DATA_LEVEL_SHIFT)
+#define MSI_DATA_LEVEL_DEASSERT	(0 << MSI_DATA_LEVEL_SHIFT)
+#define MSI_DATA_LEVEL_ASSERT		(1 << MSI_DATA_LEVEL_SHIFT)
 
 #define MSI_DATA_TRIGGER_SHIFT		15
-#define  MSI_DATA_TRIGGER_EDGE		(0 << MSI_DATA_TRIGGER_SHIFT)
-#define  MSI_DATA_TRIGGER_LEVEL		(1 << MSI_DATA_TRIGGER_SHIFT)
-#define  MSI_DATA_TRIGGER_MASK          0x00008000
+#define MSI_DATA_TRIGGER_EDGE		(0 << MSI_DATA_TRIGGER_SHIFT)
+#define MSI_DATA_TRIGGER_LEVEL		(1 << MSI_DATA_TRIGGER_SHIFT)
+#define MSI_DATA_TRIGGER_MASK          0x00008000
 
 /*
  * Shift/mask fields for msi address
@@ -52,8 +52,8 @@
 #define MSI_ADDR_REDIRECTION_MASK   (1 << MSI_ADDR_REDIRECTION_SHIFT)
 
 #define MSI_ADDR_DEST_ID_SHIFT		12
-#define	 MSI_ADDR_DEST_ID_MASK		0x00ff000
-#define  MSI_ADDR_DEST_ID(dest)		(((dest) << MSI_ADDR_DEST_ID_SHIFT) & MSI_ADDR_DEST_ID_MASK)
+#define MSI_ADDR_DEST_ID_MASK		0x00ff000
+#define MSI_ADDR_DEST_ID(dest)		(((dest) << MSI_ADDR_DEST_ID_SHIFT) & MSI_ADDR_DEST_ID_MASK)
 
 /* MAX fixed pages reserved for mapping MSIX tables. */
 #define FIX_MSIX_MAX_PAGES              512
@@ -68,13 +68,15 @@ struct msi_info {
 struct msi_msg {
     union {
         uint64_t address; /* message address */
+
         struct {
             uint32_t address_lo; /* message address low 32 bits */
             uint32_t address_hi; /* message address high 32 bits */
         };
     };
-    uint32_t data;        /* 16 bits of msi message data */
-    uint32_t dest32;      /* used when Interrupt Remapping is enabled */
+
+    uint32_t data; /* 16 bits of msi message data */
+    uint32_t dest32; /* used when Interrupt Remapping is enabled */
 };
 
 struct irq_desc;
@@ -96,34 +98,36 @@ extern int pci_reset_msix_state(struct pci_dev *pdev);
 
 struct msi_desc {
     struct msi_attrib {
-        uint8_t type;        /* {0: unused, 5h:MSI, 11h:MSI-X} */
-        uint8_t pos;         /* Location of the MSI capability */
-        bool maskbit      : 1; /* mask/pending bit supported ?   */
-        bool is_64        : 1; /* Address size: 0=32bit 1=64bit  */
-        bool host_masked  : 1;
-        bool guest_masked : 1;
-        uint16_t entry_nr;   /* specific enabled entry */
+        uint8_t type; /* {0: unused, 5h:MSI, 11h:MSI-X} */
+        uint8_t pos; /* Location of the MSI capability */
+        bool maskbit:1; /* mask/pending bit supported ?   */
+        bool is_64:1; /* Address size: 0=32bit 1=64bit  */
+        bool host_masked:1;
+        bool guest_masked:1;
+        uint16_t entry_nr; /* specific enabled entry */
     } msi_attrib;
 
     bool irte_initialized;
-    uint8_t gvec;            /* guest vector. valid when pi_desc isn't NULL */
+    uint8_t gvec; /* guest vector. valid when pi_desc isn't NULL */
     const struct pi_desc *pi_desc; /* pointer to posted descriptor */
 
     struct list_head list;
 
     union {
         void __iomem *mask_base; /* va for the entry in mask table */
+
         struct {
             unsigned int nvec; /* number of vectors */
             unsigned int mpos; /* location of mask register */
         } msi;
+
         unsigned int hpet_id; /* HPET (dev is NULL) */
     };
     struct pci_dev *dev;
     int irq;
-    int remap_index;         /* index in interrupt remapping table */
+    int remap_index; /* index in interrupt remapping table */
 
-    struct msi_msg msg;      /* Last set MSI message */
+    struct msi_msg msg; /* Last set MSI message */
 };
 
 /*
@@ -173,26 +177,28 @@ int msi_free_irq(struct msi_desc *entry);
  */
 
 struct msg_data {
-    uint32_t vector        :  8;
-    uint32_t delivery_mode :  3;    /* 000b: FIXED | 001b: lowest prior */
-    uint32_t               :  3;
-    bool level             :  1;    /* 0: deassert | 1: assert */
-    bool trigger           :  1;    /* 0: edge | 1: level */
-    uint32_t               : 16;
+    uint32_t vector:8;
+    uint32_t delivery_mode:3; /* 000b: FIXED | 001b: lowest prior */
+    uint32_t:3;
+    bool level:1; /* 0: deassert | 1: assert */
+    bool trigger:1; /* 0: edge | 1: level */
+    uint32_t:16;
 };
 
 struct msg_address {
     union {
         struct {
-            uint32_t              :  2;
-            bool dest_mode        :  1; /* 0:phys | 1:logic */
-            bool redirection_hint :  1; /* 0: dedicated CPU
+            uint32_t:2;
+            bool dest_mode:1; /* 0:phys | 1:logic */
+            bool redirection_hint:1; /* 0: dedicated CPU
                                            1: lowest priority */
-            uint32_t              :  4;
-            uint32_t dest_id      : 24; /* Destination ID */
+            uint32_t:4;
+            uint32_t dest_id:24; /* Destination ID */
         } u;
+
         uint32_t value;
     } lo_address;
+
     uint32_t hi_address;
 };
 
@@ -213,9 +219,11 @@ struct msg_address {
 
 struct arch_msix {
     unsigned int nr_entries, used_entries;
+
     struct {
         unsigned long first, last;
     } table, pba;
+
     int table_refcnt[MAX_MSIX_TABLE_PAGES];
     int table_idx[MAX_MSIX_TABLE_PAGES];
 #define ADJ_IDX_FIRST 0
@@ -224,12 +232,14 @@ struct arch_msix {
     spinlock_t table_lock;
     bool host_maskall, guest_maskall;
     domid_t warned_domid;
+
     union {
         uint8_t all;
+
         struct {
-            bool maskall                   : 1;
-            bool adjacent_not_initialized  : 1;
-            bool adjacent_pba              : 1;
+            bool maskall:1;
+            bool adjacent_not_initialized:1;
+            bool adjacent_pba:1;
         };
     } warned_kind;
 };

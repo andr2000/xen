@@ -26,19 +26,19 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-typedef uint32_t	Elf32_Addr;	/* Unsigned program address */
-typedef uint32_t	Elf32_Off;	/* Unsigned file offset */
-typedef uint16_t	Elf32_Half;	/* Unsigned medium integer */
-typedef int32_t		Elf32_Sword;	/* Signed large integer */
-typedef uint32_t	Elf32_Word;	/* Unsigned large integer */
+typedef uint32_t Elf32_Addr; /* Unsigned program address */
+typedef uint32_t Elf32_Off; /* Unsigned file offset */
+typedef uint16_t Elf32_Half; /* Unsigned medium integer */
+typedef int32_t Elf32_Sword; /* Signed large integer */
+typedef uint32_t Elf32_Word; /* Unsigned large integer */
 
-typedef uint64_t	Elf64_Addr;
-typedef uint64_t	Elf64_Off;
-typedef uint16_t	Elf64_Half;
-typedef int32_t		Elf64_Sword;
-typedef uint32_t	Elf64_Word;
-typedef int64_t		Elf64_Sxword;
-typedef uint64_t	Elf64_Xword;
+typedef uint64_t Elf64_Addr;
+typedef uint64_t Elf64_Off;
+typedef uint16_t Elf64_Half;
+typedef int32_t Elf64_Sword;
+typedef uint32_t Elf64_Word;
+typedef int64_t Elf64_Sxword;
+typedef uint64_t Elf64_Xword;
 
 /* Unique build id string format when using --build-id. */
 #define NT_GNU_BUILD_ID 3
@@ -60,18 +60,18 @@ typedef uint64_t	Elf64_Xword;
 #define EI_NIDENT	16		/* Size of e_ident[] */
 
 /* e_ident[] magic number */
-#define	ELFMAG0		0x7f		/* e_ident[EI_MAG0] */
-#define	ELFMAG1		'E'		/* e_ident[EI_MAG1] */
-#define	ELFMAG2		'L'		/* e_ident[EI_MAG2] */
-#define	ELFMAG3		'F'		/* e_ident[EI_MAG3] */
-#define	ELFMAG		"\177ELF"	/* magic */
-#define	SELFMAG		4		/* size of magic */
+#define ELFMAG0		0x7f		/* e_ident[EI_MAG0] */
+#define ELFMAG1		'E'		/* e_ident[EI_MAG1] */
+#define ELFMAG2		'L'		/* e_ident[EI_MAG2] */
+#define ELFMAG3		'F'		/* e_ident[EI_MAG3] */
+#define ELFMAG		"\177ELF"	/* magic */
+#define SELFMAG		4		/* size of magic */
 
 /* e_ident[] file class */
-#define	ELFCLASSNONE	0		/* invalid */
-#define	ELFCLASS32	1		/* 32-bit objs */
-#define	ELFCLASS64	2		/* 64-bit objs */
-#define	ELFCLASSNUM	3		/* number of classes */
+#define ELFCLASSNONE	0		/* invalid */
+#define ELFCLASS32	1		/* 32-bit objs */
+#define ELFCLASS64	2		/* 64-bit objs */
+#define ELFCLASSNUM	3		/* number of classes */
 
 /* e_ident[] data encoding */
 #define ELFDATANONE	0		/* invalid */
@@ -114,38 +114,38 @@ typedef uint64_t	Elf64_Xword;
 
 /* ELF Header */
 typedef struct elfhdr {
-	unsigned char	e_ident[EI_NIDENT]; /* ELF Identification */
-	Elf32_Half	e_type;		/* object file type */
-	Elf32_Half	e_machine;	/* machine */
-	Elf32_Word	e_version;	/* object file version */
-	Elf32_Addr	e_entry;	/* virtual entry point */
-	Elf32_Off	e_phoff;	/* program header table offset */
-	Elf32_Off	e_shoff;	/* section header table offset */
-	Elf32_Word	e_flags;	/* processor-specific flags */
-	Elf32_Half	e_ehsize;	/* ELF header size */
-	Elf32_Half	e_phentsize;	/* program header entry size */
-	Elf32_Half	e_phnum;	/* number of program header entries */
-	Elf32_Half	e_shentsize;	/* section header entry size */
-	Elf32_Half	e_shnum;	/* number of section header entries */
-	Elf32_Half	e_shstrndx;	/* section header table's "section
+    unsigned char e_ident[EI_NIDENT]; /* ELF Identification */
+    Elf32_Half e_type; /* object file type */
+    Elf32_Half e_machine; /* machine */
+    Elf32_Word e_version; /* object file version */
+    Elf32_Addr e_entry; /* virtual entry point */
+    Elf32_Off e_phoff; /* program header table offset */
+    Elf32_Off e_shoff; /* section header table offset */
+    Elf32_Word e_flags; /* processor-specific flags */
+    Elf32_Half e_ehsize; /* ELF header size */
+    Elf32_Half e_phentsize; /* program header entry size */
+    Elf32_Half e_phnum; /* number of program header entries */
+    Elf32_Half e_shentsize; /* section header entry size */
+    Elf32_Half e_shnum; /* number of section header entries */
+    Elf32_Half e_shstrndx; /* section header table's "section
 					   header string table" entry offset */
 } Elf32_Ehdr;
 
 typedef struct {
-	unsigned char	e_ident[EI_NIDENT];	/* Id bytes */
-	Elf64_Half	e_type;			/* file type */
-	Elf64_Half	e_machine;		/* machine type */
-	Elf64_Word	e_version;		/* version number */
-	Elf64_Addr	e_entry;		/* entry point */
-	Elf64_Off	e_phoff;		/* Program hdr offset */
-	Elf64_Off	e_shoff;		/* Section hdr offset */
-	Elf64_Word	e_flags;		/* Processor flags */
-	Elf64_Half	e_ehsize;		/* sizeof ehdr */
-	Elf64_Half	e_phentsize;		/* Program header entry size */
-	Elf64_Half	e_phnum;		/* Number of program headers */
-	Elf64_Half	e_shentsize;		/* Section header entry size */
-	Elf64_Half	e_shnum;		/* Number of section headers */
-	Elf64_Half	e_shstrndx;		/* String table index */
+    unsigned char e_ident[EI_NIDENT]; /* Id bytes */
+    Elf64_Half e_type; /* file type */
+    Elf64_Half e_machine; /* machine type */
+    Elf64_Word e_version; /* version number */
+    Elf64_Addr e_entry; /* entry point */
+    Elf64_Off e_phoff; /* Program hdr offset */
+    Elf64_Off e_shoff; /* Section hdr offset */
+    Elf64_Word e_flags; /* Processor flags */
+    Elf64_Half e_ehsize; /* sizeof ehdr */
+    Elf64_Half e_phentsize; /* Program header entry size */
+    Elf64_Half e_phnum; /* Number of program headers */
+    Elf64_Half e_shentsize; /* Section header entry size */
+    Elf64_Half e_shnum; /* Number of section headers */
+    Elf64_Half e_shstrndx; /* String table index */
 } Elf64_Ehdr;
 
 /* e_type */
@@ -195,30 +195,30 @@ typedef struct {
 
 /* Section Header */
 typedef struct {
-	Elf32_Word	sh_name;	/* name - index into section header
+    Elf32_Word sh_name; /* name - index into section header
 					   string table section */
-	Elf32_Word	sh_type;	/* type */
-	Elf32_Word	sh_flags;	/* flags */
-	Elf32_Addr	sh_addr;	/* address */
-	Elf32_Off	sh_offset;	/* file offset */
-	Elf32_Word	sh_size;	/* section size */
-	Elf32_Word	sh_link;	/* section header table index link */
-	Elf32_Word	sh_info;	/* extra information */
-	Elf32_Word	sh_addralign;	/* address alignment */
-	Elf32_Word	sh_entsize;	/* section entry size */
+    Elf32_Word sh_type; /* type */
+    Elf32_Word sh_flags; /* flags */
+    Elf32_Addr sh_addr; /* address */
+    Elf32_Off sh_offset; /* file offset */
+    Elf32_Word sh_size; /* section size */
+    Elf32_Word sh_link; /* section header table index link */
+    Elf32_Word sh_info; /* extra information */
+    Elf32_Word sh_addralign; /* address alignment */
+    Elf32_Word sh_entsize; /* section entry size */
 } Elf32_Shdr;
 
 typedef struct {
-	Elf64_Word	sh_name;	/* section name */
-	Elf64_Word	sh_type;	/* section type */
-	Elf64_Xword	sh_flags;	/* section flags */
-	Elf64_Addr	sh_addr;	/* virtual address */
-	Elf64_Off	sh_offset;	/* file offset */
-	Elf64_Xword	sh_size;	/* section size */
-	Elf64_Word	sh_link;	/* link to another */
-	Elf64_Word	sh_info;	/* misc info */
-	Elf64_Xword	sh_addralign;	/* memory alignment */
-	Elf64_Xword	sh_entsize;	/* table entry size */
+    Elf64_Word sh_name; /* section name */
+    Elf64_Word sh_type; /* section type */
+    Elf64_Xword sh_flags; /* section flags */
+    Elf64_Addr sh_addr; /* virtual address */
+    Elf64_Off sh_offset; /* file offset */
+    Elf64_Xword sh_size; /* section size */
+    Elf64_Word sh_link; /* link to another */
+    Elf64_Word sh_info; /* misc info */
+    Elf64_Xword sh_addralign; /* memory alignment */
+    Elf64_Xword sh_entsize; /* table entry size */
 } Elf64_Shdr;
 
 /* Special Section Indexes */
@@ -272,32 +272,32 @@ typedef struct {
 #define ELF_SYMTAB      ".symtab"	/* symbol table */
 #define ELF_TEXT        ".text"		/* code */
 
-
 /* Section Attribute Flags - sh_flags */
 #define SHF_WRITE	0x1		/* Writable */
 #define SHF_ALLOC	0x2		/* occupies memory */
 #define SHF_EXECINSTR	0x4		/* executable */
 #define SHF_MERGE	0x10            /* mergeable */
 #define SHF_MASKPROC	0xf0000000	/* reserved bits for processor */
-					/*  specific section attributes */
+
+/*  specific section attributes */
 
 /* Symbol Table Entry */
 typedef struct elf32_sym {
-	Elf32_Word	st_name;	/* name - index into string table */
-	Elf32_Addr	st_value;	/* symbol value */
-	Elf32_Word	st_size;	/* symbol size */
-	unsigned char	st_info;	/* type and binding */
-	unsigned char	st_other;	/* 0 - no defined meaning */
-	Elf32_Half	st_shndx;	/* section header index */
+    Elf32_Word st_name; /* name - index into string table */
+    Elf32_Addr st_value; /* symbol value */
+    Elf32_Word st_size; /* symbol size */
+    unsigned char st_info; /* type and binding */
+    unsigned char st_other; /* 0 - no defined meaning */
+    Elf32_Half st_shndx; /* section header index */
 } Elf32_Sym;
 
 typedef struct {
-	Elf64_Word	st_name;	/* Symbol name index in str table */
-	unsigned char	st_info;	/* type / binding attrs */
-	unsigned char	st_other;	/* unused */
-	Elf64_Half	st_shndx;	/* section index of symbol */
-	Elf64_Addr	st_value;	/* value of symbol */
-	Elf64_Xword	st_size;	/* size of symbol */
+    Elf64_Word st_name; /* Symbol name index in str table */
+    unsigned char st_info; /* type / binding attrs */
+    unsigned char st_other; /* unused */
+    Elf64_Half st_shndx; /* section index of symbol */
+    Elf64_Addr st_value; /* value of symbol */
+    Elf64_Xword st_size; /* size of symbol */
 } Elf64_Sym;
 
 /* Symbol table index */
@@ -306,11 +306,11 @@ typedef struct {
 /* Extract symbol info - st_info */
 #define ELF32_ST_BIND(x)	((x) >> 4)
 #define ELF32_ST_TYPE(x)	(((unsigned int)(x)) & 0xf)
-#define ELF32_ST_INFO(b,t)	(((b) << 4) + ((t) & 0xf))
+#define ELF32_ST_INFO(b, t)	(((b) << 4) + ((t) & 0xf))
 
 #define ELF64_ST_BIND(x)	((x) >> 4)
 #define ELF64_ST_TYPE(x)	(((unsigned int)(x)) & 0xf)
-#define ELF64_ST_INFO(b,t)	(((b) << 4) + ((t) & 0xf))
+#define ELF64_ST_INFO(b, t)	(((b) << 4) + ((t) & 0xf))
 
 /* Symbol Binding - ELF32_ST_BIND - st_info */
 #define STB_LOCAL	0		/* Local symbol */
@@ -332,36 +332,36 @@ typedef struct {
 
 /* Relocation entry with implicit addend */
 typedef struct {
-	Elf32_Addr	r_offset;	/* offset of relocation */
-	Elf32_Word	r_info;		/* symbol table index and type */
+    Elf32_Addr r_offset; /* offset of relocation */
+    Elf32_Word r_info; /* symbol table index and type */
 } Elf32_Rel;
 
 /* Relocation entry with explicit addend */
 typedef struct {
-	Elf32_Addr	r_offset;	/* offset of relocation */
-	Elf32_Word	r_info;		/* symbol table index and type */
-	Elf32_Sword	r_addend;
+    Elf32_Addr r_offset; /* offset of relocation */
+    Elf32_Word r_info; /* symbol table index and type */
+    Elf32_Sword r_addend;
 } Elf32_Rela;
 
 /* Extract relocation info - r_info */
 #define ELF32_R_SYM(i)		((i) >> 8)
 #define ELF32_R_TYPE(i)		((unsigned char) (i))
-#define ELF32_R_INFO(s,t) 	(((s) << 8) + (unsigned char)(t))
+#define ELF32_R_INFO(s, t) 	(((s) << 8) + (unsigned char)(t))
 
 typedef struct {
-	Elf64_Addr	r_offset;	/* where to do it */
-	Elf64_Xword	r_info;		/* index & type of relocation */
+    Elf64_Addr r_offset; /* where to do it */
+    Elf64_Xword r_info; /* index & type of relocation */
 } Elf64_Rel;
 
 typedef struct {
-	Elf64_Addr	r_offset;	/* where to do it */
-	Elf64_Xword	r_info;		/* index & type of relocation */
-	Elf64_Sxword	r_addend;	/* adjustment value */
+    Elf64_Addr r_offset; /* where to do it */
+    Elf64_Xword r_info; /* index & type of relocation */
+    Elf64_Sxword r_addend; /* adjustment value */
 } Elf64_Rela;
 
-#define	ELF64_R_SYM(info)	((info) >> 32)
-#define	ELF64_R_TYPE(info)	((info) & 0xFFFFFFFF)
-#define ELF64_R_INFO(s,t) 	(((s) << 32) + (uint32_t)(t))
+#define ELF64_R_SYM(info)	((info) >> 32)
+#define ELF64_R_TYPE(info)	((info) & 0xFFFFFFFF)
+#define ELF64_R_INFO(s, t) 	(((s) << 32) + (uint32_t)(t))
 
 /*
  * Relocation types for x86_64 and ARM 64. We list only the ones Live Patch
@@ -386,7 +386,7 @@ typedef struct {
 #define R_ARM_JUMP24            29	/* Same as R_ARM_CALL */
 #define R_ARM_MOVW_ABS_NC       43	/* SignExtend([19:16],[11:0])&0xFFFF, S+A */
 #define R_ARM_MOVT_ABS          44	/* SignExtend([19:16],[11:0))&0xFFFF0000 */
-					/*  >> 16, S+A. */
+/*  >> 16, S+A. */
 
 /*
  * NC -  No check for overflow.
@@ -445,25 +445,25 @@ typedef struct {
 
 /* Program Header */
 typedef struct {
-	Elf32_Word	p_type;		/* segment type */
-	Elf32_Off	p_offset;	/* segment offset */
-	Elf32_Addr	p_vaddr;	/* virtual address of segment */
-	Elf32_Addr	p_paddr;	/* physical address - ignored? */
-	Elf32_Word	p_filesz;	/* number of bytes in file for seg. */
-	Elf32_Word	p_memsz;	/* number of bytes in mem. for seg. */
-	Elf32_Word	p_flags;	/* flags */
-	Elf32_Word	p_align;	/* memory alignment */
+    Elf32_Word p_type; /* segment type */
+    Elf32_Off p_offset; /* segment offset */
+    Elf32_Addr p_vaddr; /* virtual address of segment */
+    Elf32_Addr p_paddr; /* physical address - ignored? */
+    Elf32_Word p_filesz; /* number of bytes in file for seg. */
+    Elf32_Word p_memsz; /* number of bytes in mem. for seg. */
+    Elf32_Word p_flags; /* flags */
+    Elf32_Word p_align; /* memory alignment */
 } Elf32_Phdr;
 
 typedef struct {
-	Elf64_Word	p_type;		/* entry type */
-	Elf64_Word	p_flags;	/* flags */
-	Elf64_Off	p_offset;	/* offset */
-	Elf64_Addr	p_vaddr;	/* virtual address */
-	Elf64_Addr	p_paddr;	/* physical address */
-	Elf64_Xword	p_filesz;	/* file size */
-	Elf64_Xword	p_memsz;	/* memory size */
-	Elf64_Xword	p_align;	/* memory & file alignment */
+    Elf64_Word p_type; /* entry type */
+    Elf64_Word p_flags; /* flags */
+    Elf64_Off p_offset; /* offset */
+    Elf64_Addr p_vaddr; /* virtual address */
+    Elf64_Addr p_paddr; /* physical address */
+    Elf64_Xword p_filesz; /* file size */
+    Elf64_Xword p_memsz; /* memory size */
+    Elf64_Xword p_align; /* memory & file alignment */
 } Elf64_Phdr;
 
 /* Segment types - p_type */
@@ -483,23 +483,26 @@ typedef struct {
 #define PF_W		0x2		/* Writable */
 #define PF_R		0x4		/* Readable */
 #define PF_MASKPROC	0xf0000000	/* reserved bits for processor */
-					/*  specific segment flags */
+
+/*  specific segment flags */
 
 /* Dynamic structure */
 typedef struct {
-	Elf32_Sword	d_tag;		/* controls meaning of d_val */
-	union {
-		Elf32_Word	d_val;	/* Multiple meanings - see d_tag */
-		Elf32_Addr	d_ptr;	/* program virtual address */
-	} d_un;
+    Elf32_Sword d_tag; /* controls meaning of d_val */
+
+    union {
+        Elf32_Word d_val; /* Multiple meanings - see d_tag */
+        Elf32_Addr d_ptr; /* program virtual address */
+    } d_un;
 } Elf32_Dyn;
 
 typedef struct {
-	Elf64_Sxword	d_tag;		/* controls meaning of d_val */
-	union {
-		Elf64_Xword	d_val;
-		Elf64_Addr	d_ptr;
-	} d_un;
+    Elf64_Sxword d_tag; /* controls meaning of d_val */
+
+    union {
+        Elf64_Xword d_val;
+        Elf64_Addr d_ptr;
+    } d_un;
 } Elf64_Dyn;
 
 /* Dynamic Array Tags - d_tag */
@@ -540,22 +543,21 @@ unsigned int elf_hash(const unsigned char *name);
  * Note Definitions
  */
 typedef struct {
-	Elf32_Word namesz;
-	Elf32_Word descsz;
-	Elf32_Word type;
+    Elf32_Word namesz;
+    Elf32_Word descsz;
+    Elf32_Word type;
 } Elf32_Note;
 
 typedef struct {
-	Elf64_Word namesz;
-	Elf64_Word descsz;
-	Elf64_Word type;
+    Elf64_Word namesz;
+    Elf64_Word descsz;
+    Elf64_Word type;
 } Elf64_Note;
 
-
 #if defined(ELFSIZE)
-#define CONCAT(x,y)	__CONCAT(x,y)
+#define CONCAT(x, y)	__CONCAT(x,y)
 #define ELFNAME(x)	CONCAT(elf,CONCAT(ELFSIZE,CONCAT(_,x)))
-#define ELFNAME2(x,y)	CONCAT(x,CONCAT(_elf,CONCAT(ELFSIZE,CONCAT(_,y))))
+#define ELFNAME2(x, y)	CONCAT(x,CONCAT(_elf,CONCAT(ELFSIZE,CONCAT(_,y))))
 #define ELFNAMEEND(x)	CONCAT(x,CONCAT(_elf,ELFSIZE))
 #define ELFDEFNNAME(x)	CONCAT(ELF,CONCAT(ELFSIZE,CONCAT(_,x)))
 #endif

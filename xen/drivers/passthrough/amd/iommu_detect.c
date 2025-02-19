@@ -22,8 +22,8 @@
 
 #include "iommu.h"
 
-static int __init get_iommu_msi_capabilities(
-    u16 seg, u8 bus, u8 dev, u8 func, struct amd_iommu *iommu)
+static int __init get_iommu_msi_capabilities(u16 seg, u8 bus, u8 dev, u8 func,
+                                             struct amd_iommu *iommu)
 {
     int pos;
 
@@ -40,13 +40,14 @@ static int __init get_iommu_msi_capabilities(
     return 0;
 }
 
-static int __init get_iommu_capabilities(
-    u16 seg, u8 bus, u8 dev, u8 func, u16 cap_ptr, struct amd_iommu *iommu)
+static int __init get_iommu_capabilities(u16 seg, u8 bus, u8 dev, u8 func,
+                                         u16 cap_ptr, struct amd_iommu *iommu)
 {
     u8 type;
 
     iommu->cap.header = pci_conf_read32(PCI_SBDF(seg, bus, dev, func), cap_ptr);
-    type = get_field_from_reg_u32(iommu->cap.header, PCI_CAP_TYPE_MASK,
+    type = get_field_from_reg_u32(iommu->cap.header,
+                                  PCI_CAP_TYPE_MASK,
                                   PCI_CAP_TYPE_SHIFT);
 
     if ( type != PCI_CAP_TYPE_IOMMU )
@@ -58,7 +59,7 @@ static int __init get_iommu_capabilities(
 void __init get_iommu_features(struct amd_iommu *iommu)
 {
     const struct amd_iommu *first;
-    ASSERT( iommu->mmio_base );
+    ASSERT(iommu->mmio_base);
 
     if ( !(amd_iommu_acpi_info & ACPI_IVRS_EFR_SUP) )
     {
@@ -86,54 +87,54 @@ void __init get_iommu_features(struct amd_iommu *iommu)
         printk( "- " str "\n");                                \
 } while ( false )
 
-    FEAT(pref_sup,           "Prefetch Pages Command");
-    FEAT(ppr_sup,            "Peripheral Page Service Request");
-    FEAT(xt_sup,             "x2APIC");
-    FEAT(nx_sup,             "NX bit");
-    FEAT(gappi_sup,          "Guest APIC Physical Processor Interrupt");
-    FEAT(ia_sup,             "Invalidate All Command");
-    FEAT(ga_sup,             "Guest APIC");
-    FEAT(he_sup,             "Hardware Error Registers");
-    FEAT(pc_sup,             "Performance Counters");
-    FEAT(hats,               "Host Address Translation Size");
+    FEAT(pref_sup, "Prefetch Pages Command");
+    FEAT(ppr_sup, "Peripheral Page Service Request");
+    FEAT(xt_sup, "x2APIC");
+    FEAT(nx_sup, "NX bit");
+    FEAT(gappi_sup, "Guest APIC Physical Processor Interrupt");
+    FEAT(ia_sup, "Invalidate All Command");
+    FEAT(ga_sup, "Guest APIC");
+    FEAT(he_sup, "Hardware Error Registers");
+    FEAT(pc_sup, "Performance Counters");
+    FEAT(hats, "Host Address Translation Size");
 
     if ( iommu->features.flds.gt_sup )
     {
-        FEAT(gats,           "Guest Address Translation Size");
-        FEAT(glx_sup,        "Guest CR3 Root Table Level");
-        FEAT(pas_max,        "Maximum PASID");
+        FEAT(gats, "Guest Address Translation Size");
+        FEAT(glx_sup, "Guest CR3 Root Table Level");
+        FEAT(pas_max, "Maximum PASID");
     }
 
-    FEAT(smif_sup,           "SMI Filter Register");
-    FEAT(smif_rc,            "SMI Filter Register Count");
-    FEAT(gam_sup,            "Guest Virtual APIC Modes");
-    FEAT(dual_ppr_log_sup,   "Dual PPR Log");
+    FEAT(smif_sup, "SMI Filter Register");
+    FEAT(smif_rc, "SMI Filter Register Count");
+    FEAT(gam_sup, "Guest Virtual APIC Modes");
+    FEAT(dual_ppr_log_sup, "Dual PPR Log");
     FEAT(dual_event_log_sup, "Dual Event Log");
-    FEAT(sats_sup,           "Secure ATS");
-    FEAT(us_sup,             "User / Supervisor Page Protection");
-    FEAT(dev_tbl_seg_sup,    "Device Table Segmentation");
-    FEAT(ppr_early_of_sup,   "PPR Log Overflow Early Warning");
-    FEAT(ppr_auto_rsp_sup,   "PPR Automatic Response");
-    FEAT(marc_sup,           "Memory Access Routing and Control");
-    FEAT(blk_stop_mrk_sup,   "Block StopMark Message");
-    FEAT(perf_opt_sup ,      "Performance Optimization");
-    FEAT(msi_cap_mmio_sup,   "MSI Capability MMIO Access");
-    FEAT(gio_sup,            "Guest I/O Protection");
-    FEAT(ha_sup,             "Host Access");
-    FEAT(eph_sup,            "Enhanced PPR Handling");
-    FEAT(attr_fw_sup,        "Attribute Forward");
-    FEAT(hd_sup,             "Host Dirty");
+    FEAT(sats_sup, "Secure ATS");
+    FEAT(us_sup, "User / Supervisor Page Protection");
+    FEAT(dev_tbl_seg_sup, "Device Table Segmentation");
+    FEAT(ppr_early_of_sup, "PPR Log Overflow Early Warning");
+    FEAT(ppr_auto_rsp_sup, "PPR Automatic Response");
+    FEAT(marc_sup, "Memory Access Routing and Control");
+    FEAT(blk_stop_mrk_sup, "Block StopMark Message");
+    FEAT(perf_opt_sup, "Performance Optimization");
+    FEAT(msi_cap_mmio_sup, "MSI Capability MMIO Access");
+    FEAT(gio_sup, "Guest I/O Protection");
+    FEAT(ha_sup, "Host Access");
+    FEAT(eph_sup, "Enhanced PPR Handling");
+    FEAT(attr_fw_sup, "Attribute Forward");
+    FEAT(hd_sup, "Host Dirty");
     FEAT(inv_iotlb_type_sup, "Invalidate IOTLB Type");
-    FEAT(viommu_sup,         "Virtualized IOMMU");
-    FEAT(vm_guard_io_sup,    "VMGuard I/O Support");
-    FEAT(vm_table_size,      "VM Table Size");
-    FEAT(ga_update_dis_sup,  "Guest Access Bit Update Disable");
+    FEAT(viommu_sup, "Virtualized IOMMU");
+    FEAT(vm_guard_io_sup, "VMGuard I/O Support");
+    FEAT(vm_table_size, "VM Table Size");
+    FEAT(ga_update_dis_sup, "Guest Access Bit Update Disable");
 
 #undef FEAT
 }
 
-int __init amd_iommu_detect_one_acpi(
-    const struct acpi_ivrs_hardware *ivhd_block)
+int __init
+amd_iommu_detect_one_acpi(const struct acpi_ivrs_hardware *ivhd_block)
 {
     struct amd_iommu *iommu;
     u8 bus, dev, func;
@@ -145,8 +146,8 @@ int __init amd_iommu_detect_one_acpi(
         return -ENODEV;
     }
 
-    if ( !ivhd_block->header.device_id ||
-        !ivhd_block->capability_offset || !ivhd_block->base_address)
+    if ( !ivhd_block->header.device_id || !ivhd_block->capability_offset ||
+         !ivhd_block->base_address )
     {
         AMD_IOMMU_ERROR("invalid IVHD block\n");
         return -ENODEV;
@@ -173,6 +174,7 @@ int __init amd_iommu_detect_one_acpi(
     {
         union {
             uint32_t raw;
+
             struct {
                 unsigned int xt_sup:1;
                 unsigned int nx_sup:1;
@@ -201,7 +203,8 @@ int __init amd_iommu_detect_one_acpi(
         iommu->features.flds.hats = attr.hats;
     }
     else if ( list_empty(&amd_iommu_head) )
-        AMD_IOMMU_DEBUG("EFRSup not set in ACPI table; will fall back to hardware\n");
+        AMD_IOMMU_DEBUG(
+            "EFRSup not set in ACPI table; will fall back to hardware\n");
 
     if ( (amd_iommu_acpi_info & ACPI_IVRS_EFR_SUP) &&
          4 + iommu->features.flds.hats < amd_iommu_max_paging_mode )
@@ -214,8 +217,12 @@ int __init amd_iommu_detect_one_acpi(
     dev = PCI_SLOT(iommu->bdf);
     func = PCI_FUNC(iommu->bdf);
 
-    rt = get_iommu_capabilities(iommu->seg, bus, dev, func,
-                                iommu->cap_offset, iommu);
+    rt = get_iommu_capabilities(iommu->seg,
+                                bus,
+                                dev,
+                                func,
+                                iommu->cap_offset,
+                                iommu);
     if ( rt )
         goto out;
 
@@ -231,12 +238,13 @@ int __init amd_iommu_detect_one_acpi(
     rt = pci_ro_device(iommu->seg, bus, PCI_DEVFN(dev, func));
     if ( rt )
         printk(XENLOG_ERR "Could not mark config space of %pp read-only (%d)\n",
-               &PCI_SBDF(iommu->seg, iommu->bdf), rt);
+               &PCI_SBDF(iommu->seg, iommu->bdf),
+               rt);
 
     list_add_tail(&iommu->list, &amd_iommu_head);
     rt = 0;
 
- out:
+out:
     if ( rt )
     {
         xfree(iommu->domid_map);

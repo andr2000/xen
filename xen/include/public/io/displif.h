@@ -861,6 +861,7 @@ struct xendispl_req {
     uint16_t id;
     uint8_t operation;
     uint8_t reserved[5];
+
     union {
         struct xendispl_dbuf_create_req dbuf_create;
         struct xendispl_dbuf_destroy_req dbuf_destroy;
@@ -878,6 +879,7 @@ struct xendispl_resp {
     uint8_t operation;
     uint8_t reserved;
     int32_t status;
+
     union {
         struct xendispl_get_edid_resp get_edid;
         uint8_t reserved1[56];
@@ -888,6 +890,7 @@ struct xendispl_evt {
     uint16_t id;
     uint8_t type;
     uint8_t reserved[5];
+
     union {
         struct xendispl_pg_flip_evt pg_flip;
         uint8_t reserved[56];

@@ -20,7 +20,9 @@ static unsigned int xpos, ypos;
 static unsigned char *video;
 
 static void cf_check vga_text_puts(const char *s, size_t nr);
+
 static void cf_check vga_noop_puts(const char *s, size_t nr) {}
+
 void (*video_puts)(const char *s, size_t nr) = vga_noop_puts;
 
 /*
@@ -75,7 +77,7 @@ void __init video_init(void)
             return;
         outw(0x200a, 0x3d4); /* disable cursor */
         columns = vga_console_info.u.text_mode_3.columns;
-        lines   = vga_console_info.u.text_mode_3.rows;
+        lines = vga_console_info.u.text_mode_3.rows;
         memset(video, 0, columns * lines * 2);
         video_puts = vga_text_puts;
         break;
@@ -146,7 +148,9 @@ void __init video_endboot(void)
                 if ( !b )
                 {
                     printk(XENLOG_INFO "Boot video device %02x:%02x.%u\n",
-                           bus, PCI_SLOT(devfn), PCI_FUNC(devfn));
+                           bus,
+                           PCI_SLOT(devfn),
+                           PCI_FUNC(devfn));
                     pci_hide_device(0, bus, devfn);
                 }
             }
@@ -190,7 +194,7 @@ static void cf_check vga_text_puts(const char *s, size_t nr)
 
         if ( c != '\n' )
         {
-            video[(xpos + ypos * columns) * 2]     = c;
+            video[(xpos + ypos * columns) * 2] = c;
             video[(xpos + ypos * columns) * 2 + 1] = ATTRIBUTE;
             xpos++;
         }

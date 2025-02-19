@@ -42,7 +42,7 @@ static int32_t ffa_rxtx_unmap(uint16_t id)
 }
 
 uint32_t ffa_handle_rxtx_map(uint32_t fid, register_t tx_addr,
-			     register_t rx_addr, uint32_t page_count)
+                             register_t rx_addr, uint32_t page_count)
 {
     uint32_t ret = FFA_RET_INVALID_PARAMETERS;
     struct domain *d = current->domain;
@@ -68,8 +68,10 @@ uint32_t ffa_handle_rxtx_map(uint32_t fid, register_t tx_addr,
 
     if ( page_count > FFA_MAX_RXTX_PAGE_COUNT )
     {
-        printk(XENLOG_ERR "ffa: RXTX_MAP: error: %u pages requested (limit %u)\n",
-               page_count, FFA_MAX_RXTX_PAGE_COUNT);
+        printk(XENLOG_ERR
+               "ffa: RXTX_MAP: error: %u pages requested (limit %u)\n",
+               page_count,
+               FFA_MAX_RXTX_PAGE_COUNT);
         return FFA_RET_INVALID_PARAMETERS;
     }
 
@@ -113,7 +115,7 @@ uint32_t ffa_handle_rxtx_map(uint32_t fid, register_t tx_addr,
 
         /* All must fit in our TX buffer */
         BUILD_BUG_ON(sizeof(*rxtx_desc) + sizeof(*mem_reg) * 2 +
-                     sizeof(struct ffa_address_range) * 2 >
+                         sizeof(struct ffa_address_range) * 2 >
                      FFA_MAX_RXTX_PAGE_COUNT * FFA_PAGE_SIZE);
 
         spin_lock(&ffa_tx_buffer_lock);
@@ -181,7 +183,7 @@ err_put_tx_pg:
     return ret;
 }
 
-static uint32_t  rxtx_unmap(struct domain *d)
+static uint32_t rxtx_unmap(struct domain *d)
 {
     struct ffa_ctx *ctx = d->arch.tee;
 

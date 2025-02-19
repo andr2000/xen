@@ -51,9 +51,8 @@
 /*
  * Global interfaces
  */
-acpi_status
-acpi_initialize_tables(struct acpi_table_desc *initial_storage,
-		       u32 initial_table_count, u8 allow_resize);
+acpi_status acpi_initialize_tables(struct acpi_table_desc *initial_storage,
+                                   u32 initial_table_count, u8 allow_resize);
 
 const char *acpi_format_exception(acpi_status exception);
 
@@ -62,36 +61,36 @@ const char *acpi_format_exception(acpi_status exception);
  */
 acpi_status acpi_reallocate_root_table(void);
 
-acpi_status acpi_find_root_pointer(acpi_native_uint * rsdp_address);
+acpi_status acpi_find_root_pointer(acpi_native_uint *rsdp_address);
 
 acpi_status acpi_load_tables(void);
 
 acpi_status acpi_load_table(struct acpi_table_header *table_ptr);
 
-acpi_status
-acpi_get_table(const char *signature,
-	       acpi_native_uint instance, struct acpi_table_header **out_table);
+acpi_status acpi_get_table(const char *signature, acpi_native_uint instance,
+                           struct acpi_table_header **out_table);
 
-acpi_status
-acpi_get_table_phys(const char *signature, acpi_native_uint instance,
-		     acpi_physical_address *addr, acpi_native_uint *len);
+acpi_status acpi_get_table_phys(const char *signature,
+                                acpi_native_uint instance,
+                                acpi_physical_address *addr,
+                                acpi_native_uint *len);
 /*
  * Namespace and name interfaces
  */
-acpi_status
-acpi_debug_trace(char *name, u32 debug_level, u32 debug_layer, u32 flags);
+acpi_status acpi_debug_trace(char *name, u32 debug_level, u32 debug_layer,
+                             u32 flags);
 
-acpi_status
-acpi_get_object_info(acpi_handle handle, struct acpi_buffer *return_buffer);
+acpi_status acpi_get_object_info(acpi_handle handle,
+                                 struct acpi_buffer *return_buffer);
 
-acpi_status acpi_get_type(acpi_handle object, acpi_object_type * out_type);
+acpi_status acpi_get_type(acpi_handle object, acpi_object_type *out_type);
 
-acpi_status acpi_get_parent(acpi_handle object, acpi_handle * out_handle);
+acpi_status acpi_get_parent(acpi_handle object, acpi_handle *out_handle);
 
 /*
  * Hardware (ACPI device) interfaces
  */
-acpi_status acpi_get_register(u32 register_id, u32 * return_value);
+acpi_status acpi_get_register(u32 register_id, u32 *return_value);
 
 acpi_status acpi_set_register(u32 register_id, u32 value);
 
@@ -100,11 +99,11 @@ acpi_set_firmware_waking_vector(acpi_physical_address physical_address);
 
 #ifdef ACPI_FUTURE_USAGE
 acpi_status
-acpi_get_firmware_waking_vector(acpi_physical_address * physical_address);
+acpi_get_firmware_waking_vector(acpi_physical_address *physical_address);
 #endif
 
-acpi_status
-acpi_get_sleep_type_data(u8 sleep_state, u8 * slp_typ_a, u8 * slp_typ_b);
+acpi_status acpi_get_sleep_type_data(u8 sleep_state, u8 *slp_typ_a,
+                                     u8 *slp_typ_b);
 
 acpi_status acpi_enter_sleep_state_prep(u8 sleep_state);
 
@@ -116,4 +115,4 @@ acpi_status acpi_leave_sleep_state_prep(u8 sleep_state);
 
 acpi_status acpi_leave_sleep_state(u8 sleep_state);
 
-#endif				/* __ACXFACE_H__ */
+#endif /* __ACXFACE_H__ */

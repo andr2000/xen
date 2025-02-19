@@ -21,7 +21,7 @@ const struct livepatch_func __section(".livepatch.funcs") livepatch_nop = {
 #ifdef CONFIG_X86
     .old_addr = (void *)MINOR_VERSION_ADDR,
     /* Everything but the last instruction: "req". */
-    .new_size = MINOR_VERSION_SZ-1,
+    .new_size = MINOR_VERSION_SZ - 1,
 #endif
 
 #ifdef CONFIG_ARM
@@ -30,7 +30,7 @@ const struct livepatch_func __section(".livepatch.funcs") livepatch_nop = {
      * On ARM64 we replace the first one: "mov w0, #0x8". While on
      * ARM32 we replace all but the return instruction: "bx lr".
      */
-    .new_size = MINOR_VERSION_SZ-4,
+    .new_size = MINOR_VERSION_SZ - 4,
 #endif
 };
 

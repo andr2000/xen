@@ -15,13 +15,13 @@
  */
 void *memchr_inv(const void *s, int c, size_t n)
 {
-	const unsigned char *p = s;
+    const unsigned char *p = s;
 
-	while (n--)
-		if ((unsigned char)c != *p++)
-			return (void *)(p - 1);
+    while ( n-- )
+        if ( (unsigned char)c != *p++ )
+            return (void *)(p - 1);
 
-	return NULL;
+    return NULL;
 }
 
 /*

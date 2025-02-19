@@ -20,8 +20,8 @@
 #include <xen/event.h>
 #include <xen/iommu.h>
 
-static bool cf_check hvm_mmio_accept(
-    const struct hvm_io_handler *handler, const ioreq_t *p)
+static bool cf_check hvm_mmio_accept(const struct hvm_io_handler *handler,
+                                     const ioreq_t *p)
 {
     paddr_t first = ioreq_mmio_first_byte(p), last;
 
@@ -32,39 +32,34 @@ static bool cf_check hvm_mmio_accept(
 
     /* Make sure the handler will accept the whole access. */
     last = ioreq_mmio_last_byte(p);
-    if ( last != first &&
-         !handler->mmio.ops->check(current, last) )
+    if ( last != first && !handler->mmio.ops->check(current, last) )
         domain_crash(current->domain);
 
     return 1;
 }
 
-static int cf_check hvm_mmio_read(
-    const struct hvm_io_handler *handler, uint64_t addr, uint32_t size,
-    uint64_t *data)
+static int cf_check hvm_mmio_read(const struct hvm_io_handler *handler,
+                                  uint64_t addr, uint32_t size, uint64_t *data)
 {
     BUG_ON(handler->type != IOREQ_TYPE_COPY);
 
     return handler->mmio.ops->read(current, addr, size, data);
 }
 
-static int cf_check hvm_mmio_write(
-    const struct hvm_io_handler *handler, uint64_t addr, uint32_t size,
-    uint64_t data)
+static int cf_check hvm_mmio_write(const struct hvm_io_handler *handler,
+                                   uint64_t addr, uint32_t size, uint64_t data)
 {
     BUG_ON(handler->type != IOREQ_TYPE_COPY);
 
     return handler->mmio.ops->write(current, addr, size, data);
 }
 
-static const struct hvm_io_ops mmio_ops = {
-    .accept = hvm_mmio_accept,
-    .read = hvm_mmio_read,
-    .write = hvm_mmio_write
-};
+static const struct hvm_io_ops mmio_ops = { .accept = hvm_mmio_accept,
+                                            .read = hvm_mmio_read,
+                                            .write = hvm_mmio_write };
 
-static bool cf_check hvm_portio_accept(
-    const struct hvm_io_handler *handler, const ioreq_t *p)
+static bool cf_check hvm_portio_accept(const struct hvm_io_handler *handler,
+                                       const ioreq_t *p)
 {
     unsigned int start = handler->portio.port;
     unsigned int end = start + handler->portio.size;
@@ -74,9 +69,9 @@ static bool cf_check hvm_portio_accept(
     return (p->addr >= start) && ((p->addr + p->size) <= end);
 }
 
-static int cf_check hvm_portio_read(
-    const struct hvm_io_handler *handler, uint64_t addr, uint32_t size,
-    uint64_t *data)
+static int cf_check hvm_portio_read(const struct hvm_io_handler *handler,
+                                    uint64_t addr, uint32_t size,
+                                    uint64_t *data)
 {
     uint32_t val = ~0u;
     int rc;
@@ -89,9 +84,9 @@ static int cf_check hvm_portio_read(
     return rc;
 }
 
-static int cf_check hvm_portio_write(
-    const struct hvm_io_handler *handler, uint64_t addr, uint32_t size,
-    uint64_t data)
+static int cf_check hvm_portio_write(const struct hvm_io_handler *handler,
+                                     uint64_t addr, uint32_t size,
+                                     uint64_t data)
 {
     uint32_t val = data;
 
@@ -100,14 +95,11 @@ static int cf_check hvm_portio_write(
     return handler->portio.action(IOREQ_WRITE, addr, size, &val);
 }
 
-static const struct hvm_io_ops portio_ops = {
-    .accept = hvm_portio_accept,
-    .read = hvm_portio_read,
-    .write = hvm_portio_write
-};
+static const struct hvm_io_ops portio_ops = { .accept = hvm_portio_accept,
+                                              .read = hvm_portio_read,
+                                              .write = hvm_portio_write };
 
-int hvm_process_io_intercept(const struct hvm_io_handler *handler,
-                             ioreq_t *p)
+int hvm_process_io_intercept(const struct hvm_io_handler *handler, ioreq_t *p)
 {
     const struct hvm_io_ops *ops = handler->ops;
     int rc = X86EMUL_OKAY, i, step = p->df ? -p->size : p->size;
@@ -118,9 +110,7 @@ int hvm_process_io_intercept(const struct hvm_io_handler *handler,
     {
         for ( i = 0; i < p->count; i++ )
         {
-            addr = (p->type == IOREQ_TYPE_COPY) ?
-                   p->addr + step * i :
-                   p->addr;
+            addr = (p->type == IOREQ_TYPE_COPY) ? p->addr + step * i : p->addr;
             data = 0;
             rc = ops->read(handler, addr, p->size, &data);
             if ( rc != X86EMUL_OKAY )
@@ -129,7 +119,9 @@ int hvm_process_io_intercept(const struct hvm_io_handler *handler,
             if ( p->data_is_ptr )
             {
                 switch ( hvm_copy_to_guest_phys(p->data + step * i,
-                                                &data, p->size, current) )
+                                                &data,
+                                                p->size,
+                                                current) )
                 {
                 case HVMTRANS_okay:
                     break;
@@ -161,7 +153,8 @@ int hvm_process_io_intercept(const struct hvm_io_handler *handler,
                 unsigned int token = hvmemul_cache_disable(curr);
 
                 data = 0;
-                switch ( hvm_copy_from_guest_phys(&data, p->data + step * i,
+                switch ( hvm_copy_from_guest_phys(&data,
+                                                  p->data + step * i,
                                                   p->size) )
                 {
                 case HVMTRANS_okay:
@@ -185,9 +178,7 @@ int hvm_process_io_intercept(const struct hvm_io_handler *handler,
             else
                 data = p->data;
 
-            addr = (p->type == IOREQ_TYPE_COPY) ?
-                   p->addr + step * i :
-                   p->addr;
+            addr = (p->type == IOREQ_TYPE_COPY) ? p->addr + step * i : p->addr;
             rc = ops->write(handler, addr, p->size, data);
             if ( rc != X86EMUL_OKAY )
                 break;
@@ -217,13 +208,11 @@ static const struct hvm_io_handler *hvm_find_io_handler(const ioreq_t *p)
     struct domain *curr_d = current->domain;
     unsigned int i;
 
-    BUG_ON((p->type != IOREQ_TYPE_PIO) &&
-           (p->type != IOREQ_TYPE_COPY));
+    BUG_ON((p->type != IOREQ_TYPE_PIO) && (p->type != IOREQ_TYPE_COPY));
 
     for ( i = 0; i < curr_d->arch.hvm.io_handler_count; i++ )
     {
-        const struct hvm_io_handler *handler =
-            &curr_d->arch.hvm.io_handler[i];
+        const struct hvm_io_handler *handler = &curr_d->arch.hvm.io_handler[i];
         const struct hvm_io_ops *ops = handler->ops;
 
         if ( handler->type != p->type )
@@ -263,8 +252,7 @@ struct hvm_io_handler *hvm_next_io_handler(struct domain *d)
     return &d->arch.hvm.io_handler[i];
 }
 
-void register_mmio_handler(struct domain *d,
-                           const struct hvm_mmio_ops *ops)
+void register_mmio_handler(struct domain *d, const struct hvm_mmio_ops *ops)
 {
     struct hvm_io_handler *handler = hvm_next_io_handler(d);
 
@@ -298,8 +286,7 @@ bool relocate_portio_handler(struct domain *d, unsigned int old_port,
 
     for ( i = 0; i < d->arch.hvm.io_handler_count; i++ )
     {
-        struct hvm_io_handler *handler =
-            &d->arch.hvm.io_handler[i];
+        struct hvm_io_handler *handler = &d->arch.hvm.io_handler[i];
 
         if ( handler->type != IOREQ_TYPE_PIO )
             continue;

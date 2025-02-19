@@ -9,7 +9,7 @@ void __init intc_dt_preinit(void)
     struct dt_device_node *node;
     uint8_t num_intc = 0;
 
-    dt_for_each_device_node( dt_host, node )
+    dt_for_each_device_node(dt_host, node)
     {
         if ( !dt_get_property(node, "interrupt-controller", NULL) )
             continue;
@@ -26,7 +26,8 @@ void __init intc_dt_preinit(void)
     }
 
     if ( !num_intc )
-        panic("Unable to find compatible interrupt controller in the device tree\n");
+        panic(
+            "Unable to find compatible interrupt controller in the device tree\n");
 
     /* Set the interrupt controller as the primary interrupt controller */
     dt_interrupt_controller = node;

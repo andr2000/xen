@@ -75,7 +75,7 @@ static unsigned long __init get_memsize(const struct memsize *sz,
 static int __init parse_amt(const char *s, const char **ps, struct memsize *sz)
 {
     unsigned long val;
-    struct memsize tmp = { };
+    struct memsize tmp = {};
     unsigned int items = 0;
 
     tmp.minus = (*s == '-');
@@ -129,7 +129,8 @@ static int __init cf_check parse_dom0_mem(const char *s)
         return 0;
     }
 
-    do {
+    do
+    {
         if ( !strncmp(s, "min:", 4) )
             ret = parse_amt(s + 4, &s, &dom0_min_size);
         else if ( !strncmp(s, "max:", 4) )
@@ -140,6 +141,7 @@ static int __init cf_check parse_dom0_mem(const char *s)
 
     return s[-1] ? -EINVAL : ret;
 }
+
 custom_param("dom0_mem", parse_dom0_mem);
 
 static unsigned int __initdata opt_dom0_max_vcpus_min = 1;
@@ -147,14 +149,14 @@ static unsigned int __initdata opt_dom0_max_vcpus_max = UINT_MAX;
 
 static int __init cf_check parse_dom0_max_vcpus(const char *s)
 {
-    if ( *s == '-' )                   /* -M */
+    if ( *s == '-' ) /* -M */
         opt_dom0_max_vcpus_max = simple_strtoul(s + 1, &s, 0);
-    else                               /* N, N-, or N-M */
+    else /* N, N-, or N-M */
     {
         opt_dom0_max_vcpus_min = simple_strtoul(s, &s, 0);
         if ( opt_dom0_max_vcpus_min == 0 )
             opt_dom0_max_vcpus_min = 1;
-        if ( !*s )                    /* N */
+        if ( !*s ) /* N */
             opt_dom0_max_vcpus_max = opt_dom0_max_vcpus_min;
         else if ( *s++ == '-' && *s ) /* N-M */
             opt_dom0_max_vcpus_max = simple_strtoul(s, &s, 0);
@@ -162,11 +164,12 @@ static int __init cf_check parse_dom0_max_vcpus(const char *s)
 
     return *s ? -EINVAL : 0;
 }
+
 custom_param("dom0_max_vcpus", parse_dom0_max_vcpus);
 
 static __initdata unsigned int dom0_nr_pxms;
-static __initdata unsigned int dom0_pxms[MAX_NUMNODES] =
-    { [0 ... MAX_NUMNODES - 1] = ~0 };
+static __initdata unsigned int dom0_pxms[MAX_NUMNODES] = { [0 ... MAX_NUMNODES -
+                                                            1] = ~0 };
 bool __initdata dom0_affinity_relaxed;
 
 static int __init cf_check parse_dom0_nodes(const char *s)
@@ -174,7 +177,8 @@ static int __init cf_check parse_dom0_nodes(const char *s)
     const char *ss;
     int rc = 0;
 
-    do {
+    do
+    {
         ss = strchr(s, ',');
         if ( !ss )
             ss = strchr(s, '\0');
@@ -203,6 +207,7 @@ static int __init cf_check parse_dom0_nodes(const char *s)
 
     return rc;
 }
+
 custom_param("dom0_nodes", parse_dom0_nodes);
 
 cpumask_t __initdata dom0_cpus;
@@ -227,14 +232,13 @@ unsigned int __init dom0_max_vcpus(void)
         return nr_cpu_ids;
     }
 
-
     for ( i = 0; i < dom0_nr_pxms; ++i )
         if ( (node = pxm_to_node(dom0_pxms[i])) != NUMA_NO_NODE )
             node_set(node, dom0_nodes);
     nodes_and(dom0_nodes, dom0_nodes, node_online_map);
     if ( nodes_empty(dom0_nodes) )
         dom0_nodes = node_online_map;
-    for_each_node_mask ( node, dom0_nodes )
+    for_each_node_mask(node, dom0_nodes)
         cpumask_or(&dom0_cpus, &dom0_cpus, &node_to_cpumask(node));
     cpumask_and(&dom0_cpus, &dom0_cpus, cpupool_valid_cpus(cpupool0));
     if ( cpumask_empty(&dom0_cpus) )
@@ -298,7 +302,7 @@ string_param("dom0_ioports_disable", opt_dom0_ioports_disable);
 static bool __initdata ro_hpet = true;
 boolean_param("ro-hpet", ro_hpet);
 
-unsigned int __initdata dom0_memflags = MEMF_no_dma|MEMF_exact_node;
+unsigned int __initdata dom0_memflags = MEMF_no_dma | MEMF_exact_node;
 
 unsigned long __init dom0_paging_pages(const struct domain *d,
                                        unsigned long nr_pages)
@@ -309,11 +313,10 @@ unsigned long __init dom0_paging_pages(const struct domain *d,
     memkb = 4 * (256 * d->max_vcpus +
                  (is_pv_domain(d) ? opt_dom0_shadow || opt_pv_l1tf_hwdom
                                   : 1 + opt_dom0_shadow) *
-                 (memkb / 1024));
+                     (memkb / 1024));
 
     return DIV_ROUND_UP(memkb, 1024) << (20 - PAGE_SHIFT);
 }
-
 
 /*
  * If allocation isn't specified, reserve 1/16th of available memory for
@@ -325,8 +328,9 @@ static unsigned long __init default_nr_pages(unsigned long avail)
                             : min(avail / 16, 128UL << (20 - PAGE_SHIFT)));
 }
 
-unsigned long __init dom0_compute_nr_pages(
-    struct domain *d, struct elf_dom_parms *parms, unsigned long initrd_len)
+unsigned long __init dom0_compute_nr_pages(struct domain *d,
+                                           struct elf_dom_parms *parms,
+                                           unsigned long initrd_len)
 {
     nodeid_t node;
     unsigned long avail = 0, nr_pages, min_pages, max_pages, iommu_pages = 0;
@@ -335,13 +339,12 @@ unsigned long __init dom0_compute_nr_pages(
     if ( CONFIG_DOM0_MEM[0] && !dom0_mem_set )
         parse_dom0_mem(CONFIG_DOM0_MEM);
 
-    for_each_node_mask ( node, dom0_nodes )
+    for_each_node_mask(node, dom0_nodes)
         avail += avail_domheap_pages_region(node, 0, 0) +
                  initial_images_nrpages(node);
 
     /* Reserve memory for further dom0 vcpu-struct allocations... */
-    avail -= (d->max_vcpus - 1UL)
-             << get_order_from_bytes(sizeof(struct vcpu));
+    avail -= (d->max_vcpus - 1UL) << get_order_from_bytes(sizeof(struct vcpu));
     /* ...and compat_l4's, if needed. */
     if ( is_pv_32bit_domain(d) )
         avail -= d->max_vcpus - 1;
@@ -388,8 +391,8 @@ unsigned long __init dom0_compute_nr_pages(
     nr_pages = min(nr_pages, max_pages);
     nr_pages = min(nr_pages, avail);
 
-    if ( is_pv_domain(d) &&
-         (parms->p2m_base == UNSET_ADDR) && !memsize_gt_zero(&dom0_size) &&
+    if ( is_pv_domain(d) && (parms->p2m_base == UNSET_ADDR) &&
+         !memsize_gt_zero(&dom0_size) &&
          (!memsize_gt_zero(&dom0_min_size) || (nr_pages > min_pages)) )
     {
         /*
@@ -442,8 +445,9 @@ static void __init process_dom0_ioports_disable(struct domain *dom0)
         if ( u == t )
         {
         parse_error:
-            printk("Invalid ioport range <%s> "
-                   "in dom0_ioports_disable, skipping\n", t);
+            printk(
+                "Invalid ioport range <%s> " "in dom0_ioports_disable, skipping\n",
+                t);
             continue;
         }
 
@@ -458,7 +462,8 @@ static void __init process_dom0_ioports_disable(struct domain *dom0)
             goto parse_error;
 
         printk("Disabling dom0 access to ioport range %04lx-%04lx\n",
-            io_from, io_to);
+               io_from,
+               io_to);
 
         if ( ioports_deny_access(dom0, io_from, io_to) != 0 )
             BUG();
@@ -482,7 +487,8 @@ int __init dom0_setup_permissions(struct domain *d)
     /* Modify I/O port access permissions. */
 
     for ( offs = 0, i = ISOLATE_LSB(i8259A_alias_mask) ?: 2;
-          offs <= i8259A_alias_mask; offs += i )
+          offs <= i8259A_alias_mask;
+          offs += i )
     {
         if ( offs & ~i8259A_alias_mask )
             continue;
@@ -497,7 +503,8 @@ int __init dom0_setup_permissions(struct domain *d)
 
     /* Interval Timer (PIT). */
     for ( offs = 0, i = ISOLATE_LSB(pit_alias_mask) ?: 4;
-          offs <= pit_alias_mask; offs += i )
+          offs <= pit_alias_mask;
+          offs += i )
         if ( !(offs & ~pit_alias_mask) )
             rc |= ioports_deny_access(d, PIT_CH0 + offs, PIT_MODE + offs);
 
@@ -531,7 +538,8 @@ int __init dom0_setup_permissions(struct domain *d)
         rc |= ioports_deny_access(d, 0xC0, 0xDF);
 
         /* HVM debug console IO port. */
-        rc |= ioports_deny_access(d, XEN_HVM_DEBUGCONS_IOPORT,
+        rc |= ioports_deny_access(d,
+                                  XEN_HVM_DEBUGCONS_IOPORT,
                                   XEN_HVM_DEBUGCONS_IOPORT);
         if ( amd_acpi_c1e_quirk )
             rc |= ioports_deny_access(d, acpi_smi_cmd, acpi_smi_cmd);
@@ -556,14 +564,14 @@ int __init dom0_setup_permissions(struct domain *d)
             rc |= iomem_deny_access(d, mfn, mfn);
     }
     /* MSI range. */
-    rc |= iomem_deny_access(d, paddr_to_pfn(MSI_ADDR_BASE_LO),
+    rc |= iomem_deny_access(d,
+                            paddr_to_pfn(MSI_ADDR_BASE_LO),
                             paddr_to_pfn(MSI_ADDR_BASE_LO +
                                          MSI_ADDR_DEST_ID_MASK));
     /* HyperTransport range. */
     if ( boot_cpu_data.x86_vendor & (X86_VENDOR_AMD | X86_VENDOR_HYGON) )
     {
-        mfn = paddr_to_pfn(1UL <<
-                           (boot_cpu_data.x86 < 0x17 ? 40 : paddr_bits));
+        mfn = paddr_to_pfn(1UL << (boot_cpu_data.x86 < 0x17 ? 40 : paddr_bits));
         rc |= iomem_deny_access(d, mfn - paddr_to_pfn(3UL << 32), mfn - 1);
     }
 
@@ -573,8 +581,7 @@ int __init dom0_setup_permissions(struct domain *d)
         unsigned long sfn, efn;
         sfn = max_t(unsigned long, paddr_to_pfn(e820.map[i].addr), 0x100UL);
         efn = paddr_to_pfn(e820.map[i].addr + e820.map[i].size - 1);
-        if ( (e820.map[i].type == E820_UNUSABLE) &&
-             (e820.map[i].size != 0) &&
+        if ( (e820.map[i].type == E820_UNUSABLE) && (e820.map[i].size != 0) &&
              (sfn <= efn) )
             rc |= iomem_deny_access(d, sfn, efn);
     }

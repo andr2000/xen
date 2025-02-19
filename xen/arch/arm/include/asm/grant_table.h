@@ -11,8 +11,8 @@
 #define INITIAL_NR_GRANT_FRAMES 1U
 #define GNTTAB_MAX_VERSION 1
 
-static inline void gnttab_clear_flags(struct domain *d,
-                                      unsigned int mask, uint16_t *addr)
+static inline void gnttab_clear_flags(struct domain *d, unsigned int mask,
+                                      uint16_t *addr)
 {
     guest_clear_mask16(d, mask, addr);
 }
@@ -36,8 +36,8 @@ static inline bool gnttab_release_host_mappings(const struct domain *d)
     return true;
 }
 
-int create_grant_host_mapping(uint64_t gpaddr, mfn_t frame,
-                              unsigned int flags, unsigned int cache_flags);
+int create_grant_host_mapping(uint64_t gpaddr, mfn_t frame, unsigned int flags,
+                              unsigned int cache_flags);
 int replace_grant_host_mapping(uint64_t gpaddr, mfn_t frame,
                                uint64_t new_gpaddr, unsigned int flags);
 

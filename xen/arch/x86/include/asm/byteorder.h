@@ -6,15 +6,15 @@
 
 static inline attr_const uint32_t ___arch__swab32(uint32_t x)
 {
-    asm("bswap %0" : "=r" (x) : "0" (x));
+    asm("bswap %0" : "=r"(x) : "0"(x));
     return x;
 }
 
 static inline attr_const uint64_t ___arch__swab64(uint64_t x)
-{ 
-    asm ( "bswap %0" : "+r" (x) );
+{
+    asm("bswap %0" : "+r"(x));
     return x;
-} 
+}
 
 /* Do not define swab16.  Gcc is smart enough to recognize "C" version and
    convert it into rotation or exhange.  */

@@ -34,7 +34,7 @@
 #define SLPBTN_EN  (1 << 9)
 
 /* Mask of bits in PM1a_STS that can generate an SCI. */
-#define SCI_MASK (TMR_STS|PWRBTN_STS|SLPBTN_STS|GBL_STS) 
+#define SCI_MASK (TMR_STS|PWRBTN_STS|SLPBTN_STS|GBL_STS)
 
 /* SCI IRQ number (must match SCI_INT number in ACPI FADT in hvmloader) */
 #define SCI_IRQ 9
@@ -89,7 +89,7 @@ static void pmt_update_time(PMTState *s)
     uint64_t curr_gtime, tmp;
     struct hvm_hw_acpi *acpi = &s->vcpu->domain->arch.hvm.acpi;
     uint32_t tmr_val = acpi->tmr_val, msb = tmr_val & TMR_VAL_MSB;
-    
+
     ASSERT(spin_is_locked(&s->lock));
 
     /* Update the timer */
@@ -127,7 +127,8 @@ static void cf_check pmt_timer_callback(void *opaque)
 
     /* How close are we to the next MSB flip? */
     pmt_cycles_until_flip = TMR_VAL_MSB -
-        (s->vcpu->domain->arch.hvm.acpi.tmr_val & (TMR_VAL_MSB - 1));
+                            (s->vcpu->domain->arch.hvm.acpi.tmr_val &
+                             (TMR_VAL_MSB - 1));
 
     /* Overall time between MSB flips */
     time_until_flip = (1000000000ULL << 23) / FREQUENCE_PMTIMER;
@@ -142,8 +143,8 @@ static void cf_check pmt_timer_callback(void *opaque)
 }
 
 /* Handle port I/O to the PM1a_STS and PM1a_EN registers */
-static int cf_check handle_evt_io(
-    int dir, unsigned int port, unsigned int bytes, uint32_t *val)
+static int cf_check handle_evt_io(int dir, unsigned int port,
+                                  unsigned int bytes, uint32_t *val)
 {
     struct vcpu *v = current;
     struct hvm_hw_acpi *acpi = &v->domain->arch.hvm.acpi;
@@ -152,18 +153,16 @@ static int cf_check handle_evt_io(
     int i;
 
     addr = port -
-        ((v->domain->arch.hvm.params[
-            HVM_PARAM_ACPI_IOPORTS_LOCATION] == 0) ?
-         PM1a_STS_ADDR_V0 : PM1a_STS_ADDR_V1);
+           ((v->domain->arch.hvm.params[HVM_PARAM_ACPI_IOPORTS_LOCATION] == 0)
+                ? PM1a_STS_ADDR_V0
+                : PM1a_STS_ADDR_V1);
 
     spin_lock(&s->lock);
 
     if ( dir == IOREQ_WRITE )
     {
         /* Handle this I/O one byte at a time */
-        for ( i = bytes, data = *val;
-              i > 0;
-              i--, addr++, data >>= 8 )
+        for ( i = bytes, data = *val; i > 0; i--, addr++, data >>= 8 )
         {
             byte = data & 0xff;
             switch ( addr )
@@ -182,9 +181,11 @@ static int cf_check handle_evt_io(
                 acpi->pm1a_en = (acpi->pm1a_en & 0xff) | (byte << 8);
                 break;
             default:
-                gdprintk(XENLOG_WARNING, 
-                         "Bad ACPI PM register write: %x bytes (%x) at %x\n", 
-                         bytes, *val, port);
+                gdprintk(XENLOG_WARNING,
+                         "Bad ACPI PM register write: %x bytes (%x) at %x\n",
+                         bytes,
+                         *val,
+                         port);
                 break;
             }
         }
@@ -195,8 +196,10 @@ static int cf_check handle_evt_io(
     {
         data = acpi->pm1a_sts | ((uint32_t)acpi->pm1a_en << 16);
         data >>= 8 * addr;
-        if ( bytes == 1 ) data &= 0xff;
-        else if ( bytes == 2 ) data &= 0xffff;
+        if ( bytes == 1 )
+            data &= 0xff;
+        else if ( bytes == 2 )
+            data &= 0xffff;
         *val = data;
     }
 
@@ -205,10 +208,9 @@ static int cf_check handle_evt_io(
     return X86EMUL_OKAY;
 }
 
-
 /* Handle port I/O to the TMR_VAL register */
-static int cf_check handle_pmt_io(
-    int dir, unsigned int port, unsigned int bytes, uint32_t *val)
+static int cf_check handle_pmt_io(int dir, unsigned int port,
+                                  unsigned int bytes, uint32_t *val)
 {
     struct vcpu *v = current;
     struct hvm_hw_acpi *acpi = &v->domain->arch.hvm.acpi;
@@ -258,8 +260,10 @@ static int cf_check acpi_save(struct vcpu *v, hvm_domain_context_t *h)
      * goes forwards.
      */
     x = (((s->vcpu->arch.hvm.guest_time ?: hvm_get_guest_time(s->vcpu)) -
-          s->last_gtime) * s->scale) >> 32;
-    if ( x < 1UL<<31 )
+          s->last_gtime) *
+         s->scale) >>
+        32;
+    if ( x < 1UL << 31 )
         acpi->tmr_val += x;
     if ( (acpi->tmr_val & TMR_VAL_MSB) != msb )
         acpi->pm1a_sts |= TMR_STS;
@@ -293,16 +297,16 @@ static int cf_check acpi_load(struct domain *d, hvm_domain_context_t *h)
     s->last_gtime = hvm_get_guest_time(s->vcpu);
     s->not_accounted = 0;
 
-    /* Set the SCI state from the registers */ 
+    /* Set the SCI state from the registers */
     pmt_update_sci(s);
 
     spin_unlock(&s->lock);
-    
+
     return 0;
 }
 
-HVM_REGISTER_SAVE_RESTORE(PMTIMER, acpi_save, NULL, acpi_load,
-                          1, HVMSR_PER_DOM);
+HVM_REGISTER_SAVE_RESTORE(PMTIMER, acpi_save, NULL, acpi_load, 1,
+                          HVMSR_PER_DOM);
 
 int pmtimer_change_ioport(struct domain *d, uint64_t version)
 {
@@ -358,7 +362,6 @@ void pmtimer_init(struct vcpu *v)
     init_timer(&s->timer, pmt_timer_callback, s, v->processor);
     pmt_timer_callback(s);
 }
-
 
 void pmtimer_deinit(struct domain *d)
 {

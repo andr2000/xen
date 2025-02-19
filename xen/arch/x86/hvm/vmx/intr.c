@@ -66,7 +66,9 @@ static void vmx_enable_intr_window(struct vcpu *v, struct hvm_intack intack)
         unsigned long intr;
 
         __vmread(VM_ENTRY_INTR_INFO, &intr);
-        TRACE(TRC_HVM_INTR_WINDOW, intack.vector, intack.source,
+        TRACE(TRC_HVM_INTR_WINDOW,
+              intack.vector,
+              intack.source,
               (intr & INTR_INFO_VALID_MASK) ? intr & 0xff : -1);
     }
 
@@ -141,8 +143,7 @@ enum hvm_intblk cf_check nvmx_intr_blocked(struct vcpu *v)
 
     if ( nestedhvm_vcpu_in_guestmode(v) )
     {
-        if ( nvcpu->nv_vmexit_pending ||
-             nvcpu->nv_vmswitch_in_progress )
+        if ( nvcpu->nv_vmexit_pending || nvcpu->nv_vmswitch_in_progress )
             r = hvm_intblk_rflags_ie;
         else
         {
@@ -181,7 +182,7 @@ static int nvmx_intr_intercept(struct vcpu *v, struct hvm_intack intack)
             return 0;
 
         if ( intack.source == hvm_intsrc_pic ||
-                 intack.source == hvm_intsrc_lapic )
+             intack.source == hvm_intsrc_lapic )
         {
             vmx_inject_extint(intack.vector, intack.source);
 
@@ -252,7 +253,8 @@ void asmlinkage vmx_intr_assist(void)
     /* Crank the handle on interrupt state. */
     pt_vector = pt_update_irq(v);
 
-    do {
+    do
+    {
         unsigned long intr_info;
 
         intack = hvm_vcpu_has_pending_irq(v);
@@ -285,7 +287,8 @@ void asmlinkage vmx_intr_assist(void)
 
                 goto out;
             }
-        } else if ( intblk == hvm_intblk_tpr )
+        }
+        else if ( intblk == hvm_intblk_tpr )
         {
             ASSERT(vlapic_enabled(vcpu_vlapic(v)));
             ASSERT(intack.source == hvm_intsrc_lapic);
@@ -324,7 +327,7 @@ void asmlinkage vmx_intr_assist(void)
     {
         unsigned long status;
 
-       /*
+        /*
         * intack.vector is the highest priority vector. So we set eoi_exit_bitmap
         * for intack.vector - give a chance to post periodic time interrupts when
         * periodic time interrupts become the highest one
@@ -349,15 +352,18 @@ void asmlinkage vmx_intr_assist(void)
                 unsigned int i;
 
                 printk(XENLOG_ERR "%pv: intack: %u:%02x pt: %02x\n",
-                       current, intack.source, intack.vector, pt_vector);
+                       current,
+                       intack.source,
+                       intack.vector,
+                       pt_vector);
 
                 vlapic = vcpu_vlapic(v);
                 if ( vlapic && vlapic->regs )
                 {
                     word = (const void *)&vlapic->regs->data[APIC_IRR];
                     printk(XENLOG_ERR "vIRR:");
-                    for ( i = X86_NR_VECTORS / 32; i-- ; )
-                        printk(" %08x", word[i*4]);
+                    for ( i = X86_NR_VECTORS / 32; i--; )
+                        printk(" %08x", word[i * 4]);
                     printk("\n");
                 }
 
@@ -366,7 +372,7 @@ void asmlinkage vmx_intr_assist(void)
                 {
                     word = (const void *)&pi_desc->pir;
                     printk(XENLOG_ERR " PIR:");
-                    for ( i = X86_NR_VECTORS / 32; i-- ; )
+                    for ( i = X86_NR_VECTORS / 32; i--; )
                         printk(" %08x", word[i]);
                     printk("\n");
                 }
@@ -379,8 +385,7 @@ void asmlinkage vmx_intr_assist(void)
         /* we need update the RVI field */
         __vmread(GUEST_INTR_STATUS, &status);
         status &= ~VMX_GUEST_INTR_STATUS_SUBFIELD_BITMASK;
-        status |= VMX_GUEST_INTR_STATUS_SUBFIELD_BITMASK &
-                    intack.vector;
+        status |= VMX_GUEST_INTR_STATUS_SUBFIELD_BITMASK & intack.vector;
         __vmwrite(GUEST_INTR_STATUS, status);
 
         vmx_sync_exit_bitmap(v);
@@ -389,7 +394,7 @@ void asmlinkage vmx_intr_assist(void)
     }
     else
     {
-        TRACE(TRC_HVM_INJ_VIRQ, intack.vector, /*fake=*/ 0);
+        TRACE(TRC_HVM_INJ_VIRQ, intack.vector, /*fake=*/0);
         vmx_inject_extint(intack.vector, intack.source);
         pt_intr_post(v, intack);
     }
@@ -397,17 +402,15 @@ void asmlinkage vmx_intr_assist(void)
     /* Is there another IRQ to queue up behind this one? */
     intack = hvm_vcpu_has_pending_irq(v);
     if ( !cpu_has_vmx_virtual_intr_delivery ||
-         intack.source == hvm_intsrc_pic ||
-         intack.source == hvm_intsrc_vector )
+         intack.source == hvm_intsrc_pic || intack.source == hvm_intsrc_vector )
     {
         if ( unlikely(intack.source != hvm_intsrc_none) )
             vmx_enable_intr_window(v, intack);
     }
 
- out:
+out:
     if ( !nestedhvm_vcpu_in_guestmode(v) &&
-         !cpu_has_vmx_virtual_intr_delivery &&
-         cpu_has_vmx_tpr_shadow )
+         !cpu_has_vmx_virtual_intr_delivery && cpu_has_vmx_tpr_shadow )
         __vmwrite(TPR_THRESHOLD, tpr_threshold);
 }
 

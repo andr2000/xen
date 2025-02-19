@@ -113,17 +113,14 @@ int vcpu_vtimer_init(struct vcpu *v)
 
     init_timer(&t->timer, phys_timer_expired, t, v->processor);
     t->ctl = 0;
-    t->irq = d0
-        ? timer_get_irq(TIMER_PHYS_NONSECURE_PPI)
-        : GUEST_TIMER_PHYS_NS_PPI;
+    t->irq = d0 ? timer_get_irq(TIMER_PHYS_NONSECURE_PPI)
+                : GUEST_TIMER_PHYS_NS_PPI;
     t->v = v;
 
     t = &v->arch.virt_timer;
     init_timer(&t->timer, virt_timer_expired, t, v->processor);
     t->ctl = 0;
-    t->irq = d0
-        ? timer_get_irq(TIMER_VIRT_PPI)
-        : GUEST_TIMER_VIRT_PPI;
+    t->irq = d0 ? timer_get_irq(TIMER_VIRT_PPI) : GUEST_TIMER_VIRT_PPI;
     t->v = v;
 
     v->arch.vtimer_initialized = 1;
@@ -148,11 +145,11 @@ void virt_timer_save(struct vcpu *v)
     WRITE_SYSREG(v->arch.virt_timer.ctl & ~CNTx_CTL_ENABLE, CNTV_CTL_EL0);
     v->arch.virt_timer.cval = READ_SYSREG64(CNTV_CVAL_EL0);
     if ( (v->arch.virt_timer.ctl & CNTx_CTL_ENABLE) &&
-         !(v->arch.virt_timer.ctl & CNTx_CTL_MASK))
+         !(v->arch.virt_timer.ctl & CNTx_CTL_MASK) )
     {
         set_timer(&v->arch.virt_timer.timer,
                   v->domain->arch.virt_timer_base.nanoseconds +
-                  ticks_to_ns(v->arch.virt_timer.cval));
+                      ticks_to_ns(v->arch.virt_timer.cval));
     }
 }
 
@@ -196,7 +193,8 @@ static bool vtimer_cntp_ctl(struct cpu_user_regs *regs, register_t *r,
              * immediately.
              */
             expires = v->arch.phys_timer.cval > boot_count
-                      ? ticks_to_ns(v->arch.phys_timer.cval - boot_count) : 0;
+                          ? ticks_to_ns(v->arch.phys_timer.cval - boot_count)
+                          : 0;
             set_timer(&v->arch.phys_timer.timer, expires);
         }
         else
@@ -232,15 +230,15 @@ static bool vtimer_cntp_tval(struct cpu_user_regs *regs, register_t *r,
              * immediately.
              */
             expires = v->arch.phys_timer.cval > boot_count
-                      ? ticks_to_ns(v->arch.phys_timer.cval - boot_count) : 0;
+                          ? ticks_to_ns(v->arch.phys_timer.cval - boot_count)
+                          : 0;
             set_timer(&v->arch.phys_timer.timer, expires);
         }
     }
     return true;
 }
 
-static bool vtimer_cntp_cval(struct cpu_user_regs *regs, uint64_t *r,
-                             bool read)
+static bool vtimer_cntp_cval(struct cpu_user_regs *regs, uint64_t *r, bool read)
 {
     struct vcpu *v = current;
     s_time_t expires;
@@ -263,7 +261,8 @@ static bool vtimer_cntp_cval(struct cpu_user_regs *regs, uint64_t *r,
              * immediately.
              */
             expires = v->arch.phys_timer.cval > boot_count
-                      ? ticks_to_ns(v->arch.phys_timer.cval - boot_count) : 0;
+                          ? ticks_to_ns(v->arch.phys_timer.cval - boot_count)
+                          : 0;
             set_timer(&v->arch.phys_timer.timer, expires);
         }
     }
@@ -333,14 +332,13 @@ static bool vtimer_emulate_sysreg(struct cpu_user_regs *regs, union hsr hsr)
     default:
         return false;
     }
-
 }
 #endif
 
 bool vtimer_emulate(struct cpu_user_regs *regs, union hsr hsr)
 {
-
-    switch (hsr.ec) {
+    switch ( hsr.ec )
+    {
     case HSR_EC_CP15_32:
         return vtimer_emulate_cp32(regs, hsr);
     case HSR_EC_CP15_64:
@@ -396,7 +394,8 @@ void vtimer_update_irqs(struct vcpu *v)
      * TODO: The proper fix for this is to make vtimer vIRQ hardware mapped,
      * but this requires reworking the arch timer to implement this.
      */
-    vtimer_update_irq(v, &v->arch.virt_timer,
+    vtimer_update_irq(v,
+                      &v->arch.virt_timer,
                       READ_SYSREG(CNTV_CTL_EL0) & ~CNTx_CTL_MASK);
 
     /* For the physical timer we rely on our emulated state. */

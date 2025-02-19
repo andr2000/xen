@@ -243,12 +243,20 @@ static int optee_domain_init(struct domain *d)
      *
      * a7 should be 0, so we can't skip last 6 parameters of arm_smccc_smc()
      */
-    arm_smccc_smc(OPTEE_SMC_VM_CREATED, OPTEE_CLIENT_ID(d), 0, 0, 0, 0, 0, 0,
+    arm_smccc_smc(OPTEE_SMC_VM_CREATED,
+                  OPTEE_CLIENT_ID(d),
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
                   &resp);
     if ( resp.a0 != OPTEE_SMC_RETURN_OK )
     {
         printk(XENLOG_WARNING "%pd: Unable to create OPTEE client: rc = 0x%X\n",
-               d, (uint32_t)resp.a0);
+               d,
+               (uint32_t)resp.a0);
 
         xfree(ctx);
 
@@ -322,8 +330,7 @@ static struct optee_std_call *allocate_std_call(struct optee_domain *ctx)
     return call;
 }
 
-static void free_std_call(struct optee_domain *ctx,
-                          struct optee_std_call *call)
+static void free_std_call(struct optee_domain *ctx, struct optee_std_call *call)
 {
     atomic_dec(&ctx->call_count);
 
@@ -362,14 +369,15 @@ static struct optee_std_call *get_std_call(struct optee_domain *ctx,
     struct optee_std_call *call;
 
     spin_lock(&ctx->lock);
-    list_for_each_entry( call, &ctx->call_list, list )
+    list_for_each_entry(call, &ctx->call_list, list)
     {
         if ( call->optee_thread_id == thread_id )
         {
             if ( call->in_flight )
             {
-                gdprintk(XENLOG_WARNING,
-                         "Guest tries to execute call which is already in flight.\n");
+                gdprintk(
+                    XENLOG_WARNING,
+                    "Guest tries to execute call which is already in flight.\n");
                 goto out;
             }
             call->in_flight = true;
@@ -421,13 +429,13 @@ static struct shm_rpc *allocate_and_pin_shm_rpc(struct optee_domain *ctx,
 
     spin_lock(&ctx->lock);
     /* Check if there is existing SHM with the same cookie. */
-    list_for_each_entry( shm_rpc_tmp, &ctx->shm_rpc_list, list )
+    list_for_each_entry(shm_rpc_tmp, &ctx->shm_rpc_list, list)
     {
         if ( shm_rpc_tmp->cookie == cookie )
         {
             spin_unlock(&ctx->lock);
             gdprintk(XENLOG_WARNING,
-                     "Guest tries to use the same RPC SHM cookie %"PRIx64"\n",
+                     "Guest tries to use the same RPC SHM cookie %" PRIx64 "\n",
                      cookie);
             goto err;
         }
@@ -455,7 +463,7 @@ static void free_shm_rpc(struct optee_domain *ctx, uint64_t cookie)
 
     spin_lock(&ctx->lock);
 
-    list_for_each_entry( shm_rpc, &ctx->shm_rpc_list, list )
+    list_for_each_entry(shm_rpc, &ctx->shm_rpc_list, list)
     {
         if ( shm_rpc->cookie == cookie )
         {
@@ -482,12 +490,12 @@ static struct shm_rpc *find_shm_rpc(struct optee_domain *ctx, uint64_t cookie)
     struct shm_rpc *shm_rpc;
 
     spin_lock(&ctx->lock);
-    list_for_each_entry( shm_rpc, &ctx->shm_rpc_list, list )
+    list_for_each_entry(shm_rpc, &ctx->shm_rpc_list, list)
     {
         if ( shm_rpc->cookie == cookie )
         {
-                spin_unlock(&ctx->lock);
-                return shm_rpc;
+            spin_unlock(&ctx->lock);
+            return shm_rpc;
         }
     }
     spin_unlock(&ctx->lock);
@@ -506,8 +514,8 @@ static struct optee_shm_buf *allocate_optee_shm_buf(struct optee_domain *ctx,
     int err_code;
     int count;
 
-    count = atomic_add_unless(&ctx->optee_shm_buf_count, 1,
-                              MAX_SHM_BUFFER_COUNT);
+    count =
+        atomic_add_unless(&ctx->optee_shm_buf_count, 1, MAX_SHM_BUFFER_COUNT);
     if ( count == MAX_SHM_BUFFER_COUNT )
         return ERR_PTR(-ENOMEM);
 
@@ -520,9 +528,8 @@ static struct optee_shm_buf *allocate_optee_shm_buf(struct optee_domain *ctx,
             err_code = -ENOMEM;
             goto err_dec_cnt;
         }
-    }
-    while ( unlikely(old != atomic_cmpxchg(&ctx->optee_shm_buf_pages,
-                                           old, new)) );
+    } while ( unlikely(old !=
+                       atomic_cmpxchg(&ctx->optee_shm_buf_pages, old, new)) );
 
     optee_shm_buf = xzalloc_flex_struct(struct optee_shm_buf, pages, pages_cnt);
     if ( !optee_shm_buf )
@@ -537,13 +544,14 @@ static struct optee_shm_buf *allocate_optee_shm_buf(struct optee_domain *ctx,
 
     spin_lock(&ctx->lock);
     /* Check if there is already SHM with the same cookie */
-    list_for_each_entry( optee_shm_buf_tmp, &ctx->optee_shm_buf_list, list )
+    list_for_each_entry(optee_shm_buf_tmp, &ctx->optee_shm_buf_list, list)
     {
         if ( optee_shm_buf_tmp->cookie == cookie )
         {
             spin_unlock(&ctx->lock);
             gdprintk(XENLOG_WARNING,
-                     "Guest tries to use the same SHM buffer cookie %"PRIx64"\n",
+                     "Guest tries to use the same SHM buffer cookie %" PRIx64
+                     "\n",
                      cookie);
             err_code = -EINVAL;
             goto err;
@@ -581,7 +589,7 @@ static void free_optee_shm_buf(struct optee_domain *ctx, uint64_t cookie)
     bool found = false;
 
     spin_lock(&ctx->lock);
-    list_for_each_entry( optee_shm_buf, &ctx->optee_shm_buf_list, list )
+    list_for_each_entry(optee_shm_buf, &ctx->optee_shm_buf_list, list)
     {
         if ( optee_shm_buf->cookie == cookie )
         {
@@ -614,7 +622,7 @@ static void free_optee_shm_buf_pg_list(struct optee_domain *ctx,
     bool found = false;
 
     spin_lock(&ctx->lock);
-    list_for_each_entry( optee_shm_buf, &ctx->optee_shm_buf_list, list )
+    list_for_each_entry(optee_shm_buf, &ctx->optee_shm_buf_list, list)
     {
         if ( optee_shm_buf->cookie == cookie )
         {
@@ -628,7 +636,8 @@ static void free_optee_shm_buf_pg_list(struct optee_domain *ctx,
         free_pg_list(optee_shm_buf);
     else
         gdprintk(XENLOG_ERR,
-                 "Can't find pagelist for SHM buffer with cookie %"PRIx64" to free it\n",
+                 "Can't find pagelist for SHM buffer with cookie %" PRIx64
+                 " to free it\n",
                  cookie);
 }
 
@@ -648,7 +657,7 @@ static int optee_relinquish_resources(struct domain *d)
      * no more than 8-16 calls. But it depends on OP-TEE configuration
      * (CFG_NUM_THREADS option).
      */
-    list_for_each_entry_safe( call, call_tmp, &ctx->call_list, list )
+    list_for_each_entry_safe(call, call_tmp, &ctx->call_list, list)
         free_std_call(ctx, call);
 
     if ( hypercall_preempt_check() )
@@ -658,11 +667,13 @@ static int optee_relinquish_resources(struct domain *d)
      * Number of this buffers also depends on max_optee_threads, so
      * check the comment above.
      */
-    list_for_each_entry_safe( shm_rpc, shm_rpc_tmp, &ctx->shm_rpc_list, list )
+    list_for_each_entry_safe(shm_rpc, shm_rpc_tmp, &ctx->shm_rpc_list, list)
         free_shm_rpc(ctx, shm_rpc->cookie);
 
-    list_for_each_entry_safe( optee_shm_buf, optee_shm_buf_tmp,
-                              &ctx->optee_shm_buf_list, list )
+    list_for_each_entry_safe(optee_shm_buf,
+                             optee_shm_buf_tmp,
+                             &ctx->optee_shm_buf_list,
+                             list)
     {
         if ( hypercall_preempt_check() )
             return -ERESTART;
@@ -681,7 +692,14 @@ static int optee_relinquish_resources(struct domain *d)
      *
      * a7 should be 0, so we can't skip last 6 parameters of arm_smccc_smc()
      */
-    arm_smccc_smc(OPTEE_SMC_VM_DESTROYED, OPTEE_CLIENT_ID(d), 0, 0, 0, 0, 0, 0,
+    arm_smccc_smc(OPTEE_SMC_VM_DESTROYED,
+                  OPTEE_CLIENT_ID(d),
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
                   &resp);
 
     ASSERT(!spin_is_locked(&ctx->lock));
@@ -716,6 +734,7 @@ static int translate_noncontig(struct optee_domain *ctx,
     gfn_t gfn;
     struct page_info *guest_pg, *xen_pgs;
     struct optee_shm_buf *optee_shm_buf;
+
     /*
      * This is memory layout for page list. Basically list consists of 4k pages,
      * every page store 511 page addresses of user buffer and page address of
@@ -772,8 +791,11 @@ static int translate_noncontig(struct optee_domain *ctx,
     if ( !xen_pgs )
         return -ENOMEM;
 
-    optee_shm_buf = allocate_optee_shm_buf(ctx, param->u.tmem.shm_ref,
-                                           pg_count, xen_pgs, order);
+    optee_shm_buf = allocate_optee_shm_buf(ctx,
+                                           param->u.tmem.shm_ref,
+                                           pg_count,
+                                           xen_pgs,
+                                           order);
     if ( IS_ERR(optee_shm_buf) )
     {
         free_domheap_pages(xen_pgs, order);
@@ -883,7 +905,8 @@ static int translate_params(struct optee_domain *ctx,
             {
                 if ( call->xen_arg->params[i].u.tmem.buf_ptr )
                 {
-                    gdprintk(XENLOG_WARNING, "Guest tries to use old tmem arg\n");
+                    gdprintk(XENLOG_WARNING,
+                             "Guest tries to use old tmem arg\n");
                     ret = -EINVAL;
                     goto out;
                 }
@@ -945,9 +968,11 @@ static bool copy_std_request(struct cpu_user_regs *regs,
 
     map_xen_arg(call);
 
-    if ( access_guest_memory_by_gpa(current->domain, call->guest_arg_ipa,
+    if ( access_guest_memory_by_gpa(current->domain,
+                                    call->guest_arg_ipa,
                                     call->xen_arg,
-                                    OPTEE_MSG_NONCONTIG_PAGE_SIZE, false) )
+                                    OPTEE_MSG_NONCONTIG_PAGE_SIZE,
+                                    false) )
     {
         set_user_reg(regs, 0, OPTEE_SMC_RETURN_EBADADDR);
         return false;
@@ -1016,12 +1041,9 @@ static void copy_std_request_back(struct optee_domain *ctx,
             continue;
         case OPTEE_MSG_ATTR_TYPE_VALUE_OUTPUT:
         case OPTEE_MSG_ATTR_TYPE_VALUE_INOUT:
-            guest_arg->params[i].u.value.a =
-                call->xen_arg->params[i].u.value.a;
-            guest_arg->params[i].u.value.b =
-                call->xen_arg->params[i].u.value.b;
-            guest_arg->params[i].u.value.c =
-                call->xen_arg->params[i].u.value.c;
+            guest_arg->params[i].u.value.a = call->xen_arg->params[i].u.value.a;
+            guest_arg->params[i].u.value.b = call->xen_arg->params[i].u.value.b;
+            guest_arg->params[i].u.value.c = call->xen_arg->params[i].u.value.c;
             continue;
         case OPTEE_MSG_ATTR_TYPE_NONE:
         case OPTEE_MSG_ATTR_TYPE_RMEM_INPUT:
@@ -1034,13 +1056,12 @@ static void copy_std_request_back(struct optee_domain *ctx,
     put_page(page);
 }
 
-
 static void free_shm_buffers(struct optee_domain *ctx,
                              struct optee_msg_arg *arg)
 {
     unsigned int i;
 
-    for ( i = 0; i < arg->num_params; i ++ )
+    for ( i = 0; i < arg->num_params; i++ )
     {
         switch ( arg->params[i].attr & OPTEE_MSG_ATTR_TYPE_MASK )
         {
@@ -1092,7 +1113,8 @@ static int handle_rpc_return(struct optee_domain *ctx,
              * will overwrite it with actual result. So we can just
              * continue the call.
              */
-            gprintk(XENLOG_ERR, "Can't find SHM-RPC with cookie %"PRIx64"\n",
+            gprintk(XENLOG_ERR,
+                    "Can't find SHM-RPC with cookie %" PRIx64 "\n",
                     cookie);
 
             return -ERESTART;
@@ -1100,11 +1122,12 @@ static int handle_rpc_return(struct optee_domain *ctx,
 
         shm_rpc->xen_arg = __map_domain_page(shm_rpc->xen_arg_pg);
 
-        if ( access_guest_memory_by_gpa(current->domain,
-                        gfn_to_gaddr(shm_rpc->gfn),
-                        shm_rpc->xen_arg,
-                        OPTEE_MSG_GET_ARG_SIZE(shm_rpc->xen_arg->num_params),
-                        true) )
+        if ( access_guest_memory_by_gpa(
+                 current->domain,
+                 gfn_to_gaddr(shm_rpc->gfn),
+                 shm_rpc->xen_arg,
+                 OPTEE_MSG_GET_ARG_SIZE(shm_rpc->xen_arg->num_params),
+                 true) )
         {
             /*
              * We were unable to propagate request to guest, so let's return
@@ -1158,25 +1181,38 @@ static int handle_rpc_return(struct optee_domain *ctx,
  */
 static void do_call_with_arg(struct optee_domain *ctx,
                              struct optee_std_call *call,
-                             struct cpu_user_regs *regs,
-                             register_t a0, register_t a1, register_t a2,
-                             register_t a3, register_t a4, register_t a5)
+                             struct cpu_user_regs *regs, register_t a0,
+                             register_t a1, register_t a2, register_t a3,
+                             register_t a4, register_t a5)
 {
     struct arm_smccc_res res;
 
-    arm_smccc_smc(a0, a1, a2, a3, a4, a5, 0, OPTEE_CLIENT_ID(current->domain),
+    arm_smccc_smc(a0,
+                  a1,
+                  a2,
+                  a3,
+                  a4,
+                  a5,
+                  0,
+                  OPTEE_CLIENT_ID(current->domain),
                   &res);
 
     if ( OPTEE_SMC_RETURN_IS_RPC(res.a0) )
     {
-        while ( handle_rpc_return(ctx, &res, regs, call)  == -ERESTART )
+        while ( handle_rpc_return(ctx, &res, regs, call) == -ERESTART )
         {
-            arm_smccc_smc(res.a0, res.a1, res.a2, res.a3, 0, 0, 0,
-                          OPTEE_CLIENT_ID(current->domain), &res);
+            arm_smccc_smc(res.a0,
+                          res.a1,
+                          res.a2,
+                          res.a3,
+                          0,
+                          0,
+                          0,
+                          OPTEE_CLIENT_ID(current->domain),
+                          &res);
 
             if ( !OPTEE_SMC_RETURN_IS_RPC(res.a0) )
                 break;
-
         }
 
         put_std_call(ctx, call);
@@ -1269,7 +1305,7 @@ static void handle_std_call(struct optee_domain *ctx,
     case OPTEE_MSG_CMD_CANCEL:
     case OPTEE_MSG_CMD_REGISTER_SHM:
     case OPTEE_MSG_CMD_UNREGISTER_SHM:
-        if( translate_params(ctx, call) )
+        if ( translate_params(ctx, call) )
         {
             /*
              * translate_params() sets xen_arg->ret value to non-zero.
@@ -1284,8 +1320,15 @@ static void handle_std_call(struct optee_domain *ctx,
         xen_addr = page_to_maddr(call->xen_arg_pg);
         uint64_to_regpair(&a1, &a2, xen_addr);
 
-        do_call_with_arg(ctx, call, regs, OPTEE_SMC_CALL_WITH_ARG, a1, a2,
-                         OPTEE_SMC_SHM_CACHED, 0, 0);
+        do_call_with_arg(ctx,
+                         call,
+                         regs,
+                         OPTEE_SMC_CALL_WITH_ARG,
+                         a1,
+                         a2,
+                         OPTEE_SMC_SHM_CACHED,
+                         0,
+                         0);
         return;
     default:
         set_user_reg(regs, 0, OPTEE_SMC_RETURN_EBADCMD);
@@ -1310,8 +1353,7 @@ err:
 static bool issue_rpc_cmd_free(struct optee_domain *ctx,
                                struct cpu_user_regs *regs,
                                struct optee_std_call *call,
-                               struct shm_rpc *shm_rpc,
-                               uint64_t cookie)
+                               struct shm_rpc *shm_rpc, uint64_t cookie)
 {
     register_t r1, r2;
 
@@ -1402,11 +1444,11 @@ static bool handle_rpc_cmd_alloc(struct optee_domain *ctx,
     if ( shm_rpc->xen_arg->ret || shm_rpc->xen_arg->num_params != 1 )
         return true;
 
-    if ( shm_rpc->xen_arg->params[0].attr != (OPTEE_MSG_ATTR_TYPE_TMEM_OUTPUT |
-                                              OPTEE_MSG_ATTR_NONCONTIG) )
+    if ( shm_rpc->xen_arg->params[0].attr !=
+         (OPTEE_MSG_ATTR_TYPE_TMEM_OUTPUT | OPTEE_MSG_ATTR_NONCONTIG) )
     {
         gdprintk(XENLOG_WARNING,
-                 "Invalid attrs for shared mem buffer: %"PRIx64"\n",
+                 "Invalid attrs for shared mem buffer: %" PRIx64 "\n",
                  shm_rpc->xen_arg->params[0].attr);
         return true;
     }
@@ -1417,8 +1459,7 @@ static bool handle_rpc_cmd_alloc(struct optee_domain *ctx,
 
     if ( !translate_noncontig(ctx, call, &shm_rpc->xen_arg->params[0]) )
     {
-        call->rpc_data_cookie =
-            shm_rpc->xen_arg->params[0].u.tmem.shm_ref;
+        call->rpc_data_cookie = shm_rpc->xen_arg->params[0].u.tmem.shm_ref;
     }
     else
     {
@@ -1427,7 +1468,10 @@ static bool handle_rpc_cmd_alloc(struct optee_domain *ctx,
          * We are unable to translate guest's buffer, so we need tell guest
          * to free it, before reporting an error to OP-TEE.
          */
-        return !issue_rpc_cmd_free(ctx, regs, call, shm_rpc,
+        return !issue_rpc_cmd_free(ctx,
+                                   regs,
+                                   call,
+                                   shm_rpc,
                                    shm_rpc->xen_arg->params[0].u.tmem.shm_ref);
     }
 
@@ -1441,14 +1485,14 @@ static void handle_rpc_cmd(struct optee_domain *ctx, struct cpu_user_regs *regs,
     uint64_t cookie;
     size_t arg_size;
 
-    cookie = regpair_to_uint64(get_user_reg(regs, 1),
-                               get_user_reg(regs, 2));
+    cookie = regpair_to_uint64(get_user_reg(regs, 1), get_user_reg(regs, 2));
 
     shm_rpc = find_shm_rpc(ctx, cookie);
 
     if ( !shm_rpc )
     {
-        gdprintk(XENLOG_ERR, "Can't find SHM-RPC with cookie %"PRIx64"\n",
+        gdprintk(XENLOG_ERR,
+                 "Can't find SHM-RPC with cookie %" PRIx64 "\n",
                  cookie);
         return;
     }
@@ -1474,8 +1518,11 @@ static void handle_rpc_cmd(struct optee_domain *ctx, struct cpu_user_regs *regs,
     }
 
     /* Read the whole command structure */
-    if ( access_guest_memory_by_gpa(current->domain, gfn_to_gaddr(shm_rpc->gfn),
-                                    shm_rpc->xen_arg, arg_size, false) )
+    if ( access_guest_memory_by_gpa(current->domain,
+                                    gfn_to_gaddr(shm_rpc->gfn),
+                                    shm_rpc->xen_arg,
+                                    arg_size,
+                                    false) )
     {
         shm_rpc->xen_arg->ret = TEEC_ERROR_GENERIC;
         goto out;
@@ -1483,7 +1530,7 @@ static void handle_rpc_cmd(struct optee_domain *ctx, struct cpu_user_regs *regs,
 
     if ( call->state == OPTEE_CALL_NORMAL )
     {
-        switch (shm_rpc->xen_arg->cmd)
+        switch ( shm_rpc->xen_arg->cmd )
         {
         case OPTEE_RPC_CMD_GET_TIME:
         case OPTEE_RPC_CMD_WAIT_QUEUE:
@@ -1513,9 +1560,15 @@ static void handle_rpc_cmd(struct optee_domain *ctx, struct cpu_user_regs *regs,
 out:
     unmap_domain_page(shm_rpc->xen_arg);
 
-    do_call_with_arg(ctx, call, regs, OPTEE_SMC_CALL_RETURN_FROM_RPC, 0, 0,
-                     get_user_reg(regs, 3), 0, 0);
-
+    do_call_with_arg(ctx,
+                     call,
+                     regs,
+                     OPTEE_SMC_CALL_RETURN_FROM_RPC,
+                     0,
+                     0,
+                     get_user_reg(regs, 3),
+                     0,
+                     0);
 }
 
 static void handle_rpc_func_alloc(struct optee_domain *ctx,
@@ -1531,7 +1584,8 @@ static void handle_rpc_func_alloc(struct optee_domain *ctx,
 
     if ( ptr & (OPTEE_MSG_NONCONTIG_PAGE_SIZE - 1) )
     {
-        gdprintk(XENLOG_WARNING, "Domain returned invalid RPC command buffer\n");
+        gdprintk(XENLOG_WARNING,
+                 "Domain returned invalid RPC command buffer\n");
         /*
          * OP-TEE is waiting for a response to the RPC. We can't just
          * return error to the guest. We need to provide some invalid
@@ -1544,7 +1598,8 @@ static void handle_rpc_func_alloc(struct optee_domain *ctx,
     shm_rpc = allocate_and_pin_shm_rpc(ctx, gaddr_to_gfn(ptr), cookie);
     if ( IS_ERR(shm_rpc) )
     {
-        gdprintk(XENLOG_WARNING, "Failed to allocate shm_rpc object: %ld\n",
+        gdprintk(XENLOG_WARNING,
+                 "Failed to allocate shm_rpc object: %ld\n",
                  PTR_ERR(shm_rpc));
         ptr = 0;
     }
@@ -1554,7 +1609,12 @@ static void handle_rpc_func_alloc(struct optee_domain *ctx,
 out:
     uint64_to_regpair(&r1, &r2, ptr);
 
-    do_call_with_arg(ctx, call, regs, OPTEE_SMC_CALL_RETURN_FROM_RPC, r1, r2,
+    do_call_with_arg(ctx,
+                     call,
+                     regs,
+                     OPTEE_SMC_CALL_RETURN_FROM_RPC,
+                     r1,
+                     r2,
                      get_user_reg(regs, 3),
                      get_user_reg(regs, 4),
                      get_user_reg(regs, 5));
@@ -1592,9 +1652,15 @@ static void handle_rpc(struct optee_domain *ctx, struct cpu_user_regs *regs)
         return;
     }
 
-    do_call_with_arg(ctx, call, regs, OPTEE_SMC_CALL_RETURN_FROM_RPC,
-                     call->rpc_params[0], call->rpc_params[1],
-                     optee_thread_id, 0, 0);
+    do_call_with_arg(ctx,
+                     call,
+                     regs,
+                     OPTEE_SMC_CALL_RETURN_FROM_RPC,
+                     call->rpc_params[0],
+                     call->rpc_params[1],
+                     optee_thread_id,
+                     0,
+                     0);
     return;
 }
 
@@ -1607,9 +1673,17 @@ static void handle_exchange_capabilities(struct cpu_user_regs *regs)
     caps = get_user_reg(regs, 1);
     caps &= OPTEE_KNOWN_NSEC_CAPS;
 
-    arm_smccc_smc(OPTEE_SMC_EXCHANGE_CAPABILITIES, caps, 0, 0, 0, 0, 0,
-                  OPTEE_CLIENT_ID(current->domain), &resp);
-    if ( resp.a0 != OPTEE_SMC_RETURN_OK ) {
+    arm_smccc_smc(OPTEE_SMC_EXCHANGE_CAPABILITIES,
+                  caps,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  OPTEE_CLIENT_ID(current->domain),
+                  &resp);
+    if ( resp.a0 != OPTEE_SMC_RETURN_OK )
+    {
         set_user_reg(regs, 0, resp.a0);
         return;
     }
@@ -1652,8 +1726,15 @@ static bool optee_handle_call(struct cpu_user_regs *regs)
         return true;
 
     case OPTEE_SMC_CALLS_UID:
-        arm_smccc_smc(OPTEE_SMC_CALLS_UID, 0, 0, 0, 0, 0, 0,
-                      OPTEE_CLIENT_ID(current->domain), &resp);
+        arm_smccc_smc(OPTEE_SMC_CALLS_UID,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      OPTEE_CLIENT_ID(current->domain),
+                      &resp);
         set_user_reg(regs, 0, resp.a0);
         set_user_reg(regs, 1, resp.a1);
         set_user_reg(regs, 2, resp.a2);
@@ -1661,15 +1742,29 @@ static bool optee_handle_call(struct cpu_user_regs *regs)
         return true;
 
     case OPTEE_SMC_CALLS_REVISION:
-        arm_smccc_smc(OPTEE_SMC_CALLS_REVISION, 0, 0, 0, 0, 0, 0,
-                      OPTEE_CLIENT_ID(current->domain), &resp);
+        arm_smccc_smc(OPTEE_SMC_CALLS_REVISION,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      OPTEE_CLIENT_ID(current->domain),
+                      &resp);
         set_user_reg(regs, 0, resp.a0);
         set_user_reg(regs, 1, resp.a1);
         return true;
 
     case OPTEE_SMC_CALL_GET_OS_UUID:
-        arm_smccc_smc(OPTEE_SMC_CALL_GET_OS_UUID, 0, 0, 0, 0, 0, 0,
-                      OPTEE_CLIENT_ID(current->domain),&resp);
+        arm_smccc_smc(OPTEE_SMC_CALL_GET_OS_UUID,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      OPTEE_CLIENT_ID(current->domain),
+                      &resp);
         set_user_reg(regs, 0, resp.a0);
         set_user_reg(regs, 1, resp.a1);
         set_user_reg(regs, 2, resp.a2);
@@ -1677,24 +1772,46 @@ static bool optee_handle_call(struct cpu_user_regs *regs)
         return true;
 
     case OPTEE_SMC_CALL_GET_OS_REVISION:
-        arm_smccc_smc(OPTEE_SMC_CALL_GET_OS_REVISION, 0, 0, 0, 0, 0, 0,
-                      OPTEE_CLIENT_ID(current->domain), &resp);
+        arm_smccc_smc(OPTEE_SMC_CALL_GET_OS_REVISION,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      OPTEE_CLIENT_ID(current->domain),
+                      &resp);
         set_user_reg(regs, 0, resp.a0);
         set_user_reg(regs, 1, resp.a1);
         return true;
 
     case OPTEE_SMC_ENABLE_SHM_CACHE:
-        arm_smccc_smc(OPTEE_SMC_ENABLE_SHM_CACHE, 0, 0, 0, 0, 0, 0,
-                      OPTEE_CLIENT_ID(current->domain), &resp);
+        arm_smccc_smc(OPTEE_SMC_ENABLE_SHM_CACHE,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      OPTEE_CLIENT_ID(current->domain),
+                      &resp);
         set_user_reg(regs, 0, resp.a0);
         return true;
 
     case OPTEE_SMC_DISABLE_SHM_CACHE:
-        arm_smccc_smc(OPTEE_SMC_DISABLE_SHM_CACHE, 0, 0, 0, 0, 0, 0,
-                      OPTEE_CLIENT_ID(current->domain), &resp);
+        arm_smccc_smc(OPTEE_SMC_DISABLE_SHM_CACHE,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      OPTEE_CLIENT_ID(current->domain),
+                      &resp);
         set_user_reg(regs, 0, resp.a0);
-        if ( resp.a0 == OPTEE_SMC_RETURN_OK ) {
-            free_shm_rpc(ctx,  regpair_to_uint64(resp.a1, resp.a2));
+        if ( resp.a0 == OPTEE_SMC_RETURN_OK )
+        {
+            free_shm_rpc(ctx, regpair_to_uint64(resp.a1, resp.a2));
             set_user_reg(regs, 1, resp.a1);
             set_user_reg(regs, 2, resp.a2);
         }
@@ -1722,8 +1839,7 @@ static bool optee_handle_call(struct cpu_user_regs *regs)
     }
 }
 
-static const struct tee_mediator_ops optee_ops =
-{
+static const struct tee_mediator_ops optee_ops = {
     .probe = optee_probe,
     .domain_init = optee_domain_init,
     .domain_teardown = optee_domain_teardown,

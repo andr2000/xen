@@ -19,9 +19,8 @@
 #include <xen/hypercall.h>
 #include <xen/nospec.h>
 
-long do_dm_op(
-    domid_t domid, unsigned int nr_bufs,
-    XEN_GUEST_HANDLE_PARAM(xen_dm_op_buf_t) bufs)
+long do_dm_op(domid_t domid, unsigned int nr_bufs,
+              XEN_GUEST_HANDLE_PARAM(xen_dm_op_buf_t) bufs)
 {
     struct dmop_args args;
     int rc;
@@ -38,8 +37,11 @@ long do_dm_op(
     rc = dm_op(&args);
 
     if ( rc == -ERESTART )
-        rc = hypercall_create_continuation(__HYPERVISOR_dm_op, "iih",
-                                           domid, nr_bufs, bufs);
+        rc = hypercall_create_continuation(__HYPERVISOR_dm_op,
+                                           "iih",
+                                           domid,
+                                           nr_bufs,
+                                           bufs);
 
     return rc;
 }

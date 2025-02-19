@@ -11,8 +11,8 @@
  * @endp: A pointer to the end of the parsed string will be placed here
  * @base: The number base to use
  */
-unsigned long long simple_strtoull(
-    const char *cp, const char **endp, unsigned int base)
+unsigned long long simple_strtoull(const char *cp, const char **endp,
+                                   unsigned int base)
 {
     unsigned long long result = 0, value;
 
@@ -38,8 +38,8 @@ unsigned long long simple_strtoull(
 
     while ( isxdigit(*cp) &&
             (value = isdigit(*cp) ? *cp - '0'
-                                  : (islower(*cp) ? toupper(*cp)
-                                                  : *cp) - 'A' + 10) < base )
+                                  : (islower(*cp) ? toupper(*cp) : *cp) - 'A' +
+                                        10) < base )
     {
         result = result * base + value;
         cp++;

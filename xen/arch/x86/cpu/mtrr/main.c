@@ -46,7 +46,7 @@
 #define mutex_lock(_m) spin_lock(_m)
 #define mutex_unlock(_m) spin_unlock(_m)
 #define dump_stack() ((void)0)
-#define	get_cpu()	smp_processor_id()
+#define get_cpu()	smp_processor_id()
 #define put_cpu()	do {} while(0)
 
 u32 __read_mostly num_var_ranges = 0;
@@ -59,54 +59,54 @@ u64 __read_mostly size_and_mask;
 
 static bool __ro_after_init mtrr_if;
 
-static void set_mtrr(unsigned int reg, unsigned long base,
-		     unsigned long size, mtrr_type type);
+static void set_mtrr(unsigned int reg, unsigned long base, unsigned long size,
+                     mtrr_type type);
 
-static const char *const mtrr_strings[MTRR_NUM_TYPES] =
-{
-    "uncachable",               /* 0 */
-    "write-combining",          /* 1 */
-    "?",                        /* 2 */
-    "?",                        /* 3 */
-    "write-through",            /* 4 */
-    "write-protect",            /* 5 */
-    "write-back",               /* 6 */
+static const char *const mtrr_strings[MTRR_NUM_TYPES] = {
+    "uncachable", /* 0 */
+    "write-combining", /* 1 */
+    "?", /* 2 */
+    "?", /* 3 */
+    "write-through", /* 4 */
+    "write-protect", /* 5 */
+    "write-back", /* 6 */
 };
 
 static const char *mtrr_attrib_to_str(int x)
 {
-	return (x <= 6) ? mtrr_strings[x] : "?";
+    return (x <= 6) ? mtrr_strings[x] : "?";
 }
 
 /*  This function returns the number of variable MTRRs  */
 static void __init set_num_var_ranges(void)
 {
-	unsigned long config;
+    unsigned long config;
 
-	rdmsrl(MSR_MTRRcap, config);
-	num_var_ranges = MASK_EXTR(config, MTRRcap_VCNT);
+    rdmsrl(MSR_MTRRcap, config);
+    num_var_ranges = MASK_EXTR(config, MTRRcap_VCNT);
 }
 
 static void __init init_table(void)
 {
-	int i, max;
+    int i, max;
 
-	max = num_var_ranges;
-	if ((usage_table = xmalloc_array(unsigned int, max)) == NULL) {
-		printk(KERN_ERR "mtrr: could not allocate\n");
-		return;
-	}
-	for (i = 0; i < max; i++)
-		usage_table[i] = 1;
+    max = num_var_ranges;
+    if ( (usage_table = xmalloc_array(unsigned int, max)) == NULL )
+    {
+        printk(KERN_ERR "mtrr: could not allocate\n");
+        return;
+    }
+    for ( i = 0; i < max; i++ )
+        usage_table[i] = 1;
 }
 
 struct set_mtrr_data {
-	atomic_t	count;
-	atomic_t	gate;
-	unsigned long	smp_base;
-	unsigned long	smp_size;
-	unsigned int	smp_reg;
-	mtrr_type	smp_type;
+    atomic_t count;
+    atomic_t gate;
+    unsigned long smp_base;
+    unsigned long smp_size;
+    unsigned int smp_reg;
+    mtrr_type smp_type;
 };
 
 /* As per the IA32 SDM vol-3: 10.11.8 MTRR Considerations in MP Systems section
@@ -125,37 +125,36 @@ static void cf_check ipi_handler(void *info)
     [RETURNS] Nothing.
 */
 {
-	struct set_mtrr_data *data = info;
-	unsigned long flags;
+    struct set_mtrr_data *data = info;
+    unsigned long flags;
 
-	local_irq_save(flags);
+    local_irq_save(flags);
 
-	atomic_dec(&data->count);
-	while(!atomic_read(&data->gate))
-		cpu_relax();
+    atomic_dec(&data->count);
+    while ( !atomic_read(&data->gate) )
+        cpu_relax();
 
-	/*  The master has cleared me to execute  */
-	if (data->smp_reg == ~0U) /* update all mtrr registers */
-		/* At the cpu hot-add time this will reinitialize mtrr 
+    /*  The master has cleared me to execute  */
+    if ( data->smp_reg == ~0U ) /* update all mtrr registers */
+        /* At the cpu hot-add time this will reinitialize mtrr 
  		 * registres on the existing cpus. It is ok.  */
-		mtrr_set_all();
-	else /* single mtrr register update */
-		mtrr_set(data->smp_reg, data->smp_base,
-			 data->smp_size, data->smp_type);
+        mtrr_set_all();
+    else /* single mtrr register update */
+        mtrr_set(data->smp_reg, data->smp_base, data->smp_size, data->smp_type);
 
-	atomic_dec(&data->count);
-	while(atomic_read(&data->gate))
-		cpu_relax();
+    atomic_dec(&data->count);
+    while ( atomic_read(&data->gate) )
+        cpu_relax();
 
-	atomic_dec(&data->count);
-	local_irq_restore(flags);
+    atomic_dec(&data->count);
+    local_irq_restore(flags);
 }
 
-static inline int types_compatible(mtrr_type type1, mtrr_type type2) {
-	return type1 == X86_MT_UC ||
-	       type2 == X86_MT_UC ||
-	       (type1 == X86_MT_WT && type2 == X86_MT_WB) ||
-	       (type1 == X86_MT_WB && type2 == X86_MT_WT);
+static inline int types_compatible(mtrr_type type1, mtrr_type type2)
+{
+    return type1 == X86_MT_UC || type2 == X86_MT_UC ||
+           (type1 == X86_MT_WT && type2 == X86_MT_WB) ||
+           (type1 == X86_MT_WB && type2 == X86_MT_WT);
 }
 
 /**
@@ -196,69 +195,70 @@ static inline int types_compatible(mtrr_type type1, mtrr_type type2) {
  * Note that the mechanism is the same for UP systems, too; all the SMP stuff
  * becomes nops.
  */
-static void set_mtrr(unsigned int reg, unsigned long base,
-		     unsigned long size, mtrr_type type)
+static void set_mtrr(unsigned int reg, unsigned long base, unsigned long size,
+                     mtrr_type type)
 {
-	cpumask_t allbutself;
-	unsigned int nr_cpus;
-	struct set_mtrr_data data;
-	unsigned long flags;
+    cpumask_t allbutself;
+    unsigned int nr_cpus;
+    struct set_mtrr_data data;
+    unsigned long flags;
 
-	cpumask_andnot(&allbutself, &cpu_online_map,
-                      cpumask_of(smp_processor_id()));
-	nr_cpus = cpumask_weight(&allbutself);
+    cpumask_andnot(&allbutself,
+                   &cpu_online_map,
+                   cpumask_of(smp_processor_id()));
+    nr_cpus = cpumask_weight(&allbutself);
 
-	data.smp_reg = reg;
-	data.smp_base = base;
-	data.smp_size = size;
-	data.smp_type = type;
-	atomic_set(&data.count, nr_cpus);
-	atomic_set(&data.gate,0);
+    data.smp_reg = reg;
+    data.smp_base = base;
+    data.smp_size = size;
+    data.smp_type = type;
+    atomic_set(&data.count, nr_cpus);
+    atomic_set(&data.gate, 0);
 
-	/* Start the ball rolling on other CPUs */
-	on_selected_cpus(&allbutself, ipi_handler, &data, 0);
+    /* Start the ball rolling on other CPUs */
+    on_selected_cpus(&allbutself, ipi_handler, &data, 0);
 
-	local_irq_save(flags);
+    local_irq_save(flags);
 
-	while (atomic_read(&data.count))
-		cpu_relax();
+    while ( atomic_read(&data.count) )
+        cpu_relax();
 
-	/* ok, reset count and toggle gate */
-	atomic_set(&data.count, nr_cpus);
-	smp_wmb();
-	atomic_set(&data.gate,1);
+    /* ok, reset count and toggle gate */
+    atomic_set(&data.count, nr_cpus);
+    smp_wmb();
+    atomic_set(&data.gate, 1);
 
-	/* do our MTRR business */
+    /* do our MTRR business */
 
-	/* HACK!
+    /* HACK!
 	 * We use this same function to initialize the mtrrs on boot.
 	 * The state of the boot cpu's mtrrs has been saved, and we want
 	 * to replicate across all the APs. 
 	 * If we're doing that @reg is set to something special...
 	 */
-	if (reg == ~0U)  /* update all mtrr registers */
-		/* at boot or resume time, this will reinitialize the mtrrs on 
+    if ( reg == ~0U ) /* update all mtrr registers */
+        /* at boot or resume time, this will reinitialize the mtrrs on 
 		 * the bp. It is ok. */
-		mtrr_set_all();
-	else /* update the single mtrr register */
-		mtrr_set(reg, base, size, type);
+        mtrr_set_all();
+    else /* update the single mtrr register */
+        mtrr_set(reg, base, size, type);
 
-	/* wait for the others */
-	while (atomic_read(&data.count))
-		cpu_relax();
+    /* wait for the others */
+    while ( atomic_read(&data.count) )
+        cpu_relax();
 
-	atomic_set(&data.count, nr_cpus);
-	smp_wmb();
-	atomic_set(&data.gate,0);
+    atomic_set(&data.count, nr_cpus);
+    smp_wmb();
+    atomic_set(&data.gate, 0);
 
-	/*
+    /*
 	 * Wait here for everyone to have seen the gate change
 	 * So we're the last ones to touch 'data'
 	 */
-	while (atomic_read(&data.count))
-		cpu_relax();
+    while ( atomic_read(&data.count) )
+        cpu_relax();
 
-	local_irq_restore(flags);
+    local_irq_restore(flags);
 }
 
 /**
@@ -297,113 +297,131 @@ static void set_mtrr(unsigned int reg, unsigned long base,
  *	failures and do not wish system log messages to be sent.
  */
 
-int mtrr_add_page(unsigned long base, unsigned long size, 
-		  unsigned int type, char increment)
+int mtrr_add_page(unsigned long base, unsigned long size, unsigned int type,
+                  char increment)
 {
-	int i, replace, error;
-	mtrr_type ltype;
-	unsigned long lbase, lsize;
+    int i, replace, error;
+    mtrr_type ltype;
+    unsigned long lbase, lsize;
 
-	if (!mtrr_if)
-		return -ENXIO;
-		
-	if ((error = mtrr_validate_add_page(base, size, type)))
-		return error;
+    if ( !mtrr_if )
+        return -ENXIO;
 
-	if (type >= MTRR_NUM_TYPES) {
-		printk(KERN_WARNING "mtrr: type: %u invalid\n", type);
-		return -EINVAL;
-	}
+    if ( (error = mtrr_validate_add_page(base, size, type)) )
+        return error;
 
-	/*  If the type is WC, check that this processor supports it  */
-	if ((type == X86_MT_WC) && !mtrr_have_wrcomb()) {
-		printk(KERN_WARNING
-		       "mtrr: your processor doesn't support write-combining\n");
-		return -EOPNOTSUPP;
-	}
+    if ( type >= MTRR_NUM_TYPES )
+    {
+        printk(KERN_WARNING "mtrr: type: %u invalid\n", type);
+        return -EINVAL;
+    }
 
-	if (!size) {
-		printk(KERN_WARNING "mtrr: zero sized request\n");
-		return -EINVAL;
-	}
+    /*  If the type is WC, check that this processor supports it  */
+    if ( (type == X86_MT_WC) && !mtrr_have_wrcomb() )
+    {
+        printk(KERN_WARNING
+               "mtrr: your processor doesn't support write-combining\n");
+        return -EOPNOTSUPP;
+    }
 
-	if ((base | (base + size - 1)) >> (paddr_bits - PAGE_SHIFT)) {
-		printk(KERN_WARNING "mtrr: base or size exceeds the MTRR width\n");
-		return -EINVAL;
-	}
+    if ( !size )
+    {
+        printk(KERN_WARNING "mtrr: zero sized request\n");
+        return -EINVAL;
+    }
 
-	error = -EINVAL;
-	replace = -1;
+    if ( (base | (base + size - 1)) >> (paddr_bits - PAGE_SHIFT) )
+    {
+        printk(KERN_WARNING "mtrr: base or size exceeds the MTRR width\n");
+        return -EINVAL;
+    }
 
-	/*  Search for existing MTRR  */
-	mutex_lock(&mtrr_mutex);
-	for (i = 0; i < num_var_ranges; ++i) {
-		mtrr_get(i, &lbase, &lsize, &ltype);
-		if (!lsize || base > lbase + lsize - 1 || base + size - 1 < lbase)
-			continue;
-		/*  At this point we know there is some kind of overlap/enclosure  */
-		if (base < lbase || base + size - 1 > lbase + lsize - 1) {
-			if (base <= lbase && base + size - 1 >= lbase + lsize - 1) {
-				/*  New region encloses an existing region  */
-				if (type == ltype) {
-					replace = replace == -1 ? i : -2;
-					continue;
-				}
-				else if (types_compatible(type, ltype))
-					continue;
-			}
-			printk(KERN_WARNING
-			       "mtrr: %#lx000,%#lx000 overlaps existing"
-			       " %#lx000,%#lx000\n", base, size, lbase,
-			       lsize);
-			goto out;
-		}
-		/*  New region is enclosed by an existing region  */
-		if (ltype != type) {
-			if (types_compatible(type, ltype))
-				continue;
-			printk (KERN_WARNING "mtrr: type mismatch for %lx000,%lx000 old: %s new: %s\n",
-			     base, size, mtrr_attrib_to_str(ltype),
-			     mtrr_attrib_to_str(type));
-			goto out;
-		}
-		if (increment)
-			++usage_table[i];
-		error = i;
-		goto out;
-	}
-	/*  Search for an empty MTRR  */
-	i = mtrr_get_free_region(base, size, replace);
-	if (i >= 0) {
-		set_mtrr(i, base, size, type);
-		if (likely(replace < 0))
-			usage_table[i] = 1;
-		else {
-			usage_table[i] = usage_table[replace] + !!increment;
-			if (unlikely(replace != i)) {
-				set_mtrr(replace, 0, 0, 0);
-				usage_table[replace] = 0;
-			}
-		}
-	} else
-		printk(KERN_INFO "mtrr: no more MTRRs available\n");
-	error = i;
- out:
-	mutex_unlock(&mtrr_mutex);
-	return error;
+    error = -EINVAL;
+    replace = -1;
+
+    /*  Search for existing MTRR  */
+    mutex_lock(&mtrr_mutex);
+    for ( i = 0; i < num_var_ranges; ++i )
+    {
+        mtrr_get(i, &lbase, &lsize, &ltype);
+        if ( !lsize || base > lbase + lsize - 1 || base + size - 1 < lbase )
+            continue;
+        /*  At this point we know there is some kind of overlap/enclosure  */
+        if ( base < lbase || base + size - 1 > lbase + lsize - 1 )
+        {
+            if ( base <= lbase && base + size - 1 >= lbase + lsize - 1 )
+            {
+                /*  New region encloses an existing region  */
+                if ( type == ltype )
+                {
+                    replace = replace == -1 ? i : -2;
+                    continue;
+                }
+                else if ( types_compatible(type, ltype) )
+                    continue;
+            }
+            printk(
+                KERN_WARNING
+                "mtrr: %#lx000,%#lx000 overlaps existing" " %#lx000,%#lx000\n",
+                base,
+                size,
+                lbase,
+                lsize);
+            goto out;
+        }
+        /*  New region is enclosed by an existing region  */
+        if ( ltype != type )
+        {
+            if ( types_compatible(type, ltype) )
+                continue;
+            printk(KERN_WARNING
+                   "mtrr: type mismatch for %lx000,%lx000 old: %s new: %s\n",
+                   base,
+                   size,
+                   mtrr_attrib_to_str(ltype),
+                   mtrr_attrib_to_str(type));
+            goto out;
+        }
+        if ( increment )
+            ++usage_table[i];
+        error = i;
+        goto out;
+    }
+    /*  Search for an empty MTRR  */
+    i = mtrr_get_free_region(base, size, replace);
+    if ( i >= 0 )
+    {
+        set_mtrr(i, base, size, type);
+        if ( likely(replace < 0) )
+            usage_table[i] = 1;
+        else
+        {
+            usage_table[i] = usage_table[replace] + !!increment;
+            if ( unlikely(replace != i) )
+            {
+                set_mtrr(replace, 0, 0, 0);
+                usage_table[replace] = 0;
+            }
+        }
+    }
+    else
+        printk(KERN_INFO "mtrr: no more MTRRs available\n");
+    error = i;
+out:
+    mutex_unlock(&mtrr_mutex);
+    return error;
 }
 
 static int mtrr_check(unsigned long base, unsigned long size)
 {
-	if ((base & (PAGE_SIZE - 1)) || (size & (PAGE_SIZE - 1))) {
-		printk(KERN_WARNING
-			"mtrr: size and base must be multiples of 4 kiB\n");
-		printk(KERN_DEBUG
-			"mtrr: size: %#lx  base: %#lx\n", size, base);
-		dump_stack();
-		return -1;
-	}
-	return 0;
+    if ( (base & (PAGE_SIZE - 1)) || (size & (PAGE_SIZE - 1)) )
+    {
+        printk(KERN_WARNING "mtrr: size and base must be multiples of 4 kiB\n");
+        printk(KERN_DEBUG "mtrr: size: %#lx  base: %#lx\n", size, base);
+        dump_stack();
+        return -1;
+    }
+    return 0;
 }
 
 /**
@@ -442,14 +460,15 @@ static int mtrr_check(unsigned long base, unsigned long size)
  *	failures and do not wish system log messages to be sent.
  */
 
-int __init
-mtrr_add(unsigned long base, unsigned long size, unsigned int type,
-	 char increment)
+int __init mtrr_add(unsigned long base, unsigned long size, unsigned int type,
+                    char increment)
 {
-	if (mtrr_check(base, size))
-		return -EINVAL;
-	return mtrr_add_page(base >> PAGE_SHIFT, size >> PAGE_SHIFT, type,
-			     increment);
+    if ( mtrr_check(base, size) )
+        return -EINVAL;
+    return mtrr_add_page(base >> PAGE_SHIFT,
+                         size >> PAGE_SHIFT,
+                         type,
+                         increment);
 }
 
 /**
@@ -469,51 +488,60 @@ mtrr_add(unsigned long base, unsigned long size, unsigned int type,
 
 int mtrr_del_page(int reg, unsigned long base, unsigned long size)
 {
-	int i, max;
-	mtrr_type ltype;
-	unsigned long lbase, lsize;
-	int error = -EINVAL;
+    int i, max;
+    mtrr_type ltype;
+    unsigned long lbase, lsize;
+    int error = -EINVAL;
 
-	if (!mtrr_if)
-		return -ENXIO;
+    if ( !mtrr_if )
+        return -ENXIO;
 
-	max = num_var_ranges;
-	mutex_lock(&mtrr_mutex);
-	if (reg < 0) {
-		/*  Search for existing MTRR  */
-		for (i = 0; i < max; ++i) {
-			mtrr_get(i, &lbase, &lsize, &ltype);
-			if (lbase == base && lsize == size) {
-				reg = i;
-				break;
-			}
-		}
-		if (reg < 0) {
-			printk(KERN_DEBUG "mtrr: no MTRR for %lx000,%lx000 found\n", base,
-			       size);
-			goto out;
-		}
-	}
-	if (reg >= max) {
-		printk(KERN_WARNING "mtrr: register: %d too big\n", reg);
-		goto out;
-	}
-	mtrr_get(reg, &lbase, &lsize, &ltype);
-	if (lsize < 1) {
-		printk(KERN_WARNING "mtrr: MTRR %d not used\n", reg);
-		goto out;
-	}
-	if (usage_table[reg] < 1) {
-		printk(KERN_WARNING "mtrr: reg: %d has count=0\n", reg);
-		goto out;
-	}
-	if (--usage_table[reg] < 1)
-		set_mtrr(reg, 0, 0, 0);
-	error = reg;
- out:
-	mutex_unlock(&mtrr_mutex);
-	return error;
+    max = num_var_ranges;
+    mutex_lock(&mtrr_mutex);
+    if ( reg < 0 )
+    {
+        /*  Search for existing MTRR  */
+        for ( i = 0; i < max; ++i )
+        {
+            mtrr_get(i, &lbase, &lsize, &ltype);
+            if ( lbase == base && lsize == size )
+            {
+                reg = i;
+                break;
+            }
+        }
+        if ( reg < 0 )
+        {
+            printk(KERN_DEBUG "mtrr: no MTRR for %lx000,%lx000 found\n",
+                   base,
+                   size);
+            goto out;
+        }
+    }
+    if ( reg >= max )
+    {
+        printk(KERN_WARNING "mtrr: register: %d too big\n", reg);
+        goto out;
+    }
+    mtrr_get(reg, &lbase, &lsize, &ltype);
+    if ( lsize < 1 )
+    {
+        printk(KERN_WARNING "mtrr: MTRR %d not used\n", reg);
+        goto out;
+    }
+    if ( usage_table[reg] < 1 )
+    {
+        printk(KERN_WARNING "mtrr: reg: %d has count=0\n", reg);
+        goto out;
+    }
+    if ( --usage_table[reg] < 1 )
+        set_mtrr(reg, 0, 0, 0);
+    error = reg;
+out:
+    mutex_unlock(&mtrr_mutex);
+    return error;
 }
+
 /**
  *	mtrr_del - delete a memory type region
  *	@reg: Register returned by mtrr_add
@@ -529,21 +557,20 @@ int mtrr_del_page(int reg, unsigned long base, unsigned long size)
  *	code.
  */
 
-int __init
-mtrr_del(int reg, unsigned long base, unsigned long size)
+int __init mtrr_del(int reg, unsigned long base, unsigned long size)
 {
-	if (mtrr_check(base, size))
-		return -EINVAL;
-	return mtrr_del_page(reg, base >> PAGE_SHIFT, size >> PAGE_SHIFT);
+    if ( mtrr_check(base, size) )
+        return -EINVAL;
+    return mtrr_del_page(reg, base >> PAGE_SHIFT, size >> PAGE_SHIFT);
 }
 
 /* The suspend/resume methods are only for CPU without MTRR. CPU using generic
  * MTRR driver doesn't require this
  */
 struct mtrr_value {
-	mtrr_type	ltype;
-	unsigned long	lbase;
-	unsigned long	lsize;
+    mtrr_type ltype;
+    unsigned long lbase;
+    unsigned long lsize;
 };
 
 /**
@@ -555,24 +582,26 @@ struct mtrr_value {
  */
 void __init mtrr_bp_init(void)
 {
-	if (cpu_has_mtrr) {
-		mtrr_if = true;
-		size_or_mask = ~((1ULL << (paddr_bits - PAGE_SHIFT)) - 1);
-		size_and_mask = ~size_or_mask & 0xfffff00000ULL;
-	}
+    if ( cpu_has_mtrr )
+    {
+        mtrr_if = true;
+        size_or_mask = ~((1ULL << (paddr_bits - PAGE_SHIFT)) - 1);
+        size_and_mask = ~size_or_mask & 0xfffff00000ULL;
+    }
 
-	if (mtrr_if) {
-		set_num_var_ranges();
-		init_table();
-		get_mtrr_state();
-	}
+    if ( mtrr_if )
+    {
+        set_num_var_ranges();
+        init_table();
+        get_mtrr_state();
+    }
 }
 
 void mtrr_ap_init(void)
 {
-	if (!mtrr_if || hold_mtrr_updates_on_aps)
-		return;
-	/*
+    if ( !mtrr_if || hold_mtrr_updates_on_aps )
+        return;
+    /*
 	 * hold_mtrr_updates_on_aps takes care of preventing unnecessary MTRR
 	 * updates when batch starting the CPUs (see
 	 * mtrr_aps_sync_{begin,end}()).
@@ -581,7 +610,7 @@ void mtrr_ap_init(void)
 	 * Note this doesn't require synchronization with the other CPUs, as
 	 * there are strictly no modifications of the current MTRR values.
 	 */
-	mtrr_set_all();
+    mtrr_set_all();
 }
 
 /**
@@ -589,36 +618,37 @@ void mtrr_ap_init(void)
  */
 void mtrr_save_state(void)
 {
-	int cpu = get_cpu();
+    int cpu = get_cpu();
 
-	if (cpu == 0)
-		mtrr_save_fixed_ranges(NULL);
-	else
-		on_selected_cpus(cpumask_of(0), mtrr_save_fixed_ranges, NULL, 1);
-	put_cpu();
+    if ( cpu == 0 )
+        mtrr_save_fixed_ranges(NULL);
+    else
+        on_selected_cpus(cpumask_of(0), mtrr_save_fixed_ranges, NULL, 1);
+    put_cpu();
 }
 
 void mtrr_aps_sync_begin(void)
 {
-	hold_mtrr_updates_on_aps = 1;
+    hold_mtrr_updates_on_aps = 1;
 }
 
 void mtrr_aps_sync_end(void)
 {
-	set_mtrr(~0U, 0, 0, 0);
-	hold_mtrr_updates_on_aps = 0;
+    set_mtrr(~0U, 0, 0, 0);
+    hold_mtrr_updates_on_aps = 0;
 }
 
 void mtrr_bp_restore(void)
 {
-	mtrr_set_all();
+    mtrr_set_all();
 }
 
 static int __init cf_check mtrr_init_finialize(void)
 {
-	if (!mtrr_if)
-		return 0;
-	mtrr_state_warn();
-	return 0;
+    if ( !mtrr_if )
+        return 0;
+    mtrr_state_warn();
+    return 0;
 }
+
 __initcall(mtrr_init_finialize);

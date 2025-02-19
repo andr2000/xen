@@ -1,7 +1,7 @@
 #ifndef __XEN_STRING_H__
 #define __XEN_STRING_H__
 
-#include <xen/types.h>	/* for size_t */
+#include <xen/types.h> /* for size_t */
 
 /*
  * These string functions are considered too dangerous for normal use.
@@ -23,7 +23,7 @@ char *strrchr(const char *s, int c);
 char *strstr(const char *s1, const char *s2);
 size_t strlen(const char *s);
 size_t strnlen(const char *s, size_t count);
-char *strpbrk(const char *cs,const char *ct);
+char *strpbrk(const char *cs, const char *ct);
 char *strsep(char **s, const char *ct);
 size_t strspn(const char *s, const char *accept);
 

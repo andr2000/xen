@@ -84,7 +84,7 @@
     do { if ( sizeof(hnd) == 8 ) *(uint64_t *)&(hnd) = 0;   \
          (hnd).p = val;                                     \
     } while ( 0 )
-#define  int64_aligned_t  int64_t __attribute__((aligned(8)))
+#define int64_aligned_t  int64_t __attribute__((aligned(8)))
 #define uint64_aligned_t uint64_t __attribute__((aligned(8)))
 #define __XEN_GUEST_HANDLE_64(name) __guest_handle_64_ ## name
 #define XEN_GUEST_HANDLE_64(name) __XEN_GUEST_HANDLE_64(name)
@@ -122,12 +122,12 @@ struct cpu_user_regs {
     __DECL_REG_LO16(di);
     __DECL_REG_LO16(bp);
     __DECL_REG_LO8(a);
-    uint16_t error_code;    /* private */
-    uint16_t entry_vector;  /* private */
+    uint16_t error_code; /* private */
+    uint16_t entry_vector; /* private */
     __DECL_REG_LO16(ip);
     uint16_t cs;
-    uint8_t  saved_upcall_mask;
-    uint8_t  _pad0;
+    uint8_t saved_upcall_mask;
+    uint8_t _pad0;
     __DECL_REG_LO16(flags); /* eflags.IF == !saved_upcall_mask */
     __DECL_REG_LO16(sp);
     uint16_t ss, _pad1;

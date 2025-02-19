@@ -125,7 +125,9 @@ static void update_identity_mapping(bool enable)
     int rc;
 
     if ( enable )
-        rc = map_pages_to_xen(id_addr, maddr_to_mfn(id_addr), 1,
+        rc = map_pages_to_xen(id_addr,
+                              maddr_to_mfn(id_addr),
+                              1,
                               PAGE_HYPERVISOR_RX);
     else
         rc = destroy_xen_mappings(id_addr, id_addr + PAGE_SIZE);
@@ -141,8 +143,8 @@ void update_boot_mapping(bool enable)
 extern void switch_ttbr_id(uint64_t ttbr);
 extern void relocate_xen(uint64_t ttbr, void *src, void *dst, size_t len);
 
-typedef void (switch_ttbr_fn)(uint64_t ttbr);
-typedef void (relocate_xen_fn)(uint64_t ttbr, void *src, void *dst, size_t len);
+typedef void(switch_ttbr_fn)(uint64_t ttbr);
+typedef void(relocate_xen_fn)(uint64_t ttbr, void *src, void *dst, size_t len);
 
 #ifdef CONFIG_LLC_COLORING
 void __init relocate_and_switch_ttbr(uint64_t ttbr)
@@ -223,15 +225,17 @@ static void __init setup_directmap_mappings(unsigned long base_mfn,
          * address.
          */
         directmap_virt_start = DIRECTMAP_VIRT_START +
-            (base_mfn - mfn_gb) * PAGE_SIZE;
+                               (base_mfn - mfn_gb) * PAGE_SIZE;
     }
 
     if ( base_mfn < mfn_x(directmap_mfn_start) )
         panic("cannot add directmap mapping at %lx below heap start %lx\n",
-              base_mfn, mfn_x(directmap_mfn_start));
+              base_mfn,
+              mfn_x(directmap_mfn_start));
 
     rc = map_pages_to_xen((vaddr_t)__mfn_to_virt(base_mfn),
-                          _mfn(base_mfn), nr_mfns,
+                          _mfn(base_mfn),
+                          nr_mfns,
                           PAGE_HYPERVISOR_RW | _PAGE_BLOCK);
     if ( rc )
         panic("Unable to setup the directmap mappings.\n");
@@ -267,8 +271,7 @@ void __init setup_mm(void)
         ram_start = min(ram_start, bank->start);
         ram_end = max(ram_end, bank_end);
 
-        setup_directmap_mappings(PFN_DOWN(bank->start),
-                                 PFN_DOWN(bank->size));
+        setup_directmap_mappings(PFN_DOWN(bank->start), PFN_DOWN(bank->size));
     }
 
     total_pages += ram_size >> PAGE_SHIFT;

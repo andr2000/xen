@@ -41,9 +41,7 @@ static inline int acquire_pmu_ownership(int pmu_ownership)
     return 1;
 }
 
-static inline void release_pmu_ownership(int pmu_ownership)
-{
-}
+static inline void release_pmu_ownership(int pmu_ownership) {}
 #endif /* CONFIG_XENOPROF */
 
-#endif  /* __XEN__XENOPROF_H__ */
+#endif /* __XEN__XENOPROF_H__ */

@@ -37,4 +37,4 @@ size_t gcov_info_to_gcda(char *buffer, const struct gcov_info *info);
 size_t gcov_store_uint32(void *buffer, size_t off, uint32_t v);
 size_t gcov_store_uint64(void *buffer, size_t off, uint64_t v);
 
-#endif	/* _GCOV_H_ */
+#endif /* _GCOV_H_ */

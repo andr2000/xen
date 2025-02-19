@@ -14,9 +14,8 @@
 
 #include "mm-locks.h"
 
-int
-guest_physmap_add_page(struct domain *d, gfn_t gfn, mfn_t mfn,
-                       unsigned int page_order)
+int guest_physmap_add_page(struct domain *d, gfn_t gfn, mfn_t mfn,
+                           unsigned int page_order)
 {
     /* IOMMU for PV guests is handled in get_page_type() and put_page(). */
     if ( !paging_mode_translate(d) )
@@ -53,9 +52,8 @@ guest_physmap_add_page(struct domain *d, gfn_t gfn, mfn_t mfn,
     return p2m_add_page(d, gfn, mfn, page_order, p2m_ram_rw);
 }
 
-int
-guest_physmap_remove_page(struct domain *d, gfn_t gfn,
-                          mfn_t mfn, unsigned int page_order)
+int guest_physmap_remove_page(struct domain *d, gfn_t gfn, mfn_t mfn,
+                              unsigned int page_order)
 {
     /* IOMMU for PV guests is handled in get_page_type() and put_page(). */
     if ( !paging_mode_translate(d) )
@@ -71,7 +69,9 @@ int set_identity_p2m_entry(struct domain *d, unsigned long gfn,
     {
         if ( !is_iommu_enabled(d) )
             return 0;
-        return iommu_legacy_map(d, _dfn(gfn), _mfn(gfn),
+        return iommu_legacy_map(d,
+                                _dfn(gfn),
+                                _mfn(gfn),
                                 1UL << PAGE_ORDER_4K,
                                 p2m_access_to_iommu_flags(p2ma));
     }

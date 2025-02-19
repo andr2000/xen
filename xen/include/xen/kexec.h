@@ -62,7 +62,7 @@ int machine_kexec_get_xen(xen_kexec_range_t *range);
 #define VMCOREINFO_NOTE_NAME       "VMCOREINFO_XEN"
 void arch_crash_save_vmcoreinfo(void);
 void vmcoreinfo_append_str(const char *fmt, ...)
-       __attribute__ ((format (printf, 1, 2)));
+    __attribute__((format(printf, 1, 2)));
 #define VMCOREINFO_PAGESIZE(value) \
        vmcoreinfo_append_str("PAGESIZE=%ld\n", value)
 #define VMCOREINFO_SYMBOL(name) \
@@ -84,12 +84,14 @@ void vmcoreinfo_append_str(const char *fmt, ...)
 #define kexecing false
 
 static inline void kexec_early_calculations(void) {}
+
 static inline void kexec_crash(enum crash_reason reason)
 {
     keyhandler_crash_action(reason);
 }
 
 static inline void kexec_crash_save_cpu(void) {}
+
 static inline void set_kexec_crash_area_size(u64 system_ram) {}
 
 #endif

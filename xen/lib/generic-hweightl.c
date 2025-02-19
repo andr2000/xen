@@ -6,18 +6,18 @@
 
 /* Value @b broadcast to every byte in a long */
 #if BITS_PER_LONG == 32
-# define BCST(b) ((b) * 0x01010101UL)
+#define BCST(b) ((b) * 0x01010101UL)
 #elif BITS_PER_LONG == 64
-# define BCST(b) ((b) * 0x0101010101010101UL)
+#define BCST(b) ((b) * 0x0101010101010101UL)
 #else
-# error Extend me please
+#error Extend me please
 #endif
 
 unsigned int generic_hweightl(unsigned long x)
 {
     x -= (x >> 1) & BCST(0x55);
-    x =  (x & BCST(0x33)) + ((x >> 2) & BCST(0x33));
-    x =  (x + (x >> 4)) & BCST(0x0f);
+    x = (x & BCST(0x33)) + ((x >> 2) & BCST(0x33));
+    x = (x + (x >> 4)) & BCST(0x0f);
 
     if ( IS_ENABLED(CONFIG_HAS_FAST_MULTIPLY) )
         return (x * BCST(0x01)) >> (BITS_PER_LONG - 8);

@@ -82,4 +82,4 @@ void acpi_os_free_memory(void *ptr);
 #define ACPI_ALLOCATE_ZEROED(a)	acpi_os_zalloc_memory(a)
 #define ACPI_FREE(a)		acpi_os_free_memory(a)
 
-#endif				/* __ACLINUX_H__ */
+#endif /* __ACLINUX_H__ */

@@ -19,12 +19,12 @@ typedef struct hvm_domain_context {
 } hvm_domain_context_t;
 
 /* Marshalling an entry: check space and fill in the header */
-int _hvm_init_entry(struct hvm_domain_context *h,
-                    uint16_t tc, uint16_t inst, uint32_t len);
+int _hvm_init_entry(struct hvm_domain_context *h, uint16_t tc, uint16_t inst,
+                    uint32_t len);
 
 /* Marshalling: copy the contents in a type-safe way */
-void _hvm_write_entry(struct hvm_domain_context *h,
-                      void *src, uint32_t src_len);
+void _hvm_write_entry(struct hvm_domain_context *h, void *src,
+                      uint32_t src_len);
 
 /* Marshalling: init and copy; evaluates to zero on success */
 #define hvm_save_entry(_x, _inst, _h, _src) ({                  \
@@ -36,8 +36,8 @@ void _hvm_write_entry(struct hvm_domain_context *h,
     r; })
 
 /* Unmarshalling: test an entry's size and typecode and record the instance */
-int _hvm_check_entry(struct hvm_domain_context *h,
-                     uint16_t type, uint32_t len, bool strict_length);
+int _hvm_check_entry(struct hvm_domain_context *h, uint16_t type, uint32_t len,
+                     bool strict_length);
 
 /*
  * Unmarshalling: check, then return pointer. Evaluates to non-NULL on success.
@@ -55,8 +55,8 @@ int _hvm_check_entry(struct hvm_domain_context *h,
     ptr; })
 
 /* Unmarshalling: copy the contents in a type-safe way */
-void _hvm_read_entry(struct hvm_domain_context *h,
-                     void *dest, uint32_t dest_len);
+void _hvm_read_entry(struct hvm_domain_context *h, void *dest,
+                     uint32_t dest_len);
 
 /*
  * Unmarshalling: check, then copy. Evaluates to zero on success. This load
@@ -101,21 +101,17 @@ static inline unsigned int hvm_load_instance(const struct hvm_domain_context *h)
  * The save handler may save multiple instances of a type into the buffer;
  * the load handler will be called once for each instance found when
  * restoring.  Both return non-zero on error. */
-typedef int (*hvm_save_handler) (struct vcpu *v,
-                                 hvm_domain_context_t *h);
+typedef int (*hvm_save_handler)(struct vcpu *v, hvm_domain_context_t *h);
 typedef int (*hvm_check_handler)(const struct domain *d,
                                  hvm_domain_context_t *h);
-typedef int (*hvm_load_handler) (struct domain *d,
-                                 hvm_domain_context_t *h);
+typedef int (*hvm_load_handler)(struct domain *d, hvm_domain_context_t *h);
 
 /* Init-time function to declare a pair of handlers for a type,
  * and the maximum buffer space needed to save this type of state */
-void hvm_register_savevm(uint16_t typecode,
-                         const char *name, 
+void hvm_register_savevm(uint16_t typecode, const char *name,
                          hvm_save_handler save_state,
                          hvm_check_handler check_state,
-                         hvm_load_handler load_state,
-                         size_t size, int kind);
+                         hvm_load_handler load_state, size_t size, int kind);
 
 /* The space needed for saving can be per-domain or per-vcpu: */
 #define HVMSR_PER_DOM  0
@@ -137,7 +133,6 @@ static int __init cf_check __hvm_register_##_x##_save_and_restore(void)   \
     return 0;                                                             \
 }                                                                         \
 __initcall(__hvm_register_##_x##_save_and_restore);
-
 
 /* Entry points for saving and restoring HVM domain state */
 size_t hvm_save_size(struct domain *d);

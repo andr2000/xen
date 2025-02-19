@@ -26,29 +26,29 @@
  * and the ZSTD_ErrorCode can be extracted using ZSTD_getErrorCode().
  */
 typedef enum {
-	ZSTD_error_no_error,
-	ZSTD_error_GENERIC,
-	ZSTD_error_prefix_unknown,
-	ZSTD_error_version_unsupported,
-	ZSTD_error_parameter_unknown,
-	ZSTD_error_frameParameter_unsupported,
-	ZSTD_error_frameParameter_unsupportedBy32bits,
-	ZSTD_error_frameParameter_windowTooLarge,
-	ZSTD_error_compressionParameter_unsupported,
-	ZSTD_error_init_missing,
-	ZSTD_error_memory_allocation,
-	ZSTD_error_stage_wrong,
-	ZSTD_error_dstSize_tooSmall,
-	ZSTD_error_srcSize_wrong,
-	ZSTD_error_corruption_detected,
-	ZSTD_error_checksum_wrong,
-	ZSTD_error_tableLog_tooLarge,
-	ZSTD_error_maxSymbolValue_tooLarge,
-	ZSTD_error_maxSymbolValue_tooSmall,
-	ZSTD_error_dictionary_corrupted,
-	ZSTD_error_dictionary_wrong,
-	ZSTD_error_dictionaryCreation_failed,
-	ZSTD_error_maxCode
+    ZSTD_error_no_error,
+    ZSTD_error_GENERIC,
+    ZSTD_error_prefix_unknown,
+    ZSTD_error_version_unsupported,
+    ZSTD_error_parameter_unknown,
+    ZSTD_error_frameParameter_unsupported,
+    ZSTD_error_frameParameter_unsupportedBy32bits,
+    ZSTD_error_frameParameter_windowTooLarge,
+    ZSTD_error_compressionParameter_unsupported,
+    ZSTD_error_init_missing,
+    ZSTD_error_memory_allocation,
+    ZSTD_error_stage_wrong,
+    ZSTD_error_dstSize_tooSmall,
+    ZSTD_error_srcSize_wrong,
+    ZSTD_error_corruption_detected,
+    ZSTD_error_checksum_wrong,
+    ZSTD_error_tableLog_tooLarge,
+    ZSTD_error_maxSymbolValue_tooLarge,
+    ZSTD_error_maxSymbolValue_tooSmall,
+    ZSTD_error_dictionary_corrupted,
+    ZSTD_error_dictionary_wrong,
+    ZSTD_error_dictionaryCreation_failed,
+    ZSTD_error_maxCode
 } ZSTD_ErrorCode;
 
 /* ****************************************
@@ -67,13 +67,16 @@ typedef ZSTD_ErrorCode ERR_enum;
 ******************************************/
 #define ERROR(name) ((size_t)-PREFIX(name))
 
-ERR_STATIC unsigned __init ERR_isError(size_t code) { return (code > ERROR(maxCode)); }
+ERR_STATIC unsigned __init ERR_isError(size_t code)
+{
+    return (code > ERROR(maxCode));
+}
 
 ERR_STATIC ERR_enum __init ERR_getErrorCode(size_t code)
 {
-	if (!ERR_isError(code))
-		return (ERR_enum)0;
-	return (ERR_enum)(0 - code);
+    if ( !ERR_isError(code) )
+        return (ERR_enum)0;
+    return (ERR_enum)(0 - code);
 }
 
 /**
@@ -84,7 +87,7 @@ ERR_STATIC ERR_enum __init ERR_getErrorCode(size_t code)
  */
 static __attribute__((unused)) unsigned int __init ZSTD_isError(size_t code)
 {
-	return code > (size_t)-ZSTD_error_maxCode;
+    return code > (size_t)-ZSTD_error_maxCode;
 }
 
 /**
@@ -94,12 +97,12 @@ static __attribute__((unused)) unsigned int __init ZSTD_isError(size_t code)
  * Return:          The ZSTD_ErrorCode corresponding to the functionResult or 0
  *                  if the functionResult isn't an error.
  */
-static __attribute__((unused)) ZSTD_ErrorCode __init ZSTD_getErrorCode(
-	size_t functionResult)
+static __attribute__((unused)) ZSTD_ErrorCode __init
+ZSTD_getErrorCode(size_t functionResult)
 {
-	if (!ZSTD_isError(functionResult))
-		return (ZSTD_ErrorCode)0;
-	return (ZSTD_ErrorCode)(0 - functionResult);
+    if ( !ZSTD_isError(functionResult) )
+        return (ZSTD_ErrorCode)0;
+    return (ZSTD_ErrorCode)(0 - functionResult);
 }
 
 #endif /* ERROR_H_MODULE */

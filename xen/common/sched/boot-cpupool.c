@@ -16,8 +16,8 @@
  * pool_sched_map: Index is cpupool id, content is scheduler id, (-1) for
  *                 unassigned.
  */
-static int __initdata pool_cpu_map[NR_CPUS]   = { [0 ... NR_CPUS-1] = -1 };
-static int __initdata pool_sched_map[NR_CPUS] = { [0 ... NR_CPUS-1] = -1 };
+static int __initdata pool_cpu_map[NR_CPUS] = { [0 ... NR_CPUS - 1] = -1 };
+static int __initdata pool_sched_map[NR_CPUS] = { [0 ... NR_CPUS - 1] = -1 };
 static unsigned int __initdata next_pool_id;
 
 #define BTCPUPOOLS_DT_NODE_NO_REG     (-1)
@@ -80,7 +80,7 @@ int __init btcpupools_get_domain_pool_id(const struct dt_device_node *node)
     return pool_cpu_map[cpu_num];
 }
 
-static int __init check_and_get_sched_id(const char* scheduler_name)
+static int __init check_and_get_sched_id(const char *scheduler_name)
 {
     int sched_id = sched_get_id_by_name(scheduler_name);
 
@@ -105,7 +105,7 @@ void __init btcpupools_dtb_parse(void)
     {
         const struct dt_device_node *phandle_node;
         int sched_id = -1;
-        const char* scheduler_name;
+        const char *scheduler_name;
         unsigned int i = 0;
 
         if ( !dt_device_is_compatible(node, "xen,cpupool") )
@@ -126,7 +126,8 @@ void __init btcpupools_dtb_parse(void)
 
             if ( cpu_num < 0 )
                 panic("Error retrieving logical cpu from node %s (%d)\n",
-                      dt_node_name(node), cpu_num);
+                      dt_node_name(node),
+                      cpu_num);
 
             if ( pool_cpu_map[cpu_num] != -1 )
                 panic("Logical cpu %d already added to a cpupool!\n", cpu_num);
@@ -189,7 +190,8 @@ void __init btcpupools_allocate_pools(void)
         {
             if ( pool_cpu_map[i] >= 0 )
                 panic("Pool-%d contains cpu%u that is not online!\n",
-                      pool_cpu_map[i], i);
+                      pool_cpu_map[i],
+                      i);
         }
     }
 
@@ -218,7 +220,9 @@ unsigned int __init btcpupools_get_cpupool_id(unsigned int cpu)
     ASSERT((cpu < NR_CPUS) && (pool_cpu_map[cpu] >= 0));
 
     printk(XENLOG_INFO "Logical CPU %u in Pool-%d (Scheduler id: %d).\n",
-           cpu, pool_cpu_map[cpu], pool_sched_map[pool_cpu_map[cpu]]);
+           cpu,
+           pool_cpu_map[cpu],
+           pool_sched_map[pool_cpu_map[cpu]]);
 
     return pool_cpu_map[cpu];
 }

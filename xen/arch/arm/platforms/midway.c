@@ -42,15 +42,11 @@ static void midway_reset(void)
     iounmap(pmu);
 }
 
-static const char * const midway_dt_compat[] __initconst =
-{
-    "calxeda,ecx-2000",
-    NULL
-};
+static const char *const midway_dt_compat[]
+    __initconst = { "calxeda,ecx-2000", NULL };
 
 PLATFORM_START(midway, "CALXEDA MIDWAY")
-    .compatible = midway_dt_compat,
-    .reset = midway_reset,
+    .compatible = midway_dt_compat, .reset = midway_reset,
 PLATFORM_END
 
 /*

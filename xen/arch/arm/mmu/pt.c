@@ -15,9 +15,9 @@
 #include <asm/fixmap.h>
 
 #ifdef NDEBUG
-static inline void
-__attribute__ ((__format__ (__printf__, 1, 2)))
-mm_printk(const char *fmt, ...) {}
+static inline void __attribute__((__format__(__printf__, 1, 2)))
+mm_printk(const char *fmt, ...)
+{}
 #else
 #define mm_printk(fmt, args...)             \
     do                                      \
@@ -57,8 +57,7 @@ static void xen_unmap_table(const lpae_t *table)
         unmap_domain_page(table);
 }
 
-void dump_pt_walk(paddr_t ttbr, paddr_t addr,
-                  unsigned int root_level,
+void dump_pt_walk(paddr_t ttbr, paddr_t addr, unsigned int root_level,
                   unsigned int nr_root_tables)
 {
     static const char *level_strs[4] = { "0TH", "1ST", "2ND", "3RD" };
@@ -93,15 +92,17 @@ void dump_pt_walk(paddr_t ttbr, paddr_t addr,
 
     mapping = xen_map_table(mfn_add(root_mfn, root_table));
 
-    for ( level = root_level; ; level++ )
+    for ( level = root_level;; level++ )
     {
         if ( offsets[level] > XEN_PT_LPAE_ENTRIES )
             break;
 
         pte = mapping[offsets[level]];
 
-        printk("%s[0x%03x] = 0x%"PRIx64"\n",
-               level_strs[level], offsets[level], pte.bits);
+        printk("%s[0x%03x] = 0x%" PRIx64 "\n",
+               level_strs[level],
+               offsets[level],
+               pte.bits);
 
         if ( level == 3 || !pte.walk.valid || !pte.walk.table )
             break;
@@ -118,9 +119,11 @@ void dump_hyp_walk(vaddr_t addr)
 {
     uint64_t ttbr = READ_SYSREG64(TTBR0_EL2);
 
-    printk("Walking Hypervisor VA 0x%"PRIvaddr" "
-           "on CPU%d via TTBR 0x%016"PRIx64"\n",
-           addr, smp_processor_id(), ttbr);
+    printk("Walking Hypervisor VA 0x%" PRIvaddr
+           " " "on CPU%d via TTBR 0x%016" PRIx64 "\n",
+           addr,
+           smp_processor_id(),
+           ttbr);
 
     dump_pt_walk(ttbr, addr, HYP_PT_ROOT_LEVEL, 1);
 }
@@ -177,7 +180,7 @@ lpae_t mfn_to_xen_entry(mfn_t mfn, unsigned int attr)
         e.pt.sh = LPAE_SH_OUTER;
         break;
     default:
-        e.pt.sh = LPAE_SH_INNER;  /* Xen mappings are SMP coherent */
+        e.pt.sh = LPAE_SH_INNER; /* Xen mappings are SMP coherent */
         break;
     }
 
@@ -279,8 +282,8 @@ static int create_xen_table(lpae_t *entry)
  *  XEN_TABLE_NORMAL_PAGE: next level mapped normally
  *  XEN_TABLE_SUPER_PAGE: The next entry points to a superpage.
  */
-static int xen_pt_next_level(bool read_only, unsigned int level,
-                             lpae_t **table, unsigned int offset)
+static int xen_pt_next_level(bool read_only, unsigned int level, lpae_t **table,
+                             unsigned int offset)
 {
     lpae_t *entry;
     int ret;
@@ -334,15 +337,18 @@ static bool xen_pt_check_entry(lpae_t entry, mfn_t mfn, unsigned int level,
         /* We don't allow changing memory attributes. */
         if ( entry.pt.ai != PAGE_AI_MASK(flags) )
         {
-            mm_printk("Modifying memory attributes is not allowed (0x%x -> 0x%x).\n",
-                      entry.pt.ai, PAGE_AI_MASK(flags));
+            mm_printk(
+                "Modifying memory attributes is not allowed (0x%x -> 0x%x).\n",
+                entry.pt.ai,
+                PAGE_AI_MASK(flags));
             return false;
         }
 
         /* We don't allow modifying entry with contiguous bit set. */
         if ( entry.pt.contig )
         {
-            mm_printk("Modifying entry with contiguous bit set is not allowed.\n");
+            mm_printk(
+                "Modifying entry with contiguous bit set is not allowed.\n");
             return false;
         }
     }
@@ -362,15 +368,18 @@ static bool xen_pt_check_entry(lpae_t entry, mfn_t mfn, unsigned int level,
         if ( lpae_is_valid(entry) )
         {
             if ( lpae_is_mapping(entry, level) )
-                mm_printk("Changing MFN for a valid entry is not allowed (%#"PRI_mfn" -> %#"PRI_mfn").\n",
-                          mfn_x(lpae_get_mfn(entry)), mfn_x(mfn));
+                mm_printk(
+                    "Changing MFN for a valid entry is not allowed (%#" PRI_mfn
+                    " -> %#" PRI_mfn ").\n",
+                    mfn_x(lpae_get_mfn(entry)),
+                    mfn_x(mfn));
             else
                 mm_printk("Trying to replace a table with a mapping.\n");
             return false;
         }
     }
     /* Sanity check when removing a mapping. */
-    else if ( (flags & (_PAGE_PRESENT|_PAGE_POPULATE)) == 0 )
+    else if ( (flags & (_PAGE_PRESENT | _PAGE_POPULATE)) == 0 )
     {
         /* We should be here with an invalid MFN. */
         ASSERT(mfn_eq(mfn, INVALID_MFN));
@@ -385,7 +394,8 @@ static bool xen_pt_check_entry(lpae_t entry, mfn_t mfn, unsigned int level,
         /* We don't allow removing a mapping with contiguous bit set. */
         if ( entry.pt.contig )
         {
-            mm_printk("Removing entry with contiguous bit set is not allowed.\n");
+            mm_printk(
+                "Removing entry with contiguous bit set is not allowed.\n");
             return false;
         }
     }
@@ -401,9 +411,8 @@ static bool xen_pt_check_entry(lpae_t entry, mfn_t mfn, unsigned int level,
 }
 
 /* Update an entry at the level @target. */
-static int xen_pt_update_entry(mfn_t root, unsigned long virt,
-                               mfn_t mfn, unsigned int target,
-                               unsigned int flags)
+static int xen_pt_update_entry(mfn_t root, unsigned long virt, mfn_t mfn,
+                               unsigned int target, unsigned int flags)
 {
     int rc;
     unsigned int level;
@@ -420,7 +429,8 @@ static int xen_pt_update_entry(mfn_t root, unsigned long virt,
     DECLARE_OFFSETS(offsets, (paddr_t)virt);
 
     /* _PAGE_POPULATE and _PAGE_PRESENT should never be set together. */
-    ASSERT((flags & (_PAGE_POPULATE|_PAGE_PRESENT)) != (_PAGE_POPULATE|_PAGE_PRESENT));
+    ASSERT((flags & (_PAGE_POPULATE | _PAGE_PRESENT)) !=
+           (_PAGE_POPULATE | _PAGE_PRESENT));
 
     table = xen_map_table(root);
     for ( level = HYP_PT_ROOT_LEVEL; level < target; level++ )
@@ -435,7 +445,7 @@ static int xen_pt_update_entry(mfn_t root, unsigned long virt,
              * removing a mapping as it may not exist in the page table.
              * In this case, just ignore it.
              */
-            if ( flags & (_PAGE_PRESENT|_PAGE_POPULATE) )
+            if ( flags & (_PAGE_PRESENT | _PAGE_POPULATE) )
             {
                 mm_printk("%s: Unable to map level %u\n", __func__, level);
                 rc = -ENOENT;
@@ -528,25 +538,25 @@ static int xen_pt_mapping_level(unsigned long vfn, mfn_t mfn, unsigned long nr,
       * superpage mapping even if it is not properly aligned (the
       * user may have asked to map 2MB + 4k).
       */
-     mask = !mfn_eq(mfn, INVALID_MFN) ? mfn_x(mfn) : 0;
-     mask |= vfn;
+    mask = !mfn_eq(mfn, INVALID_MFN) ? mfn_x(mfn) : 0;
+    mask |= vfn;
 
-     /*
+    /*
       * Always use level 3 mapping unless the caller request block
       * mapping.
       */
-     if ( likely(!(flags & _PAGE_BLOCK)) )
-         level = 3;
-     else if ( !(mask & (BIT(FIRST_ORDER, UL) - 1)) &&
-               (nr >= BIT(FIRST_ORDER, UL)) )
-         level = 1;
-     else if ( !(mask & (BIT(SECOND_ORDER, UL) - 1)) &&
-               (nr >= BIT(SECOND_ORDER, UL)) )
-         level = 2;
-     else
-         level = 3;
+    if ( likely(!(flags & _PAGE_BLOCK)) )
+        level = 3;
+    else if ( !(mask & (BIT(FIRST_ORDER, UL) - 1)) &&
+              (nr >= BIT(FIRST_ORDER, UL)) )
+        level = 1;
+    else if ( !(mask & (BIT(SECOND_ORDER, UL) - 1)) &&
+              (nr >= BIT(SECOND_ORDER, UL)) )
+        level = 2;
+    else
+        level = 3;
 
-     return level;
+    return level;
 }
 
 #define XEN_PT_4K_NR_CONTIG 16
@@ -596,11 +606,9 @@ static unsigned int xen_pt_check_contig(unsigned long vfn, mfn_t mfn,
 
 static DEFINE_SPINLOCK(xen_pt_lock);
 
-static int xen_pt_update(unsigned long virt,
-                         mfn_t mfn,
+static int xen_pt_update(unsigned long virt, mfn_t mfn,
                          /* const on purpose as it is used for TLB flush */
-                         const unsigned long nr_mfns,
-                         unsigned int flags)
+                         const unsigned long nr_mfns, unsigned int flags)
 {
     int rc = 0;
     unsigned long vfn = virt >> PAGE_SHIFT;
@@ -660,7 +668,10 @@ static int xen_pt_update(unsigned long virt,
 
         for ( ; nr_contig > 0; nr_contig-- )
         {
-            rc = xen_pt_update_entry(root, vfn << PAGE_SHIFT, mfn, level,
+            rc = xen_pt_update_entry(root,
+                                     vfn << PAGE_SHIFT,
+                                     mfn,
+                                     level,
                                      new_flags);
             if ( rc )
                 break;
@@ -698,9 +709,7 @@ static int xen_pt_update(unsigned long virt,
     return rc;
 }
 
-int map_pages_to_xen(unsigned long virt,
-                     mfn_t mfn,
-                     unsigned long nr_mfns,
+int map_pages_to_xen(unsigned long virt, mfn_t mfn, unsigned long nr_mfns,
                      unsigned int flags)
 {
     return xen_pt_update(virt, mfn, nr_mfns, flags);

@@ -27,8 +27,7 @@
 /*
  * struct to hold pci device bar.
  */
-struct pdev_bar_check
-{
+struct pdev_bar_check {
     paddr_t start;
     paddr_t end;
     bool is_valid;
@@ -57,7 +56,7 @@ static void pci_ecam_free(struct pci_config_window *cfg)
     xfree(cfg);
 }
 
-static struct pci_config_window * __init
+static struct pci_config_window *__init
 gen_pci_init(struct dt_device_node *dev, const struct pci_ecam_ops *ops)
 {
     int err, cfg_reg_idx;
@@ -69,14 +68,19 @@ gen_pci_init(struct dt_device_node *dev, const struct pci_ecam_ops *ops)
     if ( !cfg )
         return NULL;
 
-    err = dt_property_read_u32_array(dev, "bus-range", bus_range,
+    err = dt_property_read_u32_array(dev,
+                                     "bus-range",
+                                     bus_range,
                                      ARRAY_SIZE(bus_range));
-    if ( err ) {
+    if ( err )
+    {
         cfg->busn_start = 0;
         cfg->busn_end = 0xff;
         printk(XENLOG_INFO "%s: No bus range found for pci controller\n",
                dt_node_full_name(dev));
-    } else {
+    }
+    else
+    {
         cfg->busn_start = bus_range[0];
         cfg->busn_end = bus_range[1];
         if ( cfg->busn_end > cfg->busn_start + 0xff )
@@ -115,9 +119,11 @@ gen_pci_init(struct dt_device_node *dev, const struct pci_ecam_ops *ops)
         printk(XENLOG_ERR "ECAM ioremap failed\n");
         goto err_exit;
     }
-    printk("ECAM at [mem 0x%"PRIpaddr"-0x%"PRIpaddr"] for [bus %x-%x] \n",
-            cfg->phys_addr, cfg->phys_addr + cfg->size - 1,
-            cfg->busn_start, cfg->busn_end);
+    printk("ECAM at [mem 0x%" PRIpaddr "-0x%" PRIpaddr "] for [bus %x-%x] \n",
+           cfg->phys_addr,
+           cfg->phys_addr + cfg->size - 1,
+           cfg->busn_start,
+           cfg->busn_end);
 
     if ( ops->init )
     {
@@ -268,6 +274,7 @@ pci_find_host_bridge_node(const struct pci_dev *pdev)
     }
     return bridge->dt_node;
 }
+
 /*
  * This function will lookup an hostbridge based on the segment and bus
  * number.
@@ -276,7 +283,7 @@ struct pci_host_bridge *pci_find_host_bridge(uint16_t segment, uint8_t bus)
 {
     struct pci_host_bridge *bridge;
 
-    list_for_each_entry( bridge, &pci_host_bridges, node )
+    list_for_each_entry(bridge, &pci_host_bridges, node)
     {
         if ( bridge->segment != segment )
             continue;
@@ -296,7 +303,7 @@ int pci_get_host_bridge_segment(const struct dt_device_node *node,
 {
     struct pci_host_bridge *bridge;
 
-    list_for_each_entry( bridge, &pci_host_bridges, node )
+    list_for_each_entry(bridge, &pci_host_bridges, node)
     {
         if ( bridge->dt_node != node )
             continue;
@@ -308,14 +315,14 @@ int pci_get_host_bridge_segment(const struct dt_device_node *node,
     return -EINVAL;
 }
 
-int pci_host_iterate_bridges_and_count(struct domain *d,
-                                       int (*cb)(struct domain *d,
-                                                 struct pci_host_bridge *bridge))
+int pci_host_iterate_bridges_and_count(
+    struct domain *d,
+    int (*cb)(struct domain *d, struct pci_host_bridge *bridge))
 {
     struct pci_host_bridge *bridge;
     int count = 0;
 
-    list_for_each_entry( bridge, &pci_host_bridges, node )
+    list_for_each_entry(bridge, &pci_host_bridges, node)
     {
         int ret;
 
@@ -338,13 +345,11 @@ int pci_host_iterate_bridges_and_count(struct domain *d,
 int __init pci_host_bridge_mappings(struct domain *d)
 {
     struct pci_host_bridge *bridge;
-    struct map_range_data mr_data = {
-        .d = d,
-        .p2mt = p2m_mmio_direct_dev,
-        .skip_mapping = false
-    };
+    struct map_range_data mr_data = { .d = d,
+                                      .p2mt = p2m_mmio_direct_dev,
+                                      .skip_mapping = false };
 
-    list_for_each_entry( bridge, &pci_host_bridges, node )
+    list_for_each_entry(bridge, &pci_host_bridges, node)
     {
         const struct dt_device_node *dev = bridge->dt_node;
         unsigned int i;
@@ -359,7 +364,8 @@ int __init pci_host_bridge_mappings(struct domain *d)
             {
                 printk(XENLOG_ERR
                        "Unable to retrieve address range index=%u for %s\n",
-                       i, dt_node_full_name(dev));
+                       i,
+                       dt_node_full_name(dev));
                 return err;
             }
 
@@ -380,15 +386,15 @@ int __init pci_host_bridge_mappings(struct domain *d)
  * to be page aligned. We should check for alignment but this is not the
  * right place for alignment check.
  */
-static int is_bar_valid(const struct dt_device_node *dev,
-                        uint64_t addr, uint64_t len, void *data)
+static int is_bar_valid(const struct dt_device_node *dev, uint64_t addr,
+                        uint64_t len, void *data)
 {
     struct pdev_bar_check *bar_data = data;
     paddr_t s = bar_data->start;
     paddr_t e = bar_data->end;
 
     if ( (s >= addr) && (e <= (addr + len - 1)) )
-        bar_data->is_valid =  true;
+        bar_data->is_valid = true;
 
     return 0;
 }
@@ -404,11 +410,9 @@ bool pci_check_bar(const struct pci_dev *pdev, mfn_t start, mfn_t end)
     const struct dt_device_node *dt_node;
     paddr_t s = mfn_to_maddr(start);
     paddr_t e = mfn_to_maddr(mfn_add(end, 1)) - 1; /* inclusive */
-    struct pdev_bar_check bar_data =  {
-        .start = s,
-        .end = e,
-        .is_valid = false
-    };
+    struct pdev_bar_check bar_data = { .start = s,
+                                       .end = e,
+                                       .is_valid = false };
 
     if ( s > e )
         return false;
@@ -423,6 +427,7 @@ bool pci_check_bar(const struct pci_dev *pdev, mfn_t start, mfn_t end)
 
     return bar_data.is_valid;
 }
+
 /*
  * Local variables:
  * mode: C

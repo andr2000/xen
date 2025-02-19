@@ -58,8 +58,7 @@ static int __init alloc_domain_evtchn(struct dt_device_node *node)
     remote_node = dt_find_node_by_phandle(remote_phandle);
     if ( !remote_node )
     {
-        printk(XENLOG_ERR
-                "evtchn: could not find remote evtchn phandle\n");
+        printk(XENLOG_ERR "evtchn: could not find remote evtchn phandle\n");
         return -EINVAL;
     }
 
@@ -76,14 +75,14 @@ static int __init alloc_domain_evtchn(struct dt_device_node *node)
     p1_node = dt_get_parent(node);
     if ( !p1_node )
     {
-        printk(XENLOG_ERR "evtchn: evtchn parent node is NULL\n" );
+        printk(XENLOG_ERR "evtchn: evtchn parent node is NULL\n");
         return -EINVAL;
     }
 
     p2_node = dt_get_parent(remote_node);
     if ( !p2_node )
     {
-        printk(XENLOG_ERR "evtchn: remote parent node is NULL\n" );
+        printk(XENLOG_ERR "evtchn: remote parent node is NULL\n");
         return -EINVAL;
     }
 
@@ -92,7 +91,7 @@ static int __init alloc_domain_evtchn(struct dt_device_node *node)
 
     if ( !d1 || !d2 )
     {
-        printk(XENLOG_ERR "evtchn: could not find domains\n" );
+        printk(XENLOG_ERR "evtchn: could not find domains\n");
         return -EINVAL;
     }
 
@@ -102,19 +101,18 @@ static int __init alloc_domain_evtchn(struct dt_device_node *node)
     rc = evtchn_alloc_unbound(&alloc_unbound, domU1_port);
     if ( rc < 0 )
     {
-        printk(XENLOG_ERR
-                "evtchn_alloc_unbound() failure (Error %d) \n", rc);
+        printk(XENLOG_ERR "evtchn_alloc_unbound() failure (Error %d) \n", rc);
         return rc;
     }
 
-    bind_interdomain.remote_dom  = d1->domain_id;
+    bind_interdomain.remote_dom = d1->domain_id;
     bind_interdomain.remote_port = domU1_port;
 
     rc = evtchn_bind_interdomain(&bind_interdomain, d2, domU2_port);
     if ( rc < 0 )
     {
-        printk(XENLOG_ERR
-                "evtchn_bind_interdomain() failure (Error %d) \n", rc);
+        printk(XENLOG_ERR "evtchn_bind_interdomain() failure (Error %d) \n",
+               rc);
         return rc;
     }
 

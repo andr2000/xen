@@ -15,29 +15,29 @@ extern unsigned char mp_bus_id_to_type[MAX_MP_BUSSES];
 extern bool def_to_bigsmp;
 extern unsigned int boot_cpu_physical_apicid;
 extern bool smp_found_config;
-extern void find_smp_config (void);
-extern void get_smp_config (void);
-extern unsigned char apic_version [MAX_APICS];
+extern void find_smp_config(void);
+extern void get_smp_config(void);
+extern unsigned char apic_version[MAX_APICS];
 extern int mp_irq_entries;
-extern struct mpc_config_intsrc mp_irqs [MAX_IRQ_SOURCES];
+extern struct mpc_config_intsrc mp_irqs[MAX_IRQ_SOURCES];
 extern unsigned long mp_lapic_addr;
 extern bool pic_mode;
 
 #ifdef CONFIG_ACPI
 extern int mp_register_lapic(u32 id, bool enabled, bool hotplug);
 extern void mp_unregister_lapic(uint32_t apic_id, uint32_t cpu);
-extern void mp_register_lapic_address (u64 address);
-extern void mp_register_ioapic (u8 id, u32 address, u32 gsi_base);
-extern void mp_override_legacy_irq (u8 bus_irq, u8 polarity, u8 trigger, u32 gsi);
-extern void mp_config_acpi_legacy_irqs (void);
-extern int mp_register_gsi (u32 gsi, int edge_level, int active_high_low);
+extern void mp_register_lapic_address(u64 address);
+extern void mp_register_ioapic(u8 id, u32 address, u32 gsi_base);
+extern void mp_override_legacy_irq(u8 bus_irq, u8 polarity, u8 trigger,
+                                   u32 gsi);
+extern void mp_config_acpi_legacy_irqs(void);
+extern int mp_register_gsi(u32 gsi, int edge_level, int active_high_low);
 #endif /* CONFIG_ACPI */
 
 #define PHYSID_ARRAY_SIZE	BITS_TO_LONGS(MAX_APICS)
 
-struct physid_mask
-{
-	unsigned long mask[PHYSID_ARRAY_SIZE];
+struct physid_mask {
+    unsigned long mask[PHYSID_ARRAY_SIZE];
 };
 
 typedef struct physid_mask physid_mask_t;
@@ -74,4 +74,3 @@ typedef struct physid_mask physid_mask_t;
 extern physid_mask_t phys_cpu_present_map;
 
 #endif
-

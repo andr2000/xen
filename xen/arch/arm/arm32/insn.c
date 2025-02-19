@@ -53,7 +53,7 @@ int32_t aarch32_get_branch_offset(uint32_t insn)
     uint32_t imm;
 
     /* Retrieve imm from branch instruction. */
-    imm = ( insn >> BRANCH_INSN_IMM_SHIFT ) & BRANCH_INSN_IMM_MASK;
+    imm = (insn >> BRANCH_INSN_IMM_SHIFT) & BRANCH_INSN_IMM_MASK;
 
     /*
      * Check the imm signed bit. If the imm is a negative value, we
@@ -74,8 +74,7 @@ uint32_t aarch32_set_branch_offset(uint32_t insn, int32_t offset)
     /* B/BL support [-32M, 32M) offset (see ARM DDI 0406C.c A4.3). */
     if ( offset < -SZ_32M || offset >= SZ_32M )
     {
-        printk(XENLOG_ERR
-               "%s: new branch offset out of range.\n", __func__);
+        printk(XENLOG_ERR "%s: new branch offset out of range.\n", __func__);
         return BUG_OPCODE;
     }
 

@@ -41,28 +41,15 @@
 
 #ifdef DEBUG_HASHES
 static char *symtab_name[SYM_NUM] = {
-    "common prefixes",
-    "classes",
-    "roles",
-    "types",
-    "users",
-    "bools",
-    "levels",
-    "categories",
+    "common prefixes", "classes", "roles",  "types",
+    "users",           "bools",   "levels", "categories",
 };
 #endif
 
 int flask_mls_enabled = 0;
 
 static unsigned int symtab_sizes[SYM_NUM] = {
-    2,
-    32,
-    16,
-    512,
-    128,
-    16,
-    16,
-    16,
+    2, 32, 16, 512, 128, 16, 16, 16,
 };
 
 struct policydb_compat_info {
@@ -75,86 +62,86 @@ struct policydb_compat_info {
 /* These need to be updated if SYM_NUM or OCON_NUM changes */
 static struct policydb_compat_info policydb_compat[] = {
     {
-        .version        = POLICYDB_VERSION_BASE,
-        .sym_num        = SYM_NUM - 3,
-        .ocon_num       = 4,
-        .target_type    = TARGET_XEN_OLD,
-    },
+     .version = POLICYDB_VERSION_BASE,
+     .sym_num = SYM_NUM - 3,
+     .ocon_num = 4,
+     .target_type = TARGET_XEN_OLD,
+     },
     {
-        .version        = POLICYDB_VERSION_BOOL,
-        .sym_num        = SYM_NUM - 2,
-        .ocon_num       = 4,
-        .target_type    = TARGET_XEN_OLD,
-    },
+     .version = POLICYDB_VERSION_BOOL,
+     .sym_num = SYM_NUM - 2,
+     .ocon_num = 4,
+     .target_type = TARGET_XEN_OLD,
+     },
     {
-        .version        = POLICYDB_VERSION_IPV6,
-        .sym_num        = SYM_NUM - 2,
-        .ocon_num       = 5,
-        .target_type    = TARGET_XEN_OLD,
-    },
+     .version = POLICYDB_VERSION_IPV6,
+     .sym_num = SYM_NUM - 2,
+     .ocon_num = 5,
+     .target_type = TARGET_XEN_OLD,
+     },
     {
-        .version        = POLICYDB_VERSION_NLCLASS,
-        .sym_num        = SYM_NUM - 2,
-        .ocon_num       = 5,
-        .target_type    = TARGET_XEN_OLD,
-    },
+     .version = POLICYDB_VERSION_NLCLASS,
+     .sym_num = SYM_NUM - 2,
+     .ocon_num = 5,
+     .target_type = TARGET_XEN_OLD,
+     },
     {
-        .version        = POLICYDB_VERSION_MLS,
-        .sym_num        = SYM_NUM,
-        .ocon_num       = 5,
-        .target_type    = TARGET_XEN_OLD,
-    },
+     .version = POLICYDB_VERSION_MLS,
+     .sym_num = SYM_NUM,
+     .ocon_num = 5,
+     .target_type = TARGET_XEN_OLD,
+     },
     {
-        .version        = POLICYDB_VERSION_AVTAB,
-        .sym_num        = SYM_NUM,
-        .ocon_num       = 5,
-        .target_type    = TARGET_XEN_OLD,
-    },
+     .version = POLICYDB_VERSION_AVTAB,
+     .sym_num = SYM_NUM,
+     .ocon_num = 5,
+     .target_type = TARGET_XEN_OLD,
+     },
     {
-	.version	= POLICYDB_VERSION_RANGETRANS,
-	.sym_num	= SYM_NUM,
-	.ocon_num	= 5,
-        .target_type    = TARGET_XEN_OLD,
-    },
+     .version = POLICYDB_VERSION_RANGETRANS,
+     .sym_num = SYM_NUM,
+     .ocon_num = 5,
+     .target_type = TARGET_XEN_OLD,
+     },
     {
-	.version	= POLICYDB_VERSION_POLCAP,
-	.sym_num	= SYM_NUM,
-	.ocon_num	= 5,
-        .target_type    = TARGET_XEN_OLD,
-    },
+     .version = POLICYDB_VERSION_POLCAP,
+     .sym_num = SYM_NUM,
+     .ocon_num = 5,
+     .target_type = TARGET_XEN_OLD,
+     },
     {
-	.version	= POLICYDB_VERSION_PERMISSIVE,
-	.sym_num	= SYM_NUM,
-	.ocon_num	= 5,
-        .target_type    = TARGET_XEN_OLD,
-    },
+     .version = POLICYDB_VERSION_PERMISSIVE,
+     .sym_num = SYM_NUM,
+     .ocon_num = 5,
+     .target_type = TARGET_XEN_OLD,
+     },
     {
-	.version	= POLICYDB_VERSION_BOUNDARY,
-        .sym_num        = SYM_NUM,
-        .ocon_num       = OCON_NUM_OLD,
-        .target_type    = TARGET_XEN_OLD,
-    },
+     .version = POLICYDB_VERSION_BOUNDARY,
+     .sym_num = SYM_NUM,
+     .ocon_num = OCON_NUM_OLD,
+     .target_type = TARGET_XEN_OLD,
+     },
     {
-	.version	= POLICYDB_VERSION_BOUNDARY,
-	.sym_num	= SYM_NUM,
-	.ocon_num	= OCON_DEVICE + 1,
-        .target_type    = TARGET_XEN,
-    },
+     .version = POLICYDB_VERSION_BOUNDARY,
+     .sym_num = SYM_NUM,
+     .ocon_num = OCON_DEVICE + 1,
+     .target_type = TARGET_XEN,
+     },
     {
-	.version	= POLICYDB_VERSION_XEN_DEVICETREE,
-	.sym_num	= SYM_NUM,
-	.ocon_num	= OCON_DTREE + 1,
-        .target_type    = TARGET_XEN,
-    },
+     .version = POLICYDB_VERSION_XEN_DEVICETREE,
+     .sym_num = SYM_NUM,
+     .ocon_num = OCON_DTREE + 1,
+     .target_type = TARGET_XEN,
+     },
 };
 
 static struct policydb_compat_info *policydb_lookup_compat(int version,
-                                                            int target)
+                                                           int target)
 {
     int i;
     struct policydb_compat_info *info = NULL;
 
-    for ( i = 0; i < sizeof(policydb_compat)/sizeof(*info); i++ )
+    for ( i = 0; i < sizeof(policydb_compat) / sizeof(*info); i++ )
     {
         if ( policydb_compat[i].version == version &&
              policydb_compat[i].target_type == target )
@@ -187,13 +174,13 @@ static int roles_init(struct policydb *p)
         rc = -EINVAL;
         goto out_free_role;
     }
-    key = xmalloc_array(char, strlen(OBJECT_R)+1);
+    key = xmalloc_array(char, strlen(OBJECT_R) + 1);
     if ( !key )
     {
         rc = -ENOMEM;
         goto out_free_role;
     }
-    strlcpy(key, OBJECT_R, strlen(OBJECT_R)+1);
+    strlcpy(key, OBJECT_R, strlen(OBJECT_R) + 1);
     rc = hashtab_insert(p->p_roles.table, key, role);
     if ( rc )
         goto out_free_key;
@@ -286,9 +273,8 @@ static int cf_check role_index(void *key, void *datum, void *datap)
 
     role = datum;
     p = datap;
-    if ( !role->value
-         || role->value > p->p_roles.nprim
-         || role->bounds > p->p_roles.nprim )
+    if ( !role->value || role->value > p->p_roles.nprim ||
+         role->bounds > p->p_roles.nprim )
         return -EINVAL;
     p->p_role_val_to_name[role->value - 1] = key;
     p->role_val_to_struct[role->value - 1] = role;
@@ -305,9 +291,8 @@ static int cf_check type_index(void *key, void *datum, void *datap)
 
     if ( typdatum->primary )
     {
-        if ( !typdatum->value
-             || typdatum->value > p->p_types.nprim
-             || typdatum->bounds > p->p_types.nprim )
+        if ( !typdatum->value || typdatum->value > p->p_types.nprim ||
+             typdatum->bounds > p->p_types.nprim )
             return -EINVAL;
         p->p_type_val_to_name[typdatum->value - 1] = key;
         p->type_val_to_struct[typdatum->value - 1] = typdatum;
@@ -323,9 +308,8 @@ static int cf_check user_index(void *key, void *datum, void *datap)
 
     usrdatum = datum;
     p = datap;
-    if ( !usrdatum->value
-         || usrdatum->value > p->p_users.nprim
-         || usrdatum->bounds > p->p_users.nprim )
+    if ( !usrdatum->value || usrdatum->value > p->p_users.nprim ||
+         usrdatum->bounds > p->p_users.nprim )
         return -EINVAL;
     p->p_user_val_to_name[usrdatum->value - 1] = key;
     p->user_val_to_struct[usrdatum->value - 1] = usrdatum;
@@ -342,8 +326,8 @@ static int cf_check sens_index(void *key, void *datum, void *datap)
 
     if ( !levdatum->isalias )
     {
-        if ( !levdatum->level->sens || levdatum->level->sens >
-                                                        p->p_levels.nprim )
+        if ( !levdatum->level->sens ||
+             levdatum->level->sens > p->p_levels.nprim )
             return -EINVAL;
         p->p_sens_val_to_name[levdatum->level->sens - 1] = key;
     }
@@ -369,16 +353,9 @@ static int cf_check cat_index(void *key, void *datum, void *datap)
     return 0;
 }
 
-static int (*index_f[SYM_NUM]) (void *key, void *datum, void *datap) =
-{
-    common_index,
-    class_index,
-    role_index,
-    type_index,
-    user_index,
-    cond_index_bool,
-    sens_index,
-    cat_index,
+static int (*index_f[SYM_NUM])(void *key, void *datum, void *datap) = {
+    common_index, class_index,     role_index, type_index,
+    user_index,   cond_index_bool, sens_index, cat_index,
 };
 
 /*
@@ -391,16 +368,15 @@ static int policydb_index_classes(struct policydb *p)
 {
     int rc;
 
-    p->class_val_to_struct =
-        xmalloc_array(struct class_datum *, p->p_classes.nprim);
+    p->class_val_to_struct = xmalloc_array(struct class_datum *,
+                                           p->p_classes.nprim);
     if ( !p->class_val_to_struct )
     {
         rc = -ENOMEM;
         goto out;
     }
 
-    p->p_class_val_to_name =
-        xmalloc_array(char *, p->p_classes.nprim);
+    p->p_class_val_to_name = xmalloc_array(char *, p->p_classes.nprim);
     if ( !p->p_class_val_to_name )
     {
         rc = -ENOMEM;
@@ -423,9 +399,14 @@ static void symtab_hash_eval(struct symtab *s)
         struct hashtab_info info;
 
         hashtab_stat(h, &info);
-        printk(KERN_INFO "%s:  %d entries and %d/%d buckets used, "
-               "longest chain length %d\n", symtab_name[i], h->nel,
-               info.slots_used, h->size, info.max_chain_len);
+        printk(
+            KERN_INFO
+            "%s:  %d entries and %d/%d buckets used, " "longest chain length %d\n",
+            symtab_name[i],
+            h->nel,
+            info.slots_used,
+            h->size,
+            info.max_chain_len);
     }
 }
 #endif
@@ -441,38 +422,42 @@ static int policydb_index_others(struct policydb *p)
     int i, rc = 0;
 
     printk(KERN_INFO "Flask:  %d users, %d roles, %d types, %d bools",
-           p->p_users.nprim, p->p_roles.nprim, p->p_types.nprim, p->p_bools.nprim);
+           p->p_users.nprim,
+           p->p_roles.nprim,
+           p->p_types.nprim,
+           p->p_bools.nprim);
     if ( flask_mls_enabled )
         printk(", %d sens, %d cats", p->p_levels.nprim, p->p_cats.nprim);
 
     printk("\n");
 
     printk(KERN_INFO "Flask:  %d classes, %d rules\n",
-           p->p_classes.nprim, p->te_avtab.nel);
+           p->p_classes.nprim,
+           p->te_avtab.nel);
 
 #ifdef DEBUG_HASHES
     avtab_hash_eval(&p->te_avtab, "rules");
     symtab_hash_eval(p->symtab);
 #endif
 
-    p->role_val_to_struct =
-        xmalloc_array(struct role_datum *, p->p_roles.nprim);
+    p->role_val_to_struct = xmalloc_array(struct role_datum *,
+                                          p->p_roles.nprim);
     if ( !p->role_val_to_struct )
     {
         rc = -ENOMEM;
         goto out;
     }
 
-    p->user_val_to_struct =
-        xmalloc_array(struct user_datum *, p->p_users.nprim);
+    p->user_val_to_struct = xmalloc_array(struct user_datum *,
+                                          p->p_users.nprim);
     if ( !p->user_val_to_struct )
     {
         rc = -ENOMEM;
         goto out;
     }
 
-    p->type_val_to_struct =
-        xmalloc_array(struct type_datum *, p->p_types.nprim);
+    p->type_val_to_struct = xmalloc_array(struct type_datum *,
+                                          p->p_types.nprim);
     if ( !p->type_val_to_struct )
     {
         rc = -ENOMEM;
@@ -487,8 +472,7 @@ static int policydb_index_others(struct policydb *p)
 
     for ( i = SYM_ROLES; i < SYM_NUM; i++ )
     {
-        p->sym_val_to_name[i] =
-            xmalloc_array(char *, p->symtab[i].nprim);
+        p->sym_val_to_name[i] = xmalloc_array(char *, p->symtab[i].nprim);
         if ( !p->sym_val_to_name[i] )
         {
             rc = -ENOMEM;
@@ -627,16 +611,9 @@ static int cf_check cat_destroy(void *key, void *datum, void *p)
     return 0;
 }
 
-static int (*destroy_f[SYM_NUM]) (void *key, void *datum, void *datap) =
-{
-    common_destroy,
-    class_destroy,
-    role_destroy,
-    type_destroy,
-    user_destroy,
-    cond_destroy_bool,
-    sens_destroy,
-    cat_destroy,
+static int (*destroy_f[SYM_NUM])(void *key, void *datum, void *datap) = {
+    common_destroy, class_destroy,     role_destroy, type_destroy,
+    user_destroy,   cond_destroy_bool, sens_destroy, cat_destroy,
 };
 
 static void ocontext_destroy(struct ocontext *c, int i)
@@ -681,7 +658,7 @@ void policydb_destroy(struct policydb *p)
         {
             ctmp = c;
             c = c->next;
-            ocontext_destroy(ctmp,i);
+            ocontext_destroy(ctmp, i);
         }
         p->ocontexts[i] = NULL;
     }
@@ -695,14 +672,14 @@ void policydb_destroy(struct policydb *p)
     }
     xfree(ltr);
 
-    for ( ra = p->role_allow; ra; ra = ra -> next )
+    for ( ra = p->role_allow; ra; ra = ra->next )
     {
         xfree(lra);
         lra = ra;
     }
     xfree(lra);
 
-    for ( rt = p->range_tr; rt; rt = rt -> next )
+    for ( rt = p->range_tr; rt; rt = rt->next )
     {
         if ( lrt )
         {
@@ -751,15 +728,15 @@ int policydb_load_isids(struct policydb *p, struct sidtab *s)
     {
         if ( !c->context.user )
         {
-            printk(KERN_ERR "Flask:  SID %s was never "
-                   "defined.\n", c->u.name);
+            printk(KERN_ERR "Flask:  SID %s was never " "defined.\n",
+                   c->u.name);
             rc = -EINVAL;
             goto out;
         }
         if ( sidtab_insert(s, c->sid, &c->context) )
         {
-            printk(KERN_ERR "Flask:  unable to load initial "
-                   "SID %s.\n", c->u.name);
+            printk(KERN_ERR "Flask:  unable to load initial " "SID %s.\n",
+                   c->u.name);
             rc = -EINVAL;
             goto out;
         }
@@ -871,8 +848,7 @@ static int mls_read_range_helper(struct mls_range *r, void *fp)
     rc = ebitmap_read(&r->level[0].cat, fp);
     if ( rc )
     {
-        printk(KERN_ERR "Flask: mls:  error reading low "
-               "categories\n");
+        printk(KERN_ERR "Flask: mls:  error reading low " "categories\n");
         goto out;
     }
     if ( items > 1 )
@@ -880,8 +856,7 @@ static int mls_read_range_helper(struct mls_range *r, void *fp)
         rc = ebitmap_read(&r->level[1].cat, fp);
         if ( rc )
         {
-            printk(KERN_ERR "Flask: mls:  error reading high "
-                   "categories\n");
+            printk(KERN_ERR "Flask: mls:  error reading high " "categories\n");
             goto bad_high;
         }
     }
@@ -908,7 +883,7 @@ bad_high:
  * from a policydb binary representation file.
  */
 static int context_read_and_validate(struct context *c, struct policydb *p,
-                                                                    void *fp)
+                                     void *fp)
 {
     __le32 buf[3];
     int rc;
@@ -926,8 +901,7 @@ static int context_read_and_validate(struct context *c, struct policydb *p,
     {
         if ( mls_read_range_helper(&c->range, fp) )
         {
-            printk(KERN_ERR "Flask: error reading MLS range of "
-                   "context\n");
+            printk(KERN_ERR "Flask: error reading MLS range of " "context\n");
             rc = -EINVAL;
             goto out;
         }
@@ -1100,49 +1074,49 @@ static int read_cons_helper(struct policydb *p, struct constraint_node **nodep,
 
             switch ( e->expr_type )
             {
-                case CEXPR_NOT:
-                    if ( depth < 0 )
-                        return -EINVAL;
-                break;
-                case CEXPR_AND:
-                case CEXPR_OR:
-                    if ( depth < 1 )
-                        return -EINVAL;
-                    depth--;
-                break;
-                case CEXPR_ATTR:
-                    if ( depth == (CEXPR_MAXDEPTH - 1) )
-                        return -EINVAL;
-                    depth++;
-                break;
-                case CEXPR_NAMES:
-                    if ( !allowxtarget && (e->attr & CEXPR_XTARGET) )
-                        return -EINVAL;
-                    if ( depth == (CEXPR_MAXDEPTH - 1) )
-                        return -EINVAL;
-                    depth++;
-                    if ( ebitmap_read(&e->names, fp) )
-                        return -EINVAL;
-                    if ( p->policyvers >= POLICYDB_VERSION_CONSTRAINT_NAMES )
-                    {
-                        struct ebitmap dummy;
-                        ebitmap_init(&dummy);
-                        if ( ebitmap_read(&dummy, fp) )
-                            return -EINVAL;
-                        ebitmap_destroy(&dummy);
-
-                        ebitmap_init(&dummy);
-                        if ( ebitmap_read(&dummy, fp) )
-                            return -EINVAL;
-                        ebitmap_destroy(&dummy);
-
-                        rc = next_entry(buf, fp, sizeof(u32));
-                        if ( rc < 0 )
-                            return rc;
-                    }
-                break;
-                default:
+            case CEXPR_NOT:
+                if ( depth < 0 )
                     return -EINVAL;
+                break;
+            case CEXPR_AND:
+            case CEXPR_OR:
+                if ( depth < 1 )
+                    return -EINVAL;
+                depth--;
+                break;
+            case CEXPR_ATTR:
+                if ( depth == (CEXPR_MAXDEPTH - 1) )
+                    return -EINVAL;
+                depth++;
+                break;
+            case CEXPR_NAMES:
+                if ( !allowxtarget && (e->attr & CEXPR_XTARGET) )
+                    return -EINVAL;
+                if ( depth == (CEXPR_MAXDEPTH - 1) )
+                    return -EINVAL;
+                depth++;
+                if ( ebitmap_read(&e->names, fp) )
+                    return -EINVAL;
+                if ( p->policyvers >= POLICYDB_VERSION_CONSTRAINT_NAMES )
+                {
+                    struct ebitmap dummy;
+                    ebitmap_init(&dummy);
+                    if ( ebitmap_read(&dummy, fp) )
+                        return -EINVAL;
+                    ebitmap_destroy(&dummy);
+
+                    ebitmap_init(&dummy);
+                    if ( ebitmap_read(&dummy, fp) )
+                        return -EINVAL;
+                    ebitmap_destroy(&dummy);
+
+                    rc = next_entry(buf, fp, sizeof(u32));
+                    if ( rc < 0 )
+                        return rc;
+                }
+                break;
+            default:
+                return -EINVAL;
             }
             le = e;
         }
@@ -1169,7 +1143,7 @@ static int cf_check class_read(struct policydb *p, struct hashtab *h, void *fp)
         goto out;
     }
 
-    rc = next_entry(buf, fp, sizeof(u32)*6);
+    rc = next_entry(buf, fp, sizeof(u32) * 6);
     if ( rc < 0 )
         goto bad;
 
@@ -1198,7 +1172,8 @@ static int cf_check class_read(struct policydb *p, struct hashtab *h, void *fp)
 
     if ( len2 )
     {
-        printk(KERN_ERR "Flask:  classes with common prefixes are not supported\n");
+        printk(KERN_ERR
+               "Flask:  classes with common prefixes are not supported\n");
         rc = -EINVAL;
         goto bad;
     }
@@ -1305,8 +1280,9 @@ static int cf_check role_read(struct policydb *p, struct hashtab *h, void *fp)
     {
         if ( role->value != OBJECT_R_VAL )
         {
-            printk(KERN_ERR "Role %s has wrong value %d\n", OBJECT_R,
-                                                                role->value);
+            printk(KERN_ERR "Role %s has wrong value %d\n",
+                   OBJECT_R,
+                   role->value);
             rc = -EINVAL;
             goto bad;
         }
@@ -1386,7 +1362,6 @@ bad:
     type_destroy(key, typdatum, NULL);
     goto out;
 }
-
 
 /*
  * Read a MLS level structure from a policydb binary
@@ -1582,36 +1557,29 @@ bad:
     goto out;
 }
 
-static int (*read_f[SYM_NUM]) (struct policydb *p, struct hashtab *h, void *fp) =
-{
-    common_read,
-    class_read,
-    role_read,
-    type_read,
-    user_read,
-    cond_read_bool,
-    sens_read,
-    cat_read,
+static int (*read_f[SYM_NUM])(struct policydb *p, struct hashtab *h,
+                              void *fp) = {
+    common_read, class_read,     role_read, type_read,
+    user_read,   cond_read_bool, sens_read, cat_read,
 };
 
-static int cf_check user_bounds_sanity_check(
-    void *key, void *datum, void *datap)
+static int cf_check user_bounds_sanity_check(void *key, void *datum,
+                                             void *datap)
 {
     struct user_datum *upper, *user;
     struct policydb *p = datap;
     int depth = 0;
 
     upper = user = datum;
-    while (upper->bounds)
+    while ( upper->bounds )
     {
         struct ebitmap_node *node;
         unsigned long bit;
 
         if ( ++depth == POLICYDB_BOUNDS_MAXDEPTH )
         {
-            printk(KERN_ERR "Flask: user %s: "
-                   "too deep or looped boundary",
-                   (char *) key);
+            printk(KERN_ERR "Flask: user %s: " "too deep or looped boundary",
+                   (char *)key);
             return -EINVAL;
         }
 
@@ -1621,12 +1589,12 @@ static int cf_check user_bounds_sanity_check(
             if ( ebitmap_get_bit(&upper->roles, bit) )
                 continue;
 
-            printk(KERN_ERR
-                   "Flask: boundary violated policy: "
-                   "user=%s role=%s bounds=%s\n",
-                   p->p_user_val_to_name[user->value - 1],
-                   p->p_role_val_to_name[bit],
-                   p->p_user_val_to_name[upper->value - 1]);
+            printk(
+                KERN_ERR
+                "Flask: boundary violated policy: " "user=%s role=%s bounds=%s\n",
+                p->p_user_val_to_name[user->value - 1],
+                p->p_role_val_to_name[bit],
+                p->p_user_val_to_name[upper->value - 1]);
 
             return -EINVAL;
         }
@@ -1635,24 +1603,23 @@ static int cf_check user_bounds_sanity_check(
     return 0;
 }
 
-static int cf_check role_bounds_sanity_check(
-    void *key, void *datum, void *datap)
+static int cf_check role_bounds_sanity_check(void *key, void *datum,
+                                             void *datap)
 {
     struct role_datum *upper, *role;
     struct policydb *p = datap;
     int depth = 0;
 
     upper = role = datum;
-    while (upper->bounds)
+    while ( upper->bounds )
     {
         struct ebitmap_node *node;
         unsigned long bit;
 
         if ( ++depth == POLICYDB_BOUNDS_MAXDEPTH )
         {
-            printk(KERN_ERR "Flask: role %s: "
-                   "too deep or looped bounds\n",
-                   (char *) key);
+            printk(KERN_ERR "Flask: role %s: " "too deep or looped bounds\n",
+                   (char *)key);
             return -EINVAL;
         }
 
@@ -1662,12 +1629,12 @@ static int cf_check role_bounds_sanity_check(
             if ( ebitmap_get_bit(&upper->types, bit) )
                 continue;
 
-            printk(KERN_ERR
-                   "Flask: boundary violated policy: "
-                   "role=%s type=%s bounds=%s\n",
-                   p->p_role_val_to_name[role->value - 1],
-                   p->p_type_val_to_name[bit],
-                   p->p_role_val_to_name[upper->value - 1]);
+            printk(
+                KERN_ERR
+                "Flask: boundary violated policy: " "role=%s type=%s bounds=%s\n",
+                p->p_role_val_to_name[role->value - 1],
+                p->p_type_val_to_name[bit],
+                p->p_role_val_to_name[upper->value - 1]);
 
             return -EINVAL;
         }
@@ -1676,31 +1643,29 @@ static int cf_check role_bounds_sanity_check(
     return 0;
 }
 
-static int cf_check type_bounds_sanity_check(
-    void *key, void *datum, void *datap)
+static int cf_check type_bounds_sanity_check(void *key, void *datum,
+                                             void *datap)
 {
     struct type_datum *upper, *type;
     struct policydb *p = datap;
     int depth = 0;
 
     upper = type = datum;
-    while (upper->bounds)
+    while ( upper->bounds )
     {
         if ( ++depth == POLICYDB_BOUNDS_MAXDEPTH )
         {
-            printk(KERN_ERR "Flask: type %s: "
-			       "too deep or looped boundary\n",
-			       (char *) key);
+            printk(KERN_ERR "Flask: type %s: " "too deep or looped boundary\n",
+                   (char *)key);
             return -EINVAL;
         }
 
         upper = p->type_val_to_struct[upper->bounds - 1];
         if ( upper->attribute )
         {
-            printk(KERN_ERR "Flask: type %s: "
-			       "bounded by attribute %s",
-			       (char *) key,
-			       p->p_type_val_to_name[upper->value - 1]);
+            printk(KERN_ERR "Flask: type %s: " "bounded by attribute %s",
+                   (char *)key,
+                   p->p_type_val_to_name[upper->value - 1]);
             return -EINVAL;
         }
     }
@@ -1715,18 +1680,15 @@ static int policydb_bounds_sanity_check(struct policydb *p)
     if ( p->policyvers < POLICYDB_VERSION_BOUNDARY )
         return 0;
 
-    rc = hashtab_map(p->p_users.table,
-                     user_bounds_sanity_check, p);
+    rc = hashtab_map(p->p_users.table, user_bounds_sanity_check, p);
     if ( rc )
         return rc;
 
-    rc = hashtab_map(p->p_roles.table,
-                     role_bounds_sanity_check, p);
+    rc = hashtab_map(p->p_roles.table, role_bounds_sanity_check, p);
     if ( rc )
         return rc;
 
-    rc = hashtab_map(p->p_types.table,
-                     type_bounds_sanity_check, p);
+    rc = hashtab_map(p->p_types.table, type_bounds_sanity_check, p);
     if ( rc )
         return rc;
 
@@ -1755,31 +1717,37 @@ int policydb_read(struct policydb *p, void *fp)
         goto out;
 
     /* Read the magic number and string length. */
-    rc = next_entry(buf, fp, sizeof(u32)* 2);
+    rc = next_entry(buf, fp, sizeof(u32) * 2);
     if ( rc < 0 )
         goto bad;
 
     if ( le32_to_cpu(buf[0]) != POLICYDB_MAGIC )
     {
-        printk(KERN_ERR "Flask:  policydb magic number %#x does "
-               "not match expected magic number %#x\n",
-               le32_to_cpu(buf[0]), POLICYDB_MAGIC);
+        printk(
+            KERN_ERR
+            "Flask:  policydb magic number %#x does " "not match expected magic number %#x\n",
+            le32_to_cpu(buf[0]),
+            POLICYDB_MAGIC);
         goto bad;
     }
 
     len = le32_to_cpu(buf[1]);
     if ( len != strlen(POLICYDB_STRING) )
     {
-        printk(KERN_ERR "Flask:  policydb string length %d does not "
-               "match expected length %zu\n",
-               len, strlen(POLICYDB_STRING));
+        printk(
+            KERN_ERR
+            "Flask:  policydb string length %d does not " "match expected length %zu\n",
+            len,
+            strlen(POLICYDB_STRING));
         goto bad;
     }
     policydb_str = xmalloc_array(char, len + 1);
     if ( !policydb_str )
     {
-        printk(KERN_ERR "Flask:  unable to allocate memory for policydb "
-               "string of length %d\n", len);
+        printk(
+            KERN_ERR
+            "Flask:  unable to allocate memory for policydb " "string of length %d\n",
+            len);
         rc = -ENOMEM;
         goto bad;
     }
@@ -1806,26 +1774,29 @@ int policydb_read(struct policydb *p, void *fp)
     policydb_str = NULL;
 
     /* Read the version, config, and table sizes. */
-    rc = next_entry(buf, fp, sizeof(u32)*4);
+    rc = next_entry(buf, fp, sizeof(u32) * 4);
     if ( rc < 0 )
         goto bad;
 
     p->policyvers = le32_to_cpu(buf[0]);
     if ( p->policyvers < POLICYDB_VERSION_MIN ||
-                                        p->policyvers > POLICYDB_VERSION_MAX )
+         p->policyvers > POLICYDB_VERSION_MAX )
     {
-            printk(KERN_ERR "Flask:  policydb version %d does not match "
-                   "my version range %d-%d\n",
-                   le32_to_cpu(buf[0]), POLICYDB_VERSION_MIN, POLICYDB_VERSION_MAX);
-            goto bad;
+        printk(
+            KERN_ERR
+            "Flask:  policydb version %d does not match " "my version range %d-%d\n",
+            le32_to_cpu(buf[0]),
+            POLICYDB_VERSION_MIN,
+            POLICYDB_VERSION_MAX);
+        goto bad;
     }
 
     if ( (le32_to_cpu(buf[1]) & POLICYDB_CONFIG_MLS) )
     {
         if ( ss_initialized && !flask_mls_enabled )
         {
-            printk(KERN_ERR "Cannot switch between non-MLS and MLS "
-                   "policies\n");
+            printk(KERN_ERR
+                   "Cannot switch between non-MLS and MLS " "policies\n");
             goto bad;
         }
         flask_mls_enabled = 1;
@@ -1833,8 +1804,10 @@ int policydb_read(struct policydb *p, void *fp)
 
         if ( p->policyvers < POLICYDB_VERSION_MLS )
         {
-            printk(KERN_ERR "security policydb version %d (MLS) "
-                   "not backwards compatible\n", p->policyvers);
+            printk(
+                KERN_ERR
+                "security policydb version %d (MLS) " "not backwards compatible\n",
+                p->policyvers);
             goto bad;
         }
     }
@@ -1842,8 +1815,8 @@ int policydb_read(struct policydb *p, void *fp)
     {
         if ( ss_initialized && flask_mls_enabled )
         {
-            printk(KERN_ERR "Cannot switch between MLS and non-MLS "
-                   "policies\n");
+            printk(KERN_ERR
+                   "Cannot switch between MLS and non-MLS " "policies\n");
             goto bad;
         }
     }
@@ -1860,24 +1833,30 @@ int policydb_read(struct policydb *p, void *fp)
     info = policydb_lookup_compat(p->policyvers, p->target_type);
     if ( !info )
     {
-        printk(KERN_ERR "Flask:  unable to find policy compat info "
-               "for version %d target %d\n", p->policyvers, p->target_type);
+        printk(
+            KERN_ERR
+            "Flask:  unable to find policy compat info " "for version %d target %d\n",
+            p->policyvers,
+            p->target_type);
         goto bad;
     }
 
     if ( le32_to_cpu(buf[2]) != info->sym_num ||
          le32_to_cpu(buf[3]) != info->ocon_num )
     {
-        printk(KERN_ERR "Flask:  policydb table sizes (%d,%d) do "
-               "not match mine (%d,%d)\n", le32_to_cpu(buf[2]),
-               le32_to_cpu(buf[3]),
-               info->sym_num, info->ocon_num);
+        printk(
+            KERN_ERR
+            "Flask:  policydb table sizes (%d,%d) do " "not match mine (%d,%d)\n",
+            le32_to_cpu(buf[2]),
+            le32_to_cpu(buf[3]),
+            info->sym_num,
+            info->ocon_num);
         goto bad;
     }
 
     for ( i = 0; i < info->sym_num; i++ )
     {
-        rc = next_entry(buf, fp, sizeof(u32)*2);
+        rc = next_entry(buf, fp, sizeof(u32) * 2);
         if ( rc < 0 )
             goto bad;
         nprim = le32_to_cpu(buf[0]);
@@ -1921,9 +1900,9 @@ int policydb_read(struct policydb *p, void *fp)
         else
             p->role_tr = tr;
         if ( p->policyvers >= POLICYDB_VERSION_ROLETRANS )
-            rc = next_entry(buf, fp, sizeof(u32)*4);
+            rc = next_entry(buf, fp, sizeof(u32) * 4);
         else
-            rc = next_entry(buf, fp, sizeof(u32)*3);
+            rc = next_entry(buf, fp, sizeof(u32) * 3);
         if ( rc < 0 )
             goto bad;
         tr->role = le32_to_cpu(buf[0]);
@@ -1956,7 +1935,7 @@ int policydb_read(struct policydb *p, void *fp)
             lra->next = ra;
         else
             p->role_allow = ra;
-        rc = next_entry(buf, fp, sizeof(u32)*2);
+        rc = next_entry(buf, fp, sizeof(u32) * 2);
         if ( rc < 0 )
             goto bad;
         ra->role = le32_to_cpu(buf[0]);
@@ -2023,8 +2002,7 @@ int policydb_read(struct policydb *p, void *fp)
             case OCON_PIRQ:
                 if ( p->target_type != TARGET_XEN )
                 {
-                    printk(KERN_ERR
-                        "Old xen policy does not support pirqcon");
+                    printk(KERN_ERR "Old xen policy does not support pirqcon");
                     goto bad;
                 }
                 rc = next_entry(buf, fp, sizeof(u32));
@@ -2039,10 +2017,10 @@ int policydb_read(struct policydb *p, void *fp)
                 if ( p->target_type != TARGET_XEN )
                 {
                     printk(KERN_ERR
-                        "Old xen policy does not support ioportcon");
+                           "Old xen policy does not support ioportcon");
                     goto bad;
                 }
-                rc = next_entry(buf, fp, sizeof(u32) *2);
+                rc = next_entry(buf, fp, sizeof(u32) * 2);
                 if ( rc < 0 )
                     goto bad;
                 c->u.ioport.low_ioport = le32_to_cpu(buf[0]);
@@ -2051,11 +2029,14 @@ int policydb_read(struct policydb *p, void *fp)
                 if ( rc )
                     goto bad;
 
-                if ( *pn || ( l && l->u.ioport.high_ioport >= c->u.ioport.low_ioport ) )
+                if ( *pn ||
+                     (l && l->u.ioport.high_ioport >= c->u.ioport.low_ioport) )
                 {
                     pn = &p->ocontexts[i];
                     l = *pn;
-                    while ( l && l->u.ioport.high_ioport < c->u.ioport.low_ioport ) {
+                    while ( l &&
+                            l->u.ioport.high_ioport < c->u.ioport.low_ioport )
+                    {
                         pn = &l->next;
                         l = *pn;
                     }
@@ -2066,14 +2047,13 @@ int policydb_read(struct policydb *p, void *fp)
             case OCON_IOMEM:
                 if ( p->target_type != TARGET_XEN )
                 {
-                    printk(KERN_ERR
-                        "Old xen policy does not support iomemcon");
+                    printk(KERN_ERR "Old xen policy does not support iomemcon");
                     goto bad;
                 }
                 if ( p->policyvers >= POLICYDB_VERSION_XEN_DEVICETREE )
                 {
                     u64 b64[2];
-                    rc = next_entry(b64, fp, sizeof(u64) *2);
+                    rc = next_entry(b64, fp, sizeof(u64) * 2);
                     if ( rc < 0 )
                         goto bad;
                     c->u.iomem.low_iomem = le64_to_cpu(b64[0]);
@@ -2081,7 +2061,7 @@ int policydb_read(struct policydb *p, void *fp)
                 }
                 else
                 {
-                    rc = next_entry(buf, fp, sizeof(u32) *2);
+                    rc = next_entry(buf, fp, sizeof(u32) * 2);
                     if ( rc < 0 )
                         goto bad;
                     c->u.iomem.low_iomem = le32_to_cpu(buf[0]);
@@ -2091,11 +2071,13 @@ int policydb_read(struct policydb *p, void *fp)
                 if ( rc )
                     goto bad;
 
-                if ( *pn || ( l && l->u.iomem.high_iomem >= c->u.iomem.low_iomem ) )
+                if ( *pn ||
+                     (l && l->u.iomem.high_iomem >= c->u.iomem.low_iomem) )
                 {
                     pn = &p->ocontexts[i];
                     l = *pn;
-                    while ( l && l->u.iomem.high_iomem < c->u.iomem.low_iomem ) {
+                    while ( l && l->u.iomem.high_iomem < c->u.iomem.low_iomem )
+                    {
                         pn = &l->next;
                         l = *pn;
                     }
@@ -2107,7 +2089,7 @@ int policydb_read(struct policydb *p, void *fp)
                 if ( p->target_type != TARGET_XEN )
                 {
                     printk(KERN_ERR
-                        "Old xen policy does not support pcidevicecon");
+                           "Old xen policy does not support pcidevicecon");
                     goto bad;
                 }
                 rc = next_entry(buf, fp, sizeof(u32));
@@ -2122,7 +2104,7 @@ int policydb_read(struct policydb *p, void *fp)
                 if ( p->target_type != TARGET_XEN )
                 {
                     printk(KERN_ERR
-                        "Old xen policy does not support devicetreecon");
+                           "Old xen policy does not support devicetreecon");
                     goto bad;
                 }
                 rc = next_entry(buf, fp, sizeof(u32));
@@ -2131,7 +2113,7 @@ int policydb_read(struct policydb *p, void *fp)
                 len = le32_to_cpu(buf[0]);
                 rc = -ENOMEM;
                 c->u.name = xmalloc_array(char, len + 1);
-                if (!c->u.name)
+                if ( !c->u.name )
                     goto bad;
                 rc = next_entry(c->u.name, fp, len);
                 if ( rc < 0 )
@@ -2195,7 +2177,8 @@ int policydb_read(struct policydb *p, void *fp)
                 if ( rc < 0 )
                     goto bad;
                 rt->target_class = le32_to_cpu(buf[0]);
-            } else
+            }
+            else
                 rt->target_class = SECCLASS_DOMAIN;
             if ( !policydb_type_isvalid(p, rt->source_type) ||
                  !policydb_type_isvalid(p, rt->target_type) ||
@@ -2230,7 +2213,7 @@ int policydb_read(struct policydb *p, void *fp)
         }
         /* add the type itself as the degenerate case */
         if ( ebitmap_set_bit(&p->type_attr_map[i], i, 1) )
-                goto bad;
+            goto bad;
     }
 
     rc = policydb_bounds_sanity_check(p);

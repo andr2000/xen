@@ -30,9 +30,9 @@
 /* How many days are in each month.  */
 static const unsigned short int __mon_lengths[2][12] = {
     /* Normal years.  */
-    {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
+    { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 },
     /* Leap years.  */
-    {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
+    { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
 };
 
 #define SECS_PER_HOUR (60 * 60)
@@ -53,7 +53,7 @@ struct tm gmtime(unsigned long t)
 #if BITS_PER_LONG >= 64
     /* Allow the concept of time before 1970.  64-bit only; for 32-bit
      * time after 2038 seems more important than time before 1970. */
-    while ( t & (1UL<<39) )
+    while ( t & (1UL << 39) )
     {
         y -= 400;
         t += ((unsigned long)(365 * 303 + 366 * 97)) * SECS_PER_DAY;
@@ -106,8 +106,8 @@ void update_domain_wallclock_time(struct domain *d)
     smp_wmb();
 
     sec = wc_sec + d->time_offset.seconds;
-    shared_info(d, wc_sec)    = sec;
-    shared_info(d, wc_nsec)   = wc_nsec;
+    shared_info(d, wc_sec) = sec;
+    shared_info(d, wc_nsec) = wc_nsec;
 #if defined(CONFIG_X86) && defined(CONFIG_COMPAT)
     if ( likely(!has_32bit_shinfo(d)) )
         d->shared_info->native.wc_sec_hi = sec >> 32;
@@ -134,12 +134,12 @@ void do_settime(u64 secs, unsigned int nsecs, u64 system_time_base)
     y = do_div(x, 1000000000);
 
     spin_lock(&wc_lock);
-    wc_sec  = x;
+    wc_sec = x;
     wc_nsec = y;
     spin_unlock(&wc_lock);
 
     rcu_read_lock(&domlist_read_lock);
-    for_each_domain ( d )
+    for_each_domain(d)
         update_domain_wallclock_time(d);
     rcu_read_unlock(&domlist_read_lock);
 }
@@ -147,15 +147,14 @@ void do_settime(u64 secs, unsigned int nsecs, u64 system_time_base)
 /* Return secs after 00:00:00 localtime, 1 January, 1970. */
 unsigned long get_localtime(struct domain *d)
 {
-    return wc_sec + (wc_nsec + NOW()) / 1000000000ULL
-        + d->time_offset.seconds;
+    return wc_sec + (wc_nsec + NOW()) / 1000000000ULL + d->time_offset.seconds;
 }
 
 /* Return microsecs after 00:00:00 localtime, 1 January, 1970. */
 uint64_t get_localtime_us(struct domain *d)
 {
-    return (SECONDS(wc_sec + d->time_offset.seconds) + wc_nsec + NOW())
-           / 1000UL;
+    return (SECONDS(wc_sec + d->time_offset.seconds) + wc_nsec + NOW()) /
+           1000UL;
 }
 
 unsigned long get_sec(void)
@@ -168,7 +167,7 @@ struct tm wallclock_time(uint64_t *ns)
     uint64_t seconds, nsec;
 
     if ( !wc_sec )
-        return (struct tm) { 0 };
+        return (struct tm){ 0 };
 
     seconds = NOW() + SECONDS(wc_sec) + wc_nsec;
     nsec = do_div(seconds, 1000000000);

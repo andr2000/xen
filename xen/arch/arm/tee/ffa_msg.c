@@ -23,8 +23,10 @@ struct ffa_part_msg_rxtx {
 
 void ffa_handle_msg_send_direct_req(struct cpu_user_regs *regs, uint32_t fid)
 {
-    struct arm_smccc_1_2_regs arg = { .a0 = fid, };
-    struct arm_smccc_1_2_regs resp = { };
+    struct arm_smccc_1_2_regs arg = {
+        .a0 = fid,
+    };
+    struct arm_smccc_1_2_regs resp = {};
     struct domain *d = current->domain;
     uint32_t src_dst;
     uint64_t mask;
@@ -50,7 +52,7 @@ void ffa_handle_msg_send_direct_req(struct cpu_user_regs *regs, uint32_t fid)
     }
 
     /* we do not support direct messages to VMs */
-    if ( !FFA_ID_IS_SECURE(src_dst & GENMASK(15,0)) )
+    if ( !FFA_ID_IS_SECURE(src_dst & GENMASK(15, 0)) )
     {
         resp.a0 = FFA_ERROR;
         resp.a2 = FFA_RET_NOT_SUPPORTED;
@@ -83,8 +85,14 @@ void ffa_handle_msg_send_direct_req(struct cpu_user_regs *regs, uint32_t fid)
     }
 
 out:
-    ffa_set_regs(regs, resp.a0, resp.a1 & mask, resp.a2 & mask, resp.a3 & mask,
-                 resp.a4 & mask, resp.a5 & mask, resp.a6 & mask,
+    ffa_set_regs(regs,
+                 resp.a0,
+                 resp.a1 & mask,
+                 resp.a2 & mask,
+                 resp.a3 & mask,
+                 resp.a4 & mask,
+                 resp.a5 & mask,
+                 resp.a6 & mask,
                  resp.a7 & mask);
 }
 
@@ -104,7 +112,7 @@ int32_t ffa_handle_msg_send2(struct cpu_user_regs *regs)
 
     src_msg = src_ctx->tx;
     src_id = src_msg->send_recv_id >> 16;
-    dst_id = src_msg->send_recv_id & GENMASK(15,0);
+    dst_id = src_msg->send_recv_id & GENMASK(15, 0);
 
     if ( src_id != ffa_get_vm_id(src_d) || !FFA_ID_IS_SECURE(dst_id) )
     {
@@ -114,7 +122,7 @@ int32_t ffa_handle_msg_send2(struct cpu_user_regs *regs)
 
     /* check source message fits in buffer */
     if ( src_ctx->page_count * FFA_PAGE_SIZE <
-         src_msg->msg_offset + src_msg->msg_size ||
+             src_msg->msg_offset + src_msg->msg_size ||
          src_msg->msg_offset < sizeof(struct ffa_part_msg_rxtx) )
     {
         ret = FFA_RET_INVALID_PARAMETERS;
@@ -122,7 +130,10 @@ int32_t ffa_handle_msg_send2(struct cpu_user_regs *regs)
     }
 
     ret = ffa_simple_call(FFA_MSG_SEND2,
-                          ((uint32_t)ffa_get_vm_id(src_d)) << 16, 0, 0, 0);
+                          ((uint32_t)ffa_get_vm_id(src_d)) << 16,
+                          0,
+                          0,
+                          0);
 
 out_unlock_tx:
     spin_unlock(&src_ctx->tx_lock);

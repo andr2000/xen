@@ -46,10 +46,10 @@ static void imx_lpuart_interrupt(int irq, void *data)
     rxcnt = imx_lpuart_read(uart, UARTWATER) >> UARTWATER_RXCNT_OFF;
 
     if ( (sts & UARTSTAT_RDRF) || (rxcnt > 0) )
-	    serial_rx_interrupt(port);
+        serial_rx_interrupt(port);
 
     if ( sts & UARTSTAT_TDRE )
-	    serial_tx_interrupt(port);
+        serial_tx_interrupt(port);
 
     imx_lpuart_write(uart, UARTSTAT, sts);
 }
@@ -64,7 +64,7 @@ static void __init imx_lpuart_init_preirq(struct serial_port *port)
     bd = imx_lpuart_read(uart, UARTBAUD);
 
     while ( !(imx_lpuart_read(uart, UARTSTAT) & UARTSTAT_TC) )
-	    cpu_relax();
+        cpu_relax();
 
     /* Disable transmit and receive */
     imx_lpuart_write(uart, UARTCTRL, old_ctrl & ~(UARTCTRL_TE | UARTCTRL_RE));
@@ -88,7 +88,8 @@ static void __init imx_lpuart_init_postirq(struct serial_port *port)
 
     if ( setup_irq(uart->irq, 0, &uart->irqaction) != 0 )
     {
-        dprintk(XENLOG_ERR, "Failed to allocate imx_lpuart IRQ %d\n",
+        dprintk(XENLOG_ERR,
+                "Failed to allocate imx_lpuart IRQ %d\n",
                 uart->irq);
         return;
     }
@@ -123,12 +124,12 @@ static int imx_lpuart_getc(struct serial_port *port, char *pc)
     int ch;
 
     while ( !(imx_lpuart_read(uart, UARTSTAT) & UARTSTAT_RDRF) )
-	    return 0;
+        return 0;
 
     ch = imx_lpuart_read(uart, UARTDATA);
     *pc = ch & 0xff;
 
-    if ( imx_lpuart_read(uart, UARTSTAT) &  UARTSTAT_OR )
+    if ( imx_lpuart_read(uart, UARTSTAT) & UARTSTAT_OR )
         imx_lpuart_write(uart, UARTSTAT, UARTSTAT_OR);
 
     return 1;
@@ -155,7 +156,7 @@ static void imx_lpuart_start_tx(struct serial_port *port)
 
     /* Wait until empty */
     while ( !(imx_lpuart_read(uart, UARTSTAT) & UARTSTAT_TDRE) )
-	    cpu_relax();
+        cpu_relax();
 
     temp = imx_lpuart_read(uart, UARTCTRL);
     imx_lpuart_write(uart, UARTCTRL, (temp | UARTCTRL_TIE));
@@ -183,8 +184,7 @@ static struct uart_driver __read_mostly imx_lpuart_driver = {
     .vuart_info = imx_lpuart_vuart_info,
 };
 
-static int __init imx_lpuart_init(struct dt_device_node *dev,
-                                  const void *data)
+static int __init imx_lpuart_init(struct dt_device_node *dev, const void *data)
 {
     const char *config = data;
     struct imx_lpuart *uart;
@@ -199,8 +199,8 @@ static int __init imx_lpuart_init(struct dt_device_node *dev,
     res = dt_device_get_paddr(dev, 0, &addr, &size);
     if ( res )
     {
-        printk("imx8-lpuart: Unable to retrieve the base"
-               " address of the UART\n");
+        printk(
+            "imx8-lpuart: Unable to retrieve the base" " address of the UART\n");
         return res;
     }
 
@@ -234,15 +234,13 @@ static int __init imx_lpuart_init(struct dt_device_node *dev,
     return 0;
 }
 
-static const struct dt_device_match imx_lpuart_dt_compat[] __initconst =
-{
+static const struct dt_device_match imx_lpuart_dt_compat[] __initconst = {
     DT_MATCH_COMPATIBLE("fsl,imx8qxp-lpuart"),
     { /* sentinel */ },
 };
 
 DT_DEVICE_START(imx_lpuart, "i.MX LPUART", DEVICE_SERIAL)
-    .dt_match = imx_lpuart_dt_compat,
-    .init = imx_lpuart_init,
+    .dt_match = imx_lpuart_dt_compat, .init = imx_lpuart_init,
 DT_DEVICE_END
 
 /*

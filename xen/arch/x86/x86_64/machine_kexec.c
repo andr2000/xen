@@ -13,9 +13,9 @@
 
 int machine_kexec_get_xen(xen_kexec_range_t *range)
 {
-        range->start = virt_to_maddr(_start);
-        range->size = virt_to_maddr(_end) - (unsigned long)range->start;
-        return 0;
+    range->start = virt_to_maddr(_start);
+    range->size = virt_to_maddr(_end) - (unsigned long)range->start;
+    return 0;
 }
 
 /*

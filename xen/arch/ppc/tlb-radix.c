@@ -12,9 +12,8 @@
 #include <asm/processor.h>
 
 /* TLB flush actions. Used as argument to tlbiel_flush() */
-enum
-{
-    TLB_INVAL_SCOPE_LPID,   /* invalidate TLBs for current LPID */
+enum {
+    TLB_INVAL_SCOPE_LPID, /* invalidate TLBs for current LPID */
     TLB_INVAL_SCOPE_GLOBAL, /* invalidate all TLBs */
 };
 
@@ -32,18 +31,20 @@ static void tlbiel_radix_set_isa300(unsigned int set, unsigned int is,
     unsigned long rs;
 
     rb = (set << PPC_BITLSHIFT(51)) | (is << PPC_BITLSHIFT(53));
-    rs = ((unsigned long) pid << PPC_BITLSHIFT(31));
+    rs = ((unsigned long)pid << PPC_BITLSHIFT(31));
 
-    asm volatile ( "tlbiel %0, %1, %2, %3, 1"
-                   :: "r" (rb), "r" (rs), "i" (ric), "i" (prs)
-                   : "memory" );
+    asm volatile("tlbiel %0, %1, %2, %3, 1" ::"r"(rb),
+                 "r"(rs),
+                 "i"(ric),
+                 "i"(prs)
+                 : "memory");
 }
 
 static void tlbiel_all_isa300(unsigned int num_sets, unsigned int is)
 {
     unsigned int set;
 
-    asm volatile ( "ptesync" : : : "memory" );
+    asm volatile("ptesync" : : : "memory");
 
     /*
      * Flush the first set of the TLB, and the entire Page Walk Cache
@@ -66,7 +67,7 @@ static void tlbiel_all_isa300(unsigned int num_sets, unsigned int is)
     for ( set = 1; set < num_sets; set++ )
         tlbiel_radix_set_isa300(set, is, 0, RIC_FLUSH_TLB, 1);
 
-    asm volatile ( "ptesync" : : : "memory" );
+    asm volatile("ptesync" : : : "memory");
 }
 
 void radix__tlbiel_all(unsigned int action)
@@ -87,7 +88,7 @@ void radix__tlbiel_all(unsigned int action)
 
     tlbiel_all_isa300(POWER9_TLB_SETS_RADIX, is);
 
-    asm volatile ( "slbia 7; isync" : : : "memory" );
+    asm volatile("slbia 7; isync" : : : "memory");
 }
 
 void tlbie_all(void)

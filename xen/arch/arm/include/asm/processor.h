@@ -133,7 +133,6 @@
 #define MPIDR_INVALID       (~MPIDR_HWID_MASK)
 #define MPIDR_LEVEL_BITS    (8)
 
-
 /*
  * Macros to extract affinity level. picked from kernel
  */
@@ -208,7 +207,7 @@
                          SCTLR_A32_ELx_FI   | SCTLR_Axx_ELx_EE  |\
                          SCTLR_A32_ELx_TE)
 
-#if (HSCTLR_SET ^ HSCTLR_CLEAR) != 0xffffffffU
+#if ( HSCTLR_SET ^ HSCTLR_CLEAR ) != 0xffffffffU
 #error "Inconsistent HSCTLR set/clear bits"
 #endif
 
@@ -239,7 +238,7 @@
  * this check for cppcheck runs.
  */
 #ifndef CPPCHECK
-#if (SCTLR_EL2_SET ^ SCTLR_EL2_CLEAR) != 0xffffffffffffffffUL
+#if ( SCTLR_EL2_SET ^ SCTLR_EL2_CLEAR ) != 0xffffffffffffffffUL
 #error "Inconsistent SCTLR_EL2 set/clear bits"
 #endif
 #endif
@@ -561,13 +560,12 @@ extern register_t __cpu_logical_map[];
 #define VECTOR64_FIQ_OFFSET        0x100
 #define VECTOR64_ERROR_OFFSET      0x180
 
-
 #if defined(CONFIG_ARM_32)
-# include <asm/arm32/processor.h>
+#include <asm/arm32/processor.h>
 #elif defined(CONFIG_ARM_64)
-# include <asm/arm64/processor.h>
+#include <asm/arm64/processor.h>
 #else
-# error "unknown ARM variant"
+#error "unknown ARM variant"
 #endif
 
 #ifndef __ASSEMBLY__

@@ -8,8 +8,6 @@ static inline bool evaluate_nospec(bool condition)
     return condition;
 }
 
-static inline void block_speculation(void)
-{
-}
+static inline void block_speculation(void) {}
 
 #endif /* __ASM_PPC_NOSPEC_H__ */

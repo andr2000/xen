@@ -12,7 +12,7 @@
 #define __clean_dcache_one(R)                   \
     ALTERNATIVE("dc cvac, %" #R ";",            \
                 "dc civac, %" #R ";",           \
-                ARM64_WORKAROUND_CLEAN_CACHE)   \
+                ARM64_WORKAROUND_CLEAN_CACHE)
 
 /* Inline ASM to clean and invalidate dcache on register R (may be an
  * inline asm operand) */
@@ -21,16 +21,16 @@
 /* Invalidate all instruction caches in Inner Shareable domain to PoU */
 static inline void invalidate_icache(void)
 {
-    asm volatile ("ic ialluis");
-    dsb(ish);               /* Ensure completion of the flush I-cache */
+    asm volatile("ic ialluis");
+    dsb(ish); /* Ensure completion of the flush I-cache */
     isb();
 }
 
 /* Invalidate all instruction caches on the local processor to PoU */
 static inline void invalidate_icache_local(void)
 {
-    asm volatile ("ic iallu");
-    dsb(nsh);               /* Ensure completion of the I-cache flush */
+    asm volatile("ic iallu");
+    dsb(nsh); /* Ensure completion of the I-cache flush */
     isb();
 }
 
@@ -39,7 +39,7 @@ static inline uint64_t __va_to_par(vaddr_t va)
 {
     uint64_t par, tmp = read_sysreg_par();
 
-    asm volatile ("at s1e2r, %0;" : : "r" (va));
+    asm volatile("at s1e2r, %0;" : : "r"(va));
     isb();
     par = read_sysreg_par();
     WRITE_SYSREG64(tmp, PAR_EL1);
@@ -52,9 +52,9 @@ static inline uint64_t gva_to_ma_par(vaddr_t va, unsigned int flags)
     uint64_t par, tmp = read_sysreg_par();
 
     if ( (flags & GV2M_WRITE) == GV2M_WRITE )
-        asm volatile ("at s12e1w, %0;" : : "r" (va));
+        asm volatile("at s12e1w, %0;" : : "r"(va));
     else
-        asm volatile ("at s12e1r, %0;" : : "r" (va));
+        asm volatile("at s12e1r, %0;" : : "r"(va));
     isb();
     par = read_sysreg_par();
     WRITE_SYSREG64(tmp, PAR_EL1);
@@ -66,9 +66,9 @@ static inline uint64_t gva_to_ipa_par(vaddr_t va, unsigned int flags)
     uint64_t par, tmp = read_sysreg_par();
 
     if ( (flags & GV2M_WRITE) == GV2M_WRITE )
-        asm volatile ("at s1e1w, %0;" : : "r" (va));
+        asm volatile("at s1e1w, %0;" : : "r"(va));
     else
-        asm volatile ("at s1e1r, %0;" : : "r" (va));
+        asm volatile("at s1e1r, %0;" : : "r"(va));
     isb();
     par = read_sysreg_par();
     WRITE_SYSREG64(tmp, PAR_EL1);

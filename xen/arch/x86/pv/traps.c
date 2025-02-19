@@ -48,8 +48,8 @@ void pv_inject_event(const struct x86_event *event)
     ti = &curr->arch.pv.trap_ctxt[vector];
 
     tb->flags = TBF_EXCEPTION;
-    tb->cs    = ti->cs;
-    tb->eip   = ti->address;
+    tb->cs = ti->cs;
+    tb->eip = ti->address;
 
     switch ( vector | -(event->type == X86_ET_SW_INT) )
     {
@@ -67,7 +67,8 @@ void pv_inject_event(const struct x86_event *event)
 
     case X86_EXC_DB:
         curr->arch.dr6 = x86_merge_dr6(curr->domain->arch.cpu_policy,
-                                       curr->arch.dr6, event->pending_dbg);
+                                       curr->arch.dr6,
+                                       event->pending_dbg);
         fallthrough;
     default:
         trace_pv_trap(vector, regs->rip, use_error_code, error_code);
@@ -87,7 +88,9 @@ void pv_inject_event(const struct x86_event *event)
     {
         gprintk(XENLOG_ERR,
                 "Unhandled: vec %u, %s[%04x]\n",
-                vector, vector_name(vector), error_code);
+                vector,
+                vector_name(vector),
+                error_code);
 
         if ( vector == X86_EXC_PF )
             show_page_walk(event->cr2);
@@ -147,12 +150,13 @@ void __init pv_trap_init(void)
 {
 #ifdef CONFIG_PV32
     /* The 32-on-64 hypercall vector is only accessible from ring 1. */
-    _set_gate(idt_table + HYPERCALL_VECTOR,
-              SYS_DESC_irq_gate, 1, entry_int82);
+    _set_gate(idt_table + HYPERCALL_VECTOR, SYS_DESC_irq_gate, 1, entry_int82);
 #endif
 
     /* Fast trap for int80 (faster than taking the #GP-fixup path). */
-    _set_gate(idt_table + LEGACY_SYSCALL_VECTOR, SYS_DESC_irq_gate, 3,
+    _set_gate(idt_table + LEGACY_SYSCALL_VECTOR,
+              SYS_DESC_irq_gate,
+              3,
               &entry_int80);
 
     open_softirq(NMI_SOFTIRQ, nmi_softirq);

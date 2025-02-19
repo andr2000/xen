@@ -33,18 +33,18 @@
 
 #define MAX_COUNTERS FAM15H_NUM_COUNTERS
 
-#define CTR_READ(msr_content,msrs,c) do {rdmsrl(msrs->counters[(c)].addr, (msr_content));} while (0)
-#define CTR_WRITE(l,msrs,c) do {wrmsr(msrs->counters[(c)].addr, -(unsigned int)(l), -1);} while (0)
+#define CTR_READ(msr_content, msrs, c) do {rdmsrl(msrs->counters[(c)].addr, (msr_content));} while (0)
+#define CTR_WRITE(l, msrs, c) do {wrmsr(msrs->counters[(c)].addr, -(unsigned int)(l), -1);} while (0)
 #define CTR_OVERFLOWED(n) (!((n) & (1ULL<<31)))
 
-#define CTRL_READ(msr_content,msrs,c) do {rdmsrl(msrs->controls[(c)].addr, (msr_content));} while (0)
-#define CTRL_WRITE(msr_content,msrs,c) do {wrmsrl(msrs->controls[(c)].addr, (msr_content));} while (0)
+#define CTRL_READ(msr_content, msrs, c) do {rdmsrl(msrs->controls[(c)].addr, (msr_content));} while (0)
+#define CTRL_WRITE(msr_content, msrs, c) do {wrmsrl(msrs->controls[(c)].addr, (msr_content));} while (0)
 #define CTRL_SET_ACTIVE(n) (n |= (1ULL<<22))
 #define CTRL_SET_INACTIVE(n) (n &= ~(1ULL<<22))
 #define CTRL_CLEAR(val) (val &= (1ULL<<21))
 #define CTRL_SET_ENABLE(val) (val |= 1ULL<<20)
-#define CTRL_SET_USR(val,u) (val |= ((u & 1) << 16))
-#define CTRL_SET_KERN(val,k) (val |= ((k & 1) << 17))
+#define CTRL_SET_USR(val, u) (val |= ((u & 1) << 16))
+#define CTRL_SET_KERN(val, k) (val |= ((k & 1) << 17))
 #define CTRL_SET_UM(val, m) (val |= ((m & 0xff) << 8))
 #define CTRL_SET_EVENT(val, e) (val |= (((e >> 8) & 0xf) | (e & 0xff)))
 #define CTRL_SET_HOST_ONLY(val, h) (val |= ((h & 0x1ULL) << 41))
@@ -121,10 +121,9 @@ static unsigned int lfsr_random(void)
     unsigned int bit;
 
     /* Compute next bit to shift in */
-    bit = ((lfsr_value >> 0) ^
-           (lfsr_value >> 2) ^
-           (lfsr_value >> 3) ^
-           (lfsr_value >> 5)) & 0x0001;
+    bit = ((lfsr_value >> 0) ^ (lfsr_value >> 2) ^ (lfsr_value >> 3) ^
+           (lfsr_value >> 5)) &
+          0x0001;
 
     /* Advance to next register value */
     lfsr_value = (lfsr_value >> 1) | (bit << 15);
@@ -143,7 +142,7 @@ static inline u64 op_amd_randomize_ibs_op(u64 val)
 {
     unsigned int random = lfsr_random();
 
-    if (!(ibs_caps & IBS_CAPS_RDWROPCNT))
+    if ( !(ibs_caps & IBS_CAPS_RDWROPCNT) )
         /*
          * Work around if the hw can not write to IbsOpCurCnt
          *
@@ -164,384 +163,411 @@ static inline u64 op_amd_randomize_ibs_op(u64 val)
     return val;
 }
 
-static void cf_check athlon_fill_in_addresses(struct op_msrs * const msrs)
+static void cf_check athlon_fill_in_addresses(struct op_msrs *const msrs)
 {
-	msrs->counters[0].addr = MSR_K7_PERFCTR0;
-	msrs->counters[1].addr = MSR_K7_PERFCTR1;
-	msrs->counters[2].addr = MSR_K7_PERFCTR2;
-	msrs->counters[3].addr = MSR_K7_PERFCTR3;
+    msrs->counters[0].addr = MSR_K7_PERFCTR0;
+    msrs->counters[1].addr = MSR_K7_PERFCTR1;
+    msrs->counters[2].addr = MSR_K7_PERFCTR2;
+    msrs->counters[3].addr = MSR_K7_PERFCTR3;
 
-	msrs->controls[0].addr = MSR_K7_EVNTSEL0;
-	msrs->controls[1].addr = MSR_K7_EVNTSEL1;
-	msrs->controls[2].addr = MSR_K7_EVNTSEL2;
-	msrs->controls[3].addr = MSR_K7_EVNTSEL3;
+    msrs->controls[0].addr = MSR_K7_EVNTSEL0;
+    msrs->controls[1].addr = MSR_K7_EVNTSEL1;
+    msrs->controls[2].addr = MSR_K7_EVNTSEL2;
+    msrs->controls[3].addr = MSR_K7_EVNTSEL3;
 }
 
-static void cf_check fam15h_fill_in_addresses(struct op_msrs * const msrs)
+static void cf_check fam15h_fill_in_addresses(struct op_msrs *const msrs)
 {
-	msrs->counters[0].addr = MSR_AMD_FAM15H_PERFCTR0;
-	msrs->counters[1].addr = MSR_AMD_FAM15H_PERFCTR1;
-	msrs->counters[2].addr = MSR_AMD_FAM15H_PERFCTR2;
-	msrs->counters[3].addr = MSR_AMD_FAM15H_PERFCTR3;
-	msrs->counters[4].addr = MSR_AMD_FAM15H_PERFCTR4;
-	msrs->counters[5].addr = MSR_AMD_FAM15H_PERFCTR5;
+    msrs->counters[0].addr = MSR_AMD_FAM15H_PERFCTR0;
+    msrs->counters[1].addr = MSR_AMD_FAM15H_PERFCTR1;
+    msrs->counters[2].addr = MSR_AMD_FAM15H_PERFCTR2;
+    msrs->counters[3].addr = MSR_AMD_FAM15H_PERFCTR3;
+    msrs->counters[4].addr = MSR_AMD_FAM15H_PERFCTR4;
+    msrs->counters[5].addr = MSR_AMD_FAM15H_PERFCTR5;
 
-	msrs->controls[0].addr = MSR_AMD_FAM15H_EVNTSEL0;
-	msrs->controls[1].addr = MSR_AMD_FAM15H_EVNTSEL1;
-	msrs->controls[2].addr = MSR_AMD_FAM15H_EVNTSEL2;
-	msrs->controls[3].addr = MSR_AMD_FAM15H_EVNTSEL3;
-	msrs->controls[4].addr = MSR_AMD_FAM15H_EVNTSEL4;
-	msrs->controls[5].addr = MSR_AMD_FAM15H_EVNTSEL5;
+    msrs->controls[0].addr = MSR_AMD_FAM15H_EVNTSEL0;
+    msrs->controls[1].addr = MSR_AMD_FAM15H_EVNTSEL1;
+    msrs->controls[2].addr = MSR_AMD_FAM15H_EVNTSEL2;
+    msrs->controls[3].addr = MSR_AMD_FAM15H_EVNTSEL3;
+    msrs->controls[4].addr = MSR_AMD_FAM15H_EVNTSEL4;
+    msrs->controls[5].addr = MSR_AMD_FAM15H_EVNTSEL5;
 }
 
-static void cf_check athlon_setup_ctrs(struct op_msrs const * const msrs)
+static void cf_check athlon_setup_ctrs(struct op_msrs const *const msrs)
 {
-	uint64_t msr_content;
-	int i;
-	unsigned int const nr_ctrs = model->num_counters;
-	unsigned int const nr_ctrls = model->num_controls;
- 
-	/* clear all counters */
-	for (i = 0 ; i < nr_ctrls; ++i) {
-		CTRL_READ(msr_content, msrs, i);
-		CTRL_CLEAR(msr_content);
-		CTRL_WRITE(msr_content, msrs, i);
-	}
-	
-	/* avoid a false detection of ctr overflows in NMI handler */
-	for (i = 0; i < nr_ctrs; ++i) {
-		CTR_WRITE(1, msrs, i);
-	}
+    uint64_t msr_content;
+    int i;
+    const unsigned int nr_ctrs = model->num_counters;
+    const unsigned int nr_ctrls = model->num_controls;
 
-	/* enable active counters */
-	for (i = 0; i < nr_ctrs; ++i) {
-		if (counter_config[i].enabled) {
-			reset_value[i] = counter_config[i].count;
+    /* clear all counters */
+    for ( i = 0; i < nr_ctrls; ++i )
+    {
+        CTRL_READ(msr_content, msrs, i);
+        CTRL_CLEAR(msr_content);
+        CTRL_WRITE(msr_content, msrs, i);
+    }
 
-			CTR_WRITE(counter_config[i].count, msrs, i);
+    /* avoid a false detection of ctr overflows in NMI handler */
+    for ( i = 0; i < nr_ctrs; ++i )
+    {
+        CTR_WRITE(1, msrs, i);
+    }
 
-			CTRL_READ(msr_content, msrs, i);
-			CTRL_CLEAR(msr_content);
-			CTRL_SET_ENABLE(msr_content);
-			CTRL_SET_USR(msr_content, counter_config[i].user);
-			CTRL_SET_KERN(msr_content, counter_config[i].kernel);
-			CTRL_SET_UM(msr_content, counter_config[i].unit_mask);
-			CTRL_SET_EVENT(msr_content, counter_config[i].event);
-			CTRL_SET_HOST_ONLY(msr_content, 0);
-			CTRL_SET_GUEST_ONLY(msr_content, 0);
-			CTRL_WRITE(msr_content, msrs, i);
-		} else {
-			reset_value[i] = 0;
-		}
-	}
+    /* enable active counters */
+    for ( i = 0; i < nr_ctrs; ++i )
+    {
+        if ( counter_config[i].enabled )
+        {
+            reset_value[i] = counter_config[i].count;
+
+            CTR_WRITE(counter_config[i].count, msrs, i);
+
+            CTRL_READ(msr_content, msrs, i);
+            CTRL_CLEAR(msr_content);
+            CTRL_SET_ENABLE(msr_content);
+            CTRL_SET_USR(msr_content, counter_config[i].user);
+            CTRL_SET_KERN(msr_content, counter_config[i].kernel);
+            CTRL_SET_UM(msr_content, counter_config[i].unit_mask);
+            CTRL_SET_EVENT(msr_content, counter_config[i].event);
+            CTRL_SET_HOST_ONLY(msr_content, 0);
+            CTRL_SET_GUEST_ONLY(msr_content, 0);
+            CTRL_WRITE(msr_content, msrs, i);
+        }
+        else
+        {
+            reset_value[i] = 0;
+        }
+    }
 }
 
 static inline void
-ibs_log_event(u64 data, struct cpu_user_regs const * const regs, int mode)
+ibs_log_event(u64 data, struct cpu_user_regs const *const regs, int mode)
 {
-	struct vcpu *v = current;
-	u32 temp = 0;
+    struct vcpu *v = current;
+    u32 temp = 0;
 
-	temp = data & 0xFFFFFFFF;
-	xenoprof_log_event(v, regs, temp, mode, 0);
-	
-	temp = (data >> 32) & 0xFFFFFFFF;
-	xenoprof_log_event(v, regs, temp, mode, 0);
-	
+    temp = data & 0xFFFFFFFF;
+    xenoprof_log_event(v, regs, temp, mode, 0);
+
+    temp = (data >> 32) & 0xFFFFFFFF;
+    xenoprof_log_event(v, regs, temp, mode, 0);
 }
 
-static inline int handle_ibs(int mode, struct cpu_user_regs const * const regs)
+static inline int handle_ibs(int mode, struct cpu_user_regs const *const regs)
 {
-	u64 val, ctl;
-	struct vcpu *v = current;
+    u64 val, ctl;
+    struct vcpu *v = current;
 
-	if (!ibs_caps)
-		return 1;
+    if ( !ibs_caps )
+        return 1;
 
-	if (ibs_config.fetch_enabled) {
-		rdmsrl(MSR_AMD64_IBSFETCHCTL, ctl);
-		if (ctl & IBS_FETCH_VAL) {
-			rdmsrl(MSR_AMD64_IBSFETCHLINAD, val);
-			xenoprof_log_event(v, regs, IBS_FETCH_CODE, mode, 0);
-			xenoprof_log_event(v, regs, val, mode, 0);
+    if ( ibs_config.fetch_enabled )
+    {
+        rdmsrl(MSR_AMD64_IBSFETCHCTL, ctl);
+        if ( ctl & IBS_FETCH_VAL )
+        {
+            rdmsrl(MSR_AMD64_IBSFETCHLINAD, val);
+            xenoprof_log_event(v, regs, IBS_FETCH_CODE, mode, 0);
+            xenoprof_log_event(v, regs, val, mode, 0);
 
-			ibs_log_event(val, regs, mode);
-			ibs_log_event(ctl, regs, mode);
+            ibs_log_event(val, regs, mode);
+            ibs_log_event(ctl, regs, mode);
 
-			rdmsrl(MSR_AMD64_IBSFETCHPHYSAD, val);
-			ibs_log_event(val, regs, mode);
-		
-			/* reenable the IRQ */
-			ctl &= ~(IBS_FETCH_VAL | IBS_FETCH_CNT);
-			ctl |= IBS_FETCH_ENABLE;
-			wrmsrl(MSR_AMD64_IBSFETCHCTL, ctl);
-		}
-	}
+            rdmsrl(MSR_AMD64_IBSFETCHPHYSAD, val);
+            ibs_log_event(val, regs, mode);
 
-	if (ibs_config.op_enabled) {
-		rdmsrl(MSR_AMD64_IBSOPCTL, ctl);
-		if (ctl & IBS_OP_VAL) {
+            /* reenable the IRQ */
+            ctl &= ~(IBS_FETCH_VAL | IBS_FETCH_CNT);
+            ctl |= IBS_FETCH_ENABLE;
+            wrmsrl(MSR_AMD64_IBSFETCHCTL, ctl);
+        }
+    }
 
-			rdmsrl(MSR_AMD64_IBSOPRIP, val);
-			xenoprof_log_event(v, regs, IBS_OP_CODE, mode, 0);
-			xenoprof_log_event(v, regs, val, mode, 0);
-			
-			ibs_log_event(val, regs, mode);
+    if ( ibs_config.op_enabled )
+    {
+        rdmsrl(MSR_AMD64_IBSOPCTL, ctl);
+        if ( ctl & IBS_OP_VAL )
+        {
+            rdmsrl(MSR_AMD64_IBSOPRIP, val);
+            xenoprof_log_event(v, regs, IBS_OP_CODE, mode, 0);
+            xenoprof_log_event(v, regs, val, mode, 0);
 
-			rdmsrl(MSR_AMD64_IBSOPDATA, val);
-			ibs_log_event(val, regs, mode);
-			rdmsrl(MSR_AMD64_IBSOPDATA2, val);
-			ibs_log_event(val, regs, mode);
-			rdmsrl(MSR_AMD64_IBSOPDATA3, val);
-			ibs_log_event(val, regs, mode);
-			rdmsrl(MSR_AMD64_IBSDCLINAD, val);
-			ibs_log_event(val, regs, mode);
-			rdmsrl(MSR_AMD64_IBSDCPHYSAD, val);
-			ibs_log_event(val, regs, mode);
+            ibs_log_event(val, regs, mode);
 
-			/* reenable the IRQ */
-			ctl = op_amd_randomize_ibs_op(ibs_op_ctl);
-			wrmsrl(MSR_AMD64_IBSOPCTL, ctl);
-		}
-	}
+            rdmsrl(MSR_AMD64_IBSOPDATA, val);
+            ibs_log_event(val, regs, mode);
+            rdmsrl(MSR_AMD64_IBSOPDATA2, val);
+            ibs_log_event(val, regs, mode);
+            rdmsrl(MSR_AMD64_IBSOPDATA3, val);
+            ibs_log_event(val, regs, mode);
+            rdmsrl(MSR_AMD64_IBSDCLINAD, val);
+            ibs_log_event(val, regs, mode);
+            rdmsrl(MSR_AMD64_IBSDCPHYSAD, val);
+            ibs_log_event(val, regs, mode);
+
+            /* reenable the IRQ */
+            ctl = op_amd_randomize_ibs_op(ibs_op_ctl);
+            wrmsrl(MSR_AMD64_IBSOPCTL, ctl);
+        }
+    }
 
     return 1;
 }
 
-static int cf_check athlon_check_ctrs(
-	unsigned int const cpu, struct op_msrs const * const msrs,
-	struct cpu_user_regs const * const regs)
+static int cf_check athlon_check_ctrs(const unsigned int cpu,
+                                      struct op_msrs const *const msrs,
+                                      struct cpu_user_regs const *const regs)
 
 {
-	uint64_t msr_content;
-	int i;
-	unsigned long eip = regs->rip;
-	int mode = 0;
-	struct vcpu *v = current;
-	unsigned int const nr_ctrs = model->num_counters;
+    uint64_t msr_content;
+    int i;
+    unsigned long eip = regs->rip;
+    int mode = 0;
+    struct vcpu *v = current;
+    const unsigned int nr_ctrs = model->num_counters;
 
 #ifdef CONFIG_AMD_SVM
-	struct cpu_user_regs *guest_regs = guest_cpu_user_regs();
+    struct cpu_user_regs *guest_regs = guest_cpu_user_regs();
 
-	if (!guest_mode(regs) &&
-	    (eip == (unsigned long)svm_stgi_label)) {
-		/* SVM guest was running when NMI occurred */
-		ASSERT(is_hvm_vcpu(v));
-		eip = guest_regs->rip;
-		mode = xenoprofile_get_mode(v, guest_regs);
-	} else
+    if ( !guest_mode(regs) && (eip == (unsigned long)svm_stgi_label) )
+    {
+        /* SVM guest was running when NMI occurred */
+        ASSERT(is_hvm_vcpu(v));
+        eip = guest_regs->rip;
+        mode = xenoprofile_get_mode(v, guest_regs);
+    }
+    else
 #endif
-		mode = xenoprofile_get_mode(v, regs);
+        mode = xenoprofile_get_mode(v, regs);
 
-	for (i = 0 ; i < nr_ctrs; ++i) {
-		CTR_READ(msr_content, msrs, i);
-		if (CTR_OVERFLOWED(msr_content)) {
-			xenoprof_log_event(current, regs, eip, mode, i);
-			CTR_WRITE(reset_value[i], msrs, i);
-		}
-	}
+    for ( i = 0; i < nr_ctrs; ++i )
+    {
+        CTR_READ(msr_content, msrs, i);
+        if ( CTR_OVERFLOWED(msr_content) )
+        {
+            xenoprof_log_event(current, regs, eip, mode, i);
+            CTR_WRITE(reset_value[i], msrs, i);
+        }
+    }
 
-	/* See op_model_ppro.c */
-	return handle_ibs(mode, regs);
+    /* See op_model_ppro.c */
+    return handle_ibs(mode, regs);
 }
 
 static inline void start_ibs(void)
 {
-	u64 val = 0;
+    u64 val = 0;
 
-	if (!ibs_caps)
-		return;
+    if ( !ibs_caps )
+        return;
 
-	if (ibs_config.fetch_enabled) {
-		val = (ibs_config.max_cnt_fetch >> 4) & IBS_FETCH_MAX_CNT;
-		val |= ibs_config.rand_en ? IBS_FETCH_RAND_EN : 0;
-		val |= IBS_FETCH_ENABLE;
-		wrmsrl(MSR_AMD64_IBSFETCHCTL, val);
-	}
+    if ( ibs_config.fetch_enabled )
+    {
+        val = (ibs_config.max_cnt_fetch >> 4) & IBS_FETCH_MAX_CNT;
+        val |= ibs_config.rand_en ? IBS_FETCH_RAND_EN : 0;
+        val |= IBS_FETCH_ENABLE;
+        wrmsrl(MSR_AMD64_IBSFETCHCTL, val);
+    }
 
-	if (ibs_config.op_enabled) {
-		ibs_op_ctl = ibs_config.max_cnt_op >> 4;
-		if (!(ibs_caps & IBS_CAPS_RDWROPCNT)) {
-			/*
+    if ( ibs_config.op_enabled )
+    {
+        ibs_op_ctl = ibs_config.max_cnt_op >> 4;
+        if ( !(ibs_caps & IBS_CAPS_RDWROPCNT) )
+        {
+            /*
 			 * IbsOpCurCnt not supported.  See
 			 * op_amd_randomize_ibs_op() for details.
 			 */
-			ibs_op_ctl = clamp((unsigned long long)ibs_op_ctl, 
-							0x0081ULL, 0xFF80ULL);
-		} else {
-			/*
+            ibs_op_ctl =
+                clamp((unsigned long long)ibs_op_ctl, 0x0081ULL, 0xFF80ULL);
+        }
+        else
+        {
+            /*
 			 * The start value is randomized with a
 			 * positive offset, we need to compensate it
 			 * with the half of the randomized range. Also
 			 * avoid underflows.
 			 */
-		ibs_op_ctl = min(ibs_op_ctl + IBS_RANDOM_MAXCNT_OFFSET,
-					IBS_OP_MAX_CNT);
-		}
-		if (ibs_caps & IBS_CAPS_OPCNT && ibs_config.dispatched_ops)
-			ibs_op_ctl |= IBS_OP_CNT_CTL;
-		ibs_op_ctl |= IBS_OP_ENABLE;
-		val = op_amd_randomize_ibs_op(ibs_op_ctl);
-		wrmsrl(MSR_AMD64_IBSOPCTL, val);
-	}
+            ibs_op_ctl = min(ibs_op_ctl + IBS_RANDOM_MAXCNT_OFFSET,
+                             IBS_OP_MAX_CNT);
+        }
+        if ( ibs_caps & IBS_CAPS_OPCNT && ibs_config.dispatched_ops )
+            ibs_op_ctl |= IBS_OP_CNT_CTL;
+        ibs_op_ctl |= IBS_OP_ENABLE;
+        val = op_amd_randomize_ibs_op(ibs_op_ctl);
+        wrmsrl(MSR_AMD64_IBSOPCTL, val);
+    }
 }
- 
-static void cf_check athlon_start(struct op_msrs const * const msrs)
+
+static void cf_check athlon_start(struct op_msrs const *const msrs)
 {
-	uint64_t msr_content;
-	int i;
-	unsigned int const nr_ctrs = model->num_counters;
-	for (i = 0 ; i < nr_ctrs ; ++i) {
-		if (reset_value[i]) {
-			CTRL_READ(msr_content, msrs, i);
-			CTRL_SET_ACTIVE(msr_content);
-			CTRL_WRITE(msr_content, msrs, i);
-		}
-	}
-	start_ibs();
+    uint64_t msr_content;
+    int i;
+    const unsigned int nr_ctrs = model->num_counters;
+    for ( i = 0; i < nr_ctrs; ++i )
+    {
+        if ( reset_value[i] )
+        {
+            CTRL_READ(msr_content, msrs, i);
+            CTRL_SET_ACTIVE(msr_content);
+            CTRL_WRITE(msr_content, msrs, i);
+        }
+    }
+    start_ibs();
 }
 
 static void stop_ibs(void)
 {
-	if (!ibs_caps)
-		return;
+    if ( !ibs_caps )
+        return;
 
-	if (ibs_config.fetch_enabled)
-		/* clear max count and enable */
-		wrmsrl(MSR_AMD64_IBSFETCHCTL, 0);
+    if ( ibs_config.fetch_enabled )
+        /* clear max count and enable */
+        wrmsrl(MSR_AMD64_IBSFETCHCTL, 0);
 
-	if (ibs_config.op_enabled)
-		/* clear max count and enable */
-		wrmsrl(MSR_AMD64_IBSOPCTL, 0);
+    if ( ibs_config.op_enabled )
+        /* clear max count and enable */
+        wrmsrl(MSR_AMD64_IBSOPCTL, 0);
 }
 
-static void cf_check athlon_stop(struct op_msrs const * const msrs)
+static void cf_check athlon_stop(struct op_msrs const *const msrs)
 {
-	uint64_t msr_content;
-	int i;
-	unsigned int const nr_ctrs = model->num_counters;
+    uint64_t msr_content;
+    int i;
+    const unsigned int nr_ctrs = model->num_counters;
 
-	/* Subtle: stop on all counters to avoid race with
+    /* Subtle: stop on all counters to avoid race with
 	 * setting our pm callback */
-	for (i = 0 ; i < nr_ctrs ; ++i) {
-		CTRL_READ(msr_content, msrs, i);
-		CTRL_SET_INACTIVE(msr_content);
-		CTRL_WRITE(msr_content, msrs, i);
-	}
+    for ( i = 0; i < nr_ctrs; ++i )
+    {
+        CTRL_READ(msr_content, msrs, i);
+        CTRL_SET_INACTIVE(msr_content);
+        CTRL_WRITE(msr_content, msrs, i);
+    }
 
-	stop_ibs();
+    stop_ibs();
 }
 
 #define IBSCTL_LVTOFFSETVAL             (1 << 8)
 #define APIC_EILVT_MSG_NMI              0x4
 #define APIC_EILVT_LVTOFF_IBS           1
 #define APIC_EILVTn(n)                  (0x500 + 0x10 * n)
+
 static inline void __init cf_check init_ibs_nmi_per_cpu(void *arg)
 {
-	unsigned long reg;
+    unsigned long reg;
 
-	reg = (APIC_EILVT_LVTOFF_IBS << 4) + APIC_EILVTn(0);
-	apic_write(reg, APIC_EILVT_MSG_NMI << 8);
+    reg = (APIC_EILVT_LVTOFF_IBS << 4) + APIC_EILVTn(0);
+    apic_write(reg, APIC_EILVT_MSG_NMI << 8);
 }
 
 #define PCI_DEVICE_ID_AMD_10H_NB_MISC   0x1203
 #define IBSCTL                          0x1cc
+
 static int __init init_ibs_nmi(void)
 {
-	int bus, dev, func;
-	u32 id, value;
-	u16 vendor_id, dev_id;
-	int nodes;
+    int bus, dev, func;
+    u32 id, value;
+    u16 vendor_id, dev_id;
+    int nodes;
 
-	/* per CPU setup */
-	on_each_cpu(init_ibs_nmi_per_cpu, NULL, 1);
+    /* per CPU setup */
+    on_each_cpu(init_ibs_nmi_per_cpu, NULL, 1);
 
-	nodes = 0;
-	for (bus = 0; bus < 256; bus++) {
-		for (dev = 0; dev < 32; dev++) {
-			for (func = 0; func < 8; func++) {
-				id = pci_conf_read32(PCI_SBDF(0, bus, dev, func),
-						     PCI_VENDOR_ID);
+    nodes = 0;
+    for ( bus = 0; bus < 256; bus++ )
+    {
+        for ( dev = 0; dev < 32; dev++ )
+        {
+            for ( func = 0; func < 8; func++ )
+            {
+                id = pci_conf_read32(PCI_SBDF(0, bus, dev, func),
+                                     PCI_VENDOR_ID);
 
-				vendor_id = id & 0xffff;
-				dev_id = (id >> 16) & 0xffff;
+                vendor_id = id & 0xffff;
+                dev_id = (id >> 16) & 0xffff;
 
-				if ((vendor_id == PCI_VENDOR_ID_AMD) &&
-					(dev_id == PCI_DEVICE_ID_AMD_10H_NB_MISC)) {
+                if ( (vendor_id == PCI_VENDOR_ID_AMD) &&
+                     (dev_id == PCI_DEVICE_ID_AMD_10H_NB_MISC) )
+                {
+                    pci_conf_write32(PCI_SBDF(0, bus, dev, func),
+                                     IBSCTL,
+                                     IBSCTL_LVTOFFSETVAL |
+                                         APIC_EILVT_LVTOFF_IBS);
 
-					pci_conf_write32(
-						PCI_SBDF(0, bus, dev, func),
-						IBSCTL,
-						IBSCTL_LVTOFFSETVAL | APIC_EILVT_LVTOFF_IBS);
+                    value = pci_conf_read32(PCI_SBDF(0, bus, dev, func),
+                                            IBSCTL);
 
-					value = pci_conf_read32(PCI_SBDF(0, bus, dev, func),
-								IBSCTL);
+                    if ( value !=
+                         (IBSCTL_LVTOFFSETVAL | APIC_EILVT_LVTOFF_IBS) )
+                    {
+                        printk(
+                            "Xenoprofile: Failed to setup IBS LVT offset, " "IBSCTL = %#x\n",
+                            value);
+                        return 1;
+                    }
+                    nodes++;
+                }
+            }
+        }
+    }
 
-					if (value != (IBSCTL_LVTOFFSETVAL |
-						APIC_EILVT_LVTOFF_IBS)) {
-						printk("Xenoprofile: Failed to setup IBS LVT offset, "
-							"IBSCTL = %#x\n", value);
-						return 1;
-					}
-					nodes++;
-				}
-			}
-		}
-	}
+    if ( !nodes )
+    {
+        printk("Xenoprofile: No CPU node configured for IBS\n");
+        return 1;
+    }
 
-	if (!nodes) {
-		printk("Xenoprofile: No CPU node configured for IBS\n");
-		return 1;
-	}
-
-	return 0;
+    return 0;
 }
 
 static void __init get_ibs_caps(void)
 {
-	if (!boot_cpu_has(X86_FEATURE_IBS))
-		return;
+    if ( !boot_cpu_has(X86_FEATURE_IBS) )
+        return;
 
     /* check IBS cpuid feature flags */
-	if (current_cpu_data.extended_cpuid_level >= IBS_CPUID_FEATURES)
-		ibs_caps = cpuid_eax(IBS_CPUID_FEATURES);
-	if (!(ibs_caps & IBS_CAPS_AVAIL))
-		/* cpuid flags not valid */
-		ibs_caps = 0;
+    if ( current_cpu_data.extended_cpuid_level >= IBS_CPUID_FEATURES )
+        ibs_caps = cpuid_eax(IBS_CPUID_FEATURES);
+    if ( !(ibs_caps & IBS_CAPS_AVAIL) )
+        /* cpuid flags not valid */
+        ibs_caps = 0;
 }
 
 void __init ibs_init(void)
 {
-	get_ibs_caps();
+    get_ibs_caps();
 
-	if ( !ibs_caps )
-		return;
+    if ( !ibs_caps )
+        return;
 
-	if (init_ibs_nmi()) {
-		ibs_caps = 0;
-		return;
-	}
+    if ( init_ibs_nmi() )
+    {
+        ibs_caps = 0;
+        return;
+    }
 
-	printk("Xenoprofile: AMD IBS detected (%#x)\n",
-		(unsigned)ibs_caps);
+    printk("Xenoprofile: AMD IBS detected (%#x)\n", (unsigned)ibs_caps);
 }
 
 struct op_x86_model_spec const op_athlon_spec = {
-	.num_counters = K7_NUM_COUNTERS,
-	.num_controls = K7_NUM_CONTROLS,
-	.fill_in_addresses = &athlon_fill_in_addresses,
-	.setup_ctrs = &athlon_setup_ctrs,
-	.check_ctrs = &athlon_check_ctrs,
-	.start = &athlon_start,
-	.stop = &athlon_stop
+    .num_counters = K7_NUM_COUNTERS,
+    .num_controls = K7_NUM_CONTROLS,
+    .fill_in_addresses = &athlon_fill_in_addresses,
+    .setup_ctrs = &athlon_setup_ctrs,
+    .check_ctrs = &athlon_check_ctrs,
+    .start = &athlon_start,
+    .stop = &athlon_stop
 };
 
 struct op_x86_model_spec const op_amd_fam15h_spec = {
-	.num_counters = FAM15H_NUM_COUNTERS,
-	.num_controls = FAM15H_NUM_CONTROLS,
-	.fill_in_addresses = &fam15h_fill_in_addresses,
-	.setup_ctrs = &athlon_setup_ctrs,
-	.check_ctrs = &athlon_check_ctrs,
-	.start = &athlon_start,
-	.stop = &athlon_stop
+    .num_counters = FAM15H_NUM_COUNTERS,
+    .num_controls = FAM15H_NUM_CONTROLS,
+    .fill_in_addresses = &fam15h_fill_in_addresses,
+    .setup_ctrs = &athlon_setup_ctrs,
+    .check_ctrs = &athlon_check_ctrs,
+    .start = &athlon_start,
+    .stop = &athlon_stop
 };

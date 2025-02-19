@@ -99,8 +99,7 @@ void *map_domain_page(mfn_t mfn)
           i < DOMHEAP_ENTRIES;
           slot = (slot + 1) % DOMHEAP_ENTRIES, i++ )
     {
-        if ( map[slot].pt.avail < 0xf &&
-             map[slot].pt.base == slot_mfn &&
+        if ( map[slot].pt.avail < 0xf && map[slot].pt.base == slot_mfn &&
              map[slot].pt.valid )
         {
             /* This slot already points to the right place; reuse it */
@@ -115,7 +114,6 @@ void *map_domain_page(mfn_t mfn)
             write_pte(map + slot, pte);
             break;
         }
-
     }
     /* If the map fills up, the callers have misbehaved. */
     BUG_ON(i == DOMHEAP_ENTRIES);
@@ -135,9 +133,8 @@ void *map_domain_page(mfn_t mfn)
 
     local_irq_restore(flags);
 
-    va = (DOMHEAP_VIRT_START
-          + (slot << SECOND_SHIFT)
-          + ((mfn_x(mfn) & XEN_PT_LPAE_ENTRY_MASK) << THIRD_SHIFT));
+    va = (DOMHEAP_VIRT_START + (slot << SECOND_SHIFT) +
+          ((mfn_x(mfn) & XEN_PT_LPAE_ENTRY_MASK) << THIRD_SHIFT));
 
     /*
      * We may not have flushed this specific subpage at map time,
@@ -173,7 +170,7 @@ mfn_t domain_page_map_to_mfn(const void *ptr)
     unsigned long va = (unsigned long)ptr;
     lpae_t *map = this_cpu(xen_dommap);
     int slot = (va - DOMHEAP_VIRT_START) >> SECOND_SHIFT;
-    unsigned long offset = (va>>THIRD_SHIFT) & XEN_PT_LPAE_ENTRY_MASK;
+    unsigned long offset = (va >> THIRD_SHIFT) & XEN_PT_LPAE_ENTRY_MASK;
 
     if ( (va >= VMAP_VIRT_START) && ((va - VMAP_VIRT_START) < VMAP_VIRT_SIZE) )
         return virt_to_mfn(va);

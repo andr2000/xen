@@ -16,10 +16,8 @@
 
 #define ad_bytes (s->ad_bytes) /* for truncate_ea() */
 
-int x86emul_0f01(struct x86_emulate_state *s,
-                 struct cpu_user_regs *regs,
-                 struct operand *dst,
-                 struct x86_emulate_ctxt *ctxt,
+int x86emul_0f01(struct x86_emulate_state *s, struct cpu_user_regs *regs,
+                 struct operand *dst, struct x86_emulate_ctxt *ctxt,
                  const struct x86_emulate_ops *ops)
 {
     enum x86_segment seg = (s->modrm_reg & 1) ? x86_seg_idtr : x86_seg_gdtr;
@@ -76,7 +74,8 @@ int x86emul_0f01(struct x86_emulate_state *s,
         generate_exception_if(!(cr4 & X86_CR4_OSXSAVE), X86_EXC_UD);
         generate_exception_if(!mode_ring0(), X86_EXC_GP, 0);
         rc = ops->write_xcr(regs->ecx,
-                            regs->eax | ((uint64_t)regs->edx << 32), ctxt);
+                            regs->eax | ((uint64_t)regs->edx << 32),
+                            ctxt);
         if ( rc != X86EMUL_OKAY )
             goto done;
         break;
@@ -96,24 +95,24 @@ int x86emul_0f01(struct x86_emulate_state *s,
 
     case 0xd6: /* xtest */
         generate_exception_if(s->vex.pfx, X86_EXC_UD);
-        generate_exception_if(!vcpu_has_rtm() && !vcpu_has_hle(),
-                              X86_EXC_UD);
+        generate_exception_if(!vcpu_has_rtm() && !vcpu_has_hle(), X86_EXC_UD);
         /* Neither HLE nor RTM can be active when we get here. */
         regs->eflags |= X86_EFLAGS_ZF;
         break;
 
     case 0xdf: /* invlpga */
         fail_if(!ops->read_msr);
-        if ( (rc = ops->read_msr(MSR_EFER,
-                                 &msr_val, ctxt)) != X86EMUL_OKAY )
+        if ( (rc = ops->read_msr(MSR_EFER, &msr_val, ctxt)) != X86EMUL_OKAY )
             goto done;
         /* Finding SVME set implies vcpu_has_svm(). */
-        generate_exception_if(!(msr_val & EFER_SVME) ||
-                              !in_protmode(ctxt, ops), X86_EXC_UD);
+        generate_exception_if(!(msr_val & EFER_SVME) || !in_protmode(ctxt, ops),
+                              X86_EXC_UD);
         generate_exception_if(!mode_ring0(), X86_EXC_GP, 0);
         fail_if(!ops->tlb_op);
-        if ( (rc = ops->tlb_op(x86emul_invlpga, truncate_ea(regs->r(ax)),
-                               regs->ecx, ctxt)) != X86EMUL_OKAY )
+        if ( (rc = ops->tlb_op(x86emul_invlpga,
+                               truncate_ea(regs->r(ax)),
+                               regs->ecx,
+                               ctxt)) != X86EMUL_OKAY )
             goto done;
         break;
 
@@ -122,7 +121,7 @@ int x86emul_0f01(struct x86_emulate_state *s,
         {
         case vex_none: /* serialize */
             host_and_vcpu_must_have(serialize);
-            asm volatile ( ".byte 0x0f, 0x01, 0xe8" );
+            asm volatile(".byte 0x0f, 0x01, 0xe8");
             break;
         case vex_f2: /* xsusldtrk */
             vcpu_must_have(tsxldtrk);
@@ -155,8 +154,7 @@ int x86emul_0f01(struct x86_emulate_state *s,
         switch ( s->vex.pfx )
         {
         case vex_none: /* rdpkru */
-            if ( !ops->read_cr ||
-                 ops->read_cr(4, &cr4, ctxt) != X86EMUL_OKAY )
+            if ( !ops->read_cr || ops->read_cr(4, &cr4, ctxt) != X86EMUL_OKAY )
                 cr4 = 0;
             generate_exception_if(!(cr4 & X86_CR4_PKE), X86_EXC_UD);
             generate_exception_if(regs->ecx, X86_EXC_GP, 0);
@@ -172,8 +170,7 @@ int x86emul_0f01(struct x86_emulate_state *s,
         switch ( s->vex.pfx )
         {
         case vex_none: /* wrpkru */
-            if ( !ops->read_cr ||
-                 ops->read_cr(4, &cr4, ctxt) != X86EMUL_OKAY )
+            if ( !ops->read_cr || ops->read_cr(4, &cr4, ctxt) != X86EMUL_OKAY )
                 cr4 = 0;
             generate_exception_if(!(cr4 & X86_CR4_PKE), X86_EXC_UD);
             generate_exception_if(regs->ecx | regs->edx, X86_EXC_GP, 0);
@@ -187,22 +184,22 @@ int x86emul_0f01(struct x86_emulate_state *s,
     case 0xf8: /* swapgs */
         generate_exception_if(!mode_64bit(), X86_EXC_UD);
         generate_exception_if(!mode_ring0(), X86_EXC_GP, 0);
-        fail_if(!ops->read_segment || !ops->read_msr ||
-                !ops->write_segment || !ops->write_msr);
-        if ( (rc = ops->read_segment(x86_seg_gs, &sreg,
-                                     ctxt)) != X86EMUL_OKAY ||
-             (rc = ops->read_msr(MSR_SHADOW_GS_BASE, &msr_val,
-                                 ctxt)) != X86EMUL_OKAY ||
-             (rc = ops->write_msr(MSR_SHADOW_GS_BASE, sreg.base,
-                                  ctxt)) != X86EMUL_OKAY )
+        fail_if(!ops->read_segment || !ops->read_msr || !ops->write_segment ||
+                !ops->write_msr);
+        if ( (rc = ops->read_segment(x86_seg_gs, &sreg, ctxt)) !=
+                 X86EMUL_OKAY ||
+             (rc = ops->read_msr(MSR_SHADOW_GS_BASE, &msr_val, ctxt)) !=
+                 X86EMUL_OKAY ||
+             (rc = ops->write_msr(MSR_SHADOW_GS_BASE, sreg.base, ctxt)) !=
+                 X86EMUL_OKAY )
             goto done;
         sreg.base = msr_val;
-        if ( (rc = ops->write_segment(x86_seg_gs, &sreg,
-                                      ctxt)) != X86EMUL_OKAY )
+        if ( (rc = ops->write_segment(x86_seg_gs, &sreg, ctxt)) !=
+             X86EMUL_OKAY )
         {
             /* Best effort unwind (i.e. no real error checking). */
-            if ( ops->write_msr(MSR_SHADOW_GS_BASE, msr_val,
-                                ctxt) == X86EMUL_EXCEPTION )
+            if ( ops->write_msr(MSR_SHADOW_GS_BASE, msr_val, ctxt) ==
+                 X86EMUL_EXCEPTION )
                 x86_emul_reset_event(ctxt);
             goto done;
         }
@@ -210,8 +207,7 @@ int x86emul_0f01(struct x86_emulate_state *s,
 
     case 0xf9: /* rdtscp */
         fail_if(ops->read_msr == NULL);
-        if ( (rc = ops->read_msr(MSR_TSC_AUX,
-                                 &msr_val, ctxt)) != X86EMUL_OKAY )
+        if ( (rc = ops->read_msr(MSR_TSC_AUX, &msr_val, ctxt)) != X86EMUL_OKAY )
             goto done;
         regs->r(cx) = (uint32_t)msr_val;
         return X86EMUL_rdtsc;
@@ -222,18 +218,23 @@ int x86emul_0f01(struct x86_emulate_state *s,
 
         vcpu_must_have(clzero);
 
-        base = ad_bytes == 8 ? regs->r(ax) :
-               ad_bytes == 4 ? regs->eax : regs->ax;
+        base = ad_bytes == 8   ? regs->r(ax)
+               : ad_bytes == 4 ? regs->eax
+                               : regs->ax;
         limit = ctxt->cpuid->basic.clflush_size * 8;
-        generate_exception_if(limit < sizeof(long) ||
-                              (limit & (limit - 1)), X86_EXC_UD);
+        generate_exception_if(limit < sizeof(long) || (limit & (limit - 1)),
+                              X86_EXC_UD);
         base &= ~(limit - 1);
         if ( ops->rep_stos )
         {
             unsigned long nr_reps = limit / sizeof(zero);
 
-            rc = ops->rep_stos(&zero, s->ea.mem.seg, base, sizeof(zero),
-                               &nr_reps, ctxt);
+            rc = ops->rep_stos(&zero,
+                               s->ea.mem.seg,
+                               base,
+                               sizeof(zero),
+                               &nr_reps,
+                               ctxt);
             if ( rc == X86EMUL_OKAY )
             {
                 base += nr_reps * sizeof(zero);
@@ -273,10 +274,16 @@ int x86emul_0f01(struct x86_emulate_state *s,
             sreg.base &= 0xffffff;
             s->op_bytes = 4;
         }
-        if ( (rc = ops->write(s->ea.mem.seg, s->ea.mem.off, &sreg.limit,
-                              2, ctxt)) != X86EMUL_OKAY ||
-             (rc = ops->write(s->ea.mem.seg, truncate_ea(s->ea.mem.off + 2),
-                              &sreg.base, s->op_bytes, ctxt)) != X86EMUL_OKAY )
+        if ( (rc = ops->write(s->ea.mem.seg,
+                              s->ea.mem.off,
+                              &sreg.limit,
+                              2,
+                              ctxt)) != X86EMUL_OKAY ||
+             (rc = ops->write(s->ea.mem.seg,
+                              truncate_ea(s->ea.mem.off + 2),
+                              &sreg.base,
+                              s->op_bytes,
+                              ctxt)) != X86EMUL_OKAY )
             goto done;
         break;
 
@@ -286,10 +293,18 @@ int x86emul_0f01(struct x86_emulate_state *s,
         generate_exception_if(!mode_ring0(), X86_EXC_GP, 0);
         fail_if(ops->write_segment == NULL);
         memset(&sreg, 0, sizeof(sreg));
-        if ( (rc = read_ulong(s->ea.mem.seg, s->ea.mem.off,
-                              &limit, 2, ctxt, ops)) ||
-             (rc = read_ulong(s->ea.mem.seg, truncate_ea(s->ea.mem.off + 2),
-                              &base, mode_64bit() ? 8 : 4, ctxt, ops)) )
+        if ( (rc = read_ulong(s->ea.mem.seg,
+                              s->ea.mem.off,
+                              &limit,
+                              2,
+                              ctxt,
+                              ops)) ||
+             (rc = read_ulong(s->ea.mem.seg,
+                              truncate_ea(s->ea.mem.off + 2),
+                              &base,
+                              mode_64bit() ? 8 : 4,
+                              ctxt,
+                              ops)) )
             goto done;
         generate_exception_if(!is_canonical_address(base), X86_EXC_GP, 0);
         sreg.base = base;
@@ -324,8 +339,8 @@ int x86emul_0f01(struct x86_emulate_state *s,
             goto done;
         if ( s->ea.type == OP_REG )
             cr0w = *s->ea.reg;
-        else if ( (rc = read_ulong(s->ea.mem.seg, s->ea.mem.off,
-                                   &cr0w, 2, ctxt, ops)) )
+        else if (
+            (rc = read_ulong(s->ea.mem.seg, s->ea.mem.off, &cr0w, 2, ctxt, ops)) )
             goto done;
         /* LMSW can: (1) set bits 0-3; (2) clear bits 1-3. */
         cr0 = (cr0 & ~0xe) | (cr0w & 0xf);
@@ -337,7 +352,9 @@ int x86emul_0f01(struct x86_emulate_state *s,
         ASSERT(s->ea.type == OP_MEM);
         generate_exception_if(!mode_ring0(), X86_EXC_GP, 0);
         fail_if(!ops->tlb_op);
-        if ( (rc = ops->tlb_op(x86emul_invlpg, s->ea.mem.off, s->ea.mem.seg,
+        if ( (rc = ops->tlb_op(x86emul_invlpg,
+                               s->ea.mem.off,
+                               s->ea.mem.seg,
                                ctxt)) != X86EMUL_OKAY )
             goto done;
         break;
@@ -352,6 +369,6 @@ int x86emul_0f01(struct x86_emulate_state *s,
 
     rc = X86EMUL_OKAY;
 
- done:
+done:
     return rc;
 }

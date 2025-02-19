@@ -24,11 +24,11 @@
 #include <xen/delay.h>
 
 struct brcm_plat_regs {
-    uint32_t    hif_mask;
-    uint32_t    hif_cpu_reset_config;
-    uint32_t    hif_boot_continuation;
-    uint32_t    cpu0_pwr_zone_ctrl;
-    uint32_t    scratch_reg;
+    uint32_t hif_mask;
+    uint32_t hif_cpu_reset_config;
+    uint32_t hif_boot_continuation;
+    uint32_t cpu0_pwr_zone_ctrl;
+    uint32_t scratch_reg;
 };
 
 static u32 brcm_boot_continuation_pc;
@@ -104,14 +104,16 @@ static __init int brcm_populate_plat_regs(void)
 
     regs.hif_boot_continuation = reg_base;
 
-    dprintk(XENLOG_INFO, "hif_cpu_reset_config  : %08xh\n",
-                    regs.hif_cpu_reset_config);
-    dprintk(XENLOG_INFO, "cpu0_pwr_zone_ctrl    : %08xh\n",
-                    regs.cpu0_pwr_zone_ctrl);
-    dprintk(XENLOG_INFO, "hif_boot_continuation : %08xh\n",
-                    regs.hif_boot_continuation);
-    dprintk(XENLOG_INFO, "scratch_reg : %08xh\n",
-                    regs.scratch_reg);
+    dprintk(XENLOG_INFO,
+            "hif_cpu_reset_config  : %08xh\n",
+            regs.hif_cpu_reset_config);
+    dprintk(XENLOG_INFO,
+            "cpu0_pwr_zone_ctrl    : %08xh\n",
+            regs.cpu0_pwr_zone_ctrl);
+    dprintk(XENLOG_INFO,
+            "hif_boot_continuation : %08xh\n",
+            regs.hif_boot_continuation);
+    dprintk(XENLOG_INFO, "scratch_reg : %08xh\n", regs.scratch_reg);
 
     return 0;
 }
@@ -132,8 +134,9 @@ static int brcm_cpu_power_on(int cpu)
 
     if ( !pwr_ctl )
     {
-        dprintk(XENLOG_ERR, "%s: Unable to map \"cpu0_pwr_zone_ctrl\"\n",
-                        __func__);
+        dprintk(XENLOG_ERR,
+                "%s: Unable to map \"cpu0_pwr_zone_ctrl\"\n",
+                __func__);
         return -EFAULT;
     }
 
@@ -179,7 +182,8 @@ static int brcm_cpu_release(u32 cpu)
     reg = ioremap_nocache(regs.hif_cpu_reset_config, sizeof(u32));
     if ( !reg )
     {
-        dprintk(XENLOG_ERR, "%s: Unable to map \"hif_cpu_reset_config\"\n",
+        dprintk(XENLOG_ERR,
+                "%s: Unable to map \"hif_cpu_reset_config\"\n",
                 __func__);
         return -EFAULT;
     }
@@ -203,7 +207,8 @@ static int brcm_set_boot_continuation(u32 cpu, u32 pc)
                           2 * sizeof(u32));
     if ( !reg )
     {
-        dprintk(XENLOG_ERR, "%s: Unable to map \"hif_boot_continuation\"\n",
+        dprintk(XENLOG_ERR,
+                "%s: Unable to map \"hif_boot_continuation\"\n",
                 __func__);
         return -EFAULT;
     }
@@ -218,7 +223,7 @@ static int brcm_set_boot_continuation(u32 cpu, u32 pc)
 
 static int brcm_cpu_up(int cpu)
 {
-    int  rc;
+    int rc;
 
     rc = brcm_cpu_power_on(cpu);
     if ( rc )
@@ -228,7 +233,7 @@ static int brcm_cpu_up(int cpu)
     if ( rc )
         return rc;
 
-   return brcm_cpu_release(cpu);
+    return brcm_cpu_release(cpu);
 }
 
 static int __init brcm_smp_init(void)
@@ -260,8 +265,11 @@ static int __init brcm_smp_init(void)
 
     iounmap(scratch);
 
-    dprintk(XENLOG_INFO, "%s: target_pc 0x%x boot continuation pc 0x%x\n",
-            __func__, target_pc, brcm_boot_continuation_pc);
+    dprintk(XENLOG_INFO,
+            "%s: target_pc 0x%x boot continuation pc 0x%x\n",
+            __func__,
+            target_pc,
+            brcm_boot_continuation_pc);
 
     return 0;
 }
@@ -271,17 +279,12 @@ static __init int brcm_init(void)
     return brcm_populate_plat_regs();
 }
 
-static const char *const brcm_dt_compat[] __initconst =
-{
-    "brcm,bcm7445d0",
-    NULL
-};
+static const char *const brcm_dt_compat[]
+    __initconst = { "brcm,bcm7445d0", NULL };
 
 PLATFORM_START(brcm, "Broadcom B15")
-    .compatible     = brcm_dt_compat,
-    .init           = brcm_init,
-    .smp_init       = brcm_smp_init,
-    .cpu_up         = brcm_cpu_up,
+    .compatible = brcm_dt_compat, .init = brcm_init, .smp_init = brcm_smp_init,
+    .cpu_up = brcm_cpu_up,
 PLATFORM_END
 
 /*

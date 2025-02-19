@@ -25,7 +25,8 @@ find_last_descendants_node(const struct dt_device_node *device_node)
     struct dt_device_node *child_node;
 
     for ( child_node = device_node->child; child_node->sibling != NULL;
-          child_node = child_node->sibling );
+          child_node = child_node->sibling )
+        ;
 
     /* If last child_node also have children. */
     if ( child_node->child )
@@ -160,7 +161,8 @@ static int dt_overlay_add_node(struct dt_device_node *device_node,
          * If parent has at least one child node.
          * Iterate to the last child node of parent.
          */
-        for ( np = parent_node->child; np->sibling != NULL; np = np->sibling );
+        for ( np = parent_node->child; np->sibling != NULL; np = np->sibling )
+            ;
 
         /* Iterate over all child nodes of np node. */
         if ( np->child )
@@ -206,7 +208,7 @@ static int dt_overlay_add_node(struct dt_device_node *device_node,
 static int check_overlay_fdt(const void *overlay_fdt, uint32_t overlay_fdt_size)
 {
     if ( (fdt_totalsize(overlay_fdt) != overlay_fdt_size) ||
-          fdt_check_header(overlay_fdt) )
+         fdt_check_header(overlay_fdt) )
     {
         printk(XENLOG_ERR "The overlay FDT is not a valid Flat Device Tree\n");
         return -EINVAL;
@@ -235,7 +237,6 @@ static int irq_remove_cb(unsigned long s, unsigned long e, void *dom,
         *c += e - s + 1;
 
     return rc;
-
 }
 
 static int iomem_remove_cb(unsigned long s, unsigned long e, void *dom,
@@ -252,7 +253,9 @@ static int iomem_remove_cb(unsigned long s, unsigned long e, void *dom,
     if ( rc )
     {
         printk(XENLOG_ERR "Unable to remove %pd access to %#lx - %#lx\n",
-               d, s, e);
+               d,
+               s,
+               e);
     }
     else
         *c += e - s + 1;
@@ -305,8 +308,10 @@ static int overlay_get_nodes_info(const void *fdto, char **nodes_full_path)
         if ( overlay < 0 )
             continue;
 
-        target = fdt_overlay_target_offset(device_tree_flattened, fdto,
-                                           fragment, &target_path);
+        target = fdt_overlay_target_offset(device_tree_flattened,
+                                           fdto,
+                                           fragment,
+                                           &target_path);
         if ( target < 0 )
             return target;
 
@@ -347,7 +352,8 @@ static int overlay_get_nodes_info(const void *fdto, char **nodes_full_path)
                 nodes_full_path[node_num][target_path_len++] = '/';
 
             memcpy(nodes_full_path[node_num] + target_path_len,
-                    node_name, node_name_len);
+                   node_name,
+                   node_name_len);
 
             nodes_full_path[node_num][node_full_name_len - 1] = '\0';
 
@@ -375,7 +381,7 @@ find_track_entry_from_tracker(const void *overlay_fdt,
      * supported currently. We are relying on user to provide the same dtbo
      * as it was used when adding the nodes.
      */
-    list_for_each_entry_safe( entry, temp, &overlay_tracker, entry )
+    list_for_each_entry_safe(entry, temp, &overlay_tracker, entry)
     {
         if ( memcmp(entry->overlay_fdt, overlay_fdt, overlay_fdt_size) == 0 )
         {
@@ -386,8 +392,9 @@ find_track_entry_from_tracker(const void *overlay_fdt,
 
     if ( !found_entry )
     {
-        printk(XENLOG_ERR "Cannot find any matching tracker with input dtbo."
-               " Operation is supported only for prior added dtbo.\n");
+        printk(
+            XENLOG_ERR
+            "Cannot find any matching tracker with input dtbo." " Operation is supported only for prior added dtbo.\n");
         return NULL;
     }
 
@@ -409,8 +416,10 @@ static int remove_node_resources(struct dt_device_node *device_node)
     /* Remove the node if only it's assigned to hardware domain or domain io. */
     if ( domid != hardware_domain->domain_id && domid != DOMID_IO )
     {
-        printk(XENLOG_ERR "Device %s is being used by domain %u. Removing nodes failed\n",
-               device_node->full_name, domid);
+        printk(XENLOG_ERR
+               "Device %s is being used by domain %u. Removing nodes failed\n",
+               device_node->full_name,
+               domid);
         return -EINVAL;
     }
 
@@ -436,7 +445,7 @@ remove_descendant_nodes_resources(const struct dt_device_node *device_node)
     struct dt_device_node *child_node;
 
     for ( child_node = device_node->child; child_node != NULL;
-         child_node = child_node->sibling )
+          child_node = child_node->sibling )
     {
         if ( child_node->child )
         {
@@ -503,7 +512,7 @@ static int remove_nodes(const struct overlay_track *tracker)
             return rc;
     }
 
-   /* Remove mmio access. */
+    /* Remove mmio access. */
     if ( tracker->iomem_ranges )
     {
         rc = rangeset_consume_ranges(tracker->iomem_ranges, iomem_remove_cb, d);
@@ -536,7 +545,6 @@ static long handle_remove_overlay_nodes(const void *overlay_fdt,
     {
         rc = -EINVAL;
         goto out;
-
     }
 
     rc = remove_nodes(entry);
@@ -559,7 +567,7 @@ static long handle_remove_overlay_nodes(const void *overlay_fdt,
 
     xfree(entry);
 
- out:
+out:
     spin_unlock(&overlay_lock);
     return rc;
 }
@@ -642,6 +650,7 @@ static long add_nodes(struct overlay_track *tr, char **nodes_full_path)
 
     return 0;
 }
+
 /*
  * Adds device tree nodes under target node.
  * We use tr->dt_host_new to unflatten the updated device_tree_flattened.
@@ -661,7 +670,7 @@ static long handle_add_overlay_nodes(void *overlay_fdt,
         return -ENOMEM;
 
     new_fdt_size = fdt_totalsize(device_tree_flattened) +
-                                 fdt_totalsize(overlay_fdt);
+                   fdt_totalsize(overlay_fdt);
 
     tr->fdt = xzalloc_bytes(new_fdt_size);
     if ( tr->fdt == NULL )
@@ -712,15 +721,18 @@ static long handle_add_overlay_nodes(void *overlay_fdt,
 
     spin_lock(&overlay_lock);
 
-    memcpy(tr->fdt, device_tree_flattened,
+    memcpy(tr->fdt,
+           device_tree_flattened,
            fdt_totalsize(device_tree_flattened));
 
     /* Open tr->fdt with more space to accommodate the overlay_fdt. */
     rc = fdt_open_into(tr->fdt, tr->fdt, new_fdt_size);
     if ( rc )
     {
-        printk(XENLOG_ERR "Increasing fdt size to accommodate overlay_fdt failed with error %d\n",
-               rc);
+        printk(
+            XENLOG_ERR
+            "Increasing fdt size to accommodate overlay_fdt failed with error %d\n",
+            rc);
         goto err;
     }
 
@@ -781,7 +793,8 @@ static long handle_add_overlay_nodes(void *overlay_fdt,
     rc = add_nodes(tr, nodes_full_path);
     if ( rc )
     {
-        printk(XENLOG_ERR "Adding nodes failed. Removing the partially added nodes.\n");
+        printk(XENLOG_ERR
+               "Adding nodes failed. Removing the partially added nodes.\n");
         goto remove_node;
     }
 
@@ -794,11 +807,11 @@ static long handle_add_overlay_nodes(void *overlay_fdt,
 
     return rc;
 
-/*
+    /*
  * Failure case. We need to remove the nodes, free tracker(if tr exists) and
  * tr->dt_host_new.
  */
- remove_node:
+remove_node:
     tr->num_nodes = j;
     rc = remove_nodes(tr);
 
@@ -821,7 +834,7 @@ static long handle_add_overlay_nodes(void *overlay_fdt,
         return rc;
     }
 
- err:
+err:
     spin_unlock(&overlay_lock);
 
     if ( tr->dt_host_new )
@@ -860,16 +873,16 @@ static long handle_attach_overlay_nodes(struct domain *d,
     }
 
     entry->irq_ranges = rangeset_new(d, "Overlays: Interrupts", 0);
-    if (entry->irq_ranges == NULL)
+    if ( entry->irq_ranges == NULL )
     {
         rc = -ENOMEM;
         printk(XENLOG_ERR "Creating IRQ rangeset failed");
         goto out;
     }
 
-    entry->iomem_ranges = rangeset_new(d, "Overlay: I/O Memory",
-                                       RANGESETF_prettyprint_hex);
-    if (entry->iomem_ranges == NULL)
+    entry->iomem_ranges =
+        rangeset_new(d, "Overlay: I/O Memory", RANGESETF_prettyprint_hex);
+    if ( entry->iomem_ranges == NULL )
     {
         rc = -ENOMEM;
         printk(XENLOG_ERR "Creating IOMMU rangeset failed");
@@ -888,8 +901,11 @@ static long handle_attach_overlay_nodes(struct domain *d,
         }
 
         write_lock(&dt_host_lock);
-        rc = handle_device(d, overlay_node, p2m_mmio_direct_c,
-                           entry->iomem_ranges, entry->irq_ranges);
+        rc = handle_device(d,
+                           overlay_node,
+                           p2m_mmio_direct_c,
+                           entry->iomem_ranges,
+                           entry->irq_ranges);
         write_unlock(&dt_host_lock);
         if ( rc )
         {
@@ -902,7 +918,7 @@ static long handle_attach_overlay_nodes(struct domain *d,
 
     return 0;
 
- out:
+out:
     spin_unlock(&overlay_lock);
 
     if ( entry )

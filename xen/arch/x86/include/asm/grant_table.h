@@ -55,11 +55,11 @@ static inline int replace_grant_host_mapping(uint64_t addr, mfn_t frame,
 
 #define gnttab_mark_dirty(d, f) paging_mark_dirty(d, f)
 
-static inline void gnttab_clear_flags(struct domain *d,
-                                      unsigned int mask, uint16_t *addr)
+static inline void gnttab_clear_flags(struct domain *d, unsigned int mask,
+                                      uint16_t *addr)
 {
     /* Access must be confined to the specified 2 bytes. */
-    asm volatile ("lock andw %1,%0" : "+m" (*addr) : "ir" ((uint16_t)~mask));
+    asm volatile("lock andw %1,%0" : "+m"(*addr) : "ir"((uint16_t)~mask));
 }
 
 /* Foreign mappings of HVM-guest pages do not modify the type count. */

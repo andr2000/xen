@@ -45,7 +45,7 @@ void arch_livepatch_apply(const struct livepatch_func *func,
 
         /* The arch_livepatch_symbol_ok should have caught it. */
         ASSERT(delta >= -(int32_t)ARCH_LIVEPATCH_RANGE ||
-               delta <   (int32_t)ARCH_LIVEPATCH_RANGE);
+               delta < (int32_t)ARCH_LIVEPATCH_RANGE);
 
         /* CPU shifts by two (left) when decoding, so we shift right by two. */
         delta = delta >> 2;
@@ -73,7 +73,7 @@ void arch_livepatch_apply(const struct livepatch_func *func,
     */
     if ( func->new_addr )
         clean_and_invalidate_dcache_va_range(func->new_addr, func->new_size);
-    clean_and_invalidate_dcache_va_range(new_ptr, sizeof (*new_ptr) * len);
+    clean_and_invalidate_dcache_va_range(new_ptr, sizeof(*new_ptr) * len);
 }
 
 /* arch_livepatch_revert shared with ARM 32/ARM 64. */
@@ -82,8 +82,7 @@ int arch_livepatch_verify_elf(const struct livepatch_elf *elf)
 {
     const Elf_Ehdr *hdr = elf->hdr;
 
-    if ( hdr->e_machine != EM_ARM ||
-         hdr->e_ident[EI_CLASS] != ELFCLASS32 )
+    if ( hdr->e_machine != EM_ARM || hdr->e_ident[EI_CLASS] != ELFCLASS32 )
     {
         printk(XENLOG_ERR LIVEPATCH "%s: Unsupported ELF Machine type\n",
                elf->name);
@@ -93,7 +92,8 @@ int arch_livepatch_verify_elf(const struct livepatch_elf *elf)
     if ( (hdr->e_flags & EF_ARM_EABI_MASK) != EF_ARM_EABI_VER5 )
     {
         printk(XENLOG_ERR LIVEPATCH "%s: Unsupported ELF EABI(%x)\n",
-               elf->name, hdr->e_flags);
+               elf->name,
+               hdr->e_flags);
         return -EOPNOTSUPP;
     }
 
@@ -108,7 +108,7 @@ bool arch_livepatch_symbol_deny(const struct livepatch_elf *elf,
      * them. If we do, abort.
      */
     if ( sym->name && sym->name[0] == '$' && sym->name[1] == 't' )
-        return ( !sym->name[2] || sym->name[2] == '.' );
+        return (!sym->name[2] || sym->name[2] == '.');
 
     return false;
 }
@@ -117,7 +117,8 @@ static int32_t get_addend(unsigned char type, void *dest)
 {
     int32_t addend = 0;
 
-    switch ( type ) {
+    switch ( type )
+    {
     case R_ARM_NONE:
         /* ignore */
         break;
@@ -132,7 +133,7 @@ static int32_t get_addend(unsigned char type, void *dest)
 
     case R_ARM_MOVW_ABS_NC:
     case R_ARM_MOVT_ABS:
-        addend =  (*(u32 *)dest & 0x00000FFF);
+        addend = (*(u32 *)dest & 0x00000FFF);
         addend |= (*(u32 *)dest & 0x000F0000) >> 4;
         /* Addend is to sign-extend ([19:16],[11:0]). */
         addend = (int16_t)addend;
@@ -152,8 +153,8 @@ static int32_t get_addend(unsigned char type, void *dest)
 static int perform_rel(unsigned char type, void *dest, uint32_t val,
                        int32_t addend)
 {
-
-    switch ( type ) {
+    switch ( type )
+    {
     case R_ARM_NONE:
         /* ignore */
         break;
@@ -215,7 +216,7 @@ static int perform_rel(unsigned char type, void *dest, uint32_t val,
         break;
 
     default:
-         return -EOPNOTSUPP;
+        return -EOPNOTSUPP;
     }
 
     return 0;
@@ -223,8 +224,7 @@ static int perform_rel(unsigned char type, void *dest, uint32_t val,
 
 int arch_livepatch_perform(struct livepatch_elf *elf,
                            const struct livepatch_elf_sec *base,
-                           const struct livepatch_elf_sec *rela,
-                           bool use_rela)
+                           const struct livepatch_elf_sec *rela, bool use_rela)
 {
     unsigned int i;
     int rc = 0;
@@ -264,21 +264,26 @@ int arch_livepatch_perform(struct livepatch_elf *elf,
         }
         else if ( symndx >= elf->nsym )
         {
-            printk(XENLOG_ERR LIVEPATCH "%s: Relative symbol wants symbol@%u which is past end\n",
-                   elf->name, symndx);
+            printk(XENLOG_ERR LIVEPATCH
+                   "%s: Relative symbol wants symbol@%u which is past end\n",
+                   elf->name,
+                   symndx);
             return -EINVAL;
         }
         else if ( !elf->sym[symndx].sym )
         {
             printk(XENLOG_ERR LIVEPATCH "%s: No relative symbol@%u\n",
-                   elf->name, symndx);
+                   elf->name,
+                   symndx);
             return -EINVAL;
         }
         else if ( elf->sym[symndx].ignored )
         {
-            printk(XENLOG_ERR LIVEPATCH
-                   "%s: Relocation against ignored symbol %s cannot be resolved\n",
-                   elf->name, elf->sym[symndx].name);
+            printk(
+                XENLOG_ERR LIVEPATCH
+                "%s: Relocation against ignored symbol %s cannot be resolved\n",
+                elf->name,
+                elf->sym[symndx].name);
             return -EINVAL;
         }
 
@@ -288,13 +293,18 @@ int arch_livepatch_perform(struct livepatch_elf *elf,
         switch ( rc )
         {
         case -EOVERFLOW:
-            printk(XENLOG_ERR LIVEPATCH "%s: Overflow in relocation %u in %s for %s\n",
-                   elf->name, i, rela->name, base->name);
+            printk(XENLOG_ERR LIVEPATCH
+                   "%s: Overflow in relocation %u in %s for %s\n",
+                   elf->name,
+                   i,
+                   rela->name,
+                   base->name);
             break;
 
         case -EOPNOTSUPP:
             printk(XENLOG_ERR LIVEPATCH "%s: Unhandled relocation #%x\n",
-                   elf->name, type);
+                   elf->name,
+                   type);
             break;
         }
 

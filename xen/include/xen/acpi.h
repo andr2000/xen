@@ -62,49 +62,56 @@ extern acpi_physical_address rsdp_hint;
 extern bool opt_acpi_verbose;
 
 enum acpi_interrupt_id {
-	ACPI_INTERRUPT_PMI	= 1,
-	ACPI_INTERRUPT_INIT,
-	ACPI_INTERRUPT_CPEI,
-	ACPI_INTERRUPT_COUNT
+    ACPI_INTERRUPT_PMI = 1,
+    ACPI_INTERRUPT_INIT,
+    ACPI_INTERRUPT_CPEI,
+    ACPI_INTERRUPT_COUNT
 };
 
-typedef int (*acpi_madt_entry_handler) (struct acpi_subtable_header *header, const unsigned long end);
+typedef int (*acpi_madt_entry_handler)(struct acpi_subtable_header *header,
+                                       const unsigned long end);
 
-typedef int (*acpi_table_handler) (struct acpi_table_header *table);
+typedef int (*acpi_table_handler)(struct acpi_table_header *table);
 
-typedef int (*acpi_table_entry_handler) (struct acpi_subtable_header *header, const unsigned long end);
+typedef int (*acpi_table_entry_handler)(struct acpi_subtable_header *header,
+                                        const unsigned long end);
 
-unsigned int acpi_get_processor_id (unsigned int cpu);
-char * __acpi_map_table (paddr_t phys_addr, unsigned long size);
+unsigned int acpi_get_processor_id(unsigned int cpu);
+char *__acpi_map_table(paddr_t phys_addr, unsigned long size);
 bool __acpi_unmap_table(const void *ptr, unsigned long size);
-int acpi_boot_init (void);
-int acpi_boot_table_init (void);
-int acpi_numa_init (void);
+int acpi_boot_init(void);
+int acpi_boot_table_init(void);
+int acpi_numa_init(void);
 int erst_init(void);
 void acpi_hest_init(void);
 
-int acpi_table_init (void);
+int acpi_table_init(void);
 int acpi_table_parse(const char *id, acpi_table_handler handler);
 int acpi_parse_entries(const char *id, unsigned long table_size,
-		       acpi_table_entry_handler handler,
-		       struct acpi_table_header *table_header,
-		       int entry_id, unsigned int max_entries);
+                       acpi_table_entry_handler handler,
+                       struct acpi_table_header *table_header, int entry_id,
+                       unsigned int max_entries);
 int acpi_table_parse_entries(const char *id, unsigned long table_size,
-	int entry_id, acpi_table_entry_handler handler, unsigned int max_entries);
-struct acpi_subtable_header *acpi_table_get_entry_madt(enum acpi_madt_type id,
-						      unsigned int entry_index);
-int acpi_table_parse_madt(enum acpi_madt_type id, acpi_table_entry_handler handler, unsigned int max_entries);
+                             int entry_id, acpi_table_entry_handler handler,
+                             unsigned int max_entries);
+struct acpi_subtable_header *
+acpi_table_get_entry_madt(enum acpi_madt_type id, unsigned int entry_index);
+int acpi_table_parse_madt(enum acpi_madt_type id,
+                          acpi_table_entry_handler handler,
+                          unsigned int max_entries);
 int acpi_table_parse_srat(int id, acpi_madt_entry_handler handler,
-	unsigned int max_entries);
+                          unsigned int max_entries);
 int cf_check acpi_parse_srat(struct acpi_table_header *);
-void acpi_table_print (struct acpi_table_header *header, unsigned long phys_addr);
-void acpi_table_print_madt_entry (struct acpi_subtable_header *madt);
-void acpi_table_print_srat_entry (struct acpi_subtable_header *srat);
+void acpi_table_print(struct acpi_table_header *header,
+                      unsigned long phys_addr);
+void acpi_table_print_madt_entry(struct acpi_subtable_header *madt);
+void acpi_table_print_srat_entry(struct acpi_subtable_header *srat);
 
 /* the following four functions are architecture-dependent */
-void acpi_numa_slit_init (struct acpi_table_slit *slit);
+void acpi_numa_slit_init(struct acpi_table_slit *slit);
 void acpi_numa_processor_affinity_init(const struct acpi_srat_cpu_affinity *);
-void acpi_numa_x2apic_affinity_init(const struct acpi_srat_x2apic_cpu_affinity *);
+void acpi_numa_x2apic_affinity_init(
+    const struct acpi_srat_x2apic_cpu_affinity *);
 void acpi_numa_memory_affinity_init(const struct acpi_srat_mem_affinity *);
 void acpi_numa_arch_fixup(void);
 
@@ -118,29 +125,29 @@ extern int acpi_mp_config;
 
 extern u32 pci_mmcfg_base_addr;
 
-#else	/*!CONFIG_ACPI*/
+#else /*!CONFIG_ACPI*/
 
 #define acpi_mp_config	0
 #define acpi_disabled true
 
 static inline int acpi_boot_init(void)
 {
-	return 0;
+    return 0;
 }
 
 static inline int acpi_boot_table_init(void)
 {
-	return 0;
+    return 0;
 }
 
-#endif 	/*!CONFIG_ACPI*/
+#endif /*!CONFIG_ACPI*/
 
 int get_cpu_id(u32 acpi_id);
 
-unsigned int acpi_register_gsi (u32 gsi, int edge_level, int active_high_low);
-int acpi_gsi_to_irq (u32 gsi, unsigned int *irq);
+unsigned int acpi_register_gsi(u32 gsi, int edge_level, int active_high_low);
+int acpi_gsi_to_irq(u32 gsi, unsigned int *irq);
 
-#ifdef	CONFIG_ACPI_CSTATE
+#ifdef CONFIG_ACPI_CSTATE
 /*
  * max_cstate sets the highest legal C-state.
  * max_cstate = 0: C0 okay, but not C1
@@ -160,29 +167,45 @@ extern unsigned int max_csubstate;
 
 static inline unsigned int acpi_get_cstate_limit(void)
 {
-	return max_cstate;
+    return max_cstate;
 }
+
 static inline void acpi_set_cstate_limit(unsigned int new_limit)
 {
-	max_cstate = new_limit;
-	return;
+    max_cstate = new_limit;
+    return;
 }
 
 static inline unsigned int acpi_get_csubstate_limit(void)
 {
-	return max_csubstate;
+    return max_csubstate;
 }
 
 static inline void acpi_set_csubstate_limit(unsigned int new_limit)
 {
-	max_csubstate = new_limit;
+    max_csubstate = new_limit;
 }
 
 #else
-static inline unsigned int acpi_get_cstate_limit(void) { return 0; }
-static inline void acpi_set_cstate_limit(unsigned int new_limit) { return; }
-static inline unsigned int acpi_get_csubstate_limit(void) { return 0; }
-static inline void acpi_set_csubstate_limit(unsigned int new_limit) { return; }
+static inline unsigned int acpi_get_cstate_limit(void)
+{
+    return 0;
+}
+
+static inline void acpi_set_cstate_limit(unsigned int new_limit)
+{
+    return;
+}
+
+static inline unsigned int acpi_get_csubstate_limit(void)
+{
+    return 0;
+}
+
+static inline void acpi_set_csubstate_limit(unsigned int new_limit)
+{
+    return;
+}
 #endif
 
 #ifdef XEN_GUEST_HANDLE
@@ -197,8 +220,13 @@ int acpi_dmar_init(void);
 void acpi_dmar_zap(void);
 void acpi_dmar_reinstate(void);
 #else
-static inline int acpi_dmar_init(void) { return -ENODEV; }
+static inline int acpi_dmar_init(void)
+{
+    return -ENODEV;
+}
+
 static inline void acpi_dmar_zap(void) {}
+
 static inline void acpi_dmar_reinstate(void) {}
 #endif
 

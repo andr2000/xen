@@ -6,21 +6,21 @@
 #include <xen/macros.h>
 
 #ifndef CODE_FILL
-# define CODE_FILL ~0
+#define CODE_FILL ~0
 #endif
 
 #ifndef DATA_ALIGN
-# define DATA_ALIGN 0
+#define DATA_ALIGN 0
 #endif
 #ifndef DATA_FILL
-# define DATA_FILL ~0
+#define DATA_FILL ~0
 #endif
 
 #define SYM_ALIGN(align...) .balign align
 
 #define SYM_L_GLOBAL(name) .globl name; .hidden name
 #define SYM_L_WEAK(name)   .weak name
-#define SYM_L_LOCAL(name)  /* nothing */
+#define SYM_L_LOCAL(name) /* nothing */
 
 #define SYM_T_FUNC         STT_FUNC
 #define SYM_T_DATA         STT_OBJECT
@@ -40,10 +40,10 @@
  */
 #define count_args_exp(args...) count_args(args)
 #if count_args_exp(CODE_FILL)
-# define DO_CODE_ALIGN(align...) LASTARG(CONFIG_FUNCTION_ALIGNMENT, ## align), \
+#define DO_CODE_ALIGN(align...) LASTARG(CONFIG_FUNCTION_ALIGNMENT, ## align), \
                                  CODE_FILL
 #else
-# define DO_CODE_ALIGN(align...) LASTARG(CONFIG_FUNCTION_ALIGNMENT, ## align)
+#define DO_CODE_ALIGN(align...) LASTARG(CONFIG_FUNCTION_ALIGNMENT, ## align)
 #endif
 
 #define FUNC(name, align...) \

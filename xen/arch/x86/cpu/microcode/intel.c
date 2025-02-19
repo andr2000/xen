@@ -35,8 +35,8 @@ struct microcode_patch {
     uint32_t hdrver;
     int32_t rev;
     uint16_t year;
-    uint8_t  day;
-    uint8_t  month;
+    uint8_t day;
+    uint8_t month;
     uint32_t sig;
     uint32_t cksum;
     uint32_t ldrver;
@@ -56,10 +56,12 @@ struct microcode_patch {
 
     /* Extended header (iff totalsize > datasize, P4 Prescott and later) */
 };
+
 struct extended_sigtable {
     uint32_t count;
     uint32_t cksum;
     uint32_t rsvd[3];
+
     struct {
         uint32_t sig;
         uint32_t pf;
@@ -86,8 +88,8 @@ static uint32_t get_totalsize(const struct microcode_patch *patch)
  * appropriately for Pentium Pro/II microcode, which has 0 for both size
  * fields, and no extended signature table.)
  */
-static const struct extended_sigtable *get_ext_sigtable(
-    const struct microcode_patch *patch)
+static const struct extended_sigtable *
+get_ext_sigtable(const struct microcode_patch *patch)
 {
     if ( patch->totalsize > (MC_HEADER_SIZE + patch->datasize) )
         return (const void *)&patch->data[patch->datasize];
@@ -137,7 +139,9 @@ static void cf_check collect_cpu_info(void)
     csig->rev = msr_content >> 32;
 
     pr_debug("microcode: collect_cpu_info : sig=%#x, pf=%#x, rev=%#x\n",
-             csig->sig, csig->pf, csig->rev);
+             csig->sig,
+             csig->pf,
+             csig->rev);
 }
 
 /*
@@ -160,8 +164,7 @@ static int microcode_sanity_check(const struct microcode_patch *patch)
      * - Total size must be a multiple of 1024 bytes.  Data size and the
      *   header must fit within it.
      */
-    if ( (total_size & 1023) ||
-         (data_size & 3) ||
+    if ( (total_size & 1023) || (data_size & 3) ||
          data_size > (total_size - MC_HEADER_SIZE) )
     {
         printk(XENLOG_WARNING "microcode: Bad size\n");
@@ -170,7 +173,8 @@ static int microcode_sanity_check(const struct microcode_patch *patch)
 
     /* Checksum the main header and data. */
     for ( sum = 0, ptr = (const uint32_t *)patch;
-          ptr < (const uint32_t *)&patch->data[data_size]; ++ptr )
+          ptr < (const uint32_t *)&patch->data[data_size];
+          ++ptr )
         sum += *ptr;
 
     if ( sum != 0 )
@@ -201,7 +205,8 @@ static int microcode_sanity_check(const struct microcode_patch *patch)
 
     /* Checksum the whole extended signature table. */
     for ( sum = 0, ptr = (const uint32_t *)ext;
-          ptr < (const uint32_t *)&ext->sigs[ext->count]; ++ptr )
+          ptr < (const uint32_t *)&ext->sigs[ext->count];
+          ++ptr )
         sum += *ptr;
 
     if ( sum != 0 )
@@ -269,8 +274,8 @@ static bool microcode_fits_cpu(const struct microcode_patch *mc)
     return false;
 }
 
-static int cf_check intel_compare(
-    const struct microcode_patch *old, const struct microcode_patch *new)
+static int cf_check intel_compare(const struct microcode_patch *old,
+                                  const struct microcode_patch *new)
 {
     /*
      * Both patches to compare are supposed to be applicable to local CPU.
@@ -318,19 +323,29 @@ static int cf_check apply_microcode(const struct microcode_patch *patch,
     {
         printk(XENLOG_ERR
                "microcode: CPU%u update rev %#x to %#x failed, result %#x\n",
-               cpu, old_rev, patch->rev, rev);
+               cpu,
+               old_rev,
+               patch->rev,
+               rev);
         return -EIO;
     }
 
-    printk(XENLOG_WARNING
-           "microcode: CPU%u updated from revision %#x to %#x, date = %04x-%02x-%02x\n",
-           cpu, old_rev, rev, patch->year, patch->month, patch->day);
+    printk(
+        XENLOG_WARNING
+        "microcode: CPU%u updated from revision %#x to %#x, date = %04x-%02x-%02x\n",
+        cpu,
+        old_rev,
+        rev,
+        patch->year,
+        patch->month,
+        patch->day);
 
     return 0;
 }
 
-static struct microcode_patch *cf_check cpu_request_microcode(
-    const void *buf, size_t size, bool make_copy)
+static struct microcode_patch *cf_check cpu_request_microcode(const void *buf,
+                                                              size_t size,
+                                                              bool make_copy)
 {
     int error = 0;
     const struct microcode_patch *saved = NULL;
@@ -341,10 +356,10 @@ static struct microcode_patch *cf_check cpu_request_microcode(
         const struct microcode_patch *mc;
         unsigned int blob_size;
 
-        if ( size < MC_HEADER_SIZE ||       /* Insufficient space for header? */
-             (mc = buf)->hdrver != 1 ||     /* Unrecognised header version?   */
-             mc->ldrver != 1 ||             /* Unrecognised loader version?   */
-             size < (blob_size =            /* Insufficient space for patch?  */
+        if ( size < MC_HEADER_SIZE || /* Insufficient space for header? */
+             (mc = buf)->hdrver != 1 || /* Unrecognised header version?   */
+             mc->ldrver != 1 || /* Unrecognised loader version?   */
+             size < (blob_size = /* Insufficient space for patch?  */
                      get_totalsize(mc)) )
         {
             error = -EINVAL;
@@ -364,7 +379,7 @@ static struct microcode_patch *cf_check cpu_request_microcode(
              (!saved || compare_revisions(saved->rev, mc->rev) == NEW_UCODE) )
             saved = mc;
 
-        buf  += blob_size;
+        buf += blob_size;
         size -= blob_size;
     }
 
@@ -400,15 +415,15 @@ static bool __init can_load_microcode(void)
     return !(mcu_ctrl & MCU_CONTROL_DIS_MCU_LOAD);
 }
 
-static const char __initconst intel_cpio_path[] =
-    "kernel/x86/microcode/GenuineIntel.bin";
+static const char
+    __initconst intel_cpio_path[] = "kernel/x86/microcode/GenuineIntel.bin";
 
 static const struct microcode_ops __initconst_cf_clobber intel_ucode_ops = {
-    .cpu_request_microcode            = cpu_request_microcode,
-    .collect_cpu_info                 = collect_cpu_info,
-    .apply_microcode                  = apply_microcode,
-    .compare                          = intel_compare,
-    .cpio_path                        = intel_cpio_path,
+    .cpu_request_microcode = cpu_request_microcode,
+    .collect_cpu_info = collect_cpu_info,
+    .apply_microcode = apply_microcode,
+    .compare = intel_compare,
+    .cpio_path = intel_cpio_path,
 };
 
 void __init ucode_probe_intel(struct microcode_ops *ops)

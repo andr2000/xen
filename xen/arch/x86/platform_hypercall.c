@@ -42,6 +42,7 @@
 extern spinlock_t xenpf_lock;
 
 #define RESOURCE_ACCESS_MAX_ENTRIES 3
+
 struct resource_access {
     unsigned int nr_done;
     unsigned int nr_entries;
@@ -55,12 +56,12 @@ void cf_check resource_access(void *info);
 #ifndef COMPAT
 typedef long ret_t;
 DEFINE_SPINLOCK(xenpf_lock);
-# undef copy_from_compat
-# define copy_from_compat copy_from_guest
-# undef copy_to_compat
-# define copy_to_compat copy_to_guest
-# undef guest_from_compat_handle
-# define guest_from_compat_handle(x,y) ((x)=(y))
+#undef copy_from_compat
+#define copy_from_compat copy_from_guest
+#undef copy_to_compat
+#define copy_to_compat copy_to_guest
+#undef guest_from_compat_handle
+#define guest_from_compat_handle(x, y) ((x)=(y))
 
 long cf_check cpu_frequency_change_helper(void *data)
 {
@@ -144,8 +145,8 @@ void check_resource_access(struct resource_access *ra)
 
         if ( ret )
         {
-           entry->u.ret = ret;
-           break;
+            entry->u.ret = ret;
+            break;
         }
     }
 
@@ -169,8 +170,8 @@ void cf_check resource_access(void *info)
             if ( unlikely(entry->idx == MSR_IA32_TSC) )
             {
                 /* Return obfuscated scaled time instead of raw timestamp */
-                entry->val = get_s_time_fixed(tsc)
-                             + SECONDS(boot_random) - boot_random;
+                entry->val = get_s_time_fixed(tsc) + SECONDS(boot_random) -
+                             boot_random;
                 ret = 0;
             }
             else
@@ -216,8 +217,7 @@ void cf_check resource_access(void *info)
 }
 #endif
 
-ret_t do_platform_op(
-    XEN_GUEST_HANDLE_PARAM(xen_platform_op_t) u_xenpf_op)
+ret_t do_platform_op(XEN_GUEST_HANDLE_PARAM(xen_platform_op_t) u_xenpf_op)
 {
     ret_t ret;
     struct xen_platform_op curop, *op = &curop;
@@ -239,8 +239,9 @@ ret_t do_platform_op(
      */
     while ( !spin_trylock(&xenpf_lock) )
         if ( hypercall_preempt_check() )
-            return hypercall_create_continuation(
-                __HYPERVISOR_platform_op, "h", u_xenpf_op);
+            return hypercall_create_continuation(__HYPERVISOR_platform_op,
+                                                 "h",
+                                                 u_xenpf_op);
 
     switch ( op->cmd )
     {
@@ -260,26 +261,25 @@ ret_t do_platform_op(
         break;
 
     case XENPF_add_memtype:
-        ret = mtrr_add_page(
-            op->u.add_memtype.mfn,
-            op->u.add_memtype.nr_mfns,
-            op->u.add_memtype.type,
-            1);
+        ret = mtrr_add_page(op->u.add_memtype.mfn,
+                            op->u.add_memtype.nr_mfns,
+                            op->u.add_memtype.type,
+                            1);
         if ( ret >= 0 )
         {
             op->u.add_memtype.handle = 0;
-            op->u.add_memtype.reg    = ret;
-            ret = __copy_field_to_guest(u_xenpf_op, op, u.add_memtype) ?
-                  -EFAULT : 0;
+            op->u.add_memtype.reg = ret;
+            ret = __copy_field_to_guest(u_xenpf_op, op, u.add_memtype) ? -EFAULT
+                                                                       : 0;
             if ( ret != 0 )
                 mtrr_del_page(ret, 0, 0);
         }
         break;
 
     case XENPF_del_memtype:
-        if (op->u.del_memtype.handle == 0
-            /* mtrr/main.c otherwise does a lookup */
-            && (int)op->u.del_memtype.reg >= 0)
+        if ( op->u.del_memtype.handle == 0
+             /* mtrr/main.c otherwise does a lookup */
+             && (int)op->u.del_memtype.reg >= 0 )
         {
             ret = mtrr_del_page(op->u.del_memtype.reg, 0, 0);
             if ( ret > 0 )
@@ -292,17 +292,18 @@ ret_t do_platform_op(
     case XENPF_read_memtype:
     {
         unsigned long mfn, nr_mfns;
-        mtrr_type     type;
+        mtrr_type type;
 
         ret = -EINVAL;
         if ( op->u.read_memtype.reg < num_var_ranges )
         {
             mtrr_get(op->u.read_memtype.reg, &mfn, &nr_mfns, &type);
-            op->u.read_memtype.mfn     = mfn;
+            op->u.read_memtype.mfn = mfn;
             op->u.read_memtype.nr_mfns = nr_mfns;
-            op->u.read_memtype.type    = type;
+            op->u.read_memtype.type = type;
             ret = __copy_field_to_guest(u_xenpf_op, op, u.read_memtype)
-                  ? -EFAULT : 0;
+                      ? -EFAULT
+                      : 0;
         }
         break;
     }
@@ -323,7 +324,8 @@ ret_t do_platform_op(
 
         guest_from_compat_handle(data, op->u.microcode2.data);
 
-        ret = microcode_update(data, op->u.microcode2.length,
+        ret = microcode_update(data,
+                               op->u.microcode2.length,
                                op->u.microcode2.flags);
         break;
     }
@@ -355,7 +357,8 @@ ret_t do_platform_op(
     case XENPF_firmware_info:
         switch ( op->u.firmware_info.type )
         {
-        case XEN_FW_DISK_INFO: {
+        case XEN_FW_DISK_INFO:
+        {
             const struct edd_info *info;
             u16 length;
 
@@ -367,8 +370,9 @@ ret_t do_platform_op(
 
             /* Transfer the EDD info block. */
             ret = -EFAULT;
-            if ( copy_from_compat(&length, op->u.firmware_info.u.
-                                  disk_info.edd_params, 1) )
+            if ( copy_from_compat(&length,
+                                  op->u.firmware_info.u.disk_info.edd_params,
+                                  1) )
                 break;
             if ( length > info->edd_device_params.length )
                 length = info->edd_device_params.length;
@@ -377,7 +381,8 @@ ret_t do_platform_op(
                                 length) )
                 break;
             if ( copy_to_compat(op->u.firmware_info.u.disk_info.edd_params,
-                                &length, 1) )
+                                &length,
+                                1) )
                 break;
 
             /* Transfer miscellaneous other information values. */
@@ -390,12 +395,15 @@ ret_t do_platform_op(
             C(legacy_sectors_per_track);
 #undef C
 
-            ret = (__copy_field_to_guest(u_xenpf_op, op,
+            ret = (__copy_field_to_guest(u_xenpf_op,
+                                         op,
                                          u.firmware_info.u.disk_info)
-                   ? -EFAULT : 0);
+                       ? -EFAULT
+                       : 0);
             break;
         }
-        case XEN_FW_DISK_MBR_SIGNATURE: {
+        case XEN_FW_DISK_MBR_SIGNATURE:
+        {
             const struct mbr_signature *sig;
 
             ret = -ESRCH;
@@ -408,9 +416,11 @@ ret_t do_platform_op(
             op->u.firmware_info.u.disk_mbr_signature.mbr_signature =
                 sig->signature;
 
-            ret = (__copy_field_to_guest(u_xenpf_op, op,
+            ret = (__copy_field_to_guest(u_xenpf_op,
+                                         op,
                                          u.firmware_info.u.disk_mbr_signature)
-                   ? -EFAULT : 0);
+                       ? -EFAULT
+                       : 0);
             break;
         }
         case XEN_FW_VBEDDC_INFO:
@@ -427,21 +437,26 @@ ret_t do_platform_op(
                 bootsym(boot_edid_caps) >> 8;
 
             ret = 0;
-            if ( __copy_field_to_guest(u_xenpf_op, op, u.firmware_info.
-                                       u.vbeddc_info.capabilities) ||
-                 __copy_field_to_guest(u_xenpf_op, op, u.firmware_info.
-                                       u.vbeddc_info.edid_transfer_time) ||
+            if ( __copy_field_to_guest(
+                     u_xenpf_op,
+                     op,
+                     u.firmware_info.u.vbeddc_info.capabilities) ||
+                 __copy_field_to_guest(
+                     u_xenpf_op,
+                     op,
+                     u.firmware_info.u.vbeddc_info.edid_transfer_time) ||
                  copy_to_compat(op->u.firmware_info.u.vbeddc_info.edid,
-                                bootsym(boot_edid_info), 128) )
+                                bootsym(boot_edid_info),
+                                128) )
                 ret = -EFAULT;
 #endif
             break;
         case XEN_FW_EFI_INFO:
             ret = efi_get_info(op->u.firmware_info.index,
                                &op->u.firmware_info.u.efi_info);
-            if ( ret == 0 &&
-                 __copy_field_to_guest(u_xenpf_op, op,
-                                       u.firmware_info.u.efi_info) )
+            if ( ret == 0 && __copy_field_to_guest(u_xenpf_op,
+                                                   op,
+                                                   u.firmware_info.u.efi_info) )
                 ret = -EFAULT;
             break;
         case XEN_FW_KBD_SHIFT_FLAGS:
@@ -452,7 +467,8 @@ ret_t do_platform_op(
             op->u.firmware_info.u.kbd_shift_flags = bootsym(kbd_shift_flags);
 
             ret = 0;
-            if ( __copy_field_to_guest(u_xenpf_op, op,
+            if ( __copy_field_to_guest(u_xenpf_op,
+                                       op,
                                        u.firmware_info.u.kbd_shift_flags) )
                 ret = -EFAULT;
             break;
@@ -498,7 +514,7 @@ ret_t do_platform_op(
         if ( cpufreq_controller != FREQCTL_dom0_kernel )
             break;
 
-        ctlmap.nr_bits  = op->u.getidletime.cpumap_nr_cpus;
+        ctlmap.nr_bits = op->u.getidletime.cpumap_nr_cpus;
         guest_from_compat_handle(cpumap_bitmap,
                                  op->u.getidletime.cpumap_bitmap);
         ctlmap.bitmap.p = cpumap_bitmap.p; /* handle -> handle_64 conversion */
@@ -506,7 +522,7 @@ ret_t do_platform_op(
             goto out;
         guest_from_compat_handle(idletimes, op->u.getidletime.idletime);
 
-        for_each_cpu ( cpu, cpumap )
+        for_each_cpu(cpu, cpumap)
         {
             idletime = get_cpu_idle_time(cpu);
 
@@ -544,7 +560,7 @@ ret_t do_platform_op(
             }
             ret = set_px_pminfo(op->u.set_pminfo.id, &op->u.set_pminfo.u.perf);
             break;
- 
+
         case XEN_PM_CX:
             if ( !(xen_processor_pmbits & XEN_PROCESSOR_PM_CX) )
             {
@@ -601,7 +617,7 @@ ret_t do_platform_op(
             g_info->acpi_id = acpi_get_processor_id(g_info->xen_cpuid);
             ASSERT(g_info->apic_id != BAD_APICID);
             g_info->flags = 0;
-            if (cpu_online(g_info->xen_cpuid))
+            if ( cpu_online(g_info->xen_cpuid) )
                 g_info->flags |= XEN_PCPU_FLAGS_ONLINE;
         }
 
@@ -686,8 +702,7 @@ ret_t do_platform_op(
         if ( ret )
             break;
 
-        if ( cpu >= nr_cpu_ids || !cpu_present(cpu) ||
-             clocksource_is_tsc() )
+        if ( cpu >= nr_cpu_ids || !cpu_present(cpu) || clocksource_is_tsc() )
         {
             ret = -EINVAL;
             break;
@@ -699,8 +714,9 @@ ret_t do_platform_op(
             break;
         }
 
-        ret = continue_hypercall_on_cpu(
-            0, cpu_up_helper, (void *)(unsigned long)cpu);
+        ret = continue_hypercall_on_cpu(0,
+                                        cpu_up_helper,
+                                        (void *)(unsigned long)cpu);
         break;
     }
 
@@ -730,8 +746,9 @@ ret_t do_platform_op(
             break;
         }
 
-        ret = continue_hypercall_on_cpu(
-            0, cpu_down_helper, (void *)(unsigned long)cpu);
+        ret = continue_hypercall_on_cpu(0,
+                                        cpu_down_helper,
+                                        (void *)(unsigned long)cpu);
         break;
     }
 
@@ -751,32 +768,36 @@ ret_t do_platform_op(
             break;
 
         ret = memory_add(op->u.mem_add.spfn,
-                      op->u.mem_add.epfn,
-                      op->u.mem_add.pxm);
+                         op->u.mem_add.epfn,
+                         op->u.mem_add.pxm);
         break;
 
     case XENPF_core_parking:
     {
         uint32_t idle_nums;
 
-        switch(op->u.core_parking.type)
+        switch ( op->u.core_parking.type )
         {
         case XEN_CORE_PARKING_SET:
             idle_nums = min_t(uint32_t,
-                    op->u.core_parking.idle_nums, num_present_cpus() - 1);
+                              op->u.core_parking.idle_nums,
+                              num_present_cpus() - 1);
             if ( CONFIG_NR_CPUS > 1 )
-                ret = continue_hypercall_on_cpu(
-                        0, core_parking_helper,
-                        (void *)(unsigned long)idle_nums);
+                ret =
+                    continue_hypercall_on_cpu(0,
+                                              core_parking_helper,
+                                              (void *)(unsigned long)idle_nums);
             else if ( idle_nums )
                 ret = -EINVAL;
             break;
 
         case XEN_CORE_PARKING_GET:
             op->u.core_parking.idle_nums = CONFIG_NR_CPUS > 1
-                                           ? get_cur_idle_nums() : 0;
-            ret = __copy_field_to_guest(u_xenpf_op, op, u.core_parking) ?
-                  -EFAULT : 0;
+                                               ? get_cur_idle_nums()
+                                               : 0;
+            ret = __copy_field_to_guest(u_xenpf_op, op, u.core_parking)
+                      ? -EFAULT
+                      : 0;
             break;
 
         default:
@@ -842,7 +863,8 @@ ret_t do_platform_op(
             on_selected_cpus(cpumask_of(cpu), resource_access, &ra, 1);
 
         /* Copy all if succeeded or up to the failed entry. */
-        if ( __copy_to_guest(guest_entries, ra.entries,
+        if ( __copy_to_guest(guest_entries,
+                             ra.entries,
                              ra.nr_done < ra.nr_entries ? ra.nr_done + 1
                                                         : ra.nr_entries) )
             ret = -EFAULT;
@@ -862,8 +884,10 @@ ret_t do_platform_op(
 
         guest_from_compat_handle(nameh, op->u.symdata.name);
 
-        ret = xensyms_read(&op->u.symdata.symnum, &op->u.symdata.type,
-                           &addr, name);
+        ret = xensyms_read(&op->u.symdata.symnum,
+                           &op->u.symdata.type,
+                           &addr,
+                           name);
         op->u.symdata.address = addr;
         namelen = strlen(name) + 1;
 
@@ -901,7 +925,7 @@ ret_t do_platform_op(
         break;
     }
 
- out:
+out:
     spin_unlock(&xenpf_lock);
 
     return ret;

@@ -19,7 +19,7 @@
 
 #define VMAC_USE_OPENSSL  0 /* Set to non-zero to use OpenSSL's AES        */
 #define VMAC_CACHE_NONCES 1 /* Set to non-zero to cause caching            */
-                            /* of consecutive nonces on 64-bit tags        */
+/* of consecutive nonces on 64-bit tags        */
 
 #define VMAC_RUN_TESTS 0  /* Set to non-zero to check vectors and speed    */
 #define VMAC_HZ (448e6)  /* Set to hz of host machine to get speed        */
@@ -42,17 +42,17 @@
  * Microsoft C environment.
  * ----------------------------------------------------------------------- */
 #define VMAC_USE_STDINT 1  /* Set to zero if system has no stdint.h        */
- 
+
 #if VMAC_USE_STDINT && !_MSC_VER /* Try stdint.h if non-Microsoft          */
-#ifdef  __cplusplus
+#ifdef __cplusplus
 #define __STDC_CONSTANT_MACROS
 #endif
 //#include <stdint.h>
-#elif (_MSC_VER)                  /* Microsoft C does not have stdint.h    */
+#elif (_MSC_VER) /* Microsoft C does not have stdint.h    */
 typedef unsigned __int32 uint32_t;
 typedef unsigned __int64 uint64_t;
 #define UINT64_C(v) v ## UI64
-#else                             /* Guess sensibly - may need adaptation  */
+#else /* Guess sensibly - may need adaptation  */
 typedef unsigned int uint32_t;
 typedef unsigned long long uint64_t;
 #define UINT64_C(v) v ## ULL
@@ -72,23 +72,23 @@ typedef unsigned long long uint64_t;
 #include <openssl/aes.h>
 typedef AES_KEY aes_int_key;
 
-#define aes_encryption(in,out,int_key)                  \
+#define aes_encryption(in, out, int_key)                  \
 	    	AES_encrypt((unsigned char *)(in),(unsigned char *)(out),(int_key))
-#define aes_key_setup(key,int_key)                      \
+#define aes_key_setup(key, int_key)                      \
 	    	AES_set_encrypt_key((key),VMAC_KEY_LEN,(int_key))
 
 #else
 
 //#include "rijndael-alg-fst.h"
-typedef uint64_t  vmac_t;
+typedef uint64_t vmac_t;
 #include "rijndael.h"
-typedef u32 aes_int_key[4*(VMAC_KEY_LEN/32+7)];
+typedef u32 aes_int_key[4 * (VMAC_KEY_LEN / 32 + 7)];
 
-#define aes_encryption(in,out,int_key)                  \
+#define aes_encryption(in, out, int_key)                  \
 	    	rijndaelEncrypt((u32 *)(int_key),           \
 	                        ((VMAC_KEY_LEN/32)+6),      \
 	    				    (u8 *)(in), (u8 *)(out))
-#define aes_key_setup(user_key,int_key)                 \
+#define aes_key_setup(user_key, int_key)                 \
 	    	rijndaelKeySetupEnc((u32 *)(int_key),       \
 	    	                    (u8 *)(user_key), \
 	    	                    VMAC_KEY_LEN)
@@ -97,21 +97,22 @@ typedef u32 aes_int_key[4*(VMAC_KEY_LEN/32+7)];
 /* --------------------------------------------------------------------- */
 
 typedef struct {
-	uint64_t nhkey  [(VMAC_NHBYTES/8)+2*(VMAC_TAG_LEN/64-1)];
-	uint64_t polykey[2*VMAC_TAG_LEN/64];
-	uint64_t l3key  [2*VMAC_TAG_LEN/64];
-	uint64_t polytmp[2*VMAC_TAG_LEN/64];
-	aes_int_key cipher_key;
-	#if (VMAC_TAG_LEN == 64) && (VMAC_CACHE_NONCES)
-	uint64_t cached_nonce[2];
-	uint64_t cached_aes[2];
-	#endif
-	int first_block_processed;
+    uint64_t nhkey[(VMAC_NHBYTES / 8) + 2 * (VMAC_TAG_LEN / 64 - 1)];
+    uint64_t polykey[2 * VMAC_TAG_LEN / 64];
+    uint64_t l3key[2 * VMAC_TAG_LEN / 64];
+    uint64_t polytmp[2 * VMAC_TAG_LEN / 64];
+    aes_int_key cipher_key;
+#if ( VMAC_TAG_LEN == 64 ) && (VMAC_CACHE_NONCES)
+    uint64_t cached_nonce[2];
+    uint64_t cached_aes[2];
+#endif
+    int first_block_processed;
 } vmac_ctx_t;
 
 /* --------------------------------------------------------------------- */
-#ifdef  __cplusplus
-extern "C" {
+#ifdef __cplusplus
+extern "C"
+{
 #endif
 /* --------------------------------------------------------------------------
  *                        <<<<< USAGE NOTES >>>>>
@@ -142,20 +143,13 @@ extern "C" {
 
 #define vmac_update vhash_update
 
-void vhash_update(unsigned char m[],
-          unsigned int mbytes,
-          vmac_ctx_t *ctx);
+void vhash_update(unsigned char m[], unsigned int mbytes, vmac_ctx_t *ctx);
 
-uint64_t vmac(unsigned char m[],
-         unsigned int mbytes,
-         unsigned char n[16],
-         uint64_t *tagl,
-         vmac_ctx_t *ctx);
+uint64_t vmac(unsigned char m[], unsigned int mbytes, unsigned char n[16],
+              uint64_t *tagl, vmac_ctx_t *ctx);
 
-uint64_t vhash(unsigned char m[],
-          unsigned int mbytes,
-          uint64_t *tagl,
-          vmac_ctx_t *ctx);
+uint64_t vhash(unsigned char m[], unsigned int mbytes, uint64_t *tagl,
+               vmac_ctx_t *ctx);
 
 /* --------------------------------------------------------------------------
  * When passed a VMAC_KEY_LEN bit user_key, this function initialazies ctx.
@@ -165,7 +159,7 @@ void vmac_set_key(unsigned char user_key[], vmac_ctx_t *ctx);
 
 /* --------------------------------------------------------------------- */
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 }
 #endif
 

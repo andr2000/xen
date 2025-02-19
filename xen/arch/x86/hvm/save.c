@@ -37,24 +37,28 @@ static int arch_hvm_check(const struct domain *d,
 
     if ( hdr->magic != HVM_FILE_MAGIC )
     {
-        printk(XENLOG_G_ERR "HVM%d restore: bad magic number %#"PRIx32"\n",
-               d->domain_id, hdr->magic);
+        printk(XENLOG_G_ERR "HVM%d restore: bad magic number %#" PRIx32 "\n",
+               d->domain_id,
+               hdr->magic);
         return -EINVAL;
     }
 
     if ( hdr->version != HVM_FILE_VERSION )
     {
         printk(XENLOG_G_ERR "HVM%d restore: unsupported version %u\n",
-               d->domain_id, hdr->version);
+               d->domain_id,
+               hdr->version);
         return -EINVAL;
     }
 
     cpuid(1, &eax, &ebx, &ecx, &edx);
     /* CPUs ought to match but with feature-masking they might not */
     if ( (hdr->cpuid & ~0x0fUL) != (eax & ~0x0fUL) )
-        printk(XENLOG_G_INFO "HVM%d restore: VM saved on one CPU "
-               "(%#"PRIx32") and restored on another (%#"PRIx32").\n",
-               d->domain_id, hdr->cpuid, eax);
+        printk(XENLOG_G_INFO "HVM%d restore: VM saved on one CPU " "(%#" PRIx32
+                             ") and restored on another (%#" PRIx32 ").\n",
+               d->domain_id,
+               hdr->cpuid,
+               eax);
 
     return 0;
 }
@@ -82,12 +86,11 @@ static struct {
 } hvm_sr_handlers[HVM_SAVE_CODE_MAX + 1];
 
 /* Init-time function to add entries to that list */
-void __init hvm_register_savevm(uint16_t typecode,
-                                const char *name,
+void __init hvm_register_savevm(uint16_t typecode, const char *name,
                                 hvm_save_handler save_state,
                                 hvm_check_handler check_state,
-                                hvm_load_handler load_state,
-                                size_t size, int kind)
+                                hvm_load_handler load_state, size_t size,
+                                int kind)
 {
     ASSERT(typecode <= HVM_SAVE_CODE_MAX);
     ASSERT(hvm_sr_handlers[typecode].save == NULL);
@@ -108,7 +111,7 @@ size_t hvm_save_size(struct domain *d)
     int i;
 
     /* Basic overhead for header and footer */
-    sz = (2 * sizeof (struct hvm_save_descriptor)) + HVM_SAVE_LENGTH(HEADER);
+    sz = (2 * sizeof(struct hvm_save_descriptor)) + HVM_SAVE_LENGTH(HEADER);
 
     /* Plus space for each thing we will be saving */
     for ( i = 0; i <= HVM_SAVE_CODE_MAX; i++ )
@@ -129,12 +132,11 @@ int hvm_save_one(struct domain *d, unsigned int typecode, unsigned int instance,
                  XEN_GUEST_HANDLE_64(uint8) handle, uint64_t *bufsz)
 {
     int rv;
-    hvm_domain_context_t ctxt = { };
+    hvm_domain_context_t ctxt = {};
     const struct hvm_save_descriptor *desc;
     struct vcpu *v;
 
-    if ( d->is_dying ||
-         typecode > HVM_SAVE_CODE_MAX ||
+    if ( d->is_dying || typecode > HVM_SAVE_CODE_MAX ||
          hvm_sr_handlers[typecode].size < sizeof(*desc) ||
          !hvm_sr_handlers[typecode].save )
         return -EINVAL;
@@ -156,10 +158,14 @@ int hvm_save_one(struct domain *d, unsigned int typecode, unsigned int instance,
         domain_pause(d);
 
     if ( (rv = hvm_sr_handlers[typecode].save(v, &ctxt)) != 0 )
-        printk(XENLOG_G_ERR "HVM%d save: failed to save type %"PRIu16" (%d)\n",
-               d->domain_id, typecode, rv);
-    else if ( (rv = hvm_sr_handlers[typecode].kind == HVMSR_PER_VCPU ?
-               -ENODATA : -ENOENT), ctxt.cur >= sizeof(*desc) )
+        printk(XENLOG_G_ERR "HVM%d save: failed to save type %" PRIu16
+                            " (%d)\n",
+               d->domain_id,
+               typecode,
+               rv);
+    else if ( (rv = hvm_sr_handlers[typecode].kind == HVMSR_PER_VCPU ? -ENODATA
+                                                                     : -ENOENT),
+              ctxt.cur >= sizeof(*desc) )
     {
         uint32_t off;
 
@@ -168,8 +174,7 @@ int hvm_save_one(struct domain *d, unsigned int typecode, unsigned int instance,
             desc = (void *)(ctxt.data + off);
             /* Move past header */
             off += sizeof(*desc);
-            if ( ctxt.cur < desc->length ||
-                 off > ctxt.cur - desc->length )
+            if ( ctxt.cur < desc->length || off > ctxt.cur - desc->length )
                 break;
             if ( instance == desc->instance )
             {
@@ -237,15 +242,17 @@ int hvm_save(struct domain *d, hvm_domain_context_t *h)
         {
             struct vcpu *v;
 
-            for_each_vcpu ( d, v )
+            for_each_vcpu(d, v)
             {
                 printk(XENLOG_G_INFO "HVM %pv save: %s\n",
-                       v, hvm_sr_handlers[i].name);
+                       v,
+                       hvm_sr_handlers[i].name);
                 if ( handler(v, h) != 0 )
                 {
                     printk(XENLOG_G_ERR
-                           "HVM %pv save: failed to save type %"PRIu16"\n",
-                           v, i);
+                           "HVM %pv save: failed to save type %" PRIu16 "\n",
+                           v,
+                           i);
                     return -ENODATA;
                 }
                 process_pending_softirqs();
@@ -254,12 +261,14 @@ int hvm_save(struct domain *d, hvm_domain_context_t *h)
         else
         {
             printk(XENLOG_G_INFO "HVM d%d save: %s\n",
-                   d->domain_id, hvm_sr_handlers[i].name);
+                   d->domain_id,
+                   hvm_sr_handlers[i].name);
             if ( handler(d->vcpu[0], h) != 0 )
             {
-                printk(XENLOG_G_ERR
-                       "HVM d%d save: failed to save type %"PRIu16"\n",
-                       d->domain_id, i);
+                printk(XENLOG_G_ERR "HVM d%d save: failed to save type %" PRIu16
+                                    "\n",
+                       d->domain_id,
+                       i);
                 return -ENODATA;
             }
             process_pending_softirqs();
@@ -319,7 +328,7 @@ int hvm_load(struct domain *d, bool real, hvm_domain_context_t *h)
     else if ( rc )
         return rc;
 
-    for ( ; ; )
+    for ( ;; )
     {
         const char *name;
         hvm_load_handler load;
@@ -350,7 +359,8 @@ int hvm_load(struct domain *d, bool real, hvm_domain_context_t *h)
              !(load = hvm_sr_handlers[desc->typecode].load) )
         {
             printk(XENLOG_G_ERR "HVM%d restore: unknown entry typecode %u\n",
-                   d->domain_id, desc->typecode);
+                   d->domain_id,
+                   desc->typecode);
             ASSERT(!real);
             return -EINVAL;
         }
@@ -358,8 +368,10 @@ int hvm_load(struct domain *d, bool real, hvm_domain_context_t *h)
         if ( real )
         {
             /* Load the entry */
-            printk(XENLOG_G_INFO "HVM restore %pd: %s %"PRIu16"\n", d,
-                   name, desc->instance);
+            printk(XENLOG_G_INFO "HVM restore %pd: %s %" PRIu16 "\n",
+                   d,
+                   name,
+                   desc->instance);
             rc = load(d, h);
         }
         else
@@ -381,7 +393,11 @@ int hvm_load(struct domain *d, bool real, hvm_domain_context_t *h)
         if ( rc )
         {
             printk(XENLOG_G_ERR "HVM restore %pd: failed to %s %s:%u rc %d\n",
-                   d, real ? "load" : "check", name, desc->instance, rc);
+                   d,
+                   real ? "load" : "check",
+                   name,
+                   desc->instance,
+                   rc);
             return rc;
         }
 
@@ -394,14 +410,16 @@ int hvm_load(struct domain *d, bool real, hvm_domain_context_t *h)
 int _hvm_init_entry(struct hvm_domain_context *h, uint16_t tc, uint16_t inst,
                     uint32_t len)
 {
-    struct hvm_save_descriptor *d
-        = (struct hvm_save_descriptor *)&h->data[h->cur];
+    struct hvm_save_descriptor *d =
+        (struct hvm_save_descriptor *)&h->data[h->cur];
 
-    if ( h->size - h->cur < len + sizeof (*d) )
+    if ( h->size - h->cur < len + sizeof(*d) )
     {
-        printk(XENLOG_G_WARNING "HVM save: no room for"
-               " %"PRIu32" + %zu bytes for typecode %"PRIu16"\n",
-               len, sizeof(*d), tc);
+        printk(XENLOG_G_WARNING "HVM save: no room for" " %" PRIu32
+                                " + %zu bytes for typecode %" PRIu16 "\n",
+               len,
+               sizeof(*d),
+               tc);
         return -1;
     }
 
@@ -413,8 +431,7 @@ int _hvm_init_entry(struct hvm_domain_context *h, uint16_t tc, uint16_t inst,
     return 0;
 }
 
-void _hvm_write_entry(struct hvm_domain_context *h, void *src,
-                      uint32_t src_len)
+void _hvm_write_entry(struct hvm_domain_context *h, void *src, uint32_t src_len)
 {
     memcpy(&h->data[h->cur], src, src_len);
     h->cur += src_len;
@@ -423,14 +440,16 @@ void _hvm_write_entry(struct hvm_domain_context *h, void *src,
 int _hvm_check_entry(struct hvm_domain_context *h, uint16_t type, uint32_t len,
                      bool strict_length)
 {
-    struct hvm_save_descriptor *d
-        = (struct hvm_save_descriptor *)&h->data[h->cur];
+    struct hvm_save_descriptor *d =
+        (struct hvm_save_descriptor *)&h->data[h->cur];
 
-    if ( sizeof(*d) > h->size - h->cur)
+    if ( sizeof(*d) > h->size - h->cur )
     {
-        printk(XENLOG_G_WARNING
-               "HVM restore: not enough data left to read %zu bytes "
-               "for type %u header\n", sizeof(*d), type);
+        printk(
+            XENLOG_G_WARNING
+            "HVM restore: not enough data left to read %zu bytes " "for type %u header\n",
+            sizeof(*d),
+            type);
         return -1;
     }
 
@@ -438,11 +457,15 @@ int _hvm_check_entry(struct hvm_domain_context *h, uint16_t type, uint32_t len,
          (strict_length ? (len != d->length) : (len < d->length)) ||
          (d->length > (h->size - h->cur - sizeof(*d))) )
     {
-        printk(XENLOG_G_WARNING
-               "HVM restore mismatch: expected %s type %u length %u, "
-               "saw type %u length %u.  %zu bytes remaining\n",
-               strict_length ? "strict" : "zeroextended", type, len,
-               d->typecode, d->length, h->size - h->cur - sizeof(*d));
+        printk(
+            XENLOG_G_WARNING
+            "HVM restore mismatch: expected %s type %u length %u, " "saw type %u length %u.  %zu bytes remaining\n",
+            strict_length ? "strict" : "zeroextended",
+            type,
+            len,
+            d->typecode,
+            d->length,
+            h->size - h->cur - sizeof(*d));
         return -1;
     }
 
@@ -454,8 +477,8 @@ int _hvm_check_entry(struct hvm_domain_context *h, uint16_t type, uint32_t len,
 void _hvm_read_entry(struct hvm_domain_context *h, void *dest,
                      uint32_t dest_len)
 {
-    struct hvm_save_descriptor *d
-        = (struct hvm_save_descriptor *)&h->data[h->cur - sizeof(*d)];
+    struct hvm_save_descriptor *d =
+        (struct hvm_save_descriptor *)&h->data[h->cur - sizeof(*d)];
 
     BUG_ON(d->length > dest_len);
 

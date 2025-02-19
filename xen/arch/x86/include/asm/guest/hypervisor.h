@@ -48,18 +48,35 @@ int hypervisor_flush_tlb(const cpumask_t *mask, const void *va,
 #include <xen/lib.h>
 #include <xen/types.h>
 
-static inline const char *hypervisor_probe(void) { return NULL; }
-static inline void hypervisor_setup(void) { ASSERT_UNREACHABLE(); }
-static inline int hypervisor_ap_setup(void) { return 0; }
-static inline void hypervisor_resume(void) { ASSERT_UNREACHABLE(); }
+static inline const char *hypervisor_probe(void)
+{
+    return NULL;
+}
+
+static inline void hypervisor_setup(void)
+{
+    ASSERT_UNREACHABLE();
+}
+
+static inline int hypervisor_ap_setup(void)
+{
+    return 0;
+}
+
+static inline void hypervisor_resume(void)
+{
+    ASSERT_UNREACHABLE();
+}
+
 static inline void hypervisor_e820_fixup(void) {}
+
 static inline int hypervisor_flush_tlb(const cpumask_t *mask, const void *va,
                                        unsigned int flags)
 {
     return -EOPNOTSUPP;
 }
 
-#endif  /* CONFIG_GUEST */
+#endif /* CONFIG_GUEST */
 
 #endif /* __X86_HYPERVISOR_H__ */
 

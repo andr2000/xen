@@ -5,7 +5,7 @@
 #include <xen/string.h>
 #include <xen/ctype.h>
 
-int (strcasecmp)(const char *s1, const char *s2)
+int(strcasecmp)(const char *s1, const char *s2)
 {
     int c1, c2;
 

@@ -34,21 +34,21 @@
 #define PTR_ALIGN(p, a)         ((typeof(p))ALIGN((unsigned long)(p), (a)))
 
 enum cpio_fields {
-	C_MAGIC,
-	C_INO,
-	C_MODE,
-	C_UID,
-	C_GID,
-	C_NLINK,
-	C_MTIME,
-	C_FILESIZE,
-	C_MAJ,
-	C_MIN,
-	C_RMAJ,
-	C_RMIN,
-	C_NAMESIZE,
-	C_CHKSUM,
-	C_NFIELDS
+    C_MAGIC,
+    C_INO,
+    C_MODE,
+    C_UID,
+    C_GID,
+    C_NLINK,
+    C_MTIME,
+    C_FILESIZE,
+    C_MAJ,
+    C_MIN,
+    C_RMAJ,
+    C_RMIN,
+    C_NAMESIZE,
+    C_CHKSUM,
+    C_NFIELDS
 };
 
 /**
@@ -66,80 +66,86 @@ enum cpio_fields {
 
 struct cpio_data __init find_cpio_data(const char *path, void *data, size_t len)
 {
-	const size_t cpio_header_len = 8*C_NFIELDS - 2;
-	struct cpio_data cd = { NULL, 0, "" };
-	const char *p, *dptr, *nptr;
-	unsigned int ch[C_NFIELDS], *chp, v;
-	unsigned char c, x;
-	size_t mypathsize = strlen(path);
-	int i, j;
+    const size_t cpio_header_len = 8 * C_NFIELDS - 2;
+    struct cpio_data cd = { NULL, 0, "" };
+    const char *p, *dptr, *nptr;
+    unsigned int ch[C_NFIELDS], *chp, v;
+    unsigned char c, x;
+    size_t mypathsize = strlen(path);
+    int i, j;
 
-	p = data;
+    p = data;
 
-	while (len > cpio_header_len) {
-		if (!*p) {
-			/* All cpio headers need to be 4-byte aligned */
-			p += 4;
-			len -= 4;
-			continue;
-		}
+    while ( len > cpio_header_len )
+    {
+        if ( !*p )
+        {
+            /* All cpio headers need to be 4-byte aligned */
+            p += 4;
+            len -= 4;
+            continue;
+        }
 
-		j = 6;		/* The magic field is only 6 characters */
-		chp = ch;
-		for (i = C_NFIELDS; i; i--) {
-			v = 0;
-			while (j--) {
-				v <<= 4;
-				c = *p++;
+        j = 6; /* The magic field is only 6 characters */
+        chp = ch;
+        for ( i = C_NFIELDS; i; i-- )
+        {
+            v = 0;
+            while ( j-- )
+            {
+                v <<= 4;
+                c = *p++;
 
-				x = c - '0';
-				if (x < 10) {
-					v += x;
-					continue;
-				}
+                x = c - '0';
+                if ( x < 10 )
+                {
+                    v += x;
+                    continue;
+                }
 
-				x = (c | 0x20) - 'a';
-				if (x < 6) {
-					v += x + 10;
-					continue;
-				}
+                x = (c | 0x20) - 'a';
+                if ( x < 6 )
+                {
+                    v += x + 10;
+                    continue;
+                }
 
-				goto quit; /* Invalid hexadecimal */
-			}
-			*chp++ = v;
-			j = 8;	/* All other fields are 8 characters */
-		}
+                goto quit; /* Invalid hexadecimal */
+            }
+            *chp++ = v;
+            j = 8; /* All other fields are 8 characters */
+        }
 
-		if ((ch[C_MAGIC] - 0x070701) > 1)
-			goto quit; /* Invalid magic */
+        if ( (ch[C_MAGIC] - 0x070701) > 1 )
+            goto quit; /* Invalid magic */
 
-		len -= cpio_header_len;
+        len -= cpio_header_len;
 
-		dptr = PTR_ALIGN(p + ch[C_NAMESIZE], 4);
-		nptr = PTR_ALIGN(dptr + ch[C_FILESIZE], 4);
+        dptr = PTR_ALIGN(p + ch[C_NAMESIZE], 4);
+        nptr = PTR_ALIGN(dptr + ch[C_FILESIZE], 4);
 
-		if (nptr > p + len || dptr < p || nptr < dptr)
-			goto quit; /* Buffer overrun */
+        if ( nptr > p + len || dptr < p || nptr < dptr )
+            goto quit; /* Buffer overrun */
 
-		if ((ch[C_MODE] & 0170000) == 0100000 &&
-		    ch[C_NAMESIZE] >= mypathsize &&
-		    !memcmp(p, path, mypathsize)) {
-			if (ch[C_NAMESIZE] - mypathsize >= MAX_CPIO_FILE_NAME) {
-				printk(
-				"File %s exceeding MAX_CPIO_FILE_NAME [%d]\n",
-				p, MAX_CPIO_FILE_NAME);
-			}
-			strlcpy(cd.name, p + mypathsize, MAX_CPIO_FILE_NAME);
+        if ( (ch[C_MODE] & 0170000) == 0100000 &&
+             ch[C_NAMESIZE] >= mypathsize && !memcmp(p, path, mypathsize) )
+        {
+            if ( ch[C_NAMESIZE] - mypathsize >= MAX_CPIO_FILE_NAME )
+            {
+                printk("File %s exceeding MAX_CPIO_FILE_NAME [%d]\n",
+                       p,
+                       MAX_CPIO_FILE_NAME);
+            }
+            strlcpy(cd.name, p + mypathsize, MAX_CPIO_FILE_NAME);
 
-			cd.data = (void *)dptr;
-			cd.size = ch[C_FILESIZE];
-			return cd; /* Found it! */
-		}
-		len -= (nptr - p);
-		p = nptr;
-	}
+            cd.data = (void *)dptr;
+            cd.size = ch[C_FILESIZE];
+            return cd; /* Found it! */
+        }
+        len -= (nptr - p);
+        p = nptr;
+    }
 
 quit:
-	return cd;
+    return cd;
 }
-

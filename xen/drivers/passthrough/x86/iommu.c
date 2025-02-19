@@ -157,8 +157,8 @@ int iommu_enable_x2apic(void)
     return iommu_call(&iommu_ops, enable_x2apic);
 }
 
-void iommu_update_ire_from_apic(
-    unsigned int apic, unsigned int pin, uint64_t rte)
+void iommu_update_ire_from_apic(unsigned int apic, unsigned int pin,
+                                uint64_t rte)
 {
     iommu_vcall(&iommu_ops, update_ire_from_apic, apic, pin, rte);
 }
@@ -214,9 +214,8 @@ struct identity_map {
     unsigned int count;
 };
 
-int iommu_identity_mapping(struct domain *d, p2m_access_t p2ma,
-                           paddr_t base, paddr_t end,
-                           unsigned int flag)
+int iommu_identity_mapping(struct domain *d, p2m_access_t p2ma, paddr_t base,
+                           paddr_t end, unsigned int flag)
 {
     unsigned long base_pfn = base >> PAGE_SHIFT_4K;
     unsigned long end_pfn = PAGE_ALIGN_4K(end) >> PAGE_SHIFT_4K;
@@ -230,7 +229,7 @@ int iommu_identity_mapping(struct domain *d, p2m_access_t p2ma,
      * No need to acquire hd->arch.mapping_lock: Both insertion and removal
      * get done while holding pcidevs_lock.
      */
-    list_for_each_entry( map, &hd->arch.identity_maps, list )
+    list_for_each_entry(map, &hd->arch.identity_maps, list)
     {
         if ( map->base == base && map->end == end )
         {
@@ -305,7 +304,7 @@ void iommu_identity_map_teardown(struct domain *d)
     struct domain_iommu *hd = dom_iommu(d);
     struct identity_map *map, *tmp;
 
-    list_for_each_entry_safe ( map, tmp, &hd->arch.identity_maps, list )
+    list_for_each_entry_safe(map, tmp, &hd->arch.identity_maps, list)
     {
         list_del(&map->list);
         xfree(map);
@@ -335,7 +334,9 @@ static int __hwdom_init cf_check identity_map(unsigned long s, unsigned long e,
 
     if ( iommu_verbose )
         printk(XENLOG_INFO " [%010lx, %010lx] R%c\n",
-               s, e, info->mmio_ro ? 'O' : 'W');
+               s,
+               e,
+               info->mmio_ro ? 'O' : 'W');
 
     if ( paging_mode_translate(d) )
     {
@@ -368,8 +369,8 @@ static int __hwdom_init cf_check identity_map(unsigned long s, unsigned long e,
              */
             if ( iomem_access_permitted(d, s, s) )
             {
-                rc = iommu_map(d, _dfn(s), _mfn(s), 1, perms,
-                               &info->flush_flags);
+                rc =
+                    iommu_map(d, _dfn(s), _mfn(s), 1, perms, &info->flush_flags);
                 if ( rc < 0 )
                     break;
                 /* Must map a frame at least, which is what we request for. */
@@ -378,8 +379,12 @@ static int __hwdom_init cf_check identity_map(unsigned long s, unsigned long e,
             }
             s++;
         }
-        while ( (rc = iommu_map(d, _dfn(s), _mfn(s), e - s + 1,
-                                perms, &info->flush_flags)) > 0 )
+        while ( (rc = iommu_map(d,
+                                _dfn(s),
+                                _mfn(s),
+                                e - s + 1,
+                                perms,
+                                &info->flush_flags)) > 0 )
         {
             s += rc;
             process_pending_softirqs();
@@ -389,7 +394,9 @@ static int __hwdom_init cf_check identity_map(unsigned long s, unsigned long e,
     if ( rc )
         printk(XENLOG_WARNING
                "IOMMU identity mapping of [%lx, %lx] failed: %ld\n",
-               s, e, rc);
+               s,
+               e,
+               rc);
 
     /* Ignore errors and attempt to map the remaining regions. */
     return 0;
@@ -410,8 +417,9 @@ void __hwdom_init arch_iommu_hwdom_init(struct domain *d)
 
     if ( iommu_hwdom_inclusive )
     {
-        printk(XENLOG_WARNING
-               "IOMMU inclusive mappings are deprecated and will be removed in future versions\n");
+        printk(
+            XENLOG_WARNING
+            "IOMMU inclusive mappings are deprecated and will be removed in future versions\n");
 
         if ( !is_pv_domain(d) )
         {
@@ -444,7 +452,8 @@ void __hwdom_init arch_iommu_hwdom_init(struct domain *d)
         {
         case E820_UNUSABLE:
             /* Only relevant for inclusive mode, otherwise this is a no-op. */
-            rc = rangeset_remove_range(map, PFN_DOWN(entry.addr),
+            rc = rangeset_remove_range(map,
+                                       PFN_DOWN(entry.addr),
                                        PFN_DOWN(entry.addr + entry.size - 1));
             if ( rc )
                 panic("IOMMU failed to remove unusable memory: %d\n", rc);
@@ -464,7 +473,8 @@ void __hwdom_init arch_iommu_hwdom_init(struct domain *d)
             continue;
         }
 
-        rc = rangeset_add_range(map, PFN_DOWN(entry.addr),
+        rc = rangeset_add_range(map,
+                                PFN_DOWN(entry.addr),
                                 PFN_DOWN(entry.addr + entry.size - 1));
         if ( rc )
             panic("IOMMU failed to add identity range: %d\n", rc);
@@ -485,7 +495,8 @@ void __hwdom_init arch_iommu_hwdom_init(struct domain *d)
     {
         for ( i = 0; i < d->arch.hvm.nr_vioapics; i++ )
         {
-            rc = rangeset_remove_singleton(map,
+            rc = rangeset_remove_singleton(
+                map,
                 PFN_DOWN(domain_vioapic(d, i)->base_address));
             if ( rc )
                 panic("IOMMU failed to remove IO-APIC: %d\n", rc);
@@ -518,7 +529,8 @@ void __hwdom_init arch_iommu_hwdom_init(struct domain *d)
     }
 
     /* Remove any regions past the last address addressable by the domain. */
-    rc = rangeset_remove_range(map, PFN_DOWN(1UL << domain_max_paddr_bits(d)),
+    rc = rangeset_remove_range(map,
+                               PFN_DOWN(1UL << domain_max_paddr_bits(d)),
                                ~0UL);
     if ( rc )
         panic("IOMMU unable to remove unaddressable ranges: %d\n", rc);
@@ -531,12 +543,16 @@ void __hwdom_init arch_iommu_hwdom_init(struct domain *d)
     if ( !rc && is_pv_domain(d) )
     {
         map_data.mmio_ro = true;
-        rc = rangeset_report_ranges(mmio_ro_ranges, 0, ~0UL, identity_map,
+        rc = rangeset_report_ranges(mmio_ro_ranges,
+                                    0,
+                                    ~0UL,
+                                    identity_map,
                                     &map_data);
     }
     if ( rc )
         printk(XENLOG_WARNING "IOMMU unable to create %smappings: %d\n",
-               map_data.mmio_ro ? "read-only " : "", rc);
+               map_data.mmio_ro ? "read-only " : "",
+               rc);
 
     /* Use if to avoid compiler warning */
     if ( iommu_iotlb_flush_all(d, map_data.flush_flags) )
@@ -655,7 +671,8 @@ struct page_info *iommu_alloc_pgtable(struct domain_iommu *hd,
         /* See pt-contig-markers.h for a description of the marker scheme. */
         unsigned int i, shift = ffsl(contig_mask) - 1;
 
-        ASSERT((CONTIG_LEVEL_SHIFT & (contig_mask >> shift)) == CONTIG_LEVEL_SHIFT);
+        ASSERT((CONTIG_LEVEL_SHIFT & (contig_mask >> shift)) ==
+               CONTIG_LEVEL_SHIFT);
 
         p[0] = (CONTIG_LEVEL_SHIFT + 0ULL) << shift;
         p[1] = 0;
@@ -714,7 +731,7 @@ static void cf_check free_queued_pgtables(void *arg)
          * pages can be queued.  Granularity of checking is somewhat arbitrary.
          */
         if ( !(++done & 0x1ff) )
-             process_pending_softirqs();
+            process_pending_softirqs();
     }
 }
 
@@ -731,8 +748,8 @@ void iommu_queue_free_pgtable(struct domain_iommu *hd, struct page_info *pg)
     tasklet_schedule(&per_cpu(free_pgt_tasklet, cpu));
 }
 
-static int cf_check cpu_callback(
-    struct notifier_block *nfb, unsigned long action, void *hcpu)
+static int cf_check cpu_callback(struct notifier_block *nfb,
+                                 unsigned long action, void *hcpu)
 {
     unsigned int cpu = (unsigned long)hcpu;
     struct page_list_head *list = &per_cpu(free_pgt_list, cpu);
@@ -774,13 +791,15 @@ static int __init cf_check bsp_init(void)
 {
     if ( iommu_enabled )
     {
-        cpu_callback(&cpu_nfb, CPU_UP_PREPARE,
+        cpu_callback(&cpu_nfb,
+                     CPU_UP_PREPARE,
                      (void *)(unsigned long)smp_processor_id());
         register_cpu_notifier(&cpu_nfb);
     }
 
     return 0;
 }
+
 presmp_initcall(bsp_init);
 
 bool arch_iommu_use_permitted(const struct domain *d)
@@ -790,10 +809,8 @@ bool arch_iommu_use_permitted(const struct domain *d)
      * have been enabled for this domain, or if PoD is still in active use.
      */
     return d == dom_io ||
-           (likely(!mem_sharing_enabled(d)) &&
-            likely(!mem_paging_enabled(d)) &&
-            likely(!p2m_pod_active(d)) &&
-            likely(!p2m_is_global_logdirty(d)));
+           (likely(!mem_sharing_enabled(d)) && likely(!mem_paging_enabled(d)) &&
+            likely(!p2m_pod_active(d)) && likely(!p2m_is_global_logdirty(d)));
 }
 
 static int __init cf_check adjust_irq_affinities(void)
@@ -802,19 +819,23 @@ static int __init cf_check adjust_irq_affinities(void)
 
     return 0;
 }
+
 __initcall(adjust_irq_affinities);
 
 bool __init iommu_unity_region_ok(const char *prefix, mfn_t start, mfn_t end)
 {
     mfn_t addr;
 
-    if ( e820_all_mapped(mfn_to_maddr(start), mfn_to_maddr(end) + PAGE_SIZE,
+    if ( e820_all_mapped(mfn_to_maddr(start),
+                         mfn_to_maddr(end) + PAGE_SIZE,
                          E820_RESERVED) )
         return true;
 
     printk(XENLOG_WARNING
            "%s: [%#lx, %#lx] is not (entirely) in reserved memory\n",
-           prefix, mfn_to_maddr(start), mfn_to_maddr(end));
+           prefix,
+           mfn_to_maddr(start),
+           mfn_to_maddr(end));
 
     for ( addr = start; mfn_x(addr) <= mfn_x(end); addr = mfn_add(addr, 1) )
     {
@@ -823,11 +844,13 @@ bool __init iommu_unity_region_ok(const char *prefix, mfn_t start, mfn_t end)
         if ( type == RAM_TYPE_UNKNOWN )
         {
             if ( e820_add_range(mfn_to_maddr(addr),
-                                mfn_to_maddr(addr) + PAGE_SIZE, E820_RESERVED) )
+                                mfn_to_maddr(addr) + PAGE_SIZE,
+                                E820_RESERVED) )
                 continue;
-            printk(XENLOG_ERR
-                   "%s: page at %#" PRI_mfn " couldn't be reserved\n",
-                   prefix, mfn_x(addr));
+            printk(XENLOG_ERR "%s: page at %#" PRI_mfn
+                              " couldn't be reserved\n",
+                   prefix,
+                   mfn_x(addr));
             return false;
         }
 
@@ -837,13 +860,12 @@ bool __init iommu_unity_region_ok(const char *prefix, mfn_t start, mfn_t end)
          * force Xen into assuming the whole page as having that type in
          * practice.
          */
-        if ( type & (RAM_TYPE_RESERVED | RAM_TYPE_ACPI |
-                     RAM_TYPE_UNUSABLE) )
+        if ( type & (RAM_TYPE_RESERVED | RAM_TYPE_ACPI | RAM_TYPE_UNUSABLE) )
             continue;
 
-        printk(XENLOG_ERR
-               "%s: page at %#" PRI_mfn " can't be converted\n",
-               prefix, mfn_x(addr));
+        printk(XENLOG_ERR "%s: page at %#" PRI_mfn " can't be converted\n",
+               prefix,
+               mfn_x(addr));
         return false;
     }
 

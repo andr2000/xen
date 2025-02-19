@@ -31,32 +31,32 @@ enum serial_port_state {
 };
 
 struct vuart_info {
-    paddr_t base_addr;          /* Base address of the UART */
-    unsigned long size;         /* Size of the memory region */
-    unsigned long data_off;     /* Data register offset */
-    unsigned long status_off;   /* Status register offset */
-    unsigned long status;       /* Ready status value */
+    paddr_t base_addr; /* Base address of the UART */
+    unsigned long size; /* Size of the memory region */
+    unsigned long data_off; /* Data register offset */
+    unsigned long status_off; /* Status register offset */
+    unsigned long status; /* Ready status value */
 };
 
 struct serial_port {
     /* Uart-driver parameters. */
     struct uart_driver *driver;
-    void               *uart;
+    void *uart;
     enum serial_port_state state;
     /* Transmit data buffer (interrupt-driven uart). */
-    char               *txbuf;
-    unsigned int        txbufp, txbufc;
-    bool                tx_quench;
-    int                 tx_log_everything;
+    char *txbuf;
+    unsigned int txbufp, txbufc;
+    bool tx_quench;
+    int tx_log_everything;
     /* Force synchronous transmit. */
-    int                 sync;
+    int sync;
     /* Receiver callback functions (asynchronous receivers). */
-    serial_rx_fn        rx_lo, rx_hi, rx;
+    serial_rx_fn rx_lo, rx_hi, rx;
     /* Receive data buffer (polling receivers). */
-    char                rxbuf[serial_rxbufsz];
-    unsigned int        rxbufp, rxbufc;
+    char rxbuf[serial_rxbufsz];
+    unsigned int rxbufp, rxbufc;
     /* Serial I/O is concurrency-safe. */
-    spinlock_t          rx_lock, tx_lock;
+    spinlock_t rx_lock, tx_lock;
 };
 
 struct uart_driver {
@@ -77,24 +77,24 @@ struct uart_driver {
     /* Flush accumulated characters. */
     void (*flush)(struct serial_port *port);
     /* Get a character from the serial line: returns 0 if none available. */
-    int  (*getc)(struct serial_port *port, char *pc);
+    int (*getc)(struct serial_port *port, char *pc);
     /* Get IRQ number for this port's serial line: returns -1 if none. */
-    int  (*irq)(struct serial_port *port);
+    int (*irq)(struct serial_port *port);
     /* Unmask TX interrupt */
-    void  (*start_tx)(struct serial_port *port);
+    void (*start_tx)(struct serial_port *port);
     /* Mask TX interrupt */
-    void  (*stop_tx)(struct serial_port *port);
+    void (*stop_tx)(struct serial_port *port);
     /* Get serial information */
     const struct vuart_info *(*vuart_info)(struct serial_port *port);
 };
 
 /* 'Serial handles' are composed from the following fields. */
 #define SERHND_IDX      (3<<0) /* COM1, COM2, DBGP, XHCI, DTUART?         */
-# define SERHND_COM1    (0<<0)
-# define SERHND_COM2    (1<<0)
-# define SERHND_DBGP    (2<<0)
-# define SERHND_XHCI    (3<<0)
-# define SERHND_DTUART  (0<<0) /* Steal SERHND_COM1 value */
+#define SERHND_COM1    (0<<0)
+#define SERHND_COM2    (1<<0)
+#define SERHND_DBGP    (2<<0)
+#define SERHND_XHCI    (3<<0)
+#define SERHND_DTUART  (0<<0) /* Steal SERHND_COM1 value */
 #define SERHND_HI       (1<<2) /* Mux/demux each transferred char by MSB. */
 #define SERHND_LO       (1<<3) /* Ditto, except that the MSB is cleared.  */
 #define SERHND_COOKED   (1<<4) /* Newline/carriage-return translation?    */
@@ -129,7 +129,7 @@ void serial_end_log_everything(int handle);
 int serial_irq(int idx);
 
 /* Retrieve basic UART information to emulate it (base address, size...) */
-const struct vuart_info* serial_vuart_info(int idx);
+const struct vuart_info *serial_vuart_info(int idx);
 
 /* Serial suspend/resume. */
 void serial_suspend(void);
@@ -151,13 +151,14 @@ void serial_tx_interrupt(struct serial_port *port);
  */
 /* NB. Any default value can be 0 if it is unknown and must be specified. */
 struct ns16550_defaults {
-    int baud;      /* default baud rate; BAUD_AUTO == pre-configured */
+    int baud; /* default baud rate; BAUD_AUTO == pre-configured */
     int data_bits; /* default data bits (5, 6, 7 or 8) */
-    int parity;    /* default parity (n, o, e, m or s) */
+    int parity; /* default parity (n, o, e, m or s) */
     int stop_bits; /* default stop bits (1 or 2) */
-    int irq;       /* default irq */
+    int irq; /* default irq */
     unsigned long io_base; /* default io_base address */
 };
+
 void ns16550_init(int index, struct ns16550_defaults *defaults);
 void ehci_dbgp_init(void);
 #ifdef CONFIG_XHCI

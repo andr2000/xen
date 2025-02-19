@@ -41,8 +41,7 @@ extern unsigned int opt_max_grant_frames;
 /* Create/destroy per-domain grant table context. */
 int grant_table_init(struct domain *d, int max_grant_frames,
                      int max_maptrack_frames, unsigned int options);
-void grant_table_destroy(
-    struct domain *d);
+void grant_table_destroy(struct domain *d);
 void grant_table_init_vcpu(struct vcpu *v);
 
 /*
@@ -53,25 +52,25 @@ void grant_table_warn_active_grants(struct domain *d);
 /* Domain death release of granted mappings of other domains' memory. */
 int gnttab_release_mappings(struct domain *d);
 
-int mem_sharing_gref_to_gfn(struct grant_table *gt, grant_ref_t ref,
-                            gfn_t *gfn, uint16_t *status);
+int mem_sharing_gref_to_gfn(struct grant_table *gt, grant_ref_t ref, gfn_t *gfn,
+                            uint16_t *status);
 
 int gnttab_map_frame(struct domain *d, unsigned long idx, gfn_t gfn,
                      mfn_t *mfn);
 
-unsigned int gnttab_resource_max_frames(const struct domain *d, unsigned int id);
+unsigned int gnttab_resource_max_frames(const struct domain *d,
+                                        unsigned int id);
 
-int gnttab_acquire_resource(
-    struct domain *d, unsigned int id, unsigned int frame,
-    unsigned int nr_frames, xen_pfn_t mfn_list[]);
+int gnttab_acquire_resource(struct domain *d, unsigned int id,
+                            unsigned int frame, unsigned int nr_frames,
+                            xen_pfn_t mfn_list[]);
 
 #else
 
 #define opt_gnttab_max_version 0
 #define opt_max_grant_frames 0
 
-static inline int grant_table_init(struct domain *d,
-                                   int max_grant_frames,
+static inline int grant_table_init(struct domain *d, int max_grant_frames,
                                    int max_maptrack_frames,
                                    unsigned int options)
 {
@@ -87,11 +86,14 @@ static inline void grant_table_init_vcpu(struct vcpu *v) {}
 
 static inline void grant_table_warn_active_grants(struct domain *d) {}
 
-static inline int gnttab_release_mappings(struct domain *d) { return 0; }
+static inline int gnttab_release_mappings(struct domain *d)
+{
+    return 0;
+}
 
 static inline int mem_sharing_gref_to_gfn(struct grant_table *gt,
-                                          grant_ref_t ref,
-                                          gfn_t *gfn, uint16_t *status)
+                                          grant_ref_t ref, gfn_t *gfn,
+                                          uint16_t *status)
 {
     return -EINVAL;
 }
@@ -102,15 +104,16 @@ static inline int gnttab_map_frame(struct domain *d, unsigned long idx,
     return -EINVAL;
 }
 
-static inline unsigned int gnttab_resource_max_frames(
-    const struct domain *d, unsigned int id)
+static inline unsigned int gnttab_resource_max_frames(const struct domain *d,
+                                                      unsigned int id)
 {
     return 0;
 }
 
-static inline int gnttab_acquire_resource(
-    struct domain *d, unsigned int id, unsigned int frame,
-    unsigned int nr_frames, xen_pfn_t mfn_list[])
+static inline int gnttab_acquire_resource(struct domain *d, unsigned int id,
+                                          unsigned int frame,
+                                          unsigned int nr_frames,
+                                          xen_pfn_t mfn_list[])
 {
     return -EINVAL;
 }

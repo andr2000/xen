@@ -64,7 +64,7 @@ extern void *xlat_malloc(unsigned long *xlat_page_current, size_t size);
 #define compat_access_ok(addr, size) \
     __compat_access_ok(current->domain, addr, size)
 
-#define compat_array_access_ok(addr,count,size) \
+#define compat_array_access_ok(addr, count, size) \
     (likely((count) < (~0U / (size))) && \
      compat_access_ok(addr, 0 + (count) * (size)))
 

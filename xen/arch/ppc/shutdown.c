@@ -13,7 +13,8 @@ void machine_halt(void)
 
     /* TODO: mask any OPAL IRQs before shutting down */
 
-    do {
+    do
+    {
         rc = opal_cec_power_down(0);
 
         if ( rc == OPAL_BUSY_EVENT )
@@ -34,7 +35,8 @@ void machine_restart(unsigned int delay_millisecs)
      * TODO: mdelay(delay_millisecs);
      */
 
-    do {
+    do
+    {
         rc = opal_cec_reboot();
 
         if ( rc == OPAL_BUSY_EVENT )
@@ -45,4 +47,3 @@ void machine_restart(unsigned int delay_millisecs)
     for ( ;; )
         opal_poll_events(NULL);
 }
-

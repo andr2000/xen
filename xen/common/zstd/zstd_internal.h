@@ -37,12 +37,12 @@
 #define PTR_ALIGN(p, a) ((typeof(p))ALIGN((unsigned long)(p), (a)))
 
 typedef enum {
-	ZSTDnit_frameHeader,
-	ZSTDnit_blockHeader,
-	ZSTDnit_block,
-	ZSTDnit_lastBlock,
-	ZSTDnit_checksum,
-	ZSTDnit_skippableFrame
+    ZSTDnit_frameHeader,
+    ZSTDnit_blockHeader,
+    ZSTDnit_block,
+    ZSTDnit_lastBlock,
+    ZSTDnit_checksum,
+    ZSTDnit_skippableFrame
 } ZSTD_nextInputType_e;
 
 /**
@@ -53,10 +53,10 @@ typedef enum {
  * @checksumFlag:     Whether a checksum was used.
  */
 typedef struct {
-	unsigned long long frameContentSize;
-	unsigned int windowSize;
-	unsigned int dictID;
-	unsigned int checksumFlag;
+    unsigned long long frameContentSize;
+    unsigned int windowSize;
+    unsigned int dictID;
+    unsigned int checksumFlag;
 } ZSTD_frameParams;
 
 /**
@@ -67,9 +67,9 @@ typedef struct {
  *        Necessarily 0 <= pos <= size.
  */
 typedef struct ZSTD_inBuffer_s {
-	const void *src;
-	size_t size;
-	size_t pos;
+    const void *src;
+    size_t size;
+    size_t pos;
 } ZSTD_inBuffer;
 
 /**
@@ -80,9 +80,9 @@ typedef struct ZSTD_inBuffer_s {
  *        Necessarily 0 <= pos <= size.
  */
 typedef struct ZSTD_outBuffer_s {
-	void *dst;
-	size_t size;
-	size_t pos;
+    void *dst;
+    size_t size;
+    size_t pos;
 } ZSTD_outBuffer;
 
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
@@ -155,7 +155,7 @@ typedef struct ZSTD_DStream_s ZSTD_DStream;
 #define ZSTD_REP_CHECK (ZSTD_REP_NUM) /* number of repcodes to check by the optimal parser */
 #define ZSTD_REP_MOVE (ZSTD_REP_NUM - 1)
 #define ZSTD_REP_MOVE_OPT (ZSTD_REP_NUM)
-static const U32 repStartValue[ZSTD_REP_NUM] = {1, 4, 8};
+static const U32 repStartValue[ZSTD_REP_NUM] = { 1, 4, 8 };
 
 /* for static allocation */
 #define ZSTD_FRAMEHEADERSIZE_MAX 18
@@ -182,18 +182,30 @@ static const size_t ZSTD_skippableHeaderSize = 8;
 #define BIT0 1
 
 #define ZSTD_WINDOWLOG_ABSOLUTEMIN 10
-static const size_t ZSTD_fcs_fieldSize[4] = {0, 2, 4, 8};
-static const size_t ZSTD_did_fieldSize[4] = {0, 1, 2, 4};
+static const size_t ZSTD_fcs_fieldSize[4] = { 0, 2, 4, 8 };
+static const size_t ZSTD_did_fieldSize[4] = { 0, 1, 2, 4 };
 
 #define ZSTD_BLOCKHEADERSIZE 3 /* C standard doesn't allow `static const` variable to be init using another `static const` variable */
 static const size_t ZSTD_blockHeaderSize = ZSTD_BLOCKHEADERSIZE;
-typedef enum { bt_raw, bt_rle, bt_compressed, bt_reserved } blockType_e;
+
+typedef enum {
+    bt_raw,
+    bt_rle,
+    bt_compressed,
+    bt_reserved
+} blockType_e;
 
 #define MIN_SEQUENCES_SIZE 1									  /* nbSeq==0 */
 #define MIN_CBLOCK_SIZE (1 /*litCSize*/ + 1 /* RLE or RAW */ + MIN_SEQUENCES_SIZE /* nbSeq==0 */) /* for a non-null block */
 
 #define HufLog 12
-typedef enum { set_basic, set_rle, set_compressed, set_repeat } symbolEncodingType_e;
+
+typedef enum {
+    set_basic,
+    set_rle,
+    set_compressed,
+    set_repeat
+} symbolEncodingType_e;
 
 #define LONGNBSEQ 0x7F00
 
@@ -210,58 +222,77 @@ typedef enum { set_basic, set_rle, set_compressed, set_repeat } symbolEncodingTy
 #define LLFSELog 9
 #define OffFSELog 8
 
-static const U32 LL_bits[MaxLL + 1] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
-static const S16 LL_defaultNorm[MaxLL + 1] = {4, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 1, 1, 1, 1, 1, -1, -1, -1, -1};
+static const U32 LL_bits[MaxLL + 1] = { 0, 0, 0,  0,  0,  0,  0,  0,  0,
+                                        0, 0, 0,  0,  0,  0,  0,  1,  1,
+                                        1, 1, 2,  2,  3,  3,  4,  6,  7,
+                                        8, 9, 10, 11, 12, 13, 14, 15, 16 };
+static const S16 LL_defaultNorm[MaxLL + 1] = { 4, 3, 2, 2, 2, 2,  2,  2,  2,
+                                               2, 2, 2, 2, 1, 1,  1,  2,  2,
+                                               2, 2, 2, 2, 2, 2,  2,  3,  2,
+                                               1, 1, 1, 1, 1, -1, -1, -1, -1 };
 #define LL_DEFAULTNORMLOG 6 /* for static allocation */
 static const U32 LL_defaultNormLog = LL_DEFAULTNORMLOG;
 
-static const U32 ML_bits[MaxML + 1] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  0,  0,  0,  0,  0,  0, 0,
-				       0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
-static const S16 ML_defaultNorm[MaxML + 1] = {1, 4, 3, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  1,  1,  1,  1,  1,  1, 1,
-					      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1};
+static const U32 ML_bits[MaxML + 1] = { 0, 0, 0,  0,  0,  0,  0,  0,  0, 0, 0,
+                                        0, 0, 0,  0,  0,  0,  0,  0,  0, 0, 0,
+                                        0, 0, 0,  0,  0,  0,  0,  0,  0, 0, 1,
+                                        1, 1, 1,  2,  2,  3,  3,  4,  4, 5, 7,
+                                        8, 9, 10, 11, 12, 13, 14, 15, 16 };
+static const S16 ML_defaultNorm[MaxML + 1] = {
+    1, 4, 3, 2, 2, 2, 2, 2, 2, 1, 1,  1,  1,  1,  1,  1,  1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  1,  1,  1,  1,  1,  1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1
+};
 #define ML_DEFAULTNORMLOG 6 /* for static allocation */
 static const U32 ML_defaultNormLog = ML_DEFAULTNORMLOG;
 
-static const S16 OF_defaultNorm[MaxOff + 1] = {1, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1};
+static const S16 OF_defaultNorm[MaxOff + 1] = { 1,  1,  1,  1,  1, 1, 2, 2,
+                                                2,  1,  1,  1,  1, 1, 1, 1,
+                                                1,  1,  1,  1,  1, 1, 1, 1,
+                                                -1, -1, -1, -1, -1 };
 #define OF_DEFAULTNORMLOG 5 /* for static allocation */
 static const U32 OF_defaultNormLog = OF_DEFAULTNORMLOG;
 
 /*-*******************************************
 *  Shared functions to include for inlining
 *********************************************/
-ZSTD_STATIC void ZSTD_copy8(void *dst, const void *src) {
-	/*
+ZSTD_STATIC void ZSTD_copy8(void *dst, const void *src)
+{
+    /*
 	 * zstd relies heavily on gcc being able to analyze and inline this
 	 * memcpy() call, since it is called in a tight loop. Preboot mode
 	 * is compiled in freestanding mode, which stops gcc from analyzing
 	 * memcpy(). Use __builtin_memcpy() to tell gcc to analyze this as a
 	 * regular memcpy().
 	 */
-	__builtin_memcpy(dst, src, 8);
+    __builtin_memcpy(dst, src, 8);
 }
+
 /*! ZSTD_wildcopy() :
 *   custom version of memcpy(), can copy up to 7 bytes too many (8 bytes if length==0) */
 #define WILDCOPY_OVERLENGTH 8
+
 ZSTD_STATIC void ZSTD_wildcopy(void *dst, const void *src, ptrdiff_t length)
 {
-	const BYTE* ip = (const BYTE*)src;
-	BYTE* op = (BYTE*)dst;
-	BYTE* const oend = op + length;
+    const BYTE *ip = (const BYTE *)src;
+    BYTE *op = (BYTE *)dst;
+    BYTE *const oend = op + length;
 #if defined(GCC_VERSION) && GCC_VERSION >= 70000 && GCC_VERSION < 70200
-	/*
+    /*
 	 * Work around https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81388.
 	 * Avoid the bad case where the loop only runs once by handling the
 	 * special case separately. This doesn't trigger the bug because it
 	 * doesn't involve pointer/integer overflow.
 	 */
-	if (length <= 8)
-		return ZSTD_copy8(dst, src);
+    if ( length <= 8 )
+        return ZSTD_copy8(dst, src);
 #endif
-	do {
-		ZSTD_copy8(op, ip);
-		op += 8;
-		ip += 8;
-	} while (op < oend);
+    do
+    {
+        ZSTD_copy8(op, ip);
+        op += 8;
+        ip += 8;
+    } while ( op < oend );
 }
 
 /*-*******************************************
@@ -270,56 +301,56 @@ ZSTD_STATIC void ZSTD_wildcopy(void *dst, const void *src, ptrdiff_t length)
 typedef struct ZSTD_stats_s ZSTD_stats_t;
 
 typedef struct {
-	U32 off;
-	U32 len;
+    U32 off;
+    U32 len;
 } ZSTD_match_t;
 
 typedef struct {
-	U32 price;
-	U32 off;
-	U32 mlen;
-	U32 litlen;
-	U32 rep[ZSTD_REP_NUM];
+    U32 price;
+    U32 off;
+    U32 mlen;
+    U32 litlen;
+    U32 rep[ZSTD_REP_NUM];
 } ZSTD_optimal_t;
 
 typedef struct seqDef_s {
-	U32 offset;
-	U16 litLength;
-	U16 matchLength;
+    U32 offset;
+    U16 litLength;
+    U16 matchLength;
 } seqDef;
 
 typedef struct {
-	seqDef *sequencesStart;
-	seqDef *sequences;
-	BYTE *litStart;
-	BYTE *lit;
-	BYTE *llCode;
-	BYTE *mlCode;
-	BYTE *ofCode;
-	U32 longLengthID; /* 0 == no longLength; 1 == Lit.longLength; 2 == Match.longLength; */
-	U32 longLengthPos;
-	/* opt */
-	ZSTD_optimal_t *priceTable;
-	ZSTD_match_t *matchTable;
-	U32 *matchLengthFreq;
-	U32 *litLengthFreq;
-	U32 *litFreq;
-	U32 *offCodeFreq;
-	U32 matchLengthSum;
-	U32 matchSum;
-	U32 litLengthSum;
-	U32 litSum;
-	U32 offCodeSum;
-	U32 log2matchLengthSum;
-	U32 log2matchSum;
-	U32 log2litLengthSum;
-	U32 log2litSum;
-	U32 log2offCodeSum;
-	U32 factor;
-	U32 staticPrices;
-	U32 cachedPrice;
-	U32 cachedLitLength;
-	const BYTE *cachedLiterals;
+    seqDef *sequencesStart;
+    seqDef *sequences;
+    BYTE *litStart;
+    BYTE *lit;
+    BYTE *llCode;
+    BYTE *mlCode;
+    BYTE *ofCode;
+    U32 longLengthID; /* 0 == no longLength; 1 == Lit.longLength; 2 == Match.longLength; */
+    U32 longLengthPos;
+    /* opt */
+    ZSTD_optimal_t *priceTable;
+    ZSTD_match_t *matchTable;
+    U32 *matchLengthFreq;
+    U32 *litLengthFreq;
+    U32 *litFreq;
+    U32 *offCodeFreq;
+    U32 matchLengthSum;
+    U32 matchSum;
+    U32 litLengthSum;
+    U32 litSum;
+    U32 offCodeSum;
+    U32 log2matchLengthSum;
+    U32 log2matchSum;
+    U32 log2litLengthSum;
+    U32 log2litSum;
+    U32 log2offCodeSum;
+    U32 factor;
+    U32 staticPrices;
+    U32 cachedPrice;
+    U32 cachedLitLength;
+    const BYTE *cachedLiterals;
 } seqStore_t;
 
 const seqStore_t *ZSTD_getSeqStore(const ZSTD_CCtx *ctx);
@@ -329,10 +360,11 @@ int ZSTD_isSkipFrame(ZSTD_DCtx *dctx);
 /*= Custom memory allocation functions */
 typedef void *(*ZSTD_allocFunction)(void *opaque, size_t size);
 typedef void (*ZSTD_freeFunction)(void *opaque, void *address);
+
 typedef struct {
-	ZSTD_allocFunction customAlloc;
-	ZSTD_freeFunction customFree;
-	void *opaque;
+    ZSTD_allocFunction customAlloc;
+    ZSTD_freeFunction customFree;
+    void *opaque;
 } ZSTD_customMem;
 
 void *ZSTD_malloc(size_t size, ZSTD_customMem customMem);
@@ -341,8 +373,8 @@ void ZSTD_free(void *ptr, ZSTD_customMem customMem);
 /*====== stack allocation  ======*/
 
 typedef struct {
-	void *ptr;
-	const void *end;
+    void *ptr;
+    const void *end;
 } ZSTD_stack;
 
 #define ZSTD_ALIGN(x) ALIGN(x, sizeof(size_t))
@@ -356,7 +388,10 @@ void cf_check ZSTD_stackFree(void *opaque, void *address);
 
 /*======  common function  ======*/
 
-ZSTD_STATIC U32 ZSTD_highbit32(U32 val) { return 31 - __builtin_clz(val); }
+ZSTD_STATIC U32 ZSTD_highbit32(U32 val)
+{
+    return 31 - __builtin_clz(val);
+}
 
 /* hidden functions */
 

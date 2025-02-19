@@ -58,8 +58,11 @@ static bool pt_check_entry(pte_t entry, mfn_t mfn, unsigned int flags)
         if ( pte_is_valid(entry) )
         {
             if ( pte_is_mapping(entry) )
-                dprintk(XENLOG_ERR, "Changing MFN for valid PTE is not allowed (%#"PRI_mfn" -> %#"PRI_mfn")\n",
-                        mfn_x(mfn_from_pte(entry)), mfn_x(mfn));
+                dprintk(XENLOG_ERR,
+                        "Changing MFN for valid PTE is not allowed (%#" PRI_mfn
+                        " -> %#" PRI_mfn ")\n",
+                        mfn_x(mfn_from_pte(entry)),
+                        mfn_x(mfn));
             else
                 dprintk(XENLOG_ERR, "Trying to replace table with mapping\n");
             return false;
@@ -186,9 +189,8 @@ static int pt_next_level(bool alloc_tbl, pte_t **table, unsigned int offset)
 }
 
 /* Update an entry at the level @target. */
-static int pt_update_entry(mfn_t root, vaddr_t virt,
-                           mfn_t mfn, unsigned int target,
-                           unsigned int flags)
+static int pt_update_entry(mfn_t root, vaddr_t virt, mfn_t mfn,
+                           unsigned int target, unsigned int flags)
 {
     int rc;
     unsigned int level = HYP_PT_ROOT_LEVEL;
@@ -231,7 +233,8 @@ static int pt_update_entry(mfn_t root, vaddr_t virt,
     if ( level != target )
     {
         dprintk(XENLOG_ERR,
-                "%s: Shattering superpage is not supported\n", __func__);
+                "%s: Shattering superpage is not supported\n",
+                __func__);
         rc = -EOPNOTSUPP;
         goto out;
     }
@@ -268,7 +271,7 @@ static int pt_update_entry(mfn_t root, vaddr_t virt,
 
     rc = 0;
 
- out:
+out:
     unmap_table(table);
 
     return rc;
@@ -329,8 +332,8 @@ static DEFINE_SPINLOCK(pt_lock);
  * If `mfn` != INVALID_MFN and flags has PTE_VALID bit set then it means that
  * inserting will be done.
  */
-static int pt_update(vaddr_t virt, mfn_t mfn,
-                     unsigned long nr_mfns, unsigned int flags)
+static int pt_update(vaddr_t virt, mfn_t mfn, unsigned long nr_mfns,
+                     unsigned int flags)
 {
     int rc = 0;
     unsigned long vfn = PFN_DOWN(virt);
@@ -402,9 +405,7 @@ static int pt_update(vaddr_t virt, mfn_t mfn,
     return rc;
 }
 
-int map_pages_to_xen(unsigned long virt,
-                     mfn_t mfn,
-                     unsigned long nr_mfns,
+int map_pages_to_xen(unsigned long virt, mfn_t mfn, unsigned long nr_mfns,
                      unsigned int flags)
 {
     /*
@@ -445,7 +446,7 @@ void set_fixmap(unsigned int map, mfn_t mfn, unsigned int flags)
 /* Remove a mapping from a fixmap entry */
 void clear_fixmap(unsigned int map)
 {
-    if ( destroy_xen_mappings(FIXMAP_ADDR(map),
-                              FIXMAP_ADDR(map) + PAGE_SIZE) != 0 )
+    if ( destroy_xen_mappings(FIXMAP_ADDR(map), FIXMAP_ADDR(map) + PAGE_SIZE) !=
+         0 )
         BUG();
 }

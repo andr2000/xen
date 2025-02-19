@@ -55,11 +55,12 @@ int pdev_msi_init(struct pci_dev *pdev)
              * initially, clear it (and ENABLE too - for safety), to meet that
              * expectation.
              */
-            printk(XENLOG_WARNING
-                   "%pp: unexpected initial MSI-X state (MASKALL=%d, ENABLE=%d), fixing\n",
-                   &pdev->sbdf,
-                   !!(ctrl & PCI_MSIX_FLAGS_MASKALL),
-                   !!(ctrl & PCI_MSIX_FLAGS_ENABLE));
+            printk(
+                XENLOG_WARNING
+                "%pp: unexpected initial MSI-X state (MASKALL=%d, ENABLE=%d), fixing\n",
+                &pdev->sbdf,
+                !!(ctrl & PCI_MSIX_FLAGS_MASKALL),
+                !!(ctrl & PCI_MSIX_FLAGS_ENABLE));
             ctrl &= ~(PCI_MSIX_FLAGS_ENABLE | PCI_MSIX_FLAGS_MASKALL);
             pci_conf_write16(pdev->sbdf, msix_control_reg(pos), ctrl);
         }
@@ -85,7 +86,7 @@ void pdev_dump_msi(const struct pci_dev *pdev)
         return;
 
     printk(" - MSIs < ");
-    list_for_each_entry ( msi, &pdev->msi_list, list )
+    list_for_each_entry(msi, &pdev->msi_list, list)
         printk("%d ", msi->irq);
     printk(">");
 }

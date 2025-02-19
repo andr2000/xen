@@ -30,10 +30,10 @@ static unsigned int timer_slop __read_mostly = 50000; /* 50 us */
 integer_param("timer_slop", timer_slop);
 
 struct timers {
-    spinlock_t     lock;
+    spinlock_t lock;
     struct timer **heap;
-    struct timer  *list;
-    struct timer  *running;
+    struct timer *list;
+    struct timer *running;
     struct list_head inactive;
 } __cacheline_aligned;
 
@@ -71,7 +71,8 @@ static void down_heap(struct timer **heap, unsigned int pos)
 
     while ( (nxt = (pos << 1)) <= sz )
     {
-        if ( ((nxt+1) <= sz) && (heap[nxt+1]->expires < heap[nxt]->expires) )
+        if ( ((nxt + 1) <= sz) &&
+             (heap[nxt + 1]->expires < heap[nxt]->expires) )
             nxt++;
         if ( heap[nxt]->expires > t->expires )
             break;
@@ -89,9 +90,9 @@ static void up_heap(struct timer **heap, unsigned int pos)
 {
     struct timer *t = heap[pos];
 
-    while ( (pos > 1) && (t->expires < heap[pos>>1]->expires) )
+    while ( (pos > 1) && (t->expires < heap[pos >> 1]->expires) )
     {
-        heap[pos] = heap[pos>>1];
+        heap[pos] = heap[pos >> 1];
         heap[pos]->heap_offset = pos;
         pos >>= 1;
     }
@@ -99,7 +100,6 @@ static void up_heap(struct timer **heap, unsigned int pos)
     heap[pos] = t;
     t->heap_offset = pos;
 }
-
 
 /* Delete @t from @heap. Return TRUE if new top of heap. */
 static int remove_from_heap(struct timer **heap, struct timer *t)
@@ -118,15 +118,14 @@ static int remove_from_heap(struct timer **heap, struct timer *t)
 
     heap_metadata(heap)->size = --sz;
 
-    if ( (pos > 1) && (heap[pos]->expires < heap[pos>>1]->expires) )
+    if ( (pos > 1) && (heap[pos]->expires < heap[pos >> 1]->expires) )
         up_heap(heap, pos);
     else
         down_heap(heap, pos);
 
- out:
+out:
     return (pos == 1);
 }
-
 
 /* Add new entry @t to @heap. Return TRUE if new top of heap. */
 static int add_to_heap(struct timer **heap, struct timer *t)
@@ -144,7 +143,6 @@ static int add_to_heap(struct timer **heap, struct timer *t)
 
     return (t->heap_offset == 1);
 }
-
 
 /****************************************************************************
  * LINKED LIST OPERATIONS.
@@ -174,7 +172,6 @@ static int add_to_list(struct timer **pprev, struct timer *t)
 
     return (_pprev == pprev);
 }
-
 
 /****************************************************************************
  * TIMER OPERATIONS.
@@ -246,7 +243,7 @@ static inline bool timer_lock_unsafe(struct timer *timer)
 
     rcu_read_lock(&timer_cpu_read_lock);
 
-    for ( ; ; )
+    for ( ;; )
     {
         cpu = read_atomic(&timer->cpu);
         if ( unlikely(cpu == TIMER_CPU_status_killed) )
@@ -284,19 +281,14 @@ static inline void timer_unlock(struct timer *timer)
     local_irq_restore(flags);                   \
 })
 
-
 static bool active_timer(const struct timer *timer)
 {
     ASSERT(timer->status >= TIMER_STATUS_inactive);
     return timer_is_active(timer);
 }
 
-
-void init_timer(
-    struct timer *timer,
-    void        (*function)(void *data),
-    void         *data,
-    unsigned int  cpu)
+void init_timer(struct timer *timer, void (*function)(void *data), void *data,
+                unsigned int cpu)
 {
     unsigned long flags;
     memset(timer, 0, sizeof(*timer));
@@ -309,7 +301,6 @@ void init_timer(
     list_add(&timer->inactive, &per_cpu(timers, cpu).inactive);
     timer_unlock_irqrestore(timer, flags);
 }
-
 
 void set_timer(struct timer *timer, s_time_t expires)
 {
@@ -327,7 +318,6 @@ void set_timer(struct timer *timer, s_time_t expires)
 
     timer_unlock_irqrestore(timer, flags);
 }
-
 
 void stop_timer(struct timer *timer)
 {
@@ -366,7 +356,7 @@ void migrate_timer(struct timer *timer, unsigned int new_cpu)
 
     rcu_read_lock(&timer_cpu_read_lock);
 
-    for ( ; ; )
+    for ( ;; )
     {
         old_cpu = read_atomic(&timer->cpu);
         if ( (old_cpu == new_cpu) || (old_cpu == TIMER_CPU_status_killed) )
@@ -387,7 +377,7 @@ void migrate_timer(struct timer *timer, unsigned int new_cpu)
         }
 
         if ( likely(timer->cpu == old_cpu) )
-             break;
+            break;
 
         spin_unlock(&per_cpu(timers, old_cpu).lock);
         spin_unlock_irqrestore(&per_cpu(timers, new_cpu).lock, flags);
@@ -415,7 +405,6 @@ void migrate_timer(struct timer *timer, unsigned int new_cpu)
 #endif /* CONFIG_NR_CPUS */
 }
 
-
 void kill_timer(struct timer *timer)
 {
     unsigned int old_cpu, cpu;
@@ -436,11 +425,10 @@ void kill_timer(struct timer *timer)
 
     spin_unlock_irqrestore(&per_cpu(timers, old_cpu).lock, flags);
 
-    for_each_online_cpu ( cpu )
+    for_each_online_cpu(cpu)
         while ( per_cpu(timers, cpu).running == timer )
             cpu_relax();
 }
-
 
 static void execute_timer(struct timers *ts, struct timer *t)
 {
@@ -457,12 +445,11 @@ static void execute_timer(struct timers *ts, struct timer *t)
     ts->running = NULL;
 }
 
-
 static void cf_check timer_softirq_action(void)
 {
-    struct timer  *t, **heap, *next;
+    struct timer *t, **heap, *next;
     struct timers *ts;
-    s_time_t       now, deadline;
+    s_time_t now, deadline;
 
     ts = &this_cpu(timers);
     heap = ts->heap;
@@ -500,8 +487,7 @@ static void cf_check timer_softirq_action(void)
     now = NOW();
 
     /* Execute ready heap timers. */
-    while ( (heap_metadata(heap)->size != 0) &&
-            ((t = heap[1])->expires < now) )
+    while ( (heap_metadata(heap)->size != 0) && ((t = heap[1])->expires < now) )
     {
         remove_from_heap(heap, t);
         execute_timer(ts, t);
@@ -531,8 +517,9 @@ static void cf_check timer_softirq_action(void)
     if ( (ts->list != NULL) && (ts->list->expires < deadline) )
         deadline = ts->list->expires;
     now = NOW();
-    this_cpu(timer_deadline) =
-        (deadline == STIME_MAX) ? 0 : MAX(deadline, now + timer_slop);
+    this_cpu(timer_deadline) = (deadline == STIME_MAX)
+                                   ? 0
+                                   : MAX(deadline, now + timer_slop);
 
     if ( !reprogram_timer(this_cpu(timer_deadline)) )
         raise_softirq(TIMER_SOFTIRQ);
@@ -550,21 +537,24 @@ s_time_t align_timer(s_time_t firsttick, uint64_t period)
 
 static void dump_timer(struct timer *t, s_time_t now)
 {
-    printk("  ex=%12"PRId64"us timer=%p cb=%ps(%p)\n",
-           (t->expires - now) / 1000, t, t->function, t->data);
+    printk("  ex=%12" PRId64 "us timer=%p cb=%ps(%p)\n",
+           (t->expires - now) / 1000,
+           t,
+           t->function,
+           t->data);
 }
 
 static void cf_check dump_timerq(unsigned char key)
 {
-    struct timer  *t;
+    struct timer *t;
     struct timers *ts;
-    unsigned long  flags;
-    s_time_t       now = NOW();
-    unsigned int   i, j;
+    unsigned long flags;
+    s_time_t now = NOW();
+    unsigned int i, j;
 
     printk("Dumping timer queues:\n");
 
-    for_each_online_cpu( i )
+    for_each_online_cpu(i)
     {
         ts = &per_cpu(timers, i);
 
@@ -601,8 +591,8 @@ static void migrate_timers_from_cpu(unsigned int old_cpu)
         spin_lock(&old_ts->lock);
     }
 
-    while ( (t = heap_metadata(old_ts->heap)->size
-             ? old_ts->heap[1] : old_ts->list) != NULL )
+    while ( (t = heap_metadata(old_ts->heap)->size ? old_ts->heap[1]
+                                                   : old_ts->list) != NULL )
     {
         remove_entry(t);
         write_atomic(&t->cpu, new_cpu);
@@ -645,8 +635,8 @@ static void free_percpu_timers(unsigned int cpu)
         ASSERT(ts->heap == dummy_heap);
 }
 
-static int cf_check cpu_callback(
-    struct notifier_block *nfb, unsigned long action, void *hcpu)
+static int cf_check cpu_callback(struct notifier_block *nfb,
+                                 unsigned long action, void *hcpu)
 {
     unsigned int cpu = (unsigned long)hcpu;
     struct timers *ts = &per_cpu(timers, cpu);
@@ -684,10 +674,8 @@ static int cf_check cpu_callback(
     return NOTIFY_DONE;
 }
 
-static struct notifier_block cpu_nfb = {
-    .notifier_call = cpu_callback,
-    .priority = 99
-};
+static struct notifier_block cpu_nfb = { .notifier_call = cpu_callback,
+                                         .priority = 99 };
 
 void __init timer_init(void)
 {

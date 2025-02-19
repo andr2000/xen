@@ -5,9 +5,9 @@
 #include <asm/processor.h>
 
 #if defined(CONFIG_ARM_32)
-# include <asm/arm32/traps.h>
+#include <asm/arm32/traps.h>
 #elif defined(CONFIG_ARM_64)
-# include <asm/arm64/traps.h>
+#include <asm/arm64/traps.h>
 #endif
 
 #ifdef CONFIG_PARTIAL_EMULATION
@@ -88,7 +88,7 @@ void abort_guest_exit_end(void);
 static inline bool VABORT_GEN_BY_GUEST(const struct cpu_user_regs *regs)
 {
     return ((unsigned long)abort_guest_exit_start == regs->pc) ||
-        (unsigned long)abort_guest_exit_end == regs->pc;
+           (unsigned long)abort_guest_exit_end == regs->pc;
 }
 
 /* Check whether the sign extension is required and perform it */
@@ -127,4 +127,3 @@ void finalize_instr_emulation(const struct instr_details *instr);
  * indent-tabs-mode: nil
  * End:
  */
-

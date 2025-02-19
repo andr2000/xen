@@ -56,12 +56,10 @@ bool hvm_monitor_cr(unsigned int index, unsigned long value, unsigned long old)
     {
         bool sync = ad->monitor.write_ctrlreg_sync & ctrlreg_bitmask;
 
-        vm_event_request_t req = {
-            .reason = VM_EVENT_REASON_WRITE_CTRLREG,
-            .u.write_ctrlreg.index = index,
-            .u.write_ctrlreg.new_value = value,
-            .u.write_ctrlreg.old_value = old
-        };
+        vm_event_request_t req = { .reason = VM_EVENT_REASON_WRITE_CTRLREG,
+                                   .u.write_ctrlreg.index = index,
+                                   .u.write_ctrlreg.new_value = value,
+                                   .u.write_ctrlreg.old_value = old };
 
         set_npt_base(curr, &req);
 
@@ -82,13 +80,13 @@ bool hvm_monitor_emul_unimplemented(void)
      */
     vm_event_request_t req = {
         .reason = VM_EVENT_REASON_EMUL_UNIMPLEMENTED,
-        .vcpu_id  = curr->vcpu_id,
+        .vcpu_id = curr->vcpu_id,
     };
 
     set_npt_base(curr, &req);
 
     return curr->domain->arch.monitor.emul_unimplemented_enabled &&
-        monitor_traps(curr, true, &req) == 1;
+           monitor_traps(curr, true, &req) == 1;
 }
 
 bool hvm_monitor_msr(unsigned int msr, uint64_t new_value, uint64_t old_value)
@@ -97,14 +95,12 @@ bool hvm_monitor_msr(unsigned int msr, uint64_t new_value, uint64_t old_value)
 
     if ( monitored_msr(curr->domain, msr) &&
          (!monitored_msr_onchangeonly(curr->domain, msr) ||
-           new_value != old_value) )
+          new_value != old_value) )
     {
-        vm_event_request_t req = {
-            .reason = VM_EVENT_REASON_MOV_TO_MSR,
-            .u.mov_to_msr.msr = msr,
-            .u.mov_to_msr.new_value = new_value,
-            .u.mov_to_msr.old_value = old_value
-        };
+        vm_event_request_t req = { .reason = VM_EVENT_REASON_MOV_TO_MSR,
+                                   .u.mov_to_msr.msr = msr,
+                                   .u.mov_to_msr.new_value = new_value,
+                                   .u.mov_to_msr.old_value = old_value };
 
         set_npt_base(curr, &req);
 
@@ -155,7 +151,7 @@ int hvm_monitor_debug(unsigned long rip, enum hvm_monitor_debug_type type,
                       unsigned int trap_type, unsigned int insn_length,
                       unsigned int pending_dbg)
 {
-   /*
+    /*
     * rc < 0 error in monitor/vm_event, crash
     * !rc    continue normally
     * rc > 0 paused waiting for response, work here is done
@@ -262,8 +258,9 @@ bool hvm_monitor_check_p2m(unsigned long gla, gfn_t gfn, uint32_t pfec,
     struct vcpu *curr = current;
     vm_event_request_t req = {};
     paddr_t gpa = (gfn_to_gaddr(gfn) | (gla & ~PAGE_MASK));
-    unsigned int altp2m_idx = altp2m_active(curr->domain) ?
-                              altp2m_vcpu_idx(curr) : 0;
+    unsigned int altp2m_idx = altp2m_active(curr->domain)
+                                  ? altp2m_vcpu_idx(curr)
+                                  : 0;
     int rc;
 
     ASSERT(curr->arch.vm_event->send_event);
@@ -320,7 +317,6 @@ bool hvm_monitor_check_p2m(unsigned long gla, gfn_t gfn, uint32_t pfec,
         req.u.mem_access.flags |= MEM_ACCESS_FAULT_IN_GPT |
                                   MEM_ACCESS_GLA_VALID;
 
-
     req.reason = VM_EVENT_REASON_MEM_ACCESS;
     req.u.mem_access.gfn = gfn_x(gfn);
     req.u.mem_access.gla = gla;
@@ -349,8 +345,7 @@ int hvm_monitor_vmexit(unsigned long exit_reason,
     return monitor_traps(curr, ad->monitor.vmexit_sync, &req);
 }
 
-int hvm_monitor_io(unsigned int port, unsigned int bytes,
-                   bool in, bool str)
+int hvm_monitor_io(unsigned int port, unsigned int bytes, bool in, bool str)
 {
     struct vcpu *curr = current;
     struct arch_domain *ad = &curr->domain->arch;

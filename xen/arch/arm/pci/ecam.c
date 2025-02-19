@@ -20,8 +20,8 @@
 /*
  * Function to implement the pci_ops->map_bus method.
  */
-void __iomem *pci_ecam_map_bus(struct pci_host_bridge *bridge,
-                               pci_sbdf_t sbdf, uint32_t where)
+void __iomem *pci_ecam_map_bus(struct pci_host_bridge *bridge, pci_sbdf_t sbdf,
+                               uint32_t where)
 {
     const struct pci_config_window *cfg = bridge->cfg;
     const struct pci_ecam_ops *ops =

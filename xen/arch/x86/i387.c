@@ -47,12 +47,11 @@ static inline void fpu_fxrstor(struct vcpu *v)
      * sometimes new user value. Both should be ok. Use the FPU saved
      * data block as a safe address because it should be in L1.
      */
-    if ( cpu_bug_fpu_ptrs &&
-         !(fpu_ctxt->fsw & ~fpu_ctxt->fcw & 0x003f) )
-        asm volatile ( "fnclex\n\t"
-                       "ffree %%st(7)\n\t" /* clear stack tag */
-                       "fildl %0"          /* load to clear state */
-                       : : "m" (*fpu_ctxt) );
+    if ( cpu_bug_fpu_ptrs && !(fpu_ctxt->fsw & ~fpu_ctxt->fcw & 0x003f) )
+        asm volatile("fnclex\n\t" "ffree %%st(7)\n\t" /* clear stack tag */
+                     "fildl %0" /* load to clear state */
+                     :
+                     : "m"(*fpu_ctxt));
 
     /*
      * FXRSTOR can fault if passed a corrupted data block. We handle this
@@ -62,44 +61,31 @@ static inline void fpu_fxrstor(struct vcpu *v)
     switch ( __builtin_expect(fpu_ctxt->x[FPU_WORD_SIZE_OFFSET], 8) )
     {
     default:
-        asm volatile (
-            "1: fxrstorq %0\n"
-            ".section .fixup,\"ax\"   \n"
-            "2: push %%"__OP"ax       \n"
-            "   push %%"__OP"cx       \n"
-            "   push %%"__OP"di       \n"
-            "   lea  %0,%%"__OP"di    \n"
-            "   mov  %1,%%ecx         \n"
-            "   xor  %%eax,%%eax      \n"
-            "   rep ; stosl           \n"
-            "   pop  %%"__OP"di       \n"
-            "   pop  %%"__OP"cx       \n"
-            "   pop  %%"__OP"ax       \n"
-            "   jmp  1b               \n"
-            ".previous                \n"
-            _ASM_EXTABLE(1b, 2b)
+        asm volatile(
+            "1: fxrstorq %0\n" ".section .fixup,\"ax\"   \n" "2: push %%" __OP
+            "ax       \n" "   push %%" __OP "cx       \n" "   push %%" __OP
+            "di       \n" "   lea  %0,%%" __OP
+            "di    \n" "   mov  %1,%%ecx         \n" "   xor  %%eax,%%eax      \n" "   rep ; stosl           \n" "   pop  %%" __OP
+            "di       \n" "   pop  %%" __OP "cx       \n" "   pop  %%" __OP
+            "ax       \n" "   jmp  1b               \n" ".previous                \n" _ASM_EXTABLE(
+                1b,
+                2b)
             :
-            : "m" (*fpu_ctxt), "i" (sizeof(*fpu_ctxt) / 4) );
+            : "m"(*fpu_ctxt), "i"(sizeof(*fpu_ctxt) / 4));
         break;
-    case 4: case 2:
-        asm volatile (
-            "1: fxrstor %0         \n"
-            ".section .fixup,\"ax\"\n"
-            "2: push %%"__OP"ax    \n"
-            "   push %%"__OP"cx    \n"
-            "   push %%"__OP"di    \n"
-            "   lea  %0,%%"__OP"di \n"
-            "   mov  %1,%%ecx      \n"
-            "   xor  %%eax,%%eax   \n"
-            "   rep ; stosl        \n"
-            "   pop  %%"__OP"di    \n"
-            "   pop  %%"__OP"cx    \n"
-            "   pop  %%"__OP"ax    \n"
-            "   jmp  1b            \n"
-            ".previous             \n"
-            _ASM_EXTABLE(1b, 2b)
+    case 4:
+    case 2:
+        asm volatile(
+            "1: fxrstor %0         \n" ".section .fixup,\"ax\"\n" "2: push %%" __OP
+            "ax    \n" "   push %%" __OP "cx    \n" "   push %%" __OP
+            "di    \n" "   lea  %0,%%" __OP
+            "di \n" "   mov  %1,%%ecx      \n" "   xor  %%eax,%%eax   \n" "   rep ; stosl        \n" "   pop  %%" __OP
+            "di    \n" "   pop  %%" __OP "cx    \n" "   pop  %%" __OP
+            "ax    \n" "   jmp  1b            \n" ".previous             \n" _ASM_EXTABLE(
+                1b,
+                2b)
             :
-            : "m" (*fpu_ctxt), "i" (sizeof(*fpu_ctxt) / 4) );
+            : "m"(*fpu_ctxt), "i"(sizeof(*fpu_ctxt) / 4));
         break;
     }
 }
@@ -154,7 +140,7 @@ static inline void fpu_fxsave(struct vcpu *v)
 
     if ( fip_width != 4 )
     {
-        asm volatile ( "fxsaveq %0" : "=m" (*fpu_ctxt) );
+        asm volatile("fxsaveq %0" : "=m"(*fpu_ctxt));
 
         /*
          * Some CPUs don't save/restore FDP/FIP/FOP unless an exception is
@@ -168,12 +154,11 @@ static inline void fpu_fxsave(struct vcpu *v)
          * If the FIP/FDP[63:32] are both zero, it is safe to use the
          * 32-bit restore to also restore the selectors.
          */
-        if ( !fip_width &&
-             !((fpu_ctxt->fip.addr | fpu_ctxt->fdp.addr) >> 32) )
+        if ( !fip_width && !((fpu_ctxt->fip.addr | fpu_ctxt->fdp.addr) >> 32) )
         {
             struct ix87_env fpu_env;
 
-            asm volatile ( "fnstenv %0" : "=m" (fpu_env) );
+            asm volatile("fnstenv %0" : "=m"(fpu_env));
             fpu_ctxt->fip.sel = fpu_env.fcs;
             fpu_ctxt->fdp.sel = fpu_env.fds;
             fip_width = 4;
@@ -183,7 +168,7 @@ static inline void fpu_fxsave(struct vcpu *v)
     }
     else
     {
-        asm volatile ( "fxsave %0" : "=m" (*fpu_ctxt) );
+        asm volatile("fxsave %0" : "=m"(*fpu_ctxt));
         fip_width = 4;
     }
 
@@ -229,7 +214,7 @@ void vcpu_restore_fpu_nonlazy(struct vcpu *v, bool need_stts)
         need_stts = true;
     }
 
- maybe_stts:
+maybe_stts:
     if ( need_stts )
         stts();
 }
@@ -305,7 +290,7 @@ int vcpu_init_fpu(struct vcpu *v)
 void vcpu_reset_fpu(struct vcpu *v)
 {
     v->fpu_initialised = false;
-    *v->arch.xsave_area = (struct xsave_struct) {
+    *v->arch.xsave_area = (struct xsave_struct){
         .xsave_hdr.xstate_bv = X86_XCR0_X87,
     };
 
@@ -318,8 +303,8 @@ void vcpu_reset_fpu(struct vcpu *v)
 void vcpu_setup_fpu(struct vcpu *v, const void *data)
 {
     v->fpu_initialised = true;
-    *v->arch.xsave_area = (struct xsave_struct) {
-        .fpu_sse = *(const fpusse_t*)data,
+    *v->arch.xsave_area = (struct xsave_struct){
+        .fpu_sse = *(const fpusse_t *)data,
         .xsave_hdr.xstate_bv = XSTATE_FP_SSE,
     };
 }

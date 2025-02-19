@@ -116,7 +116,7 @@ struct grant_entry_v1 {
     /* GTF_xxx: various type and flag information.  [XEN,GST] */
     uint16_t flags;
     /* The domain being granted foreign privileges. [GST] */
-    domid_t  domid;
+    domid_t domid;
     /*
      * GTF_permit_access: GFN that @domid is allowed to map and access. [GST]
      * GTF_accept_transfer: GFN that @domid is allowed to transfer into. [GST]
@@ -208,7 +208,7 @@ typedef struct grant_entry_v1 grant_entry_v1_t;
  */
 struct grant_entry_header {
     uint16_t flags;
-    domid_t  domid;
+    domid_t domid;
 };
 typedef struct grant_entry_header grant_entry_header_t;
 
@@ -326,11 +326,11 @@ typedef uint32_t grant_handle_t;
 struct gnttab_map_grant_ref {
     /* IN parameters. */
     uint64_t host_addr;
-    uint32_t flags;               /* GNTMAP_* */
+    uint32_t flags; /* GNTMAP_* */
     grant_ref_t ref;
-    domid_t  dom;
+    domid_t dom;
     /* OUT parameters. */
-    int16_t  status;              /* => enum grant_status */
+    int16_t status; /* => enum grant_status */
     grant_handle_t handle;
     uint64_t dev_bus_addr;
 };
@@ -354,7 +354,7 @@ struct gnttab_unmap_grant_ref {
     uint64_t dev_bus_addr;
     grant_handle_t handle;
     /* OUT parameters. */
-    int16_t  status;              /* => enum grant_status */
+    int16_t status; /* => enum grant_status */
 };
 typedef struct gnttab_unmap_grant_ref gnttab_unmap_grant_ref_t;
 DEFINE_XEN_GUEST_HANDLE(gnttab_unmap_grant_ref_t);
@@ -370,10 +370,10 @@ DEFINE_XEN_GUEST_HANDLE(gnttab_unmap_grant_ref_t);
  */
 struct gnttab_setup_table {
     /* IN parameters. */
-    domid_t  dom;
+    domid_t dom;
     uint32_t nr_frames;
     /* OUT parameters. */
-    int16_t  status;              /* => enum grant_status */
+    int16_t status; /* => enum grant_status */
 #if __XEN_INTERFACE_VERSION__ < 0x00040300
     XEN_GUEST_HANDLE(ulong) frame_list;
 #else
@@ -391,7 +391,7 @@ struct gnttab_dump_table {
     /* IN parameters. */
     domid_t dom;
     /* OUT parameters. */
-    int16_t status;               /* => enum grant_status */
+    int16_t status; /* => enum grant_status */
 };
 typedef struct gnttab_dump_table gnttab_dump_table_t;
 DEFINE_XEN_GUEST_HANDLE(gnttab_dump_table_t);
@@ -407,15 +407,14 @@ DEFINE_XEN_GUEST_HANDLE(gnttab_dump_table_t);
  */
 struct gnttab_transfer {
     /* IN parameters. */
-    xen_pfn_t     mfn;
-    domid_t       domid;
-    grant_ref_t   ref;
+    xen_pfn_t mfn;
+    domid_t domid;
+    grant_ref_t ref;
     /* OUT parameters. */
-    int16_t       status;
+    int16_t status;
 };
 typedef struct gnttab_transfer gnttab_transfer_t;
 DEFINE_XEN_GUEST_HANDLE(gnttab_transfer_t);
-
 
 /*
  * GNTTABOP_copy: Hypervisor based copy
@@ -445,17 +444,19 @@ struct gnttab_copy {
     struct gnttab_copy_ptr {
         union {
             grant_ref_t ref;
-            xen_pfn_t   gmfn;
+            xen_pfn_t gmfn;
         } u;
-        domid_t  domid;
+
+        domid_t domid;
         uint16_t offset;
     } source, dest;
-    uint16_t      len;
-    uint16_t      flags;          /* GNTCOPY_* */
+
+    uint16_t len;
+    uint16_t flags; /* GNTCOPY_* */
     /* OUT parameters. */
-    int16_t       status;
+    int16_t status;
 };
-typedef struct gnttab_copy  gnttab_copy_t;
+typedef struct gnttab_copy gnttab_copy_t;
 DEFINE_XEN_GUEST_HANDLE(gnttab_copy_t);
 
 /*
@@ -467,11 +468,11 @@ DEFINE_XEN_GUEST_HANDLE(gnttab_copy_t);
  */
 struct gnttab_query_size {
     /* IN parameters. */
-    domid_t  dom;
+    domid_t dom;
     /* OUT parameters. */
     uint32_t nr_frames;
     uint32_t max_nr_frames;
-    int16_t  status;              /* => enum grant_status */
+    int16_t status; /* => enum grant_status */
 };
 typedef struct gnttab_query_size gnttab_query_size_t;
 DEFINE_XEN_GUEST_HANDLE(gnttab_query_size_t);
@@ -493,7 +494,7 @@ struct gnttab_unmap_and_replace {
     uint64_t new_addr;
     grant_handle_t handle;
     /* OUT parameters. */
-    int16_t  status;              /* => enum grant_status */
+    int16_t status; /* => enum grant_status */
 };
 typedef struct gnttab_unmap_and_replace gnttab_unmap_and_replace_t;
 DEFINE_XEN_GUEST_HANDLE(gnttab_unmap_and_replace_t);
@@ -512,7 +513,6 @@ struct gnttab_set_version {
 typedef struct gnttab_set_version gnttab_set_version_t;
 DEFINE_XEN_GUEST_HANDLE(gnttab_set_version_t);
 
-
 /*
  * GNTTABOP_get_status_frames: Get the list of frames used to store grant
  * status for <dom>. In grant format version 2, the status is separated
@@ -528,9 +528,9 @@ DEFINE_XEN_GUEST_HANDLE(gnttab_set_version_t);
 struct gnttab_get_status_frames {
     /* IN parameters. */
     uint32_t nr_frames;
-    domid_t  dom;
+    domid_t dom;
     /* OUT parameters. */
-    int16_t  status;              /* => enum grant_status */
+    int16_t status; /* => enum grant_status */
     XEN_GUEST_HANDLE(uint64_t) frame_list;
 };
 typedef struct gnttab_get_status_frames gnttab_get_status_frames_t;
@@ -558,7 +558,7 @@ struct gnttab_swap_grant_ref {
     grant_ref_t ref_a;
     grant_ref_t ref_b;
     /* OUT parameters */
-    int16_t status;             /* => enum grant_status */
+    int16_t status; /* => enum grant_status */
 };
 typedef struct gnttab_swap_grant_ref gnttab_swap_grant_ref_t;
 DEFINE_XEN_GUEST_HANDLE(gnttab_swap_grant_ref_t);
@@ -572,6 +572,7 @@ struct gnttab_cache_flush {
         uint64_t dev_bus_addr;
         grant_ref_t ref;
     } a;
+
     uint16_t offset; /* offset from start of grant */
     uint16_t length; /* size within the grant */
 #define GNTTAB_CACHE_CLEAN          (1u<<0)
@@ -587,16 +588,16 @@ DEFINE_XEN_GUEST_HANDLE(gnttab_cache_flush_t);
 /*
  * Bitfield values for gnttab_map_grant_ref.flags.
  */
- /* Map the grant entry for access by I/O devices. */
+/* Map the grant entry for access by I/O devices. */
 #define _GNTMAP_device_map      (0)
 #define GNTMAP_device_map       (1<<_GNTMAP_device_map)
- /* Map the grant entry for access by host CPUs. */
+/* Map the grant entry for access by host CPUs. */
 #define _GNTMAP_host_map        (1)
 #define GNTMAP_host_map         (1<<_GNTMAP_host_map)
- /* Accesses to the granted frame will be restricted to read-only access. */
+/* Accesses to the granted frame will be restricted to read-only access. */
 #define _GNTMAP_readonly        (2)
 #define GNTMAP_readonly         (1<<_GNTMAP_readonly)
- /*
+/*
   * GNTMAP_host_map subflag:
   *  0 => The host mapping is usable only by the guest OS.
   *  1 => The host mapping is usable by guest OS + current application.
@@ -604,7 +605,7 @@ DEFINE_XEN_GUEST_HANDLE(gnttab_cache_flush_t);
 #define _GNTMAP_application_map (3)
 #define GNTMAP_application_map  (1<<_GNTMAP_application_map)
 
- /*
+/*
   * GNTMAP_contains_pte subflag:
   *  0 => This map request contains a host virtual address.
   *  1 => This map request contains the machine addess of the PTE to update.

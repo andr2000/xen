@@ -46,18 +46,17 @@ static unsigned int __initdata max_cpus;
 integer_param("maxcpus", max_cpus);
 
 /* CPU logical map: map xen cpuid to an MPIDR */
-register_t __cpu_logical_map[NR_CPUS] = { [0 ... NR_CPUS-1] = MPIDR_INVALID };
+register_t __cpu_logical_map[NR_CPUS] = { [0 ... NR_CPUS - 1] = MPIDR_INVALID };
 
 /* Fake one node for now. See also xen/numa.h */
 nodemask_t __read_mostly node_online_map = { { [0] = 1UL } };
 
 /* Xen stack for bringing up the first CPU. */
 static unsigned char __initdata cpu0_boot_stack[STACK_SIZE]
-       __attribute__((__aligned__(STACK_SIZE)));
+    __attribute__((__aligned__(STACK_SIZE)));
 
 /* Boot cpu data */
-struct init_info init_data =
-{
+struct init_info init_data = {
     .stack = cpu0_boot_stack,
 };
 
@@ -108,8 +107,7 @@ static void remove_cpu_sibling_map(int cpu)
     free_cpumask_var(per_cpu(cpu_core_mask, cpu));
 }
 
-void __init
-smp_clear_cpu_maps (void)
+void __init smp_clear_cpu_maps(void)
 {
     cpumask_clear(&cpu_possible_map);
     cpumask_clear(&cpu_online_map);
@@ -129,10 +127,8 @@ static void __init dt_smp_init_cpus(void)
     struct dt_device_node *cpu;
     unsigned int i, j;
     unsigned int cpuidx = 1;
-    static register_t tmp_map[NR_CPUS] __initdata =
-    {
-        [0 ... NR_CPUS - 1] = MPIDR_INVALID
-    };
+    static register_t tmp_map[NR_CPUS]
+        __initdata = { [0 ... NR_CPUS - 1] = MPIDR_INVALID };
     bool bootcpu_valid = false;
     int rc;
 
@@ -140,12 +136,13 @@ static void __init dt_smp_init_cpus(void)
 
     if ( !cpus )
     {
-        printk(XENLOG_WARNING "WARNING: Can't find /cpus in the device tree.\n"
-               "Using only 1 CPU\n");
+        printk(
+            XENLOG_WARNING
+            "WARNING: Can't find /cpus in the device tree.\n" "Using only 1 CPU\n");
         return;
     }
 
-    dt_for_each_child_node( cpus, cpu )
+    dt_for_each_child_node(cpus, cpu)
     {
         const __be32 *prop;
         u64 addr;
@@ -157,7 +154,8 @@ static void __init dt_smp_init_cpus(void)
 
         if ( dt_n_size_cells(cpu) != 0 )
             printk(XENLOG_WARNING "cpu node `%s`: #size-cells %d\n",
-                   dt_node_full_name(cpu), dt_n_size_cells(cpu));
+                   dt_node_full_name(cpu),
+                   dt_n_size_cells(cpu));
 
         prop = dt_get_property(cpu, "reg", &reg_len);
         if ( !prop )
@@ -179,8 +177,9 @@ static void __init dt_smp_init_cpus(void)
         hwid = addr;
         if ( hwid != addr )
         {
-            printk(XENLOG_WARNING "cpu node `%s`: hwid overflow %"PRIx64"\n",
-                   dt_node_full_name(cpu), addr);
+            printk(XENLOG_WARNING "cpu node `%s`: hwid overflow %" PRIx64 "\n",
+                   dt_node_full_name(cpu),
+                   addr);
             continue;
         }
 
@@ -190,8 +189,10 @@ static void __init dt_smp_init_cpus(void)
          */
         if ( hwid & ~MPIDR_HWID_MASK )
         {
-            printk(XENLOG_WARNING "cpu node `%s`: invalid hwid value (0x%"PRIregister")\n",
-                   dt_node_full_name(cpu), hwid);
+            printk(XENLOG_WARNING
+                   "cpu node `%s`: invalid hwid value (0x%" PRIregister ")\n",
+                   dt_node_full_name(cpu),
+                   hwid);
             continue;
         }
 
@@ -205,9 +206,12 @@ static void __init dt_smp_init_cpus(void)
         {
             if ( tmp_map[j] == hwid )
             {
-                printk(XENLOG_WARNING
-                       "cpu node `%s`: duplicate /cpu reg properties %"PRIregister" in the DT\n",
-                       dt_node_full_name(cpu), hwid);
+                printk(
+                    XENLOG_WARNING
+                    "cpu node `%s`: duplicate /cpu reg properties %" PRIregister
+                    " in the DT\n",
+                    dt_node_full_name(cpu),
+                    hwid);
                 break;
             }
         }
@@ -234,14 +238,18 @@ static void __init dt_smp_init_cpus(void)
         {
             printk(XENLOG_WARNING
                    "DT /cpu %u node greater than max cores %u, capping them\n",
-                   cpuidx, NR_CPUS);
+                   cpuidx,
+                   NR_CPUS);
             cpuidx = NR_CPUS;
             break;
         }
 
         if ( (rc = arch_cpu_init(i, cpu)) < 0 )
         {
-            printk("cpu%d init failed (hwid %"PRIregister"): %d\n", i, hwid, rc);
+            printk("cpu%d init failed (hwid %" PRIregister "): %d\n",
+                   i,
+                   hwid,
+                   rc);
             tmp_map[i] = MPIDR_INVALID;
         }
         else
@@ -250,8 +258,8 @@ static void __init dt_smp_init_cpus(void)
 
     if ( !bootcpu_valid )
     {
-        printk(XENLOG_WARNING "DT missing boot CPU MPIDR[23:0]\n"
-               "Using only 1 CPU\n");
+        printk(XENLOG_WARNING
+               "DT missing boot CPU MPIDR[23:0]\n" "Using only 1 CPU\n");
         return;
     }
 
@@ -273,8 +281,8 @@ void __init smp_init_cpus(void)
 
     if ( (rc = arch_smp_init()) < 0 )
     {
-        printk(XENLOG_WARNING "SMP init failed (%d)\n"
-               "Using only 1 CPU\n", rc);
+        printk(XENLOG_WARNING "SMP init failed (%d)\n" "Using only 1 CPU\n",
+               rc);
         return;
     }
 
@@ -284,20 +292,19 @@ void __init smp_init_cpus(void)
         acpi_smp_init_cpus();
 
     if ( opt_hmp_unsafe )
-        warning_add("WARNING: HMP COMPUTING HAS BEEN ENABLED.\n"
-                    "It has implications on the security and stability of the system,\n"
-                    "unless the cpu affinity of all domains is specified.\n");
+        warning_add(
+            "WARNING: HMP COMPUTING HAS BEEN ENABLED.\n" "It has implications on the security and stability of the system,\n" "unless the cpu affinity of all domains is specified.\n");
 
     if ( system_cpuinfo.mpidr.mt == 1 )
-        warning_add("WARNING: MULTITHREADING HAS BEEN DETECTED ON THE PROCESSOR.\n"
-                    "It might impact the security of the system.\n");
+        warning_add(
+            "WARNING: MULTITHREADING HAS BEEN DETECTED ON THE PROCESSOR.\n" "It might impact the security of the system.\n");
 }
 
 unsigned int __init smp_get_max_cpus(void)
 {
     unsigned int i, cpus = 0;
 
-    if ( ( !max_cpus ) || ( max_cpus > nr_cpu_ids ) )
+    if ( (!max_cpus) || (max_cpus > nr_cpu_ids) )
         max_cpus = nr_cpu_ids;
 
     for ( i = 0; i < max_cpus; i++ )
@@ -307,8 +314,7 @@ unsigned int __init smp_get_max_cpus(void)
     return cpus;
 }
 
-void __init
-smp_prepare_cpus(void)
+void __init smp_prepare_cpus(void)
 {
     int rc;
 
@@ -317,7 +323,6 @@ smp_prepare_cpus(void)
     rc = setup_cpu_sibling_map(0);
     if ( rc )
         panic("Unable to allocate CPU sibling/core maps\n");
-
 }
 
 /* Boot the current CPU */
@@ -325,7 +330,7 @@ void asmlinkage start_secondary(void)
 {
     unsigned int cpuid = init_data.cpuid;
 
-    memset(get_cpu_info(), 0, sizeof (struct cpu_info));
+    memset(get_cpu_info(), 0, sizeof(struct cpu_info));
 
     set_processor_id(cpuid);
 
@@ -345,29 +350,37 @@ void asmlinkage start_secondary(void)
     {
         if ( !opt_hmp_unsafe )
         {
-            printk(XENLOG_ERR
-                   "CPU%u MIDR (0x%"PRIregister") does not match boot CPU MIDR (0x%"PRIregister"),\n"
-                   XENLOG_ERR "disable cpu (see big.LITTLE.txt under docs/).\n",
-                   smp_processor_id(), current_cpu_data.midr.bits,
+            printk(XENLOG_ERR "CPU%u MIDR (0x%" PRIregister
+                              ") does not match boot CPU MIDR (0x%" PRIregister
+                              "),\n" XENLOG_ERR
+                              "disable cpu (see big.LITTLE.txt under docs/).\n",
+                   smp_processor_id(),
+                   current_cpu_data.midr.bits,
                    system_cpuinfo.midr.bits);
             stop_cpu();
         }
         else
         {
             printk(XENLOG_ERR
-                   "CPU%u MIDR (0x%"PRIregister") does not match boot CPU MIDR (0x%"PRIregister"),\n"
-                   XENLOG_ERR "hmp-unsafe turned on so tainting Xen and keep core on!!\n",
-                   smp_processor_id(), current_cpu_data.midr.bits,
+                   "CPU%u MIDR (0x%" PRIregister
+                   ") does not match boot CPU MIDR (0x%" PRIregister
+                   "),\n" XENLOG_ERR
+                   "hmp-unsafe turned on so tainting Xen and keep core on!!\n",
+                   smp_processor_id(),
+                   current_cpu_data.midr.bits,
                    system_cpuinfo.midr.bits);
             add_taint(TAINT_CPU_OUT_OF_SPEC);
-         }
+        }
     }
 
     if ( dcache_line_bytes != read_dcache_line_bytes() )
     {
-        printk(XENLOG_ERR "CPU%u dcache line size (%zu) does not match the boot CPU (%zu)\n",
-               smp_processor_id(), read_dcache_line_bytes(),
-               dcache_line_bytes);
+        printk(
+            XENLOG_ERR
+            "CPU%u dcache line size (%zu) does not match the boot CPU (%zu)\n",
+            smp_processor_id(),
+            read_dcache_line_bytes(),
+            dcache_line_bytes);
         stop_cpu();
     }
 
@@ -467,7 +480,6 @@ static void set_smp_up_cpu(unsigned long mpidr)
     clean_dcache_va_range(ptr, sizeof(unsigned long));
 
     unmap_domain_page(ptr);
-
 }
 
 int __init cpu_up_send_sgi(int cpu)
@@ -570,8 +582,7 @@ void __cpu_die(unsigned int cpu)
 }
 
 static int cpu_smpboot_callback(struct notifier_block *nfb,
-                                unsigned long action,
-                                void *hcpu)
+                                unsigned long action, void *hcpu)
 {
     unsigned int cpu = (unsigned long)hcpu;
     unsigned int rc = 0;
@@ -607,6 +618,7 @@ static int __init cpu_smpboot_notifier_init(void)
 
     return 0;
 }
+
 presmp_initcall(cpu_smpboot_notifier_init);
 
 /*

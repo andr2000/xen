@@ -6,4 +6,4 @@
 #define RISCV_RELEASE_BARRIER   "\tfence rw, w\n"
 #define RISCV_FULL_BARRIER      "\tfence rw, rw\n"
 
-#endif	/* ASM__RISCV__FENCE_H */
+#endif /* ASM__RISCV__FENCE_H */

@@ -16,8 +16,8 @@ void pv_emul_instruction_done(struct cpu_user_regs *regs, unsigned long rip);
 static inline const seg_desc_t *gdt_ldt_desc_ptr(unsigned int sel)
 {
     const struct vcpu *curr = current;
-    const seg_desc_t *tbl = (void *)
-        ((sel & X86_XEC_TI) ? LDT_VIRT_START(curr) : GDT_VIRT_START(curr));
+    const seg_desc_t *tbl = (void *)((sel & X86_XEC_TI) ? LDT_VIRT_START(curr)
+                                                        : GDT_VIRT_START(curr));
 
     return &tbl[sel >> 3];
 }

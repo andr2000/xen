@@ -27,63 +27,61 @@
 
 #define SEL2GDT(sel) (((sel) >> 3) - FIRST_RESERVED_GDT_ENTRY)
 
-__section(".data.page_aligned") __aligned(PAGE_SIZE)
-seg_desc_t boot_gdt[PAGE_SIZE / sizeof(seg_desc_t)] =
-{
-    /* 0xe008 - Ring 0 code, 64bit mode */
-    [SEL2GDT(__HYPERVISOR_CS)] =      { 0x00af9b000000ffff },
+__section(".data.page_aligned")
+    __aligned(PAGE_SIZE) seg_desc_t boot_gdt[PAGE_SIZE / sizeof(seg_desc_t)] = {
+        /* 0xe008 - Ring 0 code, 64bit mode */
+        [SEL2GDT(__HYPERVISOR_CS)] = { 0x00af9b000000ffff },
 
-    /* 0xe010 - Ring 0 data */
-    [SEL2GDT(__HYPERVISOR_DS32)] =    { 0x00cf93000000ffff },
+        /* 0xe010 - Ring 0 data */
+        [SEL2GDT(__HYPERVISOR_DS32)] = { 0x00cf93000000ffff },
 
-    /* 0xe018 - reserved */
+        /* 0xe018 - reserved */
 
-    /* 0xe023 - Ring 3 code, compatibility */
-    [SEL2GDT(FLAT_RING3_CS32)] =      { 0x00cffb000000ffff },
+        /* 0xe023 - Ring 3 code, compatibility */
+        [SEL2GDT(FLAT_RING3_CS32)] = { 0x00cffb000000ffff },
 
-    /* 0xe02b - Ring 3 data */
-    [SEL2GDT(FLAT_RING3_DS32)] =      { 0x00cff3000000ffff },
+        /* 0xe02b - Ring 3 data */
+        [SEL2GDT(FLAT_RING3_DS32)] = { 0x00cff3000000ffff },
 
-    /* 0xe033 - Ring 3 code, 64-bit mode */
-    [SEL2GDT(FLAT_RING3_CS64)] =      { 0x00affb000000ffff },
+        /* 0xe033 - Ring 3 code, 64-bit mode */
+        [SEL2GDT(FLAT_RING3_CS64)] = { 0x00affb000000ffff },
 
-    /* 0xe038 - reserved */
-    /* 0xe040 - TSS */
-    /* 0xe050 - LDT */
+        /* 0xe038 - reserved */
+        /* 0xe040 - TSS */
+        /* 0xe050 - LDT */
 
-    /* 0xe060 - per-CPU entry (limit == cpu) */
-    [SEL2GDT(PER_CPU_SELECTOR)] =     { 0x0000910000000000 },
-};
+        /* 0xe060 - per-CPU entry (limit == cpu) */
+        [SEL2GDT(PER_CPU_SELECTOR)] = { 0x0000910000000000 },
+    };
 
 #ifdef CONFIG_PV32
 __section(".data.page_aligned") __aligned(PAGE_SIZE)
-seg_desc_t boot_compat_gdt[PAGE_SIZE / sizeof(seg_desc_t)] =
-{
-    /* 0xe008 - Ring 0 code, 64bit mode */
-    [SEL2GDT(__HYPERVISOR_CS)] =      { 0x00af9b000000ffff },
+    seg_desc_t boot_compat_gdt[PAGE_SIZE / sizeof(seg_desc_t)] = {
+        /* 0xe008 - Ring 0 code, 64bit mode */
+        [SEL2GDT(__HYPERVISOR_CS)] = { 0x00af9b000000ffff },
 
-    /* 0xe010 - Ring 0 data */
-    [SEL2GDT(__HYPERVISOR_DS32)] =    { 0x00cf93000000ffff },
+        /* 0xe010 - Ring 0 data */
+        [SEL2GDT(__HYPERVISOR_DS32)] = { 0x00cf93000000ffff },
 
-    /* 0xe019 - Ring 1 code, compatibility */
-    [SEL2GDT(FLAT_COMPAT_RING1_CS)] = { 0x00cfbb000000ffff },
+        /* 0xe019 - Ring 1 code, compatibility */
+        [SEL2GDT(FLAT_COMPAT_RING1_CS)] = { 0x00cfbb000000ffff },
 
-    /* 0xe021 - Ring 1 data */
-    [SEL2GDT(FLAT_COMPAT_RING1_DS)] = { 0x00cfb3000000ffff },
+        /* 0xe021 - Ring 1 data */
+        [SEL2GDT(FLAT_COMPAT_RING1_DS)] = { 0x00cfb3000000ffff },
 
-    /* 0xe02b - Ring 3 code, compatibility */
-    [SEL2GDT(FLAT_COMPAT_RING3_CS)] = { 0x00cffb000000ffff },
+        /* 0xe02b - Ring 3 code, compatibility */
+        [SEL2GDT(FLAT_COMPAT_RING3_CS)] = { 0x00cffb000000ffff },
 
-    /* 0xe033 - Ring 3 data */
-    [SEL2GDT(FLAT_COMPAT_RING3_DS)] = { 0x00cff3000000ffff },
+        /* 0xe033 - Ring 3 data */
+        [SEL2GDT(FLAT_COMPAT_RING3_DS)] = { 0x00cff3000000ffff },
 
-    /* 0xe038 - reserved */
-    /* 0xe040 - TSS */
-    /* 0xe050 - LDT */
+        /* 0xe038 - reserved */
+        /* 0xe040 - TSS */
+        /* 0xe050 - LDT */
 
-    /* 0xe060 - per-CPU entry (limit == cpu) */
-    [SEL2GDT(PER_CPU_SELECTOR)] =     { 0x0000910000000000 },
-};
+        /* 0xe060 - per-CPU entry (limit == cpu) */
+        [SEL2GDT(PER_CPU_SELECTOR)] = { 0x0000910000000000 },
+    };
 #endif
 
 /*

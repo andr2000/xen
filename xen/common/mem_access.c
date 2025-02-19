@@ -19,7 +19,6 @@
  * along with this program; If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <xen/sched.h>
 #include <xen/guest_access.h>
 #include <xen/hypercall.h>
@@ -57,33 +56,45 @@ int mem_access_memop(unsigned long cmd,
 
     switch ( mao.op )
     {
-
     case XENMEM_access_op_set_access:
         rc = -EINVAL;
         if ( (mao.pfn != ~0ULL) &&
-             (mao.nr < start_iter ||
-              ((mao.pfn + mao.nr - 1) < mao.pfn) ||
+             (mao.nr < start_iter || ((mao.pfn + mao.nr - 1) < mao.pfn) ||
               ((mao.pfn + mao.nr - 1) > domain_get_maximum_gpfn(d))) )
             break;
 
-        rc = p2m_set_mem_access(d, _gfn(mao.pfn), mao.nr, start_iter,
-                                MEMOP_CMD_MASK, mao.access, 0);
+        rc = p2m_set_mem_access(d,
+                                _gfn(mao.pfn),
+                                mao.nr,
+                                start_iter,
+                                MEMOP_CMD_MASK,
+                                mao.access,
+                                0);
         if ( rc > 0 )
         {
             ASSERT(!(rc & MEMOP_CMD_MASK));
-            rc = hypercall_create_continuation(__HYPERVISOR_memory_op, "lh",
-                                               XENMEM_access_op | rc, arg);
+            rc = hypercall_create_continuation(__HYPERVISOR_memory_op,
+                                               "lh",
+                                               XENMEM_access_op | rc,
+                                               arg);
         }
         break;
 
     case XENMEM_access_op_set_access_multi:
-        rc = p2m_set_mem_access_multi(d, mao.pfn_list, mao.access_list, mao.nr,
-                                      start_iter, MEMOP_CMD_MASK, 0);
+        rc = p2m_set_mem_access_multi(d,
+                                      mao.pfn_list,
+                                      mao.access_list,
+                                      mao.nr,
+                                      start_iter,
+                                      MEMOP_CMD_MASK,
+                                      0);
         if ( rc > 0 )
         {
             ASSERT(!(rc & MEMOP_CMD_MASK));
-            rc = hypercall_create_continuation(__HYPERVISOR_memory_op, "lh",
-                                               XENMEM_access_op | rc, arg);
+            rc = hypercall_create_continuation(__HYPERVISOR_memory_op,
+                                               "lh",
+                                               XENMEM_access_op | rc,
+                                               arg);
         }
         break;
 
@@ -114,7 +125,7 @@ int mem_access_memop(unsigned long cmd,
         break;
     }
 
- out:
+out:
     rcu_unlock_domain(d);
     return rc;
 }

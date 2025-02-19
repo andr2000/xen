@@ -60,7 +60,7 @@ void arch_livepatch_apply(const struct livepatch_func *func,
     */
     if ( func->new_addr )
         clean_and_invalidate_dcache_va_range(func->new_addr, func->new_size);
-    clean_and_invalidate_dcache_va_range(new_ptr, sizeof (*new_ptr) * len);
+    clean_and_invalidate_dcache_va_range(new_ptr, sizeof(*new_ptr) * len);
 }
 
 /* arch_livepatch_revert shared with ARM 32/ARM 64. */
@@ -69,8 +69,7 @@ int arch_livepatch_verify_elf(const struct livepatch_elf *elf)
 {
     const Elf_Ehdr *hdr = elf->hdr;
 
-    if ( hdr->e_machine != EM_AARCH64 ||
-         hdr->e_ident[EI_CLASS] != ELFCLASS64 )
+    if ( hdr->e_machine != EM_AARCH64 || hdr->e_ident[EI_CLASS] != ELFCLASS64 )
     {
         printk(XENLOG_ERR LIVEPATCH "%s: Unsupported ELF Machine type\n",
                elf->name);
@@ -109,10 +108,11 @@ static u64 do_reloc(enum aarch64_reloc_op reloc_op, void *place, u64 val)
 
     case RELOC_OP_NONE:
         return 0;
-
     }
 
-    dprintk(XENLOG_DEBUG, LIVEPATCH "do_reloc: unknown relocation operation %d\n", reloc_op);
+    dprintk(XENLOG_DEBUG,
+            LIVEPATCH "do_reloc: unknown relocation operation %d\n",
+            reloc_op);
 
     return 0;
 }
@@ -126,13 +126,13 @@ static int reloc_data(enum aarch64_reloc_op op, void *place, u64 val, int len)
     case 16:
         *(int16_t *)place = sval;
         if ( sval < INT16_MIN || sval > UINT16_MAX )
-	        return -EOVERFLOW;
+            return -EOVERFLOW;
         break;
 
     case 32:
         *(int32_t *)place = sval;
         if ( sval < INT32_MIN || sval > UINT32_MAX )
-	        return -EOVERFLOW;
+            return -EOVERFLOW;
         break;
 
     case 64:
@@ -140,7 +140,9 @@ static int reloc_data(enum aarch64_reloc_op op, void *place, u64 val, int len)
         break;
 
     default:
-        dprintk(XENLOG_DEBUG, LIVEPATCH "Invalid length (%d) for data relocation\n", len);
+        dprintk(XENLOG_DEBUG,
+                LIVEPATCH "Invalid length (%d) for data relocation\n",
+                len);
         return 0;
     }
 
@@ -261,29 +263,34 @@ int arch_livepatch_perform_rela(struct livepatch_elf *elf,
         }
         else if ( symndx >= elf->nsym )
         {
-            printk(XENLOG_ERR LIVEPATCH "%s: Relative relocation wants symbol@%u which is past end\n",
-                   elf->name, symndx);
+            printk(XENLOG_ERR LIVEPATCH
+                   "%s: Relative relocation wants symbol@%u which is past end\n",
+                   elf->name,
+                   symndx);
             return -EINVAL;
         }
         else if ( !elf->sym[symndx].sym )
         {
             printk(XENLOG_ERR LIVEPATCH "%s: No relative symbol@%u\n",
-                   elf->name, symndx);
+                   elf->name,
+                   symndx);
             return -EINVAL;
         }
         else if ( elf->sym[symndx].ignored )
         {
-            printk(XENLOG_ERR LIVEPATCH
-                   "%s: Relocation against ignored symbol %s cannot be resolved\n",
-                   elf->name, elf->sym[symndx].name);
+            printk(
+                XENLOG_ERR LIVEPATCH
+                "%s: Relocation against ignored symbol %s cannot be resolved\n",
+                elf->name,
+                elf->sym[symndx].name);
             return -EINVAL;
         }
 
-        val = elf->sym[symndx].sym->st_value +  r->r_addend; /* S+A */
+        val = elf->sym[symndx].sym->st_value + r->r_addend; /* S+A */
 
         /* ARM64 operations at minimum are always 32-bit. */
         if ( r->r_offset >= base->sec->sh_size ||
-            (r->r_offset + sizeof(uint32_t)) > base->sec->sh_size )
+             (r->r_offset + sizeof(uint32_t)) > base->sec->sh_size )
             goto bad_offset;
 
         switch ( ELF64_R_TYPE(r->r_info) )
@@ -325,7 +332,10 @@ int arch_livepatch_perform_rela(struct livepatch_elf *elf,
             /* Fallthrough. */
 
         case R_AARCH64_MOVW_UABS_G0:
-            ovf = reloc_insn_movw(RELOC_OP_ABS, dest, val, 0,
+            ovf = reloc_insn_movw(RELOC_OP_ABS,
+                                  dest,
+                                  val,
+                                  0,
                                   AARCH64_INSN_IMM_MOVKZ);
             break;
 
@@ -334,7 +344,10 @@ int arch_livepatch_perform_rela(struct livepatch_elf *elf,
             /* Fallthrough. */
 
         case R_AARCH64_MOVW_UABS_G1:
-            ovf = reloc_insn_movw(RELOC_OP_ABS, dest, val, 16,
+            ovf = reloc_insn_movw(RELOC_OP_ABS,
+                                  dest,
+                                  val,
+                                  16,
                                   AARCH64_INSN_IMM_MOVKZ);
             break;
 
@@ -343,75 +356,115 @@ int arch_livepatch_perform_rela(struct livepatch_elf *elf,
             /* Fallthrough. */
 
         case R_AARCH64_MOVW_UABS_G2:
-            ovf = reloc_insn_movw(RELOC_OP_ABS, dest, val, 32,
+            ovf = reloc_insn_movw(RELOC_OP_ABS,
+                                  dest,
+                                  val,
+                                  32,
                                   AARCH64_INSN_IMM_MOVKZ);
             break;
 
         case R_AARCH64_MOVW_UABS_G3:
             /* We're using the top bits so we can't overflow. */
             overflow_check = false;
-            ovf = reloc_insn_movw(RELOC_OP_ABS, dest, val, 48,
+            ovf = reloc_insn_movw(RELOC_OP_ABS,
+                                  dest,
+                                  val,
+                                  48,
                                   AARCH64_INSN_IMM_MOVKZ);
             break;
 
         case R_AARCH64_MOVW_SABS_G0:
-            ovf = reloc_insn_movw(RELOC_OP_ABS, dest, val, 0,
+            ovf = reloc_insn_movw(RELOC_OP_ABS,
+                                  dest,
+                                  val,
+                                  0,
                                   AARCH64_INSN_IMM_MOVNZ);
             break;
 
         case R_AARCH64_MOVW_SABS_G1:
-            ovf = reloc_insn_movw(RELOC_OP_ABS, dest, val, 16,
+            ovf = reloc_insn_movw(RELOC_OP_ABS,
+                                  dest,
+                                  val,
+                                  16,
                                   AARCH64_INSN_IMM_MOVNZ);
             break;
 
         case R_AARCH64_MOVW_SABS_G2:
-            ovf = reloc_insn_movw(RELOC_OP_ABS, dest, val, 32,
+            ovf = reloc_insn_movw(RELOC_OP_ABS,
+                                  dest,
+                                  val,
+                                  32,
                                   AARCH64_INSN_IMM_MOVNZ);
             break;
 
         case R_AARCH64_MOVW_PREL_G0_NC:
             overflow_check = false;
-            ovf = reloc_insn_movw(RELOC_OP_PREL, dest, val, 0,
+            ovf = reloc_insn_movw(RELOC_OP_PREL,
+                                  dest,
+                                  val,
+                                  0,
                                   AARCH64_INSN_IMM_MOVKZ);
             break;
 
         case R_AARCH64_MOVW_PREL_G0:
-            ovf = reloc_insn_movw(RELOC_OP_PREL, dest, val, 0,
+            ovf = reloc_insn_movw(RELOC_OP_PREL,
+                                  dest,
+                                  val,
+                                  0,
                                   AARCH64_INSN_IMM_MOVNZ);
             break;
 
         case R_AARCH64_MOVW_PREL_G1_NC:
             overflow_check = false;
-            ovf = reloc_insn_movw(RELOC_OP_PREL, dest, val, 16,
+            ovf = reloc_insn_movw(RELOC_OP_PREL,
+                                  dest,
+                                  val,
+                                  16,
                                   AARCH64_INSN_IMM_MOVKZ);
             break;
 
         case R_AARCH64_MOVW_PREL_G1:
-            ovf = reloc_insn_movw(RELOC_OP_PREL, dest, val, 16,
+            ovf = reloc_insn_movw(RELOC_OP_PREL,
+                                  dest,
+                                  val,
+                                  16,
                                   AARCH64_INSN_IMM_MOVNZ);
             break;
 
         case R_AARCH64_MOVW_PREL_G2_NC:
             overflow_check = false;
-            ovf = reloc_insn_movw(RELOC_OP_PREL, dest, val, 32,
+            ovf = reloc_insn_movw(RELOC_OP_PREL,
+                                  dest,
+                                  val,
+                                  32,
                                   AARCH64_INSN_IMM_MOVKZ);
             break;
 
         case R_AARCH64_MOVW_PREL_G2:
-            ovf = reloc_insn_movw(RELOC_OP_PREL, dest, val, 32,
+            ovf = reloc_insn_movw(RELOC_OP_PREL,
+                                  dest,
+                                  val,
+                                  32,
                                   AARCH64_INSN_IMM_MOVNZ);
             break;
 
         case R_AARCH64_MOVW_PREL_G3:
             /* We're using the top bits so we can't overflow. */
             overflow_check = false;
-            ovf = reloc_insn_movw(RELOC_OP_PREL, dest, val, 48,
+            ovf = reloc_insn_movw(RELOC_OP_PREL,
+                                  dest,
+                                  val,
+                                  48,
                                   AARCH64_INSN_IMM_MOVNZ);
             break;
 
         /* Instructions. */
         case R_AARCH64_ADR_PREL_LO21:
-            ovf = reloc_insn_imm(RELOC_OP_PREL, dest, val, 0, 21,
+            ovf = reloc_insn_imm(RELOC_OP_PREL,
+                                 dest,
+                                 val,
+                                 0,
+                                 21,
                                  AARCH64_INSN_IMM_ADR);
             break;
 
@@ -419,7 +472,11 @@ int arch_livepatch_perform_rela(struct livepatch_elf *elf,
             overflow_check = false;
             /* Fallthrough. */
         case R_AARCH64_ADR_PREL_PG_HI21:
-            ovf = reloc_insn_imm(RELOC_OP_PAGE, dest, val, 12, 21,
+            ovf = reloc_insn_imm(RELOC_OP_PAGE,
+                                 dest,
+                                 val,
+                                 12,
+                                 21,
                                  AARCH64_INSN_IMM_ADR);
             break;
 
@@ -428,68 +485,107 @@ int arch_livepatch_perform_rela(struct livepatch_elf *elf,
 
         case R_AARCH64_ADD_ABS_LO12_NC:
             overflow_check = false;
-            ovf = reloc_insn_imm(RELOC_OP_ABS, dest, val, 0, 12,
+            ovf = reloc_insn_imm(RELOC_OP_ABS,
+                                 dest,
+                                 val,
+                                 0,
+                                 12,
                                  AARCH64_INSN_IMM_12);
             break;
 
         case R_AARCH64_LDST16_ABS_LO12_NC:
             overflow_check = false;
-            ovf = reloc_insn_imm(RELOC_OP_ABS, dest, val, 1, 11,
+            ovf = reloc_insn_imm(RELOC_OP_ABS,
+                                 dest,
+                                 val,
+                                 1,
+                                 11,
                                  AARCH64_INSN_IMM_12);
             break;
 
         case R_AARCH64_LDST32_ABS_LO12_NC:
             overflow_check = false;
-            ovf = reloc_insn_imm(RELOC_OP_ABS, dest, val, 2, 10,
+            ovf = reloc_insn_imm(RELOC_OP_ABS,
+                                 dest,
+                                 val,
+                                 2,
+                                 10,
                                  AARCH64_INSN_IMM_12);
             break;
 
         case R_AARCH64_LDST64_ABS_LO12_NC:
             overflow_check = false;
-            ovf = reloc_insn_imm(RELOC_OP_ABS, dest, val, 3, 9,
+            ovf = reloc_insn_imm(RELOC_OP_ABS,
+                                 dest,
+                                 val,
+                                 3,
+                                 9,
                                  AARCH64_INSN_IMM_12);
             break;
 
         case R_AARCH64_LDST128_ABS_LO12_NC:
             overflow_check = false;
-            ovf = reloc_insn_imm(RELOC_OP_ABS, dest, val, 4, 8,
+            ovf = reloc_insn_imm(RELOC_OP_ABS,
+                                 dest,
+                                 val,
+                                 4,
+                                 8,
                                  AARCH64_INSN_IMM_12);
             break;
 
         case R_AARCH64_TSTBR14:
-            ovf = reloc_insn_imm(RELOC_OP_PREL, dest, val, 2, 19,
+            ovf = reloc_insn_imm(RELOC_OP_PREL,
+                                 dest,
+                                 val,
+                                 2,
+                                 19,
                                  AARCH64_INSN_IMM_14);
             break;
 
         case R_AARCH64_CONDBR19:
-            ovf = reloc_insn_imm(RELOC_OP_PREL, dest, val, 2, 19,
+            ovf = reloc_insn_imm(RELOC_OP_PREL,
+                                 dest,
+                                 val,
+                                 2,
+                                 19,
                                  AARCH64_INSN_IMM_19);
             break;
 
         case R_AARCH64_JUMP26:
         case R_AARCH64_CALL26:
-            ovf = reloc_insn_imm(RELOC_OP_PREL, dest, val, 2, 26,
+            ovf = reloc_insn_imm(RELOC_OP_PREL,
+                                 dest,
+                                 val,
+                                 2,
+                                 26,
                                  AARCH64_INSN_IMM_26);
             break;
 
         default:
             printk(XENLOG_ERR LIVEPATCH "%s: Unhandled relocation %lu\n",
-                   elf->name, ELF64_R_TYPE(r->r_info));
+                   elf->name,
+                   ELF64_R_TYPE(r->r_info));
             return -EOPNOTSUPP;
         }
 
         if ( overflow_check && ovf == -EOVERFLOW )
         {
-            printk(XENLOG_ERR LIVEPATCH "%s: Overflow in relocation %u in %s for %s\n",
-                   elf->name, i, rela->name, base->name);
+            printk(XENLOG_ERR LIVEPATCH
+                   "%s: Overflow in relocation %u in %s for %s\n",
+                   elf->name,
+                   i,
+                   rela->name,
+                   base->name);
             return ovf;
         }
     }
     return 0;
 
- bad_offset:
-    printk(XENLOG_ERR LIVEPATCH "%s: Relative relocation offset is past %s section\n",
-           elf->name, base->name);
+bad_offset:
+    printk(XENLOG_ERR LIVEPATCH
+           "%s: Relative relocation offset is past %s section\n",
+           elf->name,
+           base->name);
     return -EINVAL;
 }
 

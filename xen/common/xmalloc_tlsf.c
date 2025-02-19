@@ -83,6 +83,7 @@ struct bhdr {
      *  bit 1: previous block is free, if set
      */
     u32 size;
+
     /* Free blocks in individual freelists are linked */
     union {
         struct free_ptr free_ptr;
@@ -148,8 +149,8 @@ static inline void MAPPING_SEARCH(unsigned long *r, int *fl, int *sl)
 #if 1
         *fl -= FLI_OFFSET;
 #else
-        if ((*fl -= FLI_OFFSET) < 0) /* FL will be always >0! */
-          *fl = *sl = 0;
+        if ( (*fl -= FLI_OFFSET) < 0 ) /* FL will be always >0! */
+            *fl = *sl = 0;
 #endif
         *r &= ~t;
     }
@@ -206,8 +207,8 @@ static inline struct bhdr *FIND_SUITABLE_BLOCK(struct xmem_pool *p, int *fl,
 /**
  * Remove first free block(b) from free list with indexes (fl, sl).
  */
-static inline void EXTRACT_BLOCK_HDR(struct bhdr *b, struct xmem_pool *p, int fl,
-                                     int sl)
+static inline void EXTRACT_BLOCK_HDR(struct bhdr *b, struct xmem_pool *p,
+                                     int fl, int sl)
 {
     p->matrix[fl][sl] = b->ptr.free_ptr.next;
     if ( p->matrix[fl][sl] )
@@ -220,7 +221,7 @@ static inline void EXTRACT_BLOCK_HDR(struct bhdr *b, struct xmem_pool *p, int fl
         if ( !p->sl_bitmap[fl] )
             clear_bit(fl, &p->fl_bitmap);
     }
-    b->ptr.free_ptr = (struct free_ptr) {NULL, NULL};
+    b->ptr.free_ptr = (struct free_ptr){ NULL, NULL };
 }
 
 #define POISON_BYTE 0xAA
@@ -232,11 +233,9 @@ static inline void EXTRACT_BLOCK(struct bhdr *b, struct xmem_pool *p, int fl,
                                  int sl)
 {
     if ( b->ptr.free_ptr.next )
-        b->ptr.free_ptr.next->ptr.free_ptr.prev =
-            b->ptr.free_ptr.prev;
+        b->ptr.free_ptr.next->ptr.free_ptr.prev = b->ptr.free_ptr.prev;
     if ( b->ptr.free_ptr.prev )
-        b->ptr.free_ptr.prev->ptr.free_ptr.next =
-            b->ptr.free_ptr.next;
+        b->ptr.free_ptr.prev->ptr.free_ptr.next = b->ptr.free_ptr.next;
     if ( p->matrix[fl][sl] == b )
     {
         p->matrix[fl][sl] = b->ptr.free_ptr.next;
@@ -244,14 +243,15 @@ static inline void EXTRACT_BLOCK(struct bhdr *b, struct xmem_pool *p, int fl,
         {
             clear_bit(sl, &p->sl_bitmap[fl]);
             if ( !p->sl_bitmap[fl] )
-                clear_bit (fl, &p->fl_bitmap);
+                clear_bit(fl, &p->fl_bitmap);
         }
     }
-    b->ptr.free_ptr = (struct free_ptr) {NULL, NULL};
+    b->ptr.free_ptr = (struct free_ptr){ NULL, NULL };
 
     if ( IS_ENABLED(CONFIG_XMEM_POOL_POISON) &&
          (b->size & BLOCK_SIZE_MASK) > MIN_BLOCK_SIZE &&
-         memchr_inv(b->ptr.buffer + MIN_BLOCK_SIZE, POISON_BYTE,
+         memchr_inv(b->ptr.buffer + MIN_BLOCK_SIZE,
+                    POISON_BYTE,
                     (b->size & BLOCK_SIZE_MASK) - MIN_BLOCK_SIZE) )
     {
         printk(XENLOG_ERR "XMEM Pool corruption found");
@@ -262,14 +262,16 @@ static inline void EXTRACT_BLOCK(struct bhdr *b, struct xmem_pool *p, int fl,
 /**
  * Insert block(b) in free list with indexes (fl, sl)
  */
-static inline void INSERT_BLOCK(struct bhdr *b, struct xmem_pool *p, int fl, int sl)
+static inline void INSERT_BLOCK(struct bhdr *b, struct xmem_pool *p, int fl,
+                                int sl)
 {
     if ( IS_ENABLED(CONFIG_XMEM_POOL_POISON) &&
          (b->size & BLOCK_SIZE_MASK) > MIN_BLOCK_SIZE )
-        memset(b->ptr.buffer + MIN_BLOCK_SIZE, POISON_BYTE,
+        memset(b->ptr.buffer + MIN_BLOCK_SIZE,
+               POISON_BYTE,
                (b->size & BLOCK_SIZE_MASK) - MIN_BLOCK_SIZE);
 
-    b->ptr.free_ptr = (struct free_ptr) {NULL, p->matrix[fl][sl]};
+    b->ptr.free_ptr = (struct free_ptr){ NULL, p->matrix[fl][sl] };
     if ( p->matrix[fl][sl] )
         p->matrix[fl][sl]->ptr.free_ptr.prev = b;
     p->matrix[fl][sl] = b;
@@ -289,8 +291,8 @@ static inline void ADD_REGION(void *region, unsigned long region_size,
 
     b = (struct bhdr *)(region);
     b->prev_hdr = NULL;
-    b->size = ROUNDDOWN_SIZE(region_size - 2 * BHDR_OVERHEAD)
-        | FREE_BLOCK | PREV_USED;
+    b->size = ROUNDDOWN_SIZE(region_size - 2 * BHDR_OVERHEAD) | FREE_BLOCK |
+              PREV_USED;
     MAPPING_INSERT(b->size & BLOCK_SIZE_MASK, &fl, &sl);
     INSERT_BLOCK(b, pool, fl, sl);
     /* The sentinel block: allows us to know when we're in the last block */
@@ -305,12 +307,11 @@ static inline void ADD_REGION(void *region, unsigned long region_size,
  * TLSF pool-based allocator start.
  */
 
-struct xmem_pool *xmem_pool_create(
-    const char *name,
-    xmem_pool_get_memory get_mem,
-    xmem_pool_put_memory put_mem,
-    unsigned long max_size,
-    unsigned long grow_size)
+struct xmem_pool *xmem_pool_create(const char *name,
+                                   xmem_pool_get_memory get_mem,
+                                   xmem_pool_put_memory put_mem,
+                                   unsigned long max_size,
+                                   unsigned long grow_size)
 {
     struct xmem_pool *pool;
     int pool_bytes, pool_order;
@@ -355,12 +356,12 @@ unsigned long xmem_pool_get_used_size(struct xmem_pool *pool)
 unsigned long xmem_pool_get_total_size(struct xmem_pool *pool)
 {
     unsigned long total;
-    total = ROUNDUP_SIZE(sizeof(*pool))
-        + (pool->num_regions - 1) * pool->grow_size;
+    total = ROUNDUP_SIZE(sizeof(*pool)) +
+            (pool->num_regions - 1) * pool->grow_size;
     return total;
 }
 
-void xmem_pool_destroy(struct xmem_pool *pool) 
+void xmem_pool_destroy(struct xmem_pool *pool)
 {
     int pool_bytes, pool_order;
 
@@ -369,9 +370,10 @@ void xmem_pool_destroy(struct xmem_pool *pool)
 
     /* Check for memory leaks in this pool */
     if ( xmem_pool_get_used_size(pool) )
-        printk("memory leak in pool: %s (%p). "
-               "%lu bytes still in use.\n",
-               pool->name, pool, xmem_pool_get_used_size(pool));
+        printk("memory leak in pool: %s (%p). " "%lu bytes still in use.\n",
+               pool->name,
+               pool,
+               xmem_pool_get_used_size(pool));
 
     spin_lock(&pool_list_lock);
     list_del_init(&pool->list);
@@ -379,7 +381,7 @@ void xmem_pool_destroy(struct xmem_pool *pool)
 
     pool_bytes = ROUNDUP_SIZE(sizeof(*pool));
     pool_order = get_order_from_bytes(pool_bytes);
-    free_xenheap_pages(pool,pool_order);
+    free_xenheap_pages(pool, pool_order);
 }
 
 void *xmem_pool_alloc(unsigned long size, struct xmem_pool *pool)
@@ -404,7 +406,7 @@ void *xmem_pool_alloc(unsigned long size, struct xmem_pool *pool)
     /* Rounding up the requested size and calculating fl and sl */
 
     spin_lock(&pool->lock);
- retry_find:
+retry_find:
     MAPPING_SEARCH(&size, &fl, &sl);
 
     /* Searching a free block */
@@ -413,8 +415,8 @@ void *xmem_pool_alloc(unsigned long size, struct xmem_pool *pool)
         /* Not found */
         if ( size > (pool->grow_size - 2 * BHDR_OVERHEAD) )
             goto out_locked;
-        if ( pool->max_size && (pool->num_regions * pool->grow_size
-                                > pool->max_size) )
+        if ( pool->max_size &&
+             (pool->num_regions * pool->grow_size > pool->max_size) )
             goto out_locked;
         spin_unlock(&pool->lock);
         if ( (region = pool->get_mem(pool->grow_size)) == NULL )
@@ -456,10 +458,10 @@ void *xmem_pool_alloc(unsigned long size, struct xmem_pool *pool)
     return (void *)b->ptr.buffer;
 
     /* Failed alloc */
- out_locked:
+out_locked:
     spin_unlock(&pool->lock);
 
- out:
+out:
     return NULL;
 }
 
@@ -473,12 +475,12 @@ void xmem_pool_free(void *ptr, struct xmem_pool *pool)
     if ( unlikely(ptr == NULL) )
         return;
 
-    b = (struct bhdr *)((char *) ptr - BHDR_OVERHEAD);
+    b = (struct bhdr *)((char *)ptr - BHDR_OVERHEAD);
 
     spin_lock(&pool->lock);
     b->size |= FREE_BLOCK;
     pool->used_size -= (b->size & BLOCK_SIZE_MASK) + BHDR_OVERHEAD;
-    b->ptr.free_ptr = (struct free_ptr) { NULL, NULL};
+    b->ptr.free_ptr = (struct free_ptr){ NULL, NULL };
     tmp_b = GET_NEXT_BLOCK(b->ptr.buffer, b->size & BLOCK_SIZE_MASK);
     if ( tmp_b->size & FREE_BLOCK )
     {
@@ -511,7 +513,7 @@ void xmem_pool_free(void *ptr, struct xmem_pool *pool)
 
     tmp_b->size |= PREV_FREE;
     tmp_b->prev_hdr = b;
- out:
+out:
     spin_unlock(&pool->lock);
 }
 
@@ -564,8 +566,11 @@ static void *xmalloc_whole_pages(unsigned long size, unsigned long align)
 
 static void tlsf_init(void)
 {
-    xenpool = xmem_pool_create("xmalloc", xmalloc_pool_get,
-                               xmalloc_pool_put, 0, PAGE_SIZE);
+    xenpool = xmem_pool_create("xmalloc",
+                               xmalloc_pool_get,
+                               xmalloc_pool_put,
+                               0,
+                               PAGE_SIZE);
     BUG_ON(!xenpool);
 }
 
@@ -679,8 +684,8 @@ void *_xrealloc(void *ptr, unsigned long size, unsigned long align)
             return NULL;
 
         if ( tmp_size < PAGE_SIZE )
-            tmp_size = (tmp_size < MIN_BLOCK_SIZE) ? MIN_BLOCK_SIZE :
-                ROUNDUP_SIZE(tmp_size);
+            tmp_size = (tmp_size < MIN_BLOCK_SIZE) ? MIN_BLOCK_SIZE
+                                                   : ROUNDUP_SIZE(tmp_size);
 
         /* Strip alignment padding. */
         p = strip_padding(ptr);
@@ -723,7 +728,7 @@ void xfree(void *p)
 
         BUG_ON((unsigned long)p & ((PAGE_SIZE << order) - 1));
         PFN_ORDER(virt_to_page(p)) = 0;
-        for ( i = 0; ; ++i )
+        for ( i = 0;; ++i )
         {
             if ( !(size & (1 << i)) )
                 continue;

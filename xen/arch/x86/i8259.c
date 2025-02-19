@@ -54,18 +54,18 @@ static unsigned int cf_check startup_8259A_irq(struct irq_desc *desc)
 
 static void cf_check end_8259A_irq(struct irq_desc *desc, u8 vector)
 {
-    if (!(desc->status & (IRQ_DISABLED|IRQ_INPROGRESS)))
+    if ( !(desc->status & (IRQ_DISABLED | IRQ_INPROGRESS)) )
         enable_8259A_irq(desc);
 }
 
 static struct hw_interrupt_type __read_mostly i8259A_irq_type = {
     .typename = "XT-PIC",
-    .startup  = startup_8259A_irq,
+    .startup = startup_8259A_irq,
     .shutdown = disable_8259A_irq,
-    .enable   = enable_8259A_irq,
-    .disable  = disable_8259A_irq,
-    .ack      = mask_and_ack_8259A_irq,
-    .end      = end_8259A_irq
+    .enable = enable_8259A_irq,
+    .disable = disable_8259A_irq,
+    .ack = mask_and_ack_8259A_irq,
+    .end = end_8259A_irq
 };
 
 /*
@@ -79,7 +79,7 @@ static struct hw_interrupt_type __read_mostly i8259A_irq_type = {
  */
 static unsigned int cached_irq_mask = 0xffff;
 
-#define __byte(x,y) (((unsigned char *)&(y))[x])
+#define __byte(x, y) (((unsigned char *)&(y))[x])
 #define cached_21   (__byte(0,cached_irq_mask))
 #define cached_A1   (__byte(1,cached_irq_mask))
 
@@ -101,10 +101,10 @@ static void _disable_8259A_irq(unsigned int irq)
 
     spin_lock_irqsave(&i8259A_lock, flags);
     cached_irq_mask |= mask;
-    if (irq & 8)
-        outb(cached_A1,0xA1);
+    if ( irq & 8 )
+        outb(cached_A1, 0xA1);
     else
-        outb(cached_21,0x21);
+        outb(cached_21, 0x21);
     per_cpu(vector_irq, 0)[LEGACY_VECTOR(irq)] = ~irq;
     spin_unlock_irqrestore(&i8259A_lock, flags);
 }
@@ -122,21 +122,21 @@ void cf_check enable_8259A_irq(struct irq_desc *desc)
     spin_lock_irqsave(&i8259A_lock, flags);
     cached_irq_mask &= mask;
     per_cpu(vector_irq, 0)[LEGACY_VECTOR(desc->irq)] = desc->irq;
-    if (desc->irq & 8)
-        outb(cached_A1,0xA1);
+    if ( desc->irq & 8 )
+        outb(cached_A1, 0xA1);
     else
-        outb(cached_21,0x21);
+        outb(cached_21, 0x21);
     spin_unlock_irqrestore(&i8259A_lock, flags);
 }
 
 int i8259A_irq_pending(unsigned int irq)
 {
-    unsigned int mask = 1<<irq;
+    unsigned int mask = 1 << irq;
     unsigned long flags;
     int ret;
 
     spin_lock_irqsave(&i8259A_lock, flags);
-    if (irq < 8)
+    if ( irq < 8 )
         ret = inb(0x20) & mask;
     else
         ret = inb(0xA0) & (mask >> 8);
@@ -174,17 +174,18 @@ void unmask_8259A(void)
 static inline int i8259A_irq_real(unsigned int irq)
 {
     int value;
-    int irqmask = 1<<irq;
+    int irqmask = 1 << irq;
 
-    if (irq < 8) {
-        outb(0x0B,0x20);                /* ISR register */
+    if ( irq < 8 )
+    {
+        outb(0x0B, 0x20); /* ISR register */
         value = inb(0x20) & irqmask;
-        outb(0x0A,0x20);                /* back to the IRR register */
+        outb(0x0A, 0x20); /* back to the IRR register */
         return value;
     }
-    outb(0x0B,0xA0);                    /* ISR register */
+    outb(0x0B, 0xA0); /* ISR register */
     value = inb(0xA0) & (irqmask >> 8);
-    outb(0x0A,0xA0);                    /* back to the IRR register */
+    outb(0x0A, 0xA0); /* back to the IRR register */
     return value;
 }
 
@@ -218,13 +219,16 @@ static bool _mask_and_ack_8259A_irq(unsigned int irq)
      * but should be enough to warn the user that there
      * is something bad going on ...
      */
-    if ((cached_irq_mask & irqmask) && !i8259A_irq_real(irq)) {
+    if ( (cached_irq_mask & irqmask) && !i8259A_irq_real(irq) )
+    {
         static int spurious_irq_mask;
         is_real_irq = false;
         /* Report spurious IRQ, once per IRQ line. */
-        if (!(spurious_irq_mask & irqmask)) {
+        if ( !(spurious_irq_mask & irqmask) )
+        {
             printk("cpu%u: spurious 8259A interrupt: IRQ%u\n",
-                   smp_processor_id(), irq);
+                   smp_processor_id(),
+                   irq);
             spurious_irq_mask |= irqmask;
         }
         /*
@@ -236,18 +240,22 @@ static bool _mask_and_ack_8259A_irq(unsigned int irq)
 
     cached_irq_mask |= irqmask;
 
-    if (irq & 8) {
-        inb(0xA1);              /* DUMMY - (do we need this?) */
-        outb(cached_A1,0xA1);
-        if (!aeoi_mode) {
-            outb(0x60 + (irq & 7), 0xA0);/* 'Specific EOI' to slave */
-            outb(0x62,0x20);        /* 'Specific EOI' to master-IRQ2 */
+    if ( irq & 8 )
+    {
+        inb(0xA1); /* DUMMY - (do we need this?) */
+        outb(cached_A1, 0xA1);
+        if ( !aeoi_mode )
+        {
+            outb(0x60 + (irq & 7), 0xA0); /* 'Specific EOI' to slave */
+            outb(0x62, 0x20); /* 'Specific EOI' to master-IRQ2 */
         }
-    } else {
-        inb(0x21);              /* DUMMY - (do we need this?) */
-        outb(cached_21,0x21);
-        if (!aeoi_mode)
-            outb(0x60 + irq, 0x20);/* 'Specific EOI' to master */
+    }
+    else
+    {
+        inb(0x21); /* DUMMY - (do we need this?) */
+        outb(cached_21, 0x21);
+        if ( !aeoi_mode )
+            outb(0x60 + irq, 0x20); /* 'Specific EOI' to master */
     }
 
     spin_unlock_irqrestore(&i8259A_lock, flags);
@@ -256,6 +264,7 @@ static bool _mask_and_ack_8259A_irq(unsigned int irq)
 }
 
 static char irq_trigger[2];
+
 /**
  * ELCR registers (0x4d0, 0x4d1) control edge/level of IRQ
  */
@@ -291,27 +300,27 @@ void init_8259A(int auto_eoi)
 
     spin_lock_irqsave(&i8259A_lock, flags);
 
-    outb(0xff, 0x21);   /* mask all of 8259A-1 */
-    outb(0xff, 0xA1);   /* mask all of 8259A-2 */
+    outb(0xff, 0x21); /* mask all of 8259A-1 */
+    outb(0xff, 0xA1); /* mask all of 8259A-2 */
 
     /*
      * outb_p - this has to work on a wide range of PC hardware.
      */
-    outb_p(0x11, 0x20);     /* ICW1: select 8259A-1 init */
+    outb_p(0x11, 0x20); /* ICW1: select 8259A-1 init */
     outb_p(FIRST_LEGACY_VECTOR + 0, 0x21); /* ICW2: 8259A-1 IR0-7 */
-    outb_p(0x04, 0x21);     /* 8259A-1 (the master) has a slave on IR2 */
-    if (auto_eoi)
+    outb_p(0x04, 0x21); /* 8259A-1 (the master) has a slave on IR2 */
+    if ( auto_eoi )
         outb_p(0x03, 0x21); /* master does Auto EOI */
     else
         outb_p(0x01, 0x21); /* master expects normal EOI */
 
-    outb_p(0x11, 0xA0);     /* ICW1: select 8259A-2 init */
+    outb_p(0x11, 0xA0); /* ICW1: select 8259A-2 init */
     outb_p(FIRST_LEGACY_VECTOR + 8, 0xA1); /* ICW2: 8259A-2 IR0-7 */
-    outb_p(0x02, 0xA1);     /* 8259A-2 is a slave on master's IR2 */
-    outb_p(0x01, 0xA1);     /* (slave's support for AEOI in flat mode
+    outb_p(0x02, 0xA1); /* 8259A-2 is a slave on master's IR2 */
+    outb_p(0x01, 0xA1); /* (slave's support for AEOI in flat mode
                                is to be investigated) */
 
-    if (auto_eoi)
+    if ( auto_eoi )
         /*
          * in AEOI mode we just have to mask the interrupt
          * when acking.
@@ -320,10 +329,10 @@ void init_8259A(int auto_eoi)
     else
         i8259A_irq_type.ack = mask_and_ack_8259A_irq;
 
-    udelay(100);            /* wait for 8259A to initialize */
+    udelay(100); /* wait for 8259A to initialize */
 
-    outb(cached_21, 0x21);  /* restore master IRQ mask */
-    outb(cached_A1, 0xA1);  /* restore slave IRQ mask */
+    outb(cached_21, 0x21); /* restore master IRQ mask */
+    outb(cached_A1, 0xA1); /* restore slave IRQ mask */
 
     spin_unlock_irqrestore(&i8259A_lock, flags);
 }
@@ -355,7 +364,8 @@ static void __init probe_8259A_alias(void)
 
     outb(0xff, 0x21); /* Fully mask master. */
 
-    do {
+    do
+    {
         unsigned int offs;
 
         outb(val, 0xa1);
@@ -374,7 +384,7 @@ static void __init probe_8259A_alias(void)
             if ( inb(0xa1 + offs) != val )
                 mask &= ~offs;
         }
-    } while ( mask && (val += 0x0d) );  /* Arbitrary uneven number. */
+    } while ( mask && (val += 0x0d) ); /* Arbitrary uneven number. */
 
     outb(cached_A1, 0xa1); /* Restore slave IRQ mask. */
     outb(cached_21, 0x21); /* Restore master IRQ mask. */
@@ -386,7 +396,7 @@ static void __init probe_8259A_alias(void)
     }
 }
 
-static struct irqaction __read_mostly cascade = { no_action, "cascade", NULL};
+static struct irqaction __read_mostly cascade = { no_action, "cascade", NULL };
 
 void __init init_IRQ(void)
 {
@@ -398,9 +408,10 @@ void __init init_IRQ(void)
 
     probe_8259A_alias();
 
-    for (irq = 0; platform_legacy_irq(irq); irq++) {
+    for ( irq = 0; platform_legacy_irq(irq); irq++ )
+    {
         struct irq_desc *desc = irq_to_desc(irq);
-        
+
         if ( irq == 2 ) /* IRQ2 doesn't exist */
             continue;
         desc->handler = &i8259A_irq_type;
@@ -420,15 +431,15 @@ void __init init_IRQ(void)
          */
         cpumask_copy(desc->arch.cpu_mask,
                      (boot_cpu_data.x86_vendor &
-                      (X86_VENDOR_AMD | X86_VENDOR_HYGON) ? &cpumask_all
-                                                          : cpumask_of(cpu)));
+                              (X86_VENDOR_AMD | X86_VENDOR_HYGON)
+                          ? &cpumask_all
+                          : cpumask_of(cpu)));
         desc->arch.vector = LEGACY_VECTOR(irq);
     }
-    
+
     per_cpu(vector_irq, cpu)[IRQ0_VECTOR] = 0;
 
     apic_intr_init();
 
     setup_irq(2, 0, &cascade);
 }
-

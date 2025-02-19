@@ -96,8 +96,8 @@ typedef unsigned int RING_IDX;
  *     BACK_RING_INIT(&back_ring, (mytag_sring_t *)shared_page, PAGE_SIZE);
  */
 
-#define DEFINE_RING_TYPES(__name, __req_t, __rsp_t)                     \
-                                                                        \
+#define DEFINE_RING_TYPES(__name, __req_t, __rsp_t)
+
 /* Shared ring entry */                                                 \
 union __name##_sring_entry {                                            \
     __req_t req;                                                        \
@@ -347,7 +347,6 @@ typedef struct __name##_back_ring __name##_back_ring_t
     xen_mb();                                                           \
     (_work_to_do) = RING_HAS_UNCONSUMED_RESPONSES(_r);                  \
 } while (0)
-
 
 /*
  * DEFINE_XEN_FLEX_RING_AND_INTF defines two monodirectional rings and

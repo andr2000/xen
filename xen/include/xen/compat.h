@@ -132,7 +132,6 @@
     __raw_copy_from_guest(_d, _s, sizeof(*_d));                      \
 })
 
-
 #define CHECK_NAME(name, tag) __check ## tag ## name
 #define CHECK_NAME_(k, n, tag) __check ## tag ## k ## _ ## n
 

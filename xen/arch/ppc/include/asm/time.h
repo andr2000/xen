@@ -9,7 +9,8 @@
 struct vcpu;
 
 /* TODO: implement */
-static inline void force_update_vcpu_system_time(struct vcpu *v) {
+static inline void force_update_vcpu_system_time(struct vcpu *v)
+{
     BUG_ON("unimplemented");
 }
 

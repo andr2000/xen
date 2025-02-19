@@ -58,7 +58,7 @@ static void noreturn idle_loop(void)
 {
     unsigned int cpu = smp_processor_id();
 
-    for ( ; ; )
+    for ( ;; )
     {
         if ( cpu_is_offline(cpu) )
             stop_cpu();
@@ -153,7 +153,7 @@ static void ctxt_switch_from(struct vcpu *p)
 #endif
 
     if ( is_32bit_domain(p->domain) )
-        p->arch.ifsr  = READ_SYSREG(IFSR32_EL2);
+        p->arch.ifsr = READ_SYSREG(IFSR32_EL2);
     p->arch.afsr0 = READ_SYSREG(AFSR0_EL1);
     p->arch.afsr1 = READ_SYSREG(AFSR1_EL1);
 
@@ -374,8 +374,8 @@ void sync_vcpu_execstate(struct vcpu *v)
     __arg;                                                                  \
 })
 
-unsigned long hypercall_create_continuation(
-    unsigned int op, const char *format, ...)
+unsigned long hypercall_create_continuation(unsigned int op, const char *format,
+                                            ...)
 {
     struct mc_state *mcs = &current->mc_state;
     struct cpu_user_regs *regs;
@@ -412,12 +412,24 @@ unsigned long hypercall_create_continuation(
 
                 switch ( i )
                 {
-                case 0: regs->x0 = arg; break;
-                case 1: regs->x1 = arg; break;
-                case 2: regs->x2 = arg; break;
-                case 3: regs->x3 = arg; break;
-                case 4: regs->x4 = arg; break;
-                case 5: regs->x5 = arg; break;
+                case 0:
+                    regs->x0 = arg;
+                    break;
+                case 1:
+                    regs->x1 = arg;
+                    break;
+                case 2:
+                    regs->x2 = arg;
+                    break;
+                case 3:
+                    regs->x3 = arg;
+                    break;
+                case 4:
+                    regs->x4 = arg;
+                    break;
+                case 5:
+                    regs->x5 = arg;
+                    break;
                 }
             }
 
@@ -435,12 +447,24 @@ unsigned long hypercall_create_continuation(
 
                 switch ( i )
                 {
-                case 0: regs->r0 = arg; break;
-                case 1: regs->r1 = arg; break;
-                case 2: regs->r2 = arg; break;
-                case 3: regs->r3 = arg; break;
-                case 4: regs->r4 = arg; break;
-                case 5: regs->r5 = arg; break;
+                case 0:
+                    regs->r0 = arg;
+                    break;
+                case 1:
+                    regs->r1 = arg;
+                    break;
+                case 2:
+                    regs->r2 = arg;
+                    break;
+                case 3:
+                    regs->r3 = arg;
+                    break;
+                case 4:
+                    regs->r4 = arg;
+                    break;
+                case 5:
+                    regs->r5 = arg;
+                    break;
                 }
             }
 
@@ -453,7 +477,7 @@ unsigned long hypercall_create_continuation(
 
     return rc;
 
- bad_fmt:
+bad_fmt:
     va_end(args);
     gprintk(XENLOG_ERR, "Bad hypercall continuation format '%c'\n", *p);
     ASSERT_UNREACHABLE();
@@ -493,10 +517,7 @@ void free_domain_struct(struct domain *d)
     free_xenheap_page(d);
 }
 
-void dump_pageframe_info(struct domain *d)
-{
-
-}
+void dump_pageframe_info(struct domain *d) {}
 
 /*
  * The new VGIC has a bigger per-IRQ structure, so we need more than one
@@ -534,15 +555,15 @@ int arch_vcpu_create(struct vcpu *v)
 {
     int rc = 0;
 
-    BUILD_BUG_ON( sizeof(struct cpu_info) > STACK_SIZE );
+    BUILD_BUG_ON(sizeof(struct cpu_info) > STACK_SIZE);
 
-    v->arch.stack = alloc_xenheap_pages(STACK_ORDER, MEMF_node(vcpu_to_node(v)));
+    v->arch.stack = alloc_xenheap_pages(STACK_ORDER,
+                                        MEMF_node(vcpu_to_node(v)));
     if ( v->arch.stack == NULL )
         return -ENOMEM;
 
-    v->arch.cpu_info = (struct cpu_info *)(v->arch.stack
-                                           + STACK_SIZE
-                                           - sizeof(struct cpu_info));
+    v->arch.cpu_info = (struct cpu_info *)(v->arch.stack + STACK_SIZE -
+                                           sizeof(struct cpu_info));
     memset(v->arch.cpu_info, 0, sizeof(*v->arch.cpu_info));
 
     v->arch.saved_context.sp = (register_t)v->arch.cpu_info;
@@ -613,8 +634,7 @@ int arch_sanitise_domain_config(struct xen_domctl_createdomain *config)
 
     if ( (config->flags & ~flags_optional) != flags_required )
     {
-        dprintk(XENLOG_INFO, "Unsupported configuration %#x\n",
-                config->flags);
+        dprintk(XENLOG_INFO, "Unsupported configuration %#x\n", config->flags);
         return -EINVAL;
     }
 
@@ -633,7 +653,8 @@ int arch_sanitise_domain_config(struct xen_domctl_createdomain *config)
         {
             dprintk(XENLOG_INFO,
                     "Requested SVE vector length (%u) > supported length (%u)\n",
-                    sve_vl_bits, zcr_max_bits);
+                    sve_vl_bits,
+                    zcr_max_bits);
             return -EINVAL;
         }
     }
@@ -676,8 +697,10 @@ int arch_sanitise_domain_config(struct xen_domctl_createdomain *config)
 
     if ( config->max_vcpus > max_vcpus )
     {
-        dprintk(XENLOG_INFO, "Requested vCPUs (%u) exceeds max (%u)\n",
-                config->max_vcpus, max_vcpus);
+        dprintk(XENLOG_INFO,
+                "Requested vCPUs (%u) exceeds max (%u)\n",
+                config->max_vcpus,
+                max_vcpus);
         return -EINVAL;
     }
 
@@ -697,8 +720,7 @@ int arch_sanitise_domain_config(struct xen_domctl_createdomain *config)
     return 0;
 }
 
-int arch_domain_create(struct domain *d,
-                       struct xen_domctl_createdomain *config,
+int arch_domain_create(struct domain *d, struct xen_domctl_createdomain *config,
                        unsigned int flags)
 {
     unsigned int count = 0;
@@ -818,12 +840,12 @@ int arch_domain_teardown(struct domain *d)
     case PROG_none:
         BUILD_BUG_ON(PROG_none != 0);
 
-    PROGRESS(tee):
+        PROGRESS(tee):
         ret = tee_domain_teardown(d);
         if ( ret )
             return ret;
 
-    PROGRESS(done):
+        PROGRESS(done):
         break;
 
 #undef PROGRESS
@@ -853,17 +875,11 @@ void arch_domain_destroy(struct domain *d)
     domain_io_free(d);
 }
 
-void arch_domain_shutdown(struct domain *d)
-{
-}
+void arch_domain_shutdown(struct domain *d) {}
 
-void arch_domain_pause(struct domain *d)
-{
-}
+void arch_domain_pause(struct domain *d) {}
 
-void arch_domain_unpause(struct domain *d)
-{
-}
+void arch_domain_unpause(struct domain *d) {}
 
 int arch_domain_soft_reset(struct domain *d)
 {
@@ -877,7 +893,7 @@ void arch_domain_creation_finished(struct domain *d)
 
 static int is_guest_pv32_psr(uint32_t psr)
 {
-    switch (psr & PSR_MODE_MASK)
+    switch ( psr & PSR_MODE_MASK )
     {
     case PSR_MODE_USR:
     case PSR_MODE_FIQ:
@@ -894,14 +910,13 @@ static int is_guest_pv32_psr(uint32_t psr)
     }
 }
 
-
 #ifdef CONFIG_ARM_64
 static int is_guest_pv64_psr(uint64_t psr)
 {
     if ( psr & PSR_MODE_BIT )
         return 0;
 
-    switch (psr & PSR_MODE_MASK)
+    switch ( psr & PSR_MODE_MASK )
     {
     case PSR_MODE_EL1h:
     case PSR_MODE_EL1t:
@@ -921,8 +936,7 @@ static int is_guest_pv64_psr(uint64_t psr)
  * Initialise vCPU state. The context may be supplied by an external entity, so
  * we need to validate it.
  */
-int arch_set_info_guest(
-    struct vcpu *v, vcpu_guest_context_u c)
+int arch_set_info_guest(struct vcpu *v, vcpu_guest_context_u c)
 {
     struct vcpu_guest_context *ctxt = c.nat;
     struct vcpu_guest_core_regs *regs = &c.nat->user_regs;
@@ -986,12 +1000,12 @@ int arch_vcpu_reset(struct vcpu *v)
 static int relinquish_memory(struct domain *d, struct page_list_head *list)
 {
     struct page_info *page, *tmp;
-    int               ret = 0;
+    int ret = 0;
 
     /* Use a recursive lock, as we may enter 'free_domheap_page'. */
     rspin_lock(&d->page_alloc_lock);
 
-    page_list_for_each_safe( page, tmp, list )
+    page_list_for_each_safe(page, tmp, list)
     {
         /* Grab a reference to the page so it won't disappear from under us. */
         if ( unlikely(!get_page(page, d)) )
@@ -1015,7 +1029,7 @@ static int relinquish_memory(struct domain *d, struct page_list_head *list)
         }
     }
 
-  out:
+out:
     rspin_unlock(&d->page_alloc_lock);
     return ret;
 }
@@ -1073,50 +1087,50 @@ int domain_relinquish_resources(struct domain *d)
         ioreq_server_destroy_all(d);
 #endif
 #ifdef CONFIG_HAS_PCI
-    PROGRESS(pci):
+        PROGRESS(pci):
         ret = pci_release_devices(d);
         if ( ret )
             return ret;
 #endif
 
-    PROGRESS(tee):
+        PROGRESS(tee):
         ret = tee_relinquish_resources(d);
-        if (ret )
+        if ( ret )
             return ret;
 
-    PROGRESS(xen):
+        PROGRESS(xen):
         ret = relinquish_memory(d, &d->xenpage_list);
         if ( ret )
             return ret;
 
-    PROGRESS(page):
+        PROGRESS(page):
         ret = relinquish_memory(d, &d->page_list);
         if ( ret )
             return ret;
 
-    PROGRESS(mapping):
+        PROGRESS(mapping):
         ret = relinquish_p2m_mapping(d);
         if ( ret )
             return ret;
 
-    PROGRESS(p2m_root):
+        PROGRESS(p2m_root):
         /*
          * We are about to free the intermediate page-tables, so clear the
          * root to prevent any walk to use them.
          */
         p2m_clear_root_pages(&d->arch.p2m);
 
-    PROGRESS(p2m):
+        PROGRESS(p2m):
         ret = p2m_teardown(d);
         if ( ret )
             return ret;
 
-    PROGRESS(p2m_pool):
+        PROGRESS(p2m_pool):
         ret = p2m_teardown_allocation(d);
-        if( ret )
+        if ( ret )
             return ret;
 
-    PROGRESS(done):
+        PROGRESS(done):
         break;
 
     default:
@@ -1133,7 +1147,6 @@ void arch_dump_domain_info(struct domain *d)
     p2m_dump_info(d);
 }
 
-
 long do_vcpu_op(int cmd, unsigned int vcpuid, XEN_GUEST_HANDLE_PARAM(void) arg)
 {
     struct domain *d = current->domain;
@@ -1144,11 +1157,11 @@ long do_vcpu_op(int cmd, unsigned int vcpuid, XEN_GUEST_HANDLE_PARAM(void) arg)
 
     switch ( cmd )
     {
-        case VCPUOP_register_vcpu_info:
-        case VCPUOP_register_runstate_memory_area:
-            return common_vcpu_op(cmd, v, arg);
-        default:
-            return -EINVAL;
+    case VCPUOP_register_vcpu_info:
+    case VCPUOP_register_runstate_memory_area:
+        return common_vcpu_op(cmd, v, arg);
+    default:
+        return -EINVAL;
     }
 }
 
@@ -1160,8 +1173,10 @@ void arch_dump_vcpu_info(struct vcpu *v)
 
 void vcpu_mark_events_pending(struct vcpu *v)
 {
-    bool already_pending = guest_test_and_set_bit(v->domain,
-        0, (unsigned long *)&vcpu_info(v, evtchn_upcall_pending));
+    bool already_pending = guest_test_and_set_bit(
+        v->domain,
+        0,
+        (unsigned long *)&vcpu_info(v, evtchn_upcall_pending));
 
     if ( already_pending )
         return;

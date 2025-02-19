@@ -50,16 +50,17 @@ int cmdline_strcmp(const char *frag, const char *name);
 #ifdef CONFIG_DEBUG_TRACE
 extern void debugtrace_dump(void);
 extern void debugtrace_printk(const char *fmt, ...)
-    __attribute__ ((format (printf, 1, 2)));
+    __attribute__((format(printf, 1, 2)));
 #else
 static inline void debugtrace_dump(void) {}
-static inline void
- __attribute__ ((format (printf, 1, 2)))
-debugtrace_printk(const char *fmt, ...) {}
+
+static inline void __attribute__((format(printf, 1, 2)))
+debugtrace_printk(const char *fmt, ...)
+{}
 #endif
 
 extern void printk(const char *fmt, ...)
-    __attribute__ ((format (printf, 1, 2), cold));
+    __attribute__((format(printf, 1, 2), cold));
 
 #define printk_once(fmt, args...)               \
 ({                                              \
@@ -72,9 +73,9 @@ extern void printk(const char *fmt, ...)
 })
 
 extern void guest_printk(const struct domain *d, const char *fmt, ...)
-    __attribute__ ((format (printf, 2, 3)));
+    __attribute__((format(printf, 2, 3)));
 extern void noreturn panic(const char *fmt, ...)
-    __attribute__ ((format (printf, 1, 2)));
+    __attribute__((format(printf, 1, 2)));
 extern int __printk_ratelimit(int ratelimit_ms, int ratelimit_burst);
 extern int printk_ratelimit(void);
 
@@ -83,13 +84,13 @@ extern int printk_ratelimit(void);
 
 #ifdef NDEBUG
 
-static inline void
-__attribute__ ((__format__ (__printf__, 2, 3)))
-dprintk(const char *lvl, const char *fmt, ...) {}
+static inline void __attribute__((__format__(__printf__, 2, 3)))
+dprintk(const char *lvl, const char *fmt, ...)
+{}
 
-static inline void
-__attribute__ ((__format__ (__printf__, 2, 3)))
-gdprintk(const char *lvl, const char *fmt, ...) {}
+static inline void __attribute__((__format__(__printf__, 2, 3)))
+gdprintk(const char *lvl, const char *fmt, ...)
+{}
 
 #else
 
@@ -104,27 +105,25 @@ gdprintk(const char *lvl, const char *fmt, ...) {}
 /* vsprintf.c */
 #define sprintf __xen_has_no_sprintf__
 #define vsprintf __xen_has_no_vsprintf__
-extern int snprintf(char * buf, size_t size, const char * fmt, ...)
-    __attribute__ ((format (printf, 3, 4)));
+extern int snprintf(char *buf, size_t size, const char *fmt, ...)
+    __attribute__((format(printf, 3, 4)));
 extern int vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
-    __attribute__ ((format (printf, 3, 0)));
-extern int scnprintf(char * buf, size_t size, const char * fmt, ...)
-    __attribute__ ((format (printf, 3, 4)));
+    __attribute__((format(printf, 3, 0)));
+extern int scnprintf(char *buf, size_t size, const char *fmt, ...)
+    __attribute__((format(printf, 3, 4)));
 extern int vscnprintf(char *buf, size_t size, const char *fmt, va_list args)
-    __attribute__ ((format (printf, 3, 0)));
+    __attribute__((format(printf, 3, 0)));
 extern int xasprintf(char **bufp, const char *fmt, ...)
-    __attribute__ ((format (printf, 2, 3)));
+    __attribute__((format(printf, 2, 3)));
 extern int xvasprintf(char **bufp, const char *fmt, va_list args)
-    __attribute__ ((format (printf, 2, 0)));
+    __attribute__((format(printf, 2, 0)));
 
-long simple_strtol(
-    const char *cp,const char **endp, unsigned int base);
-unsigned long simple_strtoul(
-    const char *cp,const char **endp, unsigned int base);
-long long simple_strtoll(
-    const char *cp,const char **endp, unsigned int base);
-unsigned long long simple_strtoull(
-    const char *cp,const char **endp, unsigned int base);
+long simple_strtol(const char *cp, const char **endp, unsigned int base);
+unsigned long simple_strtoul(const char *cp, const char **endp,
+                             unsigned int base);
+long long simple_strtoll(const char *cp, const char **endp, unsigned int base);
+unsigned long long simple_strtoull(const char *cp, const char **endp,
+                                   unsigned int base);
 
 unsigned long long parse_size_and_unit(const char *s, const char **ps);
 
@@ -178,8 +177,9 @@ void init_constructors(void);
 #ifndef BSEARCH_IMPLEMENTATION
 extern gnu_inline
 #endif
-void *bsearch(const void *key, const void *base, size_t num, size_t size,
-              int (*cmp)(const void *key, const void *elt))
+    void *
+    bsearch(const void *key, const void *base, size_t num, size_t size,
+            int (*cmp)(const void *key, const void *elt))
 {
     size_t start = 0, end = num;
     int result;

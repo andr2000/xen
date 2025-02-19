@@ -26,7 +26,7 @@
 #include <public/arch-x86/hvm/start_info.h>
 
 #ifdef CONFIG_VIDEO
-# include "video.h"
+#include "video.h"
 
 /* VESA control information */
 struct __packed vesa_ctrl_info {
@@ -123,7 +123,8 @@ static struct hvm_start_info *pvh_info_reloc(uint32_t in, memctx *ctx)
 
         out->modlist_paddr =
             copy_mem(out->modlist_paddr,
-                     out->nr_modules * sizeof(struct hvm_modlist_entry), ctx);
+                     out->nr_modules * sizeof(struct hvm_modlist_entry),
+                     ctx);
 
         mods = _p(out->modlist_paddr);
 
@@ -152,7 +153,8 @@ static multiboot_info_t *mbi_reloc(uint32_t mbi_in, memctx *ctx)
         module_t *mods;
 
         mbi_out->mods_addr = copy_mem(mbi_out->mods_addr,
-                                      mbi_out->mods_count * sizeof(module_t), ctx);
+                                      mbi_out->mods_count * sizeof(module_t),
+                                      ctx);
 
         mods = _p(mbi_out->mods_addr);
 
@@ -164,16 +166,14 @@ static multiboot_info_t *mbi_reloc(uint32_t mbi_in, memctx *ctx)
     }
 
     if ( mbi_out->flags & MBI_MEMMAP )
-        mbi_out->mmap_addr = copy_mem(mbi_out->mmap_addr, mbi_out->mmap_length, ctx);
+        mbi_out->mmap_addr =
+            copy_mem(mbi_out->mmap_addr, mbi_out->mmap_length, ctx);
 
     if ( mbi_out->flags & MBI_LOADERNAME )
         mbi_out->boot_loader_name = copy_string(mbi_out->boot_loader_name, ctx);
 
     /* Mask features we don't understand or don't relocate. */
-    mbi_out->flags &= (MBI_MEMLIMITS |
-                       MBI_CMDLINE |
-                       MBI_MODULES |
-                       MBI_MEMMAP |
+    mbi_out->flags &= (MBI_MEMLIMITS | MBI_CMDLINE | MBI_MODULES | MBI_MEMMAP |
                        MBI_LOADERNAME);
 
     return mbi_out;
@@ -217,8 +217,8 @@ static multiboot_info_t *mbi2_reloc(uint32_t mbi_in, memctx *ctx)
          * We have to allocate one more module slot here. At some point
          * __start_xen() may put Xen image placement into it.
          */
-        mbi_out->mods_addr = alloc_mem((mbi_out->mods_count + 1) *
-                                       sizeof(*mbi_out_mods), ctx);
+        mbi_out->mods_addr =
+            alloc_mem((mbi_out->mods_count + 1) * sizeof(*mbi_out_mods), ctx);
         mbi_out_mods = _p(mbi_out->mods_addr);
     }
 
@@ -283,7 +283,8 @@ static multiboot_info_t *mbi2_reloc(uint32_t mbi_in, memctx *ctx)
             if ( mod_idx >= mbi_out->mods_count )
                 break;
 
-            mbi_out_mods[mod_idx].mod_start = get_mb2_data(tag, module, mod_start);
+            mbi_out_mods[mod_idx].mod_start =
+                get_mb2_data(tag, module, mod_start);
             mbi_out_mods[mod_idx].mod_end = get_mb2_data(tag, module, mod_end);
             ptr = get_mb2_string(tag, module, cmdline);
             mbi_out_mods[mod_idx].string = copy_string(ptr, ctx);
@@ -336,7 +337,7 @@ static multiboot_info_t *mbi2_reloc(uint32_t mbi_in, memctx *ctx)
         }
     }
 
- end:
+end:
 
 #ifdef CONFIG_VIDEO
     if ( video )

@@ -50,14 +50,14 @@ struct vm_event_st;
  */
 typedef enum {
     /* Code uses bottom three bits with bitmask semantics */
-    p2m_access_n     = 0, /* No access allowed. */
-    p2m_access_r     = 1 << 0,
-    p2m_access_w     = 1 << 1,
-    p2m_access_x     = 1 << 2,
-    p2m_access_rw    = p2m_access_r | p2m_access_w,
-    p2m_access_rx    = p2m_access_r | p2m_access_x,
-    p2m_access_wx    = p2m_access_w | p2m_access_x,
-    p2m_access_rwx   = p2m_access_r | p2m_access_w | p2m_access_x,
+    p2m_access_n = 0, /* No access allowed. */
+    p2m_access_r = 1 << 0,
+    p2m_access_w = 1 << 1,
+    p2m_access_x = 1 << 2,
+    p2m_access_rw = p2m_access_r | p2m_access_w,
+    p2m_access_rx = p2m_access_r | p2m_access_x,
+    p2m_access_wx = p2m_access_w | p2m_access_x,
+    p2m_access_rwx = p2m_access_r | p2m_access_w | p2m_access_x,
 
     p2m_access_rx2rw = 8, /* Special: page goes from RX to RW on write */
     p2m_access_n2rwx = 9, /* Special: page goes from N to RWX on access, *
@@ -103,9 +103,9 @@ int p2m_get_mem_access(struct domain *d, gfn_t gfn, xenmem_access_t *access,
 int mem_access_memop(unsigned long cmd,
                      XEN_GUEST_HANDLE_PARAM(xen_mem_access_op_t) arg);
 #else
-static inline
-int mem_access_memop(unsigned long cmd,
-                     XEN_GUEST_HANDLE_PARAM(xen_mem_access_op_t) arg)
+static inline int
+mem_access_memop(unsigned long cmd,
+                 XEN_GUEST_HANDLE_PARAM(xen_mem_access_op_t) arg)
 {
     return -ENOSYS;
 }

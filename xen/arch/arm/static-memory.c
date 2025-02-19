@@ -6,8 +6,7 @@
 
 static bool __init append_static_memory_to_bank(struct domain *d,
                                                 struct membank *bank,
-                                                mfn_t smfn,
-                                                paddr_t size)
+                                                mfn_t smfn, paddr_t size)
 {
     int res;
     unsigned int nr_pages = PFN_DOWN(size);
@@ -47,8 +46,9 @@ static mfn_t __init acquire_static_memory_bank(struct domain *d,
     ASSERT(IS_ALIGNED(*pbase, PAGE_SIZE) && IS_ALIGNED(*psize, PAGE_SIZE));
     if ( PFN_DOWN(*psize) > UINT_MAX )
     {
-        printk(XENLOG_ERR "%pd: static memory size too large: %#"PRIpaddr,
-               d, *psize);
+        printk(XENLOG_ERR "%pd: static memory size too large: %#" PRIpaddr,
+               d,
+               *psize);
         return INVALID_MFN;
     }
 
@@ -56,8 +56,9 @@ static mfn_t __init acquire_static_memory_bank(struct domain *d,
     res = acquire_domstatic_pages(d, smfn, PFN_DOWN(*psize), 0);
     if ( res )
     {
-        printk(XENLOG_ERR
-               "%pd: failed to acquire static memory: %d.\n", d, res);
+        printk(XENLOG_ERR "%pd: failed to acquire static memory: %d.\n",
+               d,
+               res);
         return INVALID_MFN;
     }
 
@@ -108,22 +109,32 @@ void __init allocate_static_memory(struct domain *d, struct kernel_info *kinfo,
     gbank = 0;
     gsize = ramsize[gbank];
     mem->bank[gbank].start = rambase[gbank];
-    nr_banks = length / (reg_cells * sizeof (u32));
+    nr_banks = length / (reg_cells * sizeof(u32));
 
     for ( ; bank < nr_banks; bank++ )
     {
-        smfn = acquire_static_memory_bank(d, &cell, addr_cells, size_cells,
-                                          &pbase, &psize);
+        smfn = acquire_static_memory_bank(d,
+                                          &cell,
+                                          addr_cells,
+                                          size_cells,
+                                          &pbase,
+                                          &psize);
         if ( mfn_eq(smfn, INVALID_MFN) )
             goto fail;
 
-        printk(XENLOG_INFO "%pd: STATIC BANK[%u] %#"PRIpaddr"-%#"PRIpaddr"\n",
-               d, bank, pbase, pbase + psize);
+        printk(XENLOG_INFO "%pd: STATIC BANK[%u] %#" PRIpaddr "-%#" PRIpaddr
+                           "\n",
+               d,
+               bank,
+               pbase,
+               pbase + psize);
 
         while ( 1 )
         {
             /* Map as much as possible the static range to the guest bank */
-            if ( !append_static_memory_to_bank(d, &mem->bank[gbank], smfn,
+            if ( !append_static_memory_to_bank(d,
+                                               &mem->bank[gbank],
+                                               smfn,
                                                min(psize, gsize)) )
                 goto fail;
 
@@ -172,14 +183,15 @@ void __init allocate_static_memory(struct domain *d, struct kernel_info *kinfo,
      */
     if ( kinfo->unassigned_mem )
     {
-        printk(XENLOG_ERR
-               "Size of \"memory\" property doesn't match up with the sum-up of \"xen,static-mem\". Unsupported configuration.\n");
+        printk(
+            XENLOG_ERR
+            "Size of \"memory\" property doesn't match up with the sum-up of \"xen,static-mem\". Unsupported configuration.\n");
         goto fail;
     }
 
     return;
 
- fail:
+fail:
     panic("Failed to allocate requested static memory for domain %pd.\n", d);
 }
 
@@ -201,8 +213,8 @@ void __init assign_static_memory_11(struct domain *d, struct kernel_info *kinfo,
 
     if ( parse_static_mem_prop(node, &addr_cells, &size_cells, &length, &cell) )
     {
-        printk(XENLOG_ERR
-               "%pd: failed to parse \"xen,static-mem\" property.\n", d);
+        printk(XENLOG_ERR "%pd: failed to parse \"xen,static-mem\" property.\n",
+               d);
         goto fail;
     }
     reg_cells = addr_cells + size_cells;
@@ -211,24 +223,32 @@ void __init assign_static_memory_11(struct domain *d, struct kernel_info *kinfo,
     if ( nr_banks > mem->max_banks )
     {
         printk(XENLOG_ERR
-               "%pd: exceed max number of supported guest memory banks.\n", d);
+               "%pd: exceed max number of supported guest memory banks.\n",
+               d);
         goto fail;
     }
 
     for ( ; bank < nr_banks; bank++ )
     {
-        smfn = acquire_static_memory_bank(d, &cell, addr_cells, size_cells,
-                                          &pbase, &psize);
+        smfn = acquire_static_memory_bank(d,
+                                          &cell,
+                                          addr_cells,
+                                          size_cells,
+                                          &pbase,
+                                          &psize);
         if ( mfn_eq(smfn, INVALID_MFN) )
             goto fail;
 
-        printk(XENLOG_INFO "%pd: STATIC BANK[%u] %#"PRIpaddr"-%#"PRIpaddr"\n",
-               d, bank, pbase, pbase + psize);
+        printk(XENLOG_INFO "%pd: STATIC BANK[%u] %#" PRIpaddr "-%#" PRIpaddr
+                           "\n",
+               d,
+               bank,
+               pbase,
+               pbase + psize);
 
         /* One guest memory bank is matched with one physical memory bank. */
         mem->bank[bank].start = pbase;
-        if ( !append_static_memory_to_bank(d, &mem->bank[bank],
-                                           smfn, psize) )
+        if ( !append_static_memory_to_bank(d, &mem->bank[bank], smfn, psize) )
             goto fail;
 
         kinfo->unassigned_mem -= psize;
@@ -244,16 +264,18 @@ void __init assign_static_memory_11(struct domain *d, struct kernel_info *kinfo,
      */
     if ( kinfo->unassigned_mem != 0 )
     {
-        printk(XENLOG_ERR
-               "Size of \"memory\" property doesn't match up with the sum-up of \"xen,static-mem\".\n");
+        printk(
+            XENLOG_ERR
+            "Size of \"memory\" property doesn't match up with the sum-up of \"xen,static-mem\".\n");
         goto fail;
     }
 
     return;
 
- fail:
-    panic("Failed to assign requested static memory for direct-map domain %pd.\n",
-          d);
+fail:
+    panic(
+        "Failed to assign requested static memory for direct-map domain %pd.\n",
+        d);
 }
 
 /* Static memory initialization */
@@ -262,7 +284,7 @@ void __init init_staticmem_pages(void)
     const struct membanks *reserved_mem = bootinfo_get_reserved_mem();
     unsigned int bank;
 
-    for ( bank = 0 ; bank < reserved_mem->nr_banks; bank++ )
+    for ( bank = 0; bank < reserved_mem->nr_banks; bank++ )
     {
         if ( reserved_mem->bank[bank].type == MEMBANK_STATIC_DOMAIN )
             init_staticmem_bank(&reserved_mem->bank[bank]);

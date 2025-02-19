@@ -16,8 +16,8 @@
  * Write a new value into the guest pagetable, and update the shadows
  * appropriately.
  */
-void
-shadow_write_guest_entry(struct vcpu *v, intpte_t *p, intpte_t new, mfn_t gmfn)
+void shadow_write_guest_entry(struct vcpu *v, intpte_t *p, intpte_t new,
+                              mfn_t gmfn)
 {
     paging_lock(v->domain);
     write_atomic(p, new);
@@ -30,9 +30,8 @@ shadow_write_guest_entry(struct vcpu *v, intpte_t *p, intpte_t new, mfn_t gmfn)
  * appropriately.  Returns the previous entry found, which the caller is
  * expected to check to see if the cmpxchg was successful.
  */
-intpte_t
-shadow_cmpxchg_guest_entry(struct vcpu *v, intpte_t *p, intpte_t old,
-                           intpte_t new, mfn_t gmfn)
+intpte_t shadow_cmpxchg_guest_entry(struct vcpu *v, intpte_t *p, intpte_t old,
+                                    intpte_t new, mfn_t gmfn)
 {
     intpte_t t;
 

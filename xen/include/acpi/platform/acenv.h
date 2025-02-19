@@ -150,7 +150,7 @@
 #elif defined(WIN64)
 #include "acwin64.h"
 
-#elif defined(MSDOS)		/* Must appear after WIN32 and WIN64 check */
+#elif defined(MSDOS) /* Must appear after WIN32 and WIN64 check */
 #include "acdos16.h"
 
 #elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
@@ -199,7 +199,7 @@
 #else
 #define DEBUGGER_THREADING          DEBUGGER_MULTI_THREADED
 #endif
-#endif				/* !DEBUGGER_THREADING */
+#endif /* !DEBUGGER_THREADING */
 
 /******************************************************************************
  *
@@ -223,24 +223,24 @@
 #include <string.h>
 #include <ctype.h>
 
-#endif				/* ACPI_USE_STANDARD_HEADERS */
+#endif /* ACPI_USE_STANDARD_HEADERS */
 
 /*
  * We will be linking to the standard Clib functions
  */
-#define ACPI_STRSTR(s1,s2)      strstr((s1), (s2))
-#define ACPI_STRCHR(s1,c)       strchr((s1), (c))
+#define ACPI_STRSTR(s1, s2)      strstr((s1), (s2))
+#define ACPI_STRCHR(s1, c)       strchr((s1), (c))
 #define ACPI_STRLEN(s)          (acpi_size) strlen((s))
-#define ACPI_STRCPY(d,s)        (void) strcpy((d), (s))
-#define ACPI_STRNCPY(d,s,n)     (void) strncpy((d), (s), (acpi_size)(n))
-#define ACPI_STRNCMP(d,s,n)     strncmp((d), (s), (acpi_size)(n))
-#define ACPI_STRCMP(d,s)        strcmp((d), (s))
-#define ACPI_STRCAT(d,s)        (void) strcat((d), (s))
-#define ACPI_STRNCAT(d,s,n)     strncat((d), (s), (acpi_size)(n))
-#define ACPI_STRTOUL(d,s,n)     strtoul((d), (s), (acpi_size)(n))
-#define ACPI_MEMCMP(s1,s2,n)    memcmp((const char *)(s1), (const char *)(s2), (acpi_size)(n))
-#define ACPI_MEMCPY(d,s,n)      (void) memcpy((d), (s), (acpi_size)(n))
-#define ACPI_MEMSET(d,s,n)      (void) memset((d), (s), (acpi_size)(n))
+#define ACPI_STRCPY(d, s)        (void) strcpy((d), (s))
+#define ACPI_STRNCPY(d, s, n)     (void) strncpy((d), (s), (acpi_size)(n))
+#define ACPI_STRNCMP(d, s, n)     strncmp((d), (s), (acpi_size)(n))
+#define ACPI_STRCMP(d, s)        strcmp((d), (s))
+#define ACPI_STRCAT(d, s)        (void) strcat((d), (s))
+#define ACPI_STRNCAT(d, s, n)     strncat((d), (s), (acpi_size)(n))
+#define ACPI_STRTOUL(d, s, n)     strtoul((d), (s), (acpi_size)(n))
+#define ACPI_MEMCMP(s1, s2, n)    memcmp((const char *)(s1), (const char *)(s2), (acpi_size)(n))
+#define ACPI_MEMCPY(d, s, n)      (void) memcpy((d), (s), (acpi_size)(n))
+#define ACPI_MEMSET(d, s, n)      (void) memset((d), (s), (acpi_size)(n))
 
 #define ACPI_TOUPPER(i)         toupper((int) (i))
 #define ACPI_TOLOWER(i)         tolower((int) (i))
@@ -259,7 +259,7 @@
  *
  *****************************************************************************/
 
- /*
+/*
   * Use local definitions of C library macros and functions
   * NOTE: The function implementations may not be as efficient
   * as an inline or assembly code implementation provided by a
@@ -271,13 +271,13 @@
 #ifndef _VALIST
 #define _VALIST
 typedef char *va_list;
-#endif				/* _VALIST */
+#endif /* _VALIST */
 
 /*
  * Storage alignment properties
  */
-#define  _AUPBND                (sizeof (acpi_native_int) - 1)
-#define  _ADNBND                (sizeof (acpi_native_int) - 1)
+#define _AUPBND                (sizeof (acpi_native_int) - 1)
+#define _ADNBND                (sizeof (acpi_native_int) - 1)
 
 /*
  * Variable argument list macro definitions
@@ -287,25 +287,25 @@ typedef char *va_list;
 #define va_end(ap)              (void) 0
 #define va_start(ap, A)         (void) ((ap) = (((char *) &(A)) + (_bnd (A,_AUPBND))))
 
-#endif				/* va_arg */
+#endif /* va_arg */
 
-#define ACPI_STRSTR(s1,s2)      acpi_ut_strstr ((s1), (s2))
-#define ACPI_STRCHR(s1,c)       acpi_ut_strchr ((s1), (c))
+#define ACPI_STRSTR(s1, s2)      acpi_ut_strstr ((s1), (s2))
+#define ACPI_STRCHR(s1, c)       acpi_ut_strchr ((s1), (c))
 #define ACPI_STRLEN(s)          (acpi_size) acpi_ut_strlen ((s))
-#define ACPI_STRCPY(d,s)        (void) acpi_ut_strcpy ((d), (s))
-#define ACPI_STRNCPY(d,s,n)     (void) acpi_ut_strncpy ((d), (s), (acpi_size)(n))
-#define ACPI_STRNCMP(d,s,n)     acpi_ut_strncmp ((d), (s), (acpi_size)(n))
-#define ACPI_STRCMP(d,s)        acpi_ut_strcmp ((d), (s))
-#define ACPI_STRCAT(d,s)        (void) acpi_ut_strcat ((d), (s))
-#define ACPI_STRNCAT(d,s,n)     acpi_ut_strncat ((d), (s), (acpi_size)(n))
-#define ACPI_STRTOUL(d,s,n)     acpi_ut_strtoul ((d), (s), (acpi_size)(n))
-#define ACPI_MEMCMP(s1,s2,n)    acpi_ut_memcmp((const char *)(s1), (const char *)(s2), (acpi_size)(n))
-#define ACPI_MEMCPY(d,s,n)      (void) acpi_ut_memcpy ((d), (s), (acpi_size)(n))
-#define ACPI_MEMSET(d,v,n)      (void) acpi_ut_memset ((d), (v), (acpi_size)(n))
+#define ACPI_STRCPY(d, s)        (void) acpi_ut_strcpy ((d), (s))
+#define ACPI_STRNCPY(d, s, n)     (void) acpi_ut_strncpy ((d), (s), (acpi_size)(n))
+#define ACPI_STRNCMP(d, s, n)     acpi_ut_strncmp ((d), (s), (acpi_size)(n))
+#define ACPI_STRCMP(d, s)        acpi_ut_strcmp ((d), (s))
+#define ACPI_STRCAT(d, s)        (void) acpi_ut_strcat ((d), (s))
+#define ACPI_STRNCAT(d, s, n)     acpi_ut_strncat ((d), (s), (acpi_size)(n))
+#define ACPI_STRTOUL(d, s, n)     acpi_ut_strtoul ((d), (s), (acpi_size)(n))
+#define ACPI_MEMCMP(s1, s2, n)    acpi_ut_memcmp((const char *)(s1), (const char *)(s2), (acpi_size)(n))
+#define ACPI_MEMCPY(d, s, n)      (void) acpi_ut_memcpy ((d), (s), (acpi_size)(n))
+#define ACPI_MEMSET(d, v, n)      (void) acpi_ut_memset ((d), (v), (acpi_size)(n))
 #define ACPI_TOUPPER            acpi_ut_to_upper
 #define ACPI_TOLOWER            acpi_ut_to_lower
 
-#endif				/* ACPI_USE_SYSTEM_CLIBRARY */
+#endif /* ACPI_USE_SYSTEM_CLIBRARY */
 
 /******************************************************************************
  *
@@ -346,7 +346,7 @@ typedef char *va_list;
 #define ACPI_ACQUIRE_GLOBAL_LOCK(Glptr, acq)
 #define ACPI_RELEASE_GLOBAL_LOCK(Glptr, acq)
 
-#endif				/* ACPI_ASM_MACROS */
+#endif /* ACPI_ASM_MACROS */
 
 #ifdef ACPI_APPLICATION
 
@@ -362,4 +362,4 @@ typedef char *va_list;
  * headers.
  *
  *****************************************************************************/
-#endif				/* __ACENV_H__ */
+#endif /* __ACENV_H__ */

@@ -27,8 +27,8 @@
 #endif
 
 #ifndef CONFIG_PV
-# undef X86_CR4_PCIDE
-# define X86_CR4_PCIDE 0
+#undef X86_CR4_PCIDE
+#define X86_CR4_PCIDE 0
 #endif
 
 u32 tlbflush_clock = 1U;
@@ -50,20 +50,20 @@ static u32 pre_flush(void)
     u32 t, t1, t2;
 
     t = tlbflush_clock;
-    do {
+    do
+    {
         t1 = t2 = t;
         /* Clock wrapped: someone else is leading a global TLB shootdown. */
         if ( unlikely(t1 == 0) )
             goto skip_clocktick;
         t2 = (t + 1) & WRAP_MASK;
-    }
-    while ( unlikely((t = cmpxchg(&tlbflush_clock, t1, t2)) != t1) );
+    } while ( unlikely((t = cmpxchg(&tlbflush_clock, t1, t2)) != t1) );
 
     /* Clock wrapped: we will lead a global TLB shootdown. */
     if ( unlikely(t2 == 0) )
         raise_softirq(NEW_TLBFLUSH_CLOCK_PERIOD_SOFTIRQ);
 
- skip_clocktick:
+skip_clocktick:
     return t2;
 }
 
@@ -191,7 +191,7 @@ unsigned int flush_area_local(const void *va, unsigned int flags)
 {
     unsigned int order = (flags - 1) & FLUSH_ORDER_MASK;
 
-    if ( flags & (FLUSH_TLB|FLUSH_TLB_GLOBAL) )
+    if ( flags & (FLUSH_TLB | FLUSH_TLB_GLOBAL) )
     {
         if ( order == 0 )
         {
@@ -222,8 +222,10 @@ unsigned int flush_area_local(const void *va, unsigned int flags)
                 }
             }
             else
-                asm volatile ( "invlpg %0"
-                               : : "m" (*(const char *)(va)) : "memory" );
+                asm volatile("invlpg %0"
+                             :
+                             : "m"(*(const char *)(va))
+                             : "memory");
         }
         else
             do_tlb_flush();
@@ -240,7 +242,7 @@ unsigned int flush_area_local(const void *va, unsigned int flags)
         if ( order < (BITS_PER_LONG - PAGE_SHIFT) )
             sz = 1UL << (order + PAGE_SHIFT);
 
-        if ( (!(flags & (FLUSH_TLB|FLUSH_TLB_GLOBAL)) ||
+        if ( (!(flags & (FLUSH_TLB | FLUSH_TLB_GLOBAL)) ||
               (flags & FLUSH_VA_VALID)) &&
              c->x86_clflush_size && c->x86_cache_size && sz &&
              ((sz >> 10) < c->x86_cache_size) )
@@ -286,15 +288,17 @@ void cache_flush(const void *addr, unsigned int size)
          * + prefix than a clflush + nop, and hence the prefix is added instead
          * of letting the alternative framework fill the gap by appending nops.
          */
-        alternative_input("ds; clflush %[p]",/* Semicolon for Clang-IAS < 12 */
+        alternative_input("ds; clflush %[p]", /* Semicolon for Clang-IAS < 12 */
                           "data16 clflush %[p]", /* clflushopt */
-                           X86_FEATURE_CLFLUSHOPT,
-                           [p] "m" (*(const char *)(addr)));
+                          X86_FEATURE_CLFLUSHOPT,
+                          [p] "m"(*(const char *)(addr)));
     }
 
     alternative_2("",
-                  "sfence", X86_FEATURE_CLFLUSHOPT,
-                  "mfence", X86_BUG_CLFLUSH_MFENCE);
+                  "sfence",
+                  X86_FEATURE_CLFLUSHOPT,
+                  "mfence",
+                  X86_BUG_CLFLUSH_MFENCE);
 }
 
 void cache_writeback(const void *addr, unsigned int size)
@@ -320,28 +324,28 @@ void cache_writeback(const void *addr, unsigned int size)
  * order to avoid it.
  */
 #if defined(HAVE_AS_CLWB)
-# define CLWB_ENCODING "clwb %[p]"
+#define CLWB_ENCODING "clwb %[p]"
 #elif defined(HAVE_AS_XSAVEOPT)
-# define CLWB_ENCODING "data16 xsaveopt %[p]" /* clwb */
+#define CLWB_ENCODING "data16 xsaveopt %[p]" /* clwb */
 #else
-# define CLWB_ENCODING ".byte 0x66, 0x0f, 0xae, 0x30" /* clwb (%%rax) */
+#define CLWB_ENCODING ".byte 0x66, 0x0f, 0xae, 0x30" /* clwb (%%rax) */
 #endif
 
 #define BASE_INPUT(addr) [p] "m" (*(const char *)(addr))
 #if defined(HAVE_AS_CLWB) || defined(HAVE_AS_XSAVEOPT)
-# define INPUT BASE_INPUT
+#define INPUT BASE_INPUT
 #else
-# define INPUT(addr) "a" (addr), BASE_INPUT(addr)
+#define INPUT(addr) "a" (addr), BASE_INPUT(addr)
 #endif
 
-        asm volatile (CLWB_ENCODING :: INPUT(addr));
+        asm volatile(CLWB_ENCODING ::INPUT(addr));
 
 #undef INPUT
 #undef BASE_INPUT
 #undef CLWB_ENCODING
     }
 
-    asm volatile ("sfence" ::: "memory");
+    asm volatile("sfence" ::: "memory");
 }
 
 unsigned int guest_flush_tlb_flags(const struct domain *d)

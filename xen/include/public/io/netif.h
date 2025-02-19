@@ -299,30 +299,31 @@
  * does not already provide an implementation.
  */
 #ifdef XEN_NETIF_DEFINE_TOEPLITZ
-static uint32_t xen_netif_toeplitz_hash(const uint8_t *key,
-                                        unsigned int keylen,
-                                        const uint8_t *buf,
-                                        unsigned int buflen)
+static uint32_t xen_netif_toeplitz_hash(const uint8_t *key, unsigned int keylen,
+                                        const uint8_t *buf, unsigned int buflen)
 {
     unsigned int keyi, bufi;
     uint64_t prefix = 0;
     uint64_t hash = 0;
 
     /* Pre-load prefix with the first 8 bytes of the key */
-    for (keyi = 0; keyi < 8; keyi++) {
+    for ( keyi = 0; keyi < 8; keyi++ )
+    {
         prefix <<= 8;
         prefix |= (keyi < keylen) ? key[keyi] : 0;
     }
 
-    for (bufi = 0; bufi < buflen; bufi++) {
+    for ( bufi = 0; bufi < buflen; bufi++ )
+    {
         uint8_t byte = buf[bufi];
         unsigned int bit;
 
-        for (bit = 0; bit < 8; bit++) {
-            if (byte & 0x80)
+        for ( bit = 0; bit < 8; bit++ )
+        {
+            if ( byte & 0x80 )
                 hash ^= prefix;
             prefix <<= 1;
-            byte <<=1;
+            byte <<= 1;
         }
 
         /*
@@ -437,13 +438,13 @@ struct xen_netif_ctrl_response {
  */
 
 struct xen_netif_gref {
-       grant_ref_t ref;
-       uint16_t flags;
+    grant_ref_t ref;
+    uint16_t flags;
 
 #define _XEN_NETIF_CTRLF_GREF_readonly    0
 #define XEN_NETIF_CTRLF_GREF_readonly    (1U<<_XEN_NETIF_CTRLF_GREF_readonly)
 
-       uint16_t status;
+    uint16_t status;
 };
 
 /*
@@ -749,8 +750,7 @@ struct xen_netif_gref {
  *       XEN_NETIF_CTRL_STATUS_INVALID_PARAMETER upon completion.
  */
 
-DEFINE_RING_TYPES(xen_netif_ctrl,
-                  struct xen_netif_ctrl_request,
+DEFINE_RING_TYPES(xen_netif_ctrl, struct xen_netif_ctrl_request,
                   struct xen_netif_ctrl_response);
 
 /*
@@ -956,21 +956,22 @@ DEFINE_RING_TYPES(xen_netif_ctrl,
 
 /* Protocol checksum field is blank in the packet (hardware offload)? */
 #define _NETTXF_csum_blank     (0)
-#define  NETTXF_csum_blank     (1U<<_NETTXF_csum_blank)
+#define NETTXF_csum_blank     (1U<<_NETTXF_csum_blank)
 
 /* Packet data has been validated against protocol checksum. */
 #define _NETTXF_data_validated (1)
-#define  NETTXF_data_validated (1U<<_NETTXF_data_validated)
+#define NETTXF_data_validated (1U<<_NETTXF_data_validated)
 
 /* Packet continues in the next request descriptor. */
 #define _NETTXF_more_data      (2)
-#define  NETTXF_more_data      (1U<<_NETTXF_more_data)
+#define NETTXF_more_data      (1U<<_NETTXF_more_data)
 
 /* Packet to be followed by extra descriptor(s). */
 #define _NETTXF_extra_info     (3)
-#define  NETTXF_extra_info     (1U<<_NETTXF_extra_info)
+#define NETTXF_extra_info     (1U<<_NETTXF_extra_info)
 
 #define XEN_NETIF_MAX_TX_SIZE 0xFFFF
+
 struct netif_tx_request {
     grant_ref_t gref;
     uint16_t offset;
@@ -1004,6 +1005,7 @@ typedef struct netif_tx_request netif_tx_request_t;
 struct netif_extra_info {
     uint8_t type;
     uint8_t flags;
+
     union {
         struct {
             uint16_t size;
@@ -1011,14 +1013,17 @@ struct netif_extra_info {
             uint8_t pad;
             uint16_t features;
         } gso;
+
         struct {
             uint8_t addr[6];
         } mcast;
+
         struct {
             uint8_t type;
             uint8_t algorithm;
             uint8_t value[4];
         } hash;
+
         uint16_t pad[3];
     } u;
 };
@@ -1026,42 +1031,42 @@ typedef struct netif_extra_info netif_extra_info_t;
 
 struct netif_tx_response {
     uint16_t id;
-    int16_t  status;
+    int16_t status;
 };
 typedef struct netif_tx_response netif_tx_response_t;
 
 struct netif_rx_request {
-    uint16_t    id;        /* Echoed in response message.        */
-    uint16_t    pad;
+    uint16_t id; /* Echoed in response message.        */
+    uint16_t pad;
     grant_ref_t gref;
 };
 typedef struct netif_rx_request netif_rx_request_t;
 
 /* Packet data has been validated against protocol checksum. */
 #define _NETRXF_data_validated (0)
-#define  NETRXF_data_validated (1U<<_NETRXF_data_validated)
+#define NETRXF_data_validated (1U<<_NETRXF_data_validated)
 
 /* Protocol checksum field is blank in the packet (hardware offload)? */
 #define _NETRXF_csum_blank     (1)
-#define  NETRXF_csum_blank     (1U<<_NETRXF_csum_blank)
+#define NETRXF_csum_blank     (1U<<_NETRXF_csum_blank)
 
 /* Packet continues in the next request descriptor. */
 #define _NETRXF_more_data      (2)
-#define  NETRXF_more_data      (1U<<_NETRXF_more_data)
+#define NETRXF_more_data      (1U<<_NETRXF_more_data)
 
 /* Packet to be followed by extra descriptor(s). */
 #define _NETRXF_extra_info     (3)
-#define  NETRXF_extra_info     (1U<<_NETRXF_extra_info)
+#define NETRXF_extra_info     (1U<<_NETRXF_extra_info)
 
 /* Packet has GSO prefix. Deprecated but included for compatibility */
 #define _NETRXF_gso_prefix     (4)
-#define  NETRXF_gso_prefix     (1U<<_NETRXF_gso_prefix)
+#define NETRXF_gso_prefix     (1U<<_NETRXF_gso_prefix)
 
 struct netif_rx_response {
     uint16_t id;
     uint16_t offset;
     uint16_t flags;
-    int16_t  status;
+    int16_t status;
 };
 typedef struct netif_rx_response netif_rx_response_t;
 

@@ -42,12 +42,12 @@ struct its_device {
     struct rb_node rbnode;
     struct host_its *hw_its;
     void *itt_addr;
-    paddr_t guest_doorbell;             /* Identifies the virtual ITS */
+    paddr_t guest_doorbell; /* Identifies the virtual ITS */
     uint32_t host_devid;
     uint32_t guest_devid;
-    uint32_t eventids;                  /* Number of event IDs (MSIs) */
-    uint32_t *host_lpi_blocks;          /* Which LPIs are used on the host */
-    struct pending_irq *pend_irqs;      /* One struct per event */
+    uint32_t eventids; /* Number of event IDs (MSIs) */
+    uint32_t *host_lpi_blocks; /* Which LPIs are used on the host */
+    struct pending_irq *pend_irqs; /* One struct per event */
 };
 
 bool gicv3_its_host_has_its(void)
@@ -56,6 +56,7 @@ bool gicv3_its_host_has_its(void)
 }
 
 #define BUFPTR_MASK                     GENMASK(19, 5)
+
 static int its_send_command(struct host_its *hw_its, const void *its_cmd)
 {
     /*
@@ -78,7 +79,8 @@ static int its_send_command(struct host_its *hw_its, const void *its_cmd)
 
     spin_lock(&hw_its->cmd_lock);
 
-    do {
+    do
+    {
         readp = readq_relaxed(hw_its->its_base + GITS_CREADR) & BUFPTR_MASK;
         writep = readq_relaxed(hw_its->its_base + GITS_CWRITER) & BUFPTR_MASK;
 
@@ -133,7 +135,8 @@ static int gicv3_its_wait_commands(struct host_its *hw_its)
     s_time_t deadline = NOW() + MILLISECS(100);
     uint64_t readp, writep;
 
-    do {
+    do
+    {
         spin_lock(&hw_its->cmd_lock);
         readp = readq_relaxed(hw_its->its_base + GITS_CREADR) & BUFPTR_MASK;
         writep = readq_relaxed(hw_its->its_base + GITS_CWRITER) & BUFPTR_MASK;
@@ -171,9 +174,8 @@ static int its_send_cmd_sync(struct host_its *its, unsigned int cpu)
     return its_send_command(its, cmd);
 }
 
-static int its_send_cmd_mapti(struct host_its *its,
-                              uint32_t deviceid, uint32_t eventid,
-                              uint32_t pintid, uint16_t icid)
+static int its_send_cmd_mapti(struct host_its *its, uint32_t deviceid,
+                              uint32_t eventid, uint32_t pintid, uint16_t icid)
 {
     uint64_t cmd[4];
 
@@ -223,8 +225,8 @@ static int its_send_cmd_mapd(struct host_its *its, uint32_t deviceid,
     return its_send_command(its, cmd);
 }
 
-static int its_send_cmd_inv(struct host_its *its,
-                            uint32_t deviceid, uint32_t eventid)
+static int its_send_cmd_inv(struct host_its *its, uint32_t deviceid,
+                            uint32_t eventid)
 {
     uint64_t cmd[4];
 
@@ -291,7 +293,7 @@ static void *its_map_cbaser(struct host_its *its)
     uint64_t reg;
     void *buffer;
 
-    reg  = GIC_BASER_InnerShareable << GITS_BASER_SHAREABILITY_SHIFT;
+    reg = GIC_BASER_InnerShareable << GITS_BASER_SHAREABILITY_SHIFT;
     reg |= GIC_BASER_CACHE_SameAsInner << GITS_BASER_OUTER_CACHEABILITY_SHIFT;
     reg |= GIC_BASER_CACHE_RaWaWb << GITS_BASER_INNER_CACHEABILITY_SHIFT;
 
@@ -338,11 +340,11 @@ static int its_map_baser(void __iomem *basereg, uint64_t regc,
 {
     uint64_t attr, reg;
     unsigned int entry_size = GITS_BASER_ENTRY_SIZE(regc);
-    unsigned int pagesz = 2;    /* try 64K pages first, then go down. */
+    unsigned int pagesz = 2; /* try 64K pages first, then go down. */
     unsigned int table_size;
     void *buffer;
 
-    attr  = GIC_BASER_InnerShareable << GITS_BASER_SHAREABILITY_SHIFT;
+    attr = GIC_BASER_InnerShareable << GITS_BASER_SHAREABILITY_SHIFT;
     attr |= GIC_BASER_CACHE_SameAsInner << GITS_BASER_OUTER_CACHEABILITY_SHIFT;
     attr |= GIC_BASER_CACHE_RaWaWb << GITS_BASER_INNER_CACHEABILITY_SHIFT;
 
@@ -367,7 +369,7 @@ retry:
         return -ERANGE;
     }
 
-    reg  = attr;
+    reg = attr;
     reg |= (pagesz << GITS_BASER_PAGE_SIZE_SHIFT);
     reg |= (table_size >> BASER_PAGE_BITS(pagesz)) - 1;
     reg |= regc & BASER_RO_MASK;
@@ -426,7 +428,8 @@ static int gicv3_disable_its(struct host_its *hw_its)
 
     writel_relaxed(reg & ~GITS_CTLR_ENABLE, hw_its->its_base + GITS_CTLR);
 
-    do {
+    do
+    {
         reg = readl_relaxed(hw_its->its_base + GITS_CTLR);
         if ( reg & GITS_CTLR_QUIESCENT )
             return 0;
@@ -551,8 +554,8 @@ static struct host_its *gicv3_its_find_by_doorbell(paddr_t doorbell_address)
     return NULL;
 }
 
-static int compare_its_guest_devices(struct its_device *dev,
-                                     paddr_t vdoorbell, uint32_t vdevid)
+static int compare_its_guest_devices(struct its_device *dev, paddr_t vdoorbell,
+                                     uint32_t vdevid)
 {
     if ( dev->guest_doorbell < vdoorbell )
         return -1;
@@ -574,9 +577,9 @@ static int compare_its_guest_devices(struct its_device *dev,
  * The mapping connects a device @devid and event @eventid pair to LPI @lpi,
  * increasing both @eventid and @lpi to cover the number of requested LPIs.
  */
-static int gicv3_its_map_host_events(struct host_its *its,
-                                     uint32_t devid, uint32_t eventid,
-                                     uint32_t lpi, uint32_t nr_events)
+static int gicv3_its_map_host_events(struct host_its *its, uint32_t devid,
+                                     uint32_t eventid, uint32_t lpi,
+                                     uint32_t nr_events)
 {
     uint32_t i;
     int ret;
@@ -609,16 +612,16 @@ static int gicv3_its_map_host_events(struct host_its *its,
  * This does not check if this particular hardware device is already mapped
  * at another domain, it is expected that this would be done by the caller.
  */
-int gicv3_its_map_guest_device(struct domain *d,
-                               paddr_t host_doorbell, uint32_t host_devid,
-                               paddr_t guest_doorbell, uint32_t guest_devid,
-                               uint64_t nr_events, bool valid)
+int gicv3_its_map_guest_device(struct domain *d, paddr_t host_doorbell,
+                               uint32_t host_devid, paddr_t guest_doorbell,
+                               uint32_t guest_devid, uint64_t nr_events,
+                               bool valid)
 {
     void *itt_addr = NULL;
     struct host_its *hw_its;
     struct its_device *dev = NULL;
     struct rb_node **new = &d->arch.vgic.its_devices.rb_node, *parent = NULL;
-    int i, ret = -ENOENT;      /* "i" must be signed to check for >= 0 below. */
+    int i, ret = -ENOENT; /* "i" must be signed to check for >= 0 below. */
 
     hw_its = gicv3_its_find_by_doorbell(host_doorbell);
     if ( !hw_its )
@@ -661,8 +664,12 @@ int gicv3_its_map_guest_device(struct domain *d,
 
             if ( valid )
             {
-                printk(XENLOG_G_WARNING "d%d tried to remap guest ITS device 0x%x to host device 0x%x\n",
-                        d->domain_id, guest_devid, host_devid);
+                printk(
+                    XENLOG_G_WARNING
+                    "d%d tried to remap guest ITS device 0x%x to host device 0x%x\n",
+                    d->domain_id,
+                    guest_devid,
+                    host_devid);
                 return -EBUSY;
             }
 
@@ -712,8 +719,11 @@ int gicv3_its_map_guest_device(struct domain *d,
     if ( !dev->host_lpi_blocks )
         goto out_unlock;
 
-    ret = its_send_cmd_mapd(hw_its, host_devid, fls(nr_events - 1),
-                            virt_to_maddr(itt_addr), true);
+    ret = its_send_cmd_mapd(hw_its,
+                            host_devid,
+                            fls(nr_events - 1),
+                            virt_to_maddr(itt_addr),
+                            true);
     if ( ret )
         goto out_unlock;
 
@@ -739,8 +749,11 @@ int gicv3_its_map_guest_device(struct domain *d,
         if ( ret < 0 )
             break;
 
-        ret = gicv3_its_map_host_events(hw_its, host_devid, i * LPI_BLOCK,
-                                        dev->host_lpi_blocks[i], LPI_BLOCK);
+        ret = gicv3_its_map_host_events(hw_its,
+                                        host_devid,
+                                        i * LPI_BLOCK,
+                                        dev->host_lpi_blocks[i],
+                                        LPI_BLOCK);
         if ( ret < 0 )
             break;
     }
@@ -790,7 +803,7 @@ static struct its_device *get_its_device(struct domain *d, paddr_t vdoorbell,
 
     ASSERT(spin_is_locked(&d->arch.vgic.its_devices_lock));
 
-    while (node)
+    while ( node )
     {
         int cmp;
 
@@ -809,11 +822,9 @@ static struct its_device *get_its_device(struct domain *d, paddr_t vdoorbell,
     return NULL;
 }
 
-static struct pending_irq *get_event_pending_irq(struct domain *d,
-                                                 paddr_t vdoorbell_address,
-                                                 uint32_t vdevid,
-                                                 uint32_t eventid,
-                                                 uint32_t *host_lpi)
+static struct pending_irq *
+get_event_pending_irq(struct domain *d, paddr_t vdoorbell_address,
+                      uint32_t vdevid, uint32_t eventid, uint32_t *host_lpi)
 {
     struct its_device *dev;
     struct pending_irq *pirq = NULL;
@@ -845,7 +856,10 @@ int gicv3_remove_guest_event(struct domain *d, paddr_t vdoorbell_address,
 {
     uint32_t host_lpi = INVALID_LPI;
 
-    if ( !get_event_pending_irq(d, vdoorbell_address, vdevid, eventid,
+    if ( !get_event_pending_irq(d,
+                                vdoorbell_address,
+                                vdevid,
+                                eventid,
                                 &host_lpi) )
         return -EINVAL;
 
@@ -873,8 +887,8 @@ struct pending_irq *gicv3_assign_guest_event(struct domain *d,
     struct pending_irq *pirq;
     uint32_t host_lpi = INVALID_LPI;
 
-    pirq = get_event_pending_irq(d, vdoorbell_address, vdevid, eventid,
-                                 &host_lpi);
+    pirq =
+        get_event_pending_irq(d, vdoorbell_address, vdevid, eventid, &host_lpi);
 
     if ( !pirq )
         return NULL;
@@ -890,7 +904,7 @@ int gicv3_its_deny_access(struct domain *d)
     unsigned long mfn, nr;
     const struct host_its *its_data;
 
-    list_for_each_entry( its_data, &host_its_list, entry )
+    list_for_each_entry(its_data, &host_its_list, entry)
     {
         mfn = paddr_to_pfn(its_data->addr);
         nr = PFN_UP(its_data->size);
@@ -911,8 +925,7 @@ int gicv3_its_deny_access(struct domain *d)
  * as the host.
  */
 int gicv3_its_make_hwdom_dt_nodes(const struct domain *d,
-                                  const struct dt_device_node *gic,
-                                  void *fdt)
+                                  const struct dt_device_node *gic, void *fdt)
 {
     uint32_t len;
     int res;
@@ -1042,7 +1055,8 @@ static void gicv3_its_acpi_init(void)
 {
     /* Parse ITS information */
     acpi_table_parse_madt(ACPI_MADT_TYPE_GENERIC_TRANSLATOR,
-                          gicv3_its_acpi_probe, 0);
+                          gicv3_its_acpi_probe,
+                          0);
 }
 
 unsigned long gicv3_its_make_hwdom_madt(const struct domain *d, void *base_ptr)
@@ -1091,7 +1105,6 @@ int gicv3_its_init(void)
 
     return 0;
 }
-
 
 /*
  * Local variables:

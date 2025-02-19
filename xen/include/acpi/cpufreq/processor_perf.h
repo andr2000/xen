@@ -11,14 +11,14 @@ unsigned int powernow_register_driver(void);
 unsigned int get_measured_perf(unsigned int cpu, unsigned int flag);
 void cpufreq_residency_update(unsigned int cpu, uint8_t state);
 void cpufreq_statistic_update(unsigned int cpu, uint8_t from, uint8_t to);
-int  cpufreq_statistic_init(unsigned int cpu);
+int cpufreq_statistic_init(unsigned int cpu);
 void cpufreq_statistic_exit(unsigned int cpu);
 void cpufreq_statistic_reset(unsigned int cpu);
 
-int  cpufreq_limit_change(unsigned int cpu);
+int cpufreq_limit_change(unsigned int cpu);
 
-int  cpufreq_add_cpu(unsigned int cpu);
-int  cpufreq_del_cpu(unsigned int cpu);
+int cpufreq_add_cpu(unsigned int cpu);
+int cpufreq_del_cpu(unsigned int cpu);
 
 struct processor_performance {
     uint32_t state;
@@ -36,17 +36,17 @@ struct processor_performance {
 struct processor_pminfo {
     uint32_t acpi_id;
     uint32_t id;
-    struct processor_performance    perf;
+    struct processor_performance perf;
 };
 
 extern struct processor_pminfo *processor_pminfo[NR_CPUS];
 
 struct px_stat {
-    uint8_t total;        /* total Px states */
-    uint8_t usable;       /* usable Px states */
-    uint8_t last;         /* last Px state */
-    uint8_t cur;          /* current Px state */
-    uint64_t *trans_pt;   /* Px transition table */
+    uint8_t total; /* total Px states */
+    uint8_t usable; /* usable Px states */
+    uint8_t last; /* last Px state */
+    uint8_t cur; /* current Px state */
+    uint64_t *trans_pt; /* Px transition table */
     pm_px_val_t *pt;
 };
 

@@ -45,31 +45,32 @@ struct e820map __initdata e820_raw;
  */
 int __init e820_all_mapped(u64 start, u64 end, unsigned type)
 {
-	unsigned int i;
+    unsigned int i;
 
-	for (i = 0; i < e820.nr_map; i++) {
-		struct e820entry *ei = &e820.map[i];
+    for ( i = 0; i < e820.nr_map; i++ )
+    {
+        struct e820entry *ei = &e820.map[i];
 
-		if (type && ei->type != type)
-			continue;
-		/* is the region (part) in overlap with the current region ?*/
-		if (ei->addr >= end || ei->addr + ei->size <= start)
-			continue;
+        if ( type && ei->type != type )
+            continue;
+        /* is the region (part) in overlap with the current region ?*/
+        if ( ei->addr >= end || ei->addr + ei->size <= start )
+            continue;
 
-		/*
+        /*
 		 * If the region is at the beginning of [start,end) we move
 		 * start to the end of the region since it's ok until there
 		 */
-		if (ei->addr <= start)
-			start = ei->addr + ei->size;
-		/*
+        if ( ei->addr <= start )
+            start = ei->addr + ei->size;
+        /*
 		 * if start is now at or beyond end, we're done, full
 		 * coverage
 		 */
-		if (start >= end)
-			return 1;
-	}
-	return 0;
+        if ( start >= end )
+            return 1;
+    }
+    return 0;
 }
 
 static void __init add_memory_region(unsigned long long start,
@@ -77,7 +78,8 @@ static void __init add_memory_region(unsigned long long start,
 {
     unsigned int x = e820.nr_map;
 
-    if (x == ARRAY_SIZE(e820.map)) {
+    if ( x == ARRAY_SIZE(e820.map) )
+    {
         printk(KERN_ERR "Ooops! Too many entries in the memory map!\n");
         return;
     }
@@ -93,11 +95,13 @@ void __init print_e820_memory_map(const struct e820entry *map,
 {
     unsigned int i;
 
-    for (i = 0; i < entries; i++) {
+    for ( i = 0; i < entries; i++ )
+    {
         printk(" [%016Lx, %016Lx] ",
                (unsigned long long)(map[i].addr),
                (unsigned long long)(map[i].addr + map[i].size) - 1);
-        switch (map[i].type) {
+        switch ( map[i].type )
+        {
         case E820_RAM:
             printk("(usable)\n");
             break;
@@ -131,8 +135,8 @@ struct change_member {
     struct e820entry *pbios; /* pointer to original bios entry */
     unsigned long long addr; /* address for this change point */
 };
-static struct change_member change_point_list[2*E820MAX] __initdata;
-static struct change_member *change_point[2*E820MAX] __initdata;
+static struct change_member change_point_list[2 * E820MAX] __initdata;
+static struct change_member *change_point[2 * E820MAX] __initdata;
 static struct e820entry *overlap_list[E820MAX] __initdata;
 static struct e820entry new_bios[E820MAX] __initdata;
 
@@ -182,106 +186,113 @@ int __init sanitize_e820_map(struct e820entry *biosmap, unsigned int *pnr_map)
     */
 
     /* if there's only one memory region, don't bother */
-    if (*pnr_map < 2)
+    if ( *pnr_map < 2 )
         return -1;
 
     old_nr = *pnr_map;
 
     /* bail out if we find any unreasonable addresses in bios map */
-    for (i=0; i<old_nr; i++)
-        if (biosmap[i].addr + biosmap[i].size < biosmap[i].addr)
+    for ( i = 0; i < old_nr; i++ )
+        if ( biosmap[i].addr + biosmap[i].size < biosmap[i].addr )
             return -1;
 
     /* create pointers for initial change-point information (for sorting) */
-    for (i=0; i < 2*old_nr; i++)
+    for ( i = 0; i < 2 * old_nr; i++ )
         change_point[i] = &change_point_list[i];
 
     /* record all known change-points (starting and ending addresses),
        omitting those that are for empty memory regions */
     chgidx = 0;
-    for (i=0; i < old_nr; i++)	{
-        if (biosmap[i].size != 0) {
+    for ( i = 0; i < old_nr; i++ )
+    {
+        if ( biosmap[i].size != 0 )
+        {
             change_point[chgidx]->addr = biosmap[i].addr;
             change_point[chgidx++]->pbios = &biosmap[i];
             change_point[chgidx]->addr = biosmap[i].addr + biosmap[i].size;
             change_point[chgidx++]->pbios = &biosmap[i];
         }
     }
-    chg_nr = chgidx;    	/* true number of change-points */
+    chg_nr = chgidx; /* true number of change-points */
 
     /* sort change-point list by memory addresses (low -> high) */
     still_changing = true;
-    while (still_changing)	{
+    while ( still_changing )
+    {
         still_changing = false;
-        for (i=1; i < chg_nr; i++)  {
+        for ( i = 1; i < chg_nr; i++ )
+        {
             /* if <current_addr> > <last_addr>, swap */
             /* or, if current=<start_addr> & last=<end_addr>, swap */
-            if ((change_point[i]->addr < change_point[i-1]->addr) ||
-                ((change_point[i]->addr == change_point[i-1]->addr) &&
-                 (change_point[i]->addr == change_point[i]->pbios->addr) &&
-                 (change_point[i-1]->addr != change_point[i-1]->pbios->addr))
-                )
+            if ( (change_point[i]->addr < change_point[i - 1]->addr) ||
+                 ((change_point[i]->addr == change_point[i - 1]->addr) &&
+                  (change_point[i]->addr == change_point[i]->pbios->addr) &&
+                  (change_point[i - 1]->addr !=
+                   change_point[i - 1]->pbios->addr)) )
             {
                 change_tmp = change_point[i];
-                change_point[i] = change_point[i-1];
-                change_point[i-1] = change_tmp;
+                change_point[i] = change_point[i - 1];
+                change_point[i - 1] = change_tmp;
                 still_changing = true;
             }
         }
     }
 
     /* create a new bios memory map, removing overlaps */
-    overlap_entries=0;	 /* number of entries in the overlap table */
-    new_bios_entry=0;	 /* index for creating new bios map entries */
-    last_type = 0;		 /* start with undefined memory type */
-    last_addr = 0;		 /* start with 0 as last starting address */
+    overlap_entries = 0; /* number of entries in the overlap table */
+    new_bios_entry = 0; /* index for creating new bios map entries */
+    last_type = 0; /* start with undefined memory type */
+    last_addr = 0; /* start with 0 as last starting address */
     /* loop through change-points, determining affect on the new bios map */
-    for (chgidx=0; chgidx < chg_nr; chgidx++)
+    for ( chgidx = 0; chgidx < chg_nr; chgidx++ )
     {
         /* keep track of all overlapping bios entries */
-        if (change_point[chgidx]->addr == change_point[chgidx]->pbios->addr)
+        if ( change_point[chgidx]->addr == change_point[chgidx]->pbios->addr )
         {
             /* add map entry to overlap list (> 1 entry implies an overlap) */
-            overlap_list[overlap_entries++]=change_point[chgidx]->pbios;
+            overlap_list[overlap_entries++] = change_point[chgidx]->pbios;
         }
         else
         {
             /* remove entry from list (order independent, so swap with last) */
-            for (i=0; i<overlap_entries; i++)
+            for ( i = 0; i < overlap_entries; i++ )
             {
-                if (overlap_list[i] == change_point[chgidx]->pbios)
-                    overlap_list[i] = overlap_list[overlap_entries-1];
+                if ( overlap_list[i] == change_point[chgidx]->pbios )
+                    overlap_list[i] = overlap_list[overlap_entries - 1];
             }
             overlap_entries--;
         }
         /* if there are overlapping entries, decide which "type" to use */
         /* (larger value takes precedence -- 1=usable, 2,3,4,4+=unusable) */
         current_type = 0;
-        for (i=0; i<overlap_entries; i++)
-            if (overlap_list[i]->type > current_type)
+        for ( i = 0; i < overlap_entries; i++ )
+            if ( overlap_list[i]->type > current_type )
                 current_type = overlap_list[i]->type;
         /* continue building up new bios map based on this information */
-        if (current_type != last_type)	{
-            if (last_type != 0)	 {
-                new_bios[new_bios_entry].size =
-                    change_point[chgidx]->addr - last_addr;
-				/* move forward only if the new size was non-zero */
-                if (new_bios[new_bios_entry].size != 0)
-                    if (++new_bios_entry >= ARRAY_SIZE(new_bios))
-                        break; 	/* no more space left for new bios entries */
+        if ( current_type != last_type )
+        {
+            if ( last_type != 0 )
+            {
+                new_bios[new_bios_entry].size = change_point[chgidx]->addr -
+                                                last_addr;
+                /* move forward only if the new size was non-zero */
+                if ( new_bios[new_bios_entry].size != 0 )
+                    if ( ++new_bios_entry >= ARRAY_SIZE(new_bios) )
+                        break; /* no more space left for new bios entries */
             }
-            if (current_type != 0)	{
+            if ( current_type != 0 )
+            {
                 new_bios[new_bios_entry].addr = change_point[chgidx]->addr;
                 new_bios[new_bios_entry].type = current_type;
-                last_addr=change_point[chgidx]->addr;
+                last_addr = change_point[chgidx]->addr;
             }
             last_type = current_type;
         }
     }
-    new_nr = new_bios_entry;   /* retain count for new bios entries */
+    new_nr = new_bios_entry; /* retain count for new bios entries */
 
     /* copy new bios mapping into original location */
-    memcpy(biosmap, new_bios, new_nr*sizeof(struct e820entry));
+    memcpy(biosmap, new_bios, new_nr * sizeof(struct e820entry));
     *pnr_map = new_nr;
 
     return 0;
@@ -303,41 +314,43 @@ int __init sanitize_e820_map(struct e820entry *biosmap, unsigned int *pnr_map)
  * thinkpad 560x, for example, does not cooperate with the memory
  * detection code.)
  */
-static int __init copy_e820_map(struct e820entry * biosmap, unsigned int nr_map)
+static int __init copy_e820_map(struct e820entry *biosmap, unsigned int nr_map)
 {
     /* Only one memory region? Ignore it */
-    if (nr_map < 2)
+    if ( nr_map < 2 )
         return -1;
 
-    do {
+    do
+    {
         unsigned long long start = biosmap->addr;
         unsigned long long size = biosmap->size;
         unsigned long long end = start + size;
         unsigned long type = biosmap->type;
 
         /* Overflow in 64 bits? Ignore the memory map. */
-        if (start > end)
+        if ( start > end )
             return -1;
 
         /*
          * Some BIOSes claim RAM in the 640k - 1M region.
          * Not right. Fix it up, but only when running on bare metal.
          */
-        if (!cpu_has_hypervisor && type == E820_RAM) {
-            if (start < 0x100000ULL && end > 0xA0000ULL) {
-                if (start < 0xA0000ULL)
-                    add_memory_region(start, 0xA0000ULL-start, type);
-                if (end <= 0x100000ULL)
+        if ( !cpu_has_hypervisor && type == E820_RAM )
+        {
+            if ( start < 0x100000ULL && end > 0xA0000ULL )
+            {
+                if ( start < 0xA0000ULL )
+                    add_memory_region(start, 0xA0000ULL - start, type);
+                if ( end <= 0x100000ULL )
                     continue;
                 start = 0x100000ULL;
                 size = end - start;
             }
         }
         add_memory_region(start, size, type);
-    } while (biosmap++,--nr_map);
+    } while ( biosmap++, --nr_map );
     return 0;
 }
-
 
 /*
  * Find the highest page frame number we have available
@@ -347,16 +360,17 @@ static unsigned long __init find_max_pfn(void)
     unsigned int i;
     unsigned long max_pfn = 0;
 
-    for (i = 0; i < e820.nr_map; i++) {
+    for ( i = 0; i < e820.nr_map; i++ )
+    {
         unsigned long start, end;
         /* RAM? */
-        if (e820.map[i].type != E820_RAM)
+        if ( e820.map[i].type != E820_RAM )
             continue;
         start = PFN_UP(e820.map[i].addr);
         end = PFN_DOWN(e820.map[i].addr + e820.map[i].size);
-        if (start >= end)
+        if ( start >= end )
             continue;
-        if (end > max_pfn)
+        if ( end > max_pfn )
             max_pfn = end;
     }
 
@@ -369,7 +383,7 @@ static void __init clip_to_limit(uint64_t limit, const char *warnmsg)
     char _warnmsg[160];
     uint64_t old_limit = 0;
 
-    for ( ; ; )
+    for ( ;; )
     {
         /* Find a RAM region needing clipping. */
         for ( i = 0; i < e820.nr_map; i++ )
@@ -379,15 +393,17 @@ static void __init clip_to_limit(uint64_t limit, const char *warnmsg)
 
         /* If none found, we are done. */
         if ( i == e820.nr_map )
-            break;        
+            break;
 
-        old_limit = max_t(
-            uint64_t, old_limit, e820.map[i].addr + e820.map[i].size);
+        old_limit =
+            max_t(uint64_t, old_limit, e820.map[i].addr + e820.map[i].size);
 
         /* We try to convert clipped RAM areas to E820_UNUSABLE. */
-        if ( e820_change_range_type(&e820, max(e820.map[i].addr, limit),
+        if ( e820_change_range_type(&e820,
+                                    max(e820.map[i].addr, limit),
                                     e820.map[i].addr + e820.map[i].size,
-                                    E820_RAM, E820_UNUSABLE) )
+                                    E820_RAM,
+                                    E820_UNUSABLE) )
             continue;
 
         /*
@@ -400,7 +416,8 @@ static void __init clip_to_limit(uint64_t limit, const char *warnmsg)
         }
         else
         {
-            memmove(&e820.map[i], &e820.map[i+1],
+            memmove(&e820.map[i],
+                    &e820.map[i + 1],
                     (e820.nr_map - i - 1) * sizeof(struct e820entry));
             e820.nr_map--;
         }
@@ -410,11 +427,12 @@ static void __init clip_to_limit(uint64_t limit, const char *warnmsg)
     {
         if ( warnmsg )
         {
-            snprintf(_warnmsg, sizeof(_warnmsg), warnmsg, (long)(limit>>30));
+            snprintf(_warnmsg, sizeof(_warnmsg), warnmsg, (long)(limit >> 30));
             printk("WARNING: %s\n", _warnmsg);
         }
         printk("Truncating RAM from %lukB to %lukB\n",
-               (unsigned long)(old_limit >> 10), (unsigned long)(limit >> 10));
+               (unsigned long)(old_limit >> 10),
+               (unsigned long)(limit >> 10));
     }
 }
 
@@ -429,7 +447,8 @@ static uint64_t __init mtrr_top_of_ram(void)
     if ( e820_mtrr_clip == -1 )
     {
         char vendor[13];
-        cpuid(0x00000000, &eax,
+        cpuid(0x00000000,
+              &eax,
               (uint32_t *)&vendor[0],
               (uint32_t *)&vendor[8],
               (uint32_t *)&vendor[4]);
@@ -446,7 +465,7 @@ static uint64_t __init mtrr_top_of_ram(void)
     /* Does the CPU support architectural MTRRs? */
     cpuid(0x00000001, &eax, &ebx, &ecx, &edx);
     if ( !test_bit(X86_FEATURE_MTRR & 31, &edx) )
-         return 0;
+        return 0;
 
     /* paddr_bits must have been set at this point */
     ASSERT(paddr_bits);
@@ -456,7 +475,9 @@ static uint64_t __init mtrr_top_of_ram(void)
     rdmsrl(MSR_MTRRdefType, mtrr_def);
 
     if ( e820_verbose )
-        printk(" MTRR cap: %"PRIx64" type: %"PRIx64"\n", mtrr_cap, mtrr_def);
+        printk(" MTRR cap: %" PRIx64 " type: %" PRIx64 "\n",
+               mtrr_cap,
+               mtrr_def);
 
     /* MTRRs enabled, and default memory type is not writeback? */
     if ( !test_bit(11, &mtrr_def) || ((uint8_t)mtrr_def == X86_MT_WB) )
@@ -473,8 +494,10 @@ static uint64_t __init mtrr_top_of_ram(void)
         rdmsrl(MSR_IA32_MTRR_PHYSMASK(i), mask);
 
         if ( e820_verbose )
-            printk(" MTRR[%d]: base %"PRIx64" mask %"PRIx64"\n",
-                   i, base, mask);
+            printk(" MTRR[%d]: base %" PRIx64 " mask %" PRIx64 "\n",
+                   i,
+                   base,
+                   mask);
 
         if ( !test_bit(11, &mask) || ((uint8_t)base != X86_MT_WB) )
             continue;
@@ -488,7 +511,7 @@ static uint64_t __init mtrr_top_of_ram(void)
 
 static void __init reserve_dmi_region(void)
 {
-    for ( ; ; )
+    for ( ;; )
     {
         paddr_t base;
         u32 len;
@@ -498,8 +521,11 @@ static void __init reserve_dmi_region(void)
             break;
         if ( ((base + len) > base) &&
              reserve_e820_ram(&e820, base, base + len) )
-            printk("WARNING: %s table located in E820 RAM %"PRIpaddr"-%"PRIpaddr". Fixed.\n",
-                   what, base, base + len);
+            printk("WARNING: %s table located in E820 RAM %" PRIpaddr
+                   "-%" PRIpaddr ". Fixed.\n",
+                   what,
+                   base,
+                   base + len);
     }
 }
 
@@ -521,20 +547,22 @@ static void __init machine_specific_memory_setup(struct e820map *raw)
             if ( e820.map[i].type == E820_RAM )
                 size += e820.map[i].size;
         if ( size > opt_availmem )
-            clip_to_limit(
-                e820.map[i-1].addr + e820.map[i-1].size - (size-opt_availmem),
-                NULL);
+            clip_to_limit(e820.map[i - 1].addr + e820.map[i - 1].size -
+                              (size - opt_availmem),
+                          NULL);
     }
 
-    mpt_limit = ((RDWR_MPT_VIRT_END - RDWR_MPT_VIRT_START)
-                 / sizeof(unsigned long)) << PAGE_SHIFT;
-    ro_mpt_limit = ((RO_MPT_VIRT_END - RO_MPT_VIRT_START)
-                    / sizeof(unsigned long)) << PAGE_SHIFT;
+    mpt_limit =
+        ((RDWR_MPT_VIRT_END - RDWR_MPT_VIRT_START) / sizeof(unsigned long))
+        << PAGE_SHIFT;
+    ro_mpt_limit =
+        ((RO_MPT_VIRT_END - RO_MPT_VIRT_START) / sizeof(unsigned long))
+        << PAGE_SHIFT;
     if ( mpt_limit > ro_mpt_limit )
         mpt_limit = ro_mpt_limit;
-    clip_to_limit(mpt_limit,
-                  "Only the first %lu GB of the physical "
-                  "memory map can be accessed by Xen.");
+    clip_to_limit(
+        mpt_limit,
+        "Only the first %lu GB of the physical " "memory map can be accessed by Xen.");
 
     reserve_dmi_region();
 
@@ -576,13 +604,14 @@ int __init e820_add_range(uint64_t s, uint64_t e, uint32_t type)
 
     if ( e820.nr_map >= ARRAY_SIZE(e820.map) )
     {
-        printk(XENLOG_WARNING "E820: overflow while adding region"
-               " %"PRIx64"-%"PRIx64"\n", s, e);
+        printk(XENLOG_WARNING "E820: overflow while adding region" " %" PRIx64
+                              "-%" PRIx64 "\n",
+               s,
+               e);
         return 0;
     }
 
-    memmove(ei + i + 1, ei + i,
-            (e820.nr_map - i) * sizeof(*e820.map));
+    memmove(ei + i + 1, ei + i, (e820.nr_map - i) * sizeof(*e820.map));
 
     e820.nr_map++;
     ei[i].addr = s;
@@ -592,9 +621,8 @@ int __init e820_add_range(uint64_t s, uint64_t e, uint32_t type)
     return 1;
 }
 
-int __init e820_change_range_type(
-    struct e820map *map, uint64_t s, uint64_t e,
-    uint32_t orig_type, uint32_t new_type)
+int __init e820_change_range_type(struct e820map *map, uint64_t s, uint64_t e,
+                                  uint32_t orig_type, uint32_t new_type)
 {
     uint64_t rs = 0, re = 0;
     unsigned int i;
@@ -620,23 +648,24 @@ int __init e820_change_range_type(
         if ( (map->nr_map + 1) > ARRAY_SIZE(map->map) )
             goto overflow;
 
-        memmove(&map->map[i+1], &map->map[i],
-                (map->nr_map-i) * sizeof(map->map[0]));
+        memmove(&map->map[i + 1],
+                &map->map[i],
+                (map->nr_map - i) * sizeof(map->map[0]));
         map->nr_map++;
 
         if ( s == rs )
         {
             map->map[i].size = e - s;
             map->map[i].type = new_type;
-            map->map[i+1].addr = e;
-            map->map[i+1].size = re - e;
+            map->map[i + 1].addr = e;
+            map->map[i + 1].size = re - e;
         }
         else
         {
             map->map[i].size = s - rs;
-            map->map[i+1].addr = s;
-            map->map[i+1].size = e - s;
-            map->map[i+1].type = new_type;
+            map->map[i + 1].addr = s;
+            map->map[i + 1].size = e - s;
+            map->map[i + 1].type = new_type;
         }
     }
     else
@@ -644,36 +673,39 @@ int __init e820_change_range_type(
         if ( (map->nr_map + 2) > ARRAY_SIZE(map->map) )
             goto overflow;
 
-        memmove(&map->map[i+2], &map->map[i],
-                (map->nr_map-i) * sizeof(map->map[0]));
+        memmove(&map->map[i + 2],
+                &map->map[i],
+                (map->nr_map - i) * sizeof(map->map[0]));
         map->nr_map += 2;
 
         map->map[i].size = s - rs;
-        map->map[i+1].addr = s;
-        map->map[i+1].size = e - s;
-        map->map[i+1].type = new_type;
-        map->map[i+2].addr = e;
-        map->map[i+2].size = re - e;
+        map->map[i + 1].addr = s;
+        map->map[i + 1].size = e - s;
+        map->map[i + 1].type = new_type;
+        map->map[i + 2].addr = e;
+        map->map[i + 2].size = re - e;
     }
 
     /* Finally, look for any opportunities to merge adjacent e820 entries. */
     for ( i = 0; i < (map->nr_map - 1); i++ )
     {
-        if ( (map->map[i].type != map->map[i+1].type) ||
-             ((map->map[i].addr + map->map[i].size) != map->map[i+1].addr) )
+        if ( (map->map[i].type != map->map[i + 1].type) ||
+             ((map->map[i].addr + map->map[i].size) != map->map[i + 1].addr) )
             continue;
-        map->map[i].size += map->map[i+1].size;
-        memmove(&map->map[i+1], &map->map[i+2],
-                (map->nr_map-i-2) * sizeof(map->map[0]));
+        map->map[i].size += map->map[i + 1].size;
+        memmove(&map->map[i + 1],
+                &map->map[i + 2],
+                (map->nr_map - i - 2) * sizeof(map->map[0]));
         map->nr_map--;
         i--;
     }
 
     return 1;
 
- overflow:
-    printk("Overflow in e820 while reserving region %"PRIx64"-%"PRIx64"\n",
-           s, e);
+overflow:
+    printk("Overflow in e820 while reserving region %" PRIx64 "-%" PRIx64 "\n",
+           s,
+           e);
     return 0;
 }
 

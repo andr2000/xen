@@ -37,18 +37,18 @@
 #define VGA_MEM_BASE 0xa0000
 #define VGA_MEM_SIZE 0x20000
 
-static int cf_check stdvga_mem_read(
-    const struct hvm_io_handler *handler, uint64_t addr, uint32_t size,
-    uint64_t *p_data)
+static int cf_check stdvga_mem_read(const struct hvm_io_handler *handler,
+                                    uint64_t addr, uint32_t size,
+                                    uint64_t *p_data)
 {
     ASSERT_UNREACHABLE();
     *p_data = ~0;
     return X86EMUL_UNHANDLEABLE;
 }
 
-static int cf_check stdvga_mem_write(
-    const struct hvm_io_handler *handler, uint64_t addr, uint32_t size,
-    uint64_t data)
+static int cf_check stdvga_mem_write(const struct hvm_io_handler *handler,
+                                     uint64_t addr, uint32_t size,
+                                     uint64_t data)
 {
     ioreq_t p = {
         .type = IOREQ_TYPE_COPY,
@@ -66,8 +66,8 @@ static int cf_check stdvga_mem_write(
     return ioreq_send(srv, &p, 1);
 }
 
-static bool cf_check stdvga_mem_accept(
-    const struct hvm_io_handler *handler, const ioreq_t *p)
+static bool cf_check stdvga_mem_accept(const struct hvm_io_handler *handler,
+                                       const ioreq_t *p)
 {
     /*
      * Only accept single direct writes, as that's the only thing we can

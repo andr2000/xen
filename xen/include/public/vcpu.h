@@ -61,9 +61,10 @@
  * @extra_arg == pointer to vcpu_runstate_info structure.
  */
 #define VCPUOP_get_runstate_info     4
+
 struct vcpu_runstate_info {
     /* VCPU's current state (RUNSTATE_*). */
-    int      state;
+    int state;
     /* When was current state entered (system time, ns)? */
     uint64_t state_entry_time;
     /*
@@ -115,6 +116,7 @@ DEFINE_XEN_GUEST_HANDLE(vcpu_runstate_info_t);
  * @extra_arg == pointer to vcpu_register_runstate_memory_area structure.
  */
 #define VCPUOP_register_runstate_memory_area 5
+
 struct vcpu_register_runstate_memory_area {
     union {
         XEN_GUEST_HANDLE(vcpu_runstate_info_t) h;
@@ -122,7 +124,8 @@ struct vcpu_register_runstate_memory_area {
         uint64_t p;
     } addr;
 };
-typedef struct vcpu_register_runstate_memory_area vcpu_register_runstate_memory_area_t;
+typedef struct vcpu_register_runstate_memory_area
+    vcpu_register_runstate_memory_area_t;
 DEFINE_XEN_GUEST_HANDLE(vcpu_register_runstate_memory_area_t);
 
 /*
@@ -132,6 +135,7 @@ DEFINE_XEN_GUEST_HANDLE(vcpu_register_runstate_memory_area_t);
  */
 #define VCPUOP_set_periodic_timer    6 /* arg == vcpu_set_periodic_timer_t */
 #define VCPUOP_stop_periodic_timer   7 /* arg == NULL */
+
 struct vcpu_set_periodic_timer {
     uint64_t period_ns;
 };
@@ -144,15 +148,16 @@ DEFINE_XEN_GUEST_HANDLE(vcpu_set_periodic_timer_t);
  */
 #define VCPUOP_set_singleshot_timer  8 /* arg == vcpu_set_singleshot_timer_t */
 #define VCPUOP_stop_singleshot_timer 9 /* arg == NULL */
+
 struct vcpu_set_singleshot_timer {
-    uint64_t timeout_abs_ns;   /* Absolute system time value in nanoseconds. */
-    uint32_t flags;            /* VCPU_SSHOTTMR_??? */
+    uint64_t timeout_abs_ns; /* Absolute system time value in nanoseconds. */
+    uint32_t flags; /* VCPU_SSHOTTMR_??? */
 };
 typedef struct vcpu_set_singleshot_timer vcpu_set_singleshot_timer_t;
 DEFINE_XEN_GUEST_HANDLE(vcpu_set_singleshot_timer_t);
 
 /* Flags to VCPUOP_set_singleshot_timer. */
- /*
+/*
   * Request the timeout to be in the future (return -ETIME if it's passed)
   * but can be ignored by the hypervisor.
   */
@@ -169,10 +174,11 @@ DEFINE_XEN_GUEST_HANDLE(vcpu_set_singleshot_timer_t);
  * This may be called only once per vcpu.
  */
 #define VCPUOP_register_vcpu_info   10  /* arg == vcpu_register_vcpu_info_t */
+
 struct vcpu_register_vcpu_info {
-    uint64_t mfn;    /* mfn of page to place vcpu_info */
+    uint64_t mfn; /* mfn of page to place vcpu_info */
     uint32_t offset; /* offset within page */
-    uint32_t rsvd;   /* unused */
+    uint32_t rsvd; /* unused */
 };
 typedef struct vcpu_register_vcpu_info vcpu_register_vcpu_info_t;
 DEFINE_XEN_GUEST_HANDLE(vcpu_register_vcpu_info_t);
@@ -187,6 +193,7 @@ DEFINE_XEN_GUEST_HANDLE(vcpu_register_vcpu_info_t);
  * This command returns -EINVAL if it is not a valid operation for this VCPU.
  */
 #define VCPUOP_get_physid           12 /* arg == vcpu_get_physid_t */
+
 struct vcpu_get_physid {
     uint64_t phys_id;
 };
@@ -216,6 +223,7 @@ DEFINE_XEN_GUEST_HANDLE(vcpu_get_physid_t);
  */
 #define VCPUOP_register_vcpu_time_memory_area   13
 DEFINE_XEN_GUEST_HANDLE(vcpu_time_info_t);
+
 struct vcpu_register_time_memory_area {
     union {
         XEN_GUEST_HANDLE(vcpu_time_info_t) h;

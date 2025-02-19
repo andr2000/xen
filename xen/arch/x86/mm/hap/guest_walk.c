@@ -33,8 +33,8 @@ unsigned long cf_check hap_gva_to_gfn(GUEST_PAGING_LEVELS)(
 }
 
 unsigned long cf_check hap_p2m_ga_to_gfn(GUEST_PAGING_LEVELS)(
-    struct vcpu *v, struct p2m_domain *p2m, unsigned long cr3,
-    paddr_t ga, uint32_t *pfec, unsigned int *page_order)
+    struct vcpu *v, struct p2m_domain *p2m, unsigned long cr3, paddr_t ga,
+    uint32_t *pfec, unsigned int *page_order)
 {
     bool walk_ok;
     mfn_t top_mfn;
@@ -46,7 +46,10 @@ unsigned long cf_check hap_p2m_ga_to_gfn(GUEST_PAGING_LEVELS)(
 
     /* Get the top-level table's MFN */
     top_gfn = _gfn(cr3 >> PAGE_SHIFT);
-    top_page = p2m_get_page_from_gfn(p2m, top_gfn, &p2mt, NULL,
+    top_page = p2m_get_page_from_gfn(p2m,
+                                     top_gfn,
+                                     &p2mt,
+                                     NULL,
                                      P2M_ALLOC | P2M_UNSHARE);
     if ( p2m_is_paging(p2mt) )
     {
@@ -77,8 +80,8 @@ unsigned long cf_check hap_p2m_ga_to_gfn(GUEST_PAGING_LEVELS)(
 #if GUEST_PAGING_LEVELS == 3
     top_map += (cr3 & ~(PAGE_MASK | 31));
 #endif
-    walk_ok = guest_walk_tables(v, p2m, ga, &gw, *pfec,
-                                top_gfn, top_mfn, top_map);
+    walk_ok =
+        guest_walk_tables(v, p2m, ga, &gw, *pfec, top_gfn, top_mfn, top_map);
     unmap_domain_page(top_map);
     put_page(top_page);
 
@@ -88,7 +91,10 @@ unsigned long cf_check hap_p2m_ga_to_gfn(GUEST_PAGING_LEVELS)(
         gfn_t gfn = guest_walk_to_gfn(&gw);
         struct page_info *page;
 
-        page = p2m_get_page_from_gfn(p2m, gfn, &p2mt, NULL,
+        page = p2m_get_page_from_gfn(p2m,
+                                     gfn,
+                                     &p2mt,
+                                     NULL,
                                      P2M_ALLOC | P2M_UNSHARE);
         if ( page )
             put_page(page);
@@ -113,7 +119,7 @@ unsigned long cf_check hap_p2m_ga_to_gfn(GUEST_PAGING_LEVELS)(
 
     *pfec = gw.pfec;
 
- out_tweak_pfec:
+out_tweak_pfec:
     /*
      * SDM Intel 64 Volume 3, Chapter Paging, PAGE-FAULT EXCEPTIONS:
      * The PFEC_insn_fetch flag is set only when NX or SMEP are enabled.
@@ -123,7 +129,6 @@ unsigned long cf_check hap_p2m_ga_to_gfn(GUEST_PAGING_LEVELS)(
 
     return gfn_x(INVALID_GFN);
 }
-
 
 /*
  * Local variables:

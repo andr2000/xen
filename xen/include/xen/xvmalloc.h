@@ -65,8 +65,8 @@ void *_xvrealloc(void *va, size_t size, unsigned int align);
     (p) = NULL;        \
 } while ( false )
 
-static inline void *_xvmalloc_array(
-    size_t size, unsigned int align, unsigned long num)
+static inline void *_xvmalloc_array(size_t size, unsigned int align,
+                                    unsigned long num)
 {
     /* Check for overflow. */
     if ( size && num > UINT_MAX / size )
@@ -74,8 +74,8 @@ static inline void *_xvmalloc_array(
     return _xvmalloc(size * num, align);
 }
 
-static inline void *_xvzalloc_array(
-    size_t size, unsigned int align, unsigned long num)
+static inline void *_xvzalloc_array(size_t size, unsigned int align,
+                                    unsigned long num)
 {
     /* Check for overflow. */
     if ( size && num > UINT_MAX / size )

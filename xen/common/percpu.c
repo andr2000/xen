@@ -45,6 +45,7 @@ struct free_info {
     unsigned int cpu;
     struct rcu_head rcu;
 };
+
 static DEFINE_PER_CPU(struct free_info, free_info);
 
 static void cf_check _free_percpu_area(struct rcu_head *head)
@@ -65,8 +66,8 @@ static void free_percpu_area(unsigned int cpu)
     call_rcu(&info->rcu, _free_percpu_area);
 }
 
-static int cf_check cpu_percpu_callback(
-    struct notifier_block *nfb, unsigned long action, void *hcpu)
+static int cf_check cpu_percpu_callback(struct notifier_block *nfb,
+                                        unsigned long action, void *hcpu)
 {
     unsigned int cpu = (unsigned long)hcpu;
     int rc = 0;
@@ -107,6 +108,7 @@ static int __init cf_check percpu_presmp_init(void)
 
     return 0;
 }
+
 presmp_initcall(percpu_presmp_init);
 
 /*

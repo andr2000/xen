@@ -57,7 +57,7 @@ static void __init dmar_scope_add_buses(struct dmar_scope *scope, u16 sec_bus,
                                         u16 sub_bus)
 {
     sub_bus &= 0xff;
-    if (sec_bus > sub_bus)
+    if ( sec_bus > sub_bus )
         return;
 
     while ( sec_bus <= sub_bus )
@@ -98,20 +98,20 @@ static void __init disable_all_dmar_units(void)
     struct acpi_rmrr_unit *rmrr, *_rmrr;
     struct acpi_atsr_unit *atsr, *_atsr;
 
-    list_for_each_entry_safe ( drhd, _drhd, &acpi_drhd_units, list )
+    list_for_each_entry_safe(drhd, _drhd, &acpi_drhd_units, list)
     {
         list_del(&drhd->list);
         scope_devices_free(&drhd->scope);
         iommu_free(drhd);
         xfree(drhd);
     }
-    list_for_each_entry_safe ( rmrr, _rmrr, &acpi_rmrr_units, list )
+    list_for_each_entry_safe(rmrr, _rmrr, &acpi_rmrr_units, list)
     {
         list_del(&rmrr->list);
         scope_devices_free(&rmrr->scope);
         xfree(rmrr);
     }
-    list_for_each_entry_safe ( atsr, _atsr, &acpi_atsr_units, list )
+    list_for_each_entry_safe(atsr, _atsr, &acpi_atsr_units, list)
     {
         list_del(&atsr->list);
         scope_devices_free(&atsr->scope);
@@ -119,12 +119,13 @@ static void __init disable_all_dmar_units(void)
     }
 }
 
-static int acpi_ioapic_device_match(
-    struct list_head *ioapic_list, unsigned int apic_id)
+static int acpi_ioapic_device_match(struct list_head *ioapic_list,
+                                    unsigned int apic_id)
 {
     struct acpi_ioapic_unit *ioapic;
-    list_for_each_entry( ioapic, ioapic_list, list ) {
-        if (ioapic->apic_id == apic_id)
+    list_for_each_entry(ioapic, ioapic_list, list)
+    {
+        if ( ioapic->apic_id == apic_id )
             return 1;
     }
     return 0;
@@ -133,7 +134,7 @@ static int acpi_ioapic_device_match(
 struct acpi_drhd_unit *ioapic_to_drhd(unsigned int apic_id)
 {
     struct acpi_drhd_unit *drhd;
-    list_for_each_entry( drhd, &acpi_drhd_units, list )
+    list_for_each_entry(drhd, &acpi_drhd_units, list)
         if ( acpi_ioapic_device_match(&drhd->ioapic_list, apic_id) )
             return drhd;
     return NULL;
@@ -143,19 +144,18 @@ struct vtd_iommu *ioapic_to_iommu(unsigned int apic_id)
 {
     struct acpi_drhd_unit *drhd;
 
-    list_for_each_entry( drhd, &acpi_drhd_units, list )
+    list_for_each_entry(drhd, &acpi_drhd_units, list)
         if ( acpi_ioapic_device_match(&drhd->ioapic_list, apic_id) )
             return drhd->iommu;
     return NULL;
 }
 
-static bool acpi_hpet_device_match(
-    struct list_head *list, unsigned int hpet_id)
+static bool acpi_hpet_device_match(struct list_head *list, unsigned int hpet_id)
 {
     struct acpi_hpet_unit *hpet;
 
-    list_for_each_entry( hpet, list, list )
-        if (hpet->id == hpet_id)
+    list_for_each_entry(hpet, list, list)
+        if ( hpet->id == hpet_id )
             return 1;
     return 0;
 }
@@ -164,7 +164,7 @@ struct acpi_drhd_unit *hpet_to_drhd(unsigned int hpet_id)
 {
     struct acpi_drhd_unit *drhd;
 
-    list_for_each_entry( drhd, &acpi_drhd_units, list )
+    list_for_each_entry(drhd, &acpi_drhd_units, list)
         if ( acpi_hpet_device_match(&drhd->hpet_list, hpet_id) )
             return drhd;
     return NULL;
@@ -216,12 +216,12 @@ struct acpi_drhd_unit *acpi_find_matched_drhd_unit(const struct pci_dev *pdev)
         devfn = pdev->devfn;
     }
 
-    list_for_each_entry ( drhd, &acpi_drhd_units, list )
+    list_for_each_entry(drhd, &acpi_drhd_units, list)
     {
         if ( drhd->segment != pdev->seg )
             continue;
 
-        for (i = 0; i < drhd->scope.devices_cnt; i++)
+        for ( i = 0; i < drhd->scope.devices_cnt; i++ )
             if ( drhd->scope.devices[i] == PCI_BDF(bus, devfn) )
                 return drhd;
 
@@ -239,7 +239,7 @@ struct acpi_atsr_unit *acpi_find_matched_atsr_unit(const struct pci_dev *pdev)
     struct acpi_atsr_unit *atsr;
     struct acpi_atsr_unit *all_ports = NULL;
 
-    list_for_each_entry ( atsr, &acpi_atsr_units, list )
+    list_for_each_entry(atsr, &acpi_atsr_units, list)
     {
         if ( atsr->segment != pdev->seg )
             continue;
@@ -260,7 +260,7 @@ struct acpi_rhsa_unit *drhd_to_rhsa(const struct acpi_drhd_unit *drhd)
     if ( drhd == NULL )
         return NULL;
 
-    list_for_each_entry ( rhsa, &acpi_rhsa_units, list )
+    list_for_each_entry(rhsa, &acpi_rhsa_units, list)
     {
         if ( rhsa->address == drhd->address )
             return rhsa;
@@ -303,17 +303,17 @@ static int __init scope_device_count(const void *start, const void *end)
     return count;
 }
 
-
-static int __init acpi_parse_dev_scope(
-    const void *start, const void *end, struct dmar_scope *scope,
-    int type, u16 seg)
+static int __init acpi_parse_dev_scope(const void *start, const void *end,
+                                       struct dmar_scope *scope, int type,
+                                       u16 seg)
 {
     struct acpi_ioapic_unit *acpi_ioapic_unit;
     const struct acpi_dmar_device_scope *acpi_scope;
     u16 bus, sub_bus, sec_bus;
     const struct acpi_dmar_pci_path *path;
-    struct acpi_drhd_unit *drhd = type == DMAR_TYPE ?
-        container_of(scope, struct acpi_drhd_unit, scope) : NULL;
+    struct acpi_drhd_unit *drhd =
+        type == DMAR_TYPE ? container_of(scope, struct acpi_drhd_unit, scope)
+                          : NULL;
     int depth, cnt, didx = 0, ret;
     bool gfx_only = false;
 
@@ -354,7 +354,9 @@ static int __init acpi_parse_dev_scope(
             if ( iommu_verbose )
                 printk(VTDPREFIX " bridge: %pp start=%x sec=%x sub=%x\n",
                        &PCI_SBDF(seg, bus, path->dev, path->fn),
-                       acpi_scope->bus, sec_bus, sub_bus);
+                       acpi_scope->bus,
+                       sec_bus,
+                       sub_bus);
 
             dmar_scope_add_buses(scope, sec_bus, sub_bus);
             gfx_only = false;
@@ -393,7 +395,7 @@ static int __init acpi_parse_dev_scope(
             {
                 if ( pci_conf_read8(PCI_SBDF(seg, bus, path->dev, path->fn),
                                     PCI_CLASS_DEVICE + 1) != 0x03
-                                    /* PCI_BASE_CLASS_DISPLAY */ )
+                     /* PCI_BASE_CLASS_DISPLAY */ )
                     gfx_only = false;
                 else if ( !seg && !bus && path->dev == 2 && !path->fn )
                     igd_drhd_address = drhd->address;
@@ -440,15 +442,15 @@ static int __init acpi_parse_dev_scope(
 
     ret = 0;
 
- out:
+out:
     if ( ret )
         scope_devices_free(scope);
 
     return ret;
 }
 
-static int __init acpi_dmar_check_length(
-    const struct acpi_dmar_header *h, unsigned int min_len)
+static int __init acpi_dmar_check_length(const struct acpi_dmar_header *h,
+                                         unsigned int min_len)
 {
     if ( h->length >= min_len )
         return 0;
@@ -457,8 +459,7 @@ static int __init acpi_dmar_check_length(
     return -EINVAL;
 }
 
-static int __init
-acpi_parse_one_drhd(struct acpi_dmar_header *header)
+static int __init acpi_parse_one_drhd(struct acpi_dmar_header *header)
 {
     struct acpi_dmar_hardware_unit *drhd =
         container_of(header, struct acpi_dmar_hardware_unit, header);
@@ -483,7 +484,7 @@ acpi_parse_one_drhd(struct acpi_dmar_header *header)
     INIT_LIST_HEAD(&dmaru->ioapic_list);
     INIT_LIST_HEAD(&dmaru->hpet_list);
     if ( iommu_verbose )
-        printk(VTDPREFIX "  dmaru->address = %"PRIx64"\n", dmaru->address);
+        printk(VTDPREFIX "  dmaru->address = %" PRIx64 "\n", dmaru->address);
 
     ret = iommu_alloc(dmaru);
     if ( ret )
@@ -491,8 +492,11 @@ acpi_parse_one_drhd(struct acpi_dmar_header *header)
 
     dev_scope_start = (void *)(drhd + 1);
     dev_scope_end = ((void *)drhd) + header->length;
-    ret = acpi_parse_dev_scope(dev_scope_start, dev_scope_end,
-                               &dmaru->scope, DMAR_TYPE, drhd->segment);
+    ret = acpi_parse_dev_scope(dev_scope_start,
+                               dev_scope_end,
+                               &dmaru->scope,
+                               DMAR_TYPE,
+                               drhd->segment);
 
     if ( dmaru->include_all )
     {
@@ -517,6 +521,7 @@ acpi_parse_one_drhd(struct acpi_dmar_header *header)
     {
         u8 b, d, f;
         unsigned int i = 0;
+
         union {
             const void *raw;
             const struct acpi_dmar_device_scope *scope;
@@ -576,10 +581,11 @@ static int __init register_one_rmrr(struct acpi_rmrr_unit *rmrru)
         if ( pci_device_detect(rmrru->segment, b, d, f) == 0 )
         {
             dprintk(XENLOG_WARNING VTDPREFIX,
-                    " Non-existent device (%pp) is reported"
-                    " in RMRR [%"PRIx64", %"PRIx64"]'s scope!\n",
+                    " Non-existent device (%pp) is reported" " in RMRR [%" PRIx64
+                    ", %" PRIx64 "]'s scope!\n",
                     &PCI_SBDF(rmrru->segment, b, d, f),
-                    rmrru->base_address, rmrru->end_address);
+                    rmrru->base_address,
+                    rmrru->end_address);
             ignore = true;
         }
         else
@@ -592,31 +598,34 @@ static int __init register_one_rmrr(struct acpi_rmrr_unit *rmrru)
     if ( ignore )
     {
         dprintk(XENLOG_WARNING VTDPREFIX,
-                " Ignore RMRR [%"PRIx64",%"PRIx64"] as no device"
-                " under its scope is PCI discoverable!\n",
-                rmrru->base_address, rmrru->end_address);
+                " Ignore RMRR [%" PRIx64 ",%" PRIx64
+                "] as no device" " under its scope is PCI discoverable!\n",
+                rmrru->base_address,
+                rmrru->end_address);
         ret = 1;
     }
     else if ( rmrru->base_address > rmrru->end_address )
     {
         dprintk(XENLOG_WARNING VTDPREFIX,
-                " RMRR [%"PRIx64",%"PRIx64"] is incorrect!\n",
-                rmrru->base_address, rmrru->end_address);
+                " RMRR [%" PRIx64 ",%" PRIx64 "] is incorrect!\n",
+                rmrru->base_address,
+                rmrru->end_address);
         ret = -EFAULT;
     }
     else
     {
         if ( iommu_verbose )
-            dprintk(VTDPREFIX, " RMRR: [%"PRIx64",%"PRIx64"]\n",
-                    rmrru->base_address, rmrru->end_address);
+            dprintk(VTDPREFIX,
+                    " RMRR: [%" PRIx64 ",%" PRIx64 "]\n",
+                    rmrru->base_address,
+                    rmrru->end_address);
         acpi_register_rmrr_unit(rmrru);
     }
 
     return ret;
 }
 
-static int __init
-acpi_parse_one_rmrr(struct acpi_dmar_header *header)
+static int __init acpi_parse_one_rmrr(struct acpi_dmar_header *header)
 {
     struct acpi_dmar_reserved_memory *rmrr =
         container_of(header, struct acpi_dmar_reserved_memory, header);
@@ -629,16 +638,21 @@ acpi_parse_one_rmrr(struct acpi_dmar_header *header)
         return ret;
 
     list_for_each_entry(rmrru, &acpi_rmrr_units, list)
-       if ( base_addr <= rmrru->end_address && rmrru->base_address <= end_addr )
-       {
-           printk(XENLOG_ERR VTDPREFIX
-                  "Overlapping RMRRs [%"PRIx64",%"PRIx64"] and [%"PRIx64",%"PRIx64"]\n",
-                  rmrru->base_address, rmrru->end_address,
-                  base_addr, end_addr);
-           return -EEXIST;
-       }
+        if ( base_addr <= rmrru->end_address &&
+             rmrru->base_address <= end_addr )
+        {
+            printk(XENLOG_ERR VTDPREFIX "Overlapping RMRRs [%" PRIx64
+                                        ",%" PRIx64 "] and [%" PRIx64
+                                        ",%" PRIx64 "]\n",
+                   rmrru->base_address,
+                   rmrru->end_address,
+                   base_addr,
+                   end_addr);
+            return -EEXIST;
+        }
 
-    if ( !iommu_unity_region_ok("RMRR", maddr_to_mfn(base_addr),
+    if ( !iommu_unity_region_ok("RMRR",
+                                maddr_to_mfn(base_addr),
                                 maddr_to_mfn(end_addr)) )
         return -EIO;
 
@@ -651,9 +665,12 @@ acpi_parse_one_rmrr(struct acpi_dmar_header *header)
     rmrru->segment = rmrr->segment;
 
     dev_scope_start = (void *)(rmrr + 1);
-    dev_scope_end   = ((void *)rmrr) + header->length;
-    ret = acpi_parse_dev_scope(dev_scope_start, dev_scope_end,
-                               &rmrru->scope, RMRR_TYPE, rmrr->segment);
+    dev_scope_end = ((void *)rmrr) + header->length;
+    ret = acpi_parse_dev_scope(dev_scope_start,
+                               dev_scope_end,
+                               &rmrru->scope,
+                               RMRR_TYPE,
+                               rmrr->segment);
 
     if ( !ret && (rmrru->scope.devices_cnt != 0) )
         ret = register_one_rmrr(rmrru);
@@ -672,8 +689,7 @@ acpi_parse_one_rmrr(struct acpi_dmar_header *header)
     return ret > 0 ? 0 : ret;
 }
 
-static int __init
-acpi_parse_one_atsr(struct acpi_dmar_header *header)
+static int __init acpi_parse_one_atsr(struct acpi_dmar_header *header)
 {
     struct acpi_dmar_atsr *atsr =
         container_of(header, struct acpi_dmar_atsr, header);
@@ -696,9 +712,12 @@ acpi_parse_one_atsr(struct acpi_dmar_header *header)
     if ( !atsru->all_ports )
     {
         dev_scope_start = (void *)(atsr + 1);
-        dev_scope_end   = ((void *)atsr) + header->length;
-        ret = acpi_parse_dev_scope(dev_scope_start, dev_scope_end,
-                                   &atsru->scope, ATSR_TYPE, atsr->segment);
+        dev_scope_end = ((void *)atsr) + header->length;
+        ret = acpi_parse_dev_scope(dev_scope_start,
+                                   dev_scope_end,
+                                   &atsru->scope,
+                                   ATSR_TYPE,
+                                   atsr->segment);
     }
     else
     {
@@ -725,8 +744,7 @@ acpi_parse_one_atsr(struct acpi_dmar_header *header)
     return ret;
 }
 
-static int __init
-acpi_parse_one_rhsa(struct acpi_dmar_header *header)
+static int __init acpi_parse_one_rhsa(struct acpi_dmar_header *header)
 {
     struct acpi_dmar_rhsa *rhsa =
         container_of(header, struct acpi_dmar_rhsa, header);
@@ -744,9 +762,10 @@ acpi_parse_one_rhsa(struct acpi_dmar_header *header)
     rhsau->proximity_domain = rhsa->proximity_domain;
     list_add_tail(&rhsau->list, &acpi_rhsa_units);
     if ( iommu_verbose )
-        printk(VTDPREFIX
-               "  rhsau->address: %"PRIx64" rhsau->proximity_domain: %"PRIx32"\n",
-               rhsau->address, rhsau->proximity_domain);
+        printk(VTDPREFIX "  rhsau->address: %" PRIx64
+                         " rhsau->proximity_domain: %" PRIx32 "\n",
+               rhsau->address,
+               rhsau->proximity_domain);
 
     return ret;
 }
@@ -783,9 +802,10 @@ static int __init register_one_satc(struct acpi_satc_unit *satcu)
 
     if ( ignore )
     {
-        dprintk(XENLOG_WARNING VTDPREFIX,
-                " Ignore SATC for seg %04x as no device under its scope is PCI discoverable\n",
-                satcu->segment);
+        dprintk(
+            XENLOG_WARNING VTDPREFIX,
+            " Ignore SATC for seg %04x as no device under its scope is PCI discoverable\n",
+            satcu->segment);
         return 1;
     }
 
@@ -797,8 +817,7 @@ static int __init register_one_satc(struct acpi_satc_unit *satcu)
     return ret;
 }
 
-static int __init
-acpi_parse_one_satc(const struct acpi_dmar_header *header)
+static int __init acpi_parse_one_satc(const struct acpi_dmar_header *header)
 {
     const struct acpi_dmar_satc *satc =
         container_of(header, const struct acpi_dmar_satc, header);
@@ -817,9 +836,12 @@ acpi_parse_one_satc(const struct acpi_dmar_header *header)
     satcu->atc_required = satc->flags & ACPI_SATC_ATC_REQUIRED;
 
     dev_scope_start = (const void *)(satc + 1);
-    dev_scope_end   = (const void *)satc + header->length;
-    ret = acpi_parse_dev_scope(dev_scope_start, dev_scope_end,
-                               &satcu->scope, SATC_TYPE, satc->segment);
+    dev_scope_end = (const void *)satc + header->length;
+    ret = acpi_parse_dev_scope(dev_scope_start,
+                               dev_scope_end,
+                               &satcu->scope,
+                               SATC_TYPE,
+                               satc->segment);
 
     if ( !ret && satcu->scope.devices_cnt )
         ret = register_one_satc(satcu);
@@ -912,8 +934,7 @@ static int __init cf_check acpi_parse_dmar(struct acpi_table_header *table)
 
     if ( ret )
     {
-        printk(XENLOG_WARNING
-               "Failed to parse ACPI DMAR.  Disabling VT-d.\n");
+        printk(XENLOG_WARNING "Failed to parse ACPI DMAR.  Disabling VT-d.\n");
         disable_all_dmar_units();
     }
 
@@ -928,6 +949,7 @@ out:
 
 /* RMRR units derived from command line rmrr option. */
 #define MAX_USER_RMRR_DEV 20
+
 struct user_rmrr {
     unsigned long base_pfn, end_pfn;
     unsigned int dev_count;
@@ -944,8 +966,7 @@ static struct user_rmrr __initdata user_rmrrs[MAX_USER_RMRR];
 /* Returns 1 on success, 0 when ignoring and < 0 on error. */
 static int __init add_one_user_rmrr(unsigned long base_pfn,
                                     unsigned long end_pfn,
-                                    unsigned int dev_count,
-                                    uint32_t *sbdf)
+                                    unsigned int dev_count, uint32_t *sbdf)
 {
     struct acpi_rmrr_unit *rmrr, *rmrru;
     unsigned int idx, seg;
@@ -954,13 +975,14 @@ static int __init add_one_user_rmrr(unsigned long base_pfn,
 
     if ( iommu_verbose )
         printk(XENLOG_DEBUG VTDPREFIX
-               "Adding RMRR for %d device ([0]: %#x) range "ERMRRU_FMT"\n",
-               dev_count, sbdf[0], ERMRRU_ARG);
+               "Adding RMRR for %d device ([0]: %#x) range " ERMRRU_FMT "\n",
+               dev_count,
+               sbdf[0],
+               ERMRRU_ARG);
 
     if ( base_pfn > end_pfn )
     {
-        printk(XENLOG_ERR VTDPREFIX
-               "Invalid RMRR Range "ERMRRU_FMT"\n",
+        printk(XENLOG_ERR VTDPREFIX "Invalid RMRR Range " ERMRRU_FMT "\n",
                ERMRRU_ARG);
         return 0;
     }
@@ -971,8 +993,8 @@ static int __init add_one_user_rmrr(unsigned long base_pfn,
         if ( pfn_to_paddr(base_pfn) <= rmrru->end_address &&
              rmrru->base_address <= pfn_to_paddr(end_pfn) )
         {
-            printk(XENLOG_ERR VTDPREFIX
-                   "Overlapping RMRRs: "ERMRRU_FMT" and [%lx-%lx]\n",
+            printk(XENLOG_ERR VTDPREFIX "Overlapping RMRRs: " ERMRRU_FMT
+                                        " and [%lx-%lx]\n",
                    ERMRRU_ARG,
                    paddr_to_pfn(rmrru->base_address),
                    paddr_to_pfn(rmrru->end_address));
@@ -989,8 +1011,8 @@ static int __init add_one_user_rmrr(unsigned long base_pfn,
     {
         if ( !mfn_valid(_mfn(base_iter)) )
         {
-            printk(XENLOG_ERR VTDPREFIX
-                   "Invalid pfn in RMRR range "ERMRRU_FMT"\n",
+            printk(XENLOG_ERR VTDPREFIX "Invalid pfn in RMRR range " ERMRRU_FMT
+                                        "\n",
                    ERMRRU_ARG);
             break;
         }
@@ -1020,7 +1042,7 @@ static int __init add_one_user_rmrr(unsigned long base_pfn,
     if ( seg != PCI_SEG(sbdf[0]) )
     {
         printk(XENLOG_ERR VTDPREFIX
-               "Segments are not equal for RMRR range "ERMRRU_FMT"\n",
+               "Segments are not equal for RMRR range " ERMRRU_FMT "\n",
                ERMRRU_ARG);
         scope_devices_free(&rmrr->scope);
         xfree(rmrr);
@@ -1035,8 +1057,8 @@ static int __init add_one_user_rmrr(unsigned long base_pfn,
 
     if ( register_one_rmrr(rmrr) )
     {
-        printk(XENLOG_ERR VTDPREFIX
-               "Could not register RMMR range "ERMRRU_FMT"\n",
+        printk(XENLOG_ERR VTDPREFIX "Could not register RMMR range " ERMRRU_FMT
+                                    "\n",
                ERMRRU_ARG);
         scope_devices_free(&rmrr->scope);
         xfree(rmrr);
@@ -1062,10 +1084,11 @@ static int __init add_user_rmrr(void)
     return 0;
 }
 
-static int __init cf_check add_one_extra_rmrr(xen_pfn_t start, xen_ulong_t nr, u32 id, void *ctxt)
+static int __init cf_check add_one_extra_rmrr(xen_pfn_t start, xen_ulong_t nr,
+                                              u32 id, void *ctxt)
 {
     u32 sbdf_array[] = { id };
-    return add_one_user_rmrr(start, start+nr, 1, sbdf_array);
+    return add_one_user_rmrr(start, start + nr, 1, sbdf_array);
 }
 
 static int __init add_extra_rmrr(void)
@@ -1085,10 +1108,11 @@ int __init acpi_dmar_init(void)
     const struct acpi_drhd_unit *drhd;
     int ret;
 
-    if ( ACPI_SUCCESS(acpi_get_table_phys(ACPI_SIG_DMAR, 0,
-                                          &dmar_addr, &dmar_len)) )
+    if ( ACPI_SUCCESS(
+             acpi_get_table_phys(ACPI_SIG_DMAR, 0, &dmar_addr, &dmar_len)) )
     {
-        map_pages_to_xen((unsigned long)__va(dmar_addr), maddr_to_mfn(dmar_addr),
+        map_pages_to_xen((unsigned long)__va(dmar_addr),
+                         maddr_to_mfn(dmar_addr),
                          PFN_UP(dmar_addr + dmar_len) - PFN_DOWN(dmar_addr),
                          PAGE_HYPERVISOR);
         dmar_table = __va(dmar_addr);
@@ -1096,7 +1120,7 @@ int __init acpi_dmar_init(void)
 
     ret = parse_dmar_table(acpi_parse_dmar);
 
-    for_each_drhd_unit ( drhd )
+    for_each_drhd_unit(drhd)
     {
         const struct acpi_rhsa_unit *rhsa = drhd_to_rhsa(drhd);
         struct vtd_iommu *iommu = drhd->iommu;
@@ -1126,7 +1150,7 @@ void acpi_dmar_reinstate(void)
     uint32_t sig = 0x52414d44; /* "DMAR" */
 
     if ( dmar_table )
-        write_atomic((uint32_t*)&dmar_table->signature[0], sig);
+        write_atomic((uint32_t *)&dmar_table->signature[0], sig);
 }
 
 void acpi_dmar_zap(void)
@@ -1134,7 +1158,7 @@ void acpi_dmar_zap(void)
     uint32_t sig = 0x44414d52; /* "RMAD" - doesn't alter table checksum */
 
     if ( dmar_table )
-        write_atomic((uint32_t*)&dmar_table->signature[0], sig);
+        write_atomic((uint32_t *)&dmar_table->signature[0], sig);
 }
 
 bool platform_supports_intremap(void)
@@ -1151,14 +1175,14 @@ bool __init platform_supports_x2apic(void)
     return cpu_has_x2apic && ((dmar_flags & mask) == ACPI_DMAR_INTR_REMAP);
 }
 
-int cf_check intel_iommu_get_reserved_device_memory(
-    iommu_grdm_t *func, void *ctxt)
+int cf_check intel_iommu_get_reserved_device_memory(iommu_grdm_t *func,
+                                                    void *ctxt)
 {
     struct acpi_rmrr_unit *rmrr, *rmrr_cur = NULL;
     unsigned int i;
     u16 bdf;
 
-    for_each_rmrr_device ( rmrr, bdf, i )
+    for_each_rmrr_device(rmrr, bdf, i)
     {
         int rc;
 
@@ -1167,7 +1191,8 @@ int cf_check intel_iommu_get_reserved_device_memory(
 
         rc = func(PFN_DOWN(rmrr->base_address),
                   PFN_UP(rmrr->end_address) - PFN_DOWN(rmrr->base_address),
-                  PCI_SBDF(rmrr->segment, bdf).sbdf, ctxt);
+                  PCI_SBDF(rmrr->segment, bdf).sbdf,
+                  ctxt);
 
         if ( unlikely(rc < 0) )
             return rc;
@@ -1196,7 +1221,8 @@ static int __init cf_check parse_rmrr_param(const char *str)
     unsigned int seg, bus, dev, func, dev_count;
     unsigned long start, end;
 
-    do {
+    do
+    {
         if ( nr_rmrr >= MAX_USER_RMRR )
             return -E2BIG;
 
@@ -1216,9 +1242,10 @@ static int __init cf_check parse_rmrr_param(const char *str)
         if ( (end - start) >= MAX_USER_RMRR_PAGES )
         {
             printk(XENLOG_ERR VTDPREFIX
-                    "RMRR range "ERMRRU_FMT" exceeds "\
-                    __stringify(MAX_USER_RMRR_PAGES)" pages\n",
-                    start, end);
+                   "RMRR range " ERMRRU_FMT
+                   " exceeds " __stringify(MAX_USER_RMRR_PAGES)" pages\n",
+                                           start,
+                                           end);
             return -E2BIG;
         }
 
@@ -1228,7 +1255,8 @@ static int __init cf_check parse_rmrr_param(const char *str)
         if ( *s != '=' )
             continue;
 
-        do {
+        do
+        {
             bool def_seg = false;
 
             stmp = parse_pci_seg(s + 1, &seg, &bus, &dev, &func, &def_seg);
@@ -1245,7 +1273,7 @@ static int __init cf_check parse_rmrr_param(const char *str)
             /* Keep sbdf's even if they differ and later report an error. */
             dev_count = user_rmrrs[nr_rmrr].dev_count;
             user_rmrrs[nr_rmrr].sbdf[dev_count] =
-               PCI_SBDF(seg, bus, dev, func).sbdf;
+                PCI_SBDF(seg, bus, dev, func).sbdf;
 
             user_rmrrs[nr_rmrr].dev_count++;
             s = stmp;
@@ -1259,4 +1287,5 @@ static int __init cf_check parse_rmrr_param(const char *str)
 
     return s[-1] ? -EINVAL : 0;
 }
+
 custom_param("rmrr", parse_rmrr_param);

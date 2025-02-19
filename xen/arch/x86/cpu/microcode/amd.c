@@ -34,20 +34,20 @@ struct equiv_cpu_entry {
 
 struct microcode_patch {
     uint16_t year;
-    uint8_t  day;
-    uint8_t  month;
+    uint8_t day;
+    uint8_t month;
     uint32_t patch_id;
-    uint8_t  mc_patch_data_id[2];
-    uint8_t  mc_patch_data_len;
-    uint8_t  init_flag;
+    uint8_t mc_patch_data_id[2];
+    uint8_t mc_patch_data_len;
+    uint8_t init_flag;
     uint32_t mc_patch_data_checksum;
     uint32_t nb_dev_id;
     uint32_t sb_dev_id;
     uint16_t processor_rev_id;
-    uint8_t  nb_rev_id;
-    uint8_t  sb_rev_id;
-    uint8_t  bios_api_rev;
-    uint8_t  reserved1[3];
+    uint8_t nb_rev_id;
+    uint8_t sb_rev_id;
+    uint8_t bios_api_rev;
+    uint8_t reserved1[3];
     uint32_t match_reg[8];
 };
 
@@ -60,6 +60,7 @@ struct container_equiv_table {
     uint32_t len;
     struct equiv_cpu_entry eq[];
 };
+
 struct container_microcode {
     uint32_t type; /* UCODE_UCODE_TYPE */
     uint32_t len;
@@ -101,7 +102,8 @@ static void cf_check collect_cpu_info(void)
     rdmsrl(MSR_AMD_PATCHLEVEL, csig->rev);
 
     pr_debug("microcode: CPU%d collect_cpu_info: patch_id=%#x\n",
-             smp_processor_id(), csig->rev);
+             smp_processor_id(),
+             csig->rev);
 }
 
 static bool verify_patch_size(uint32_t patch_size)
@@ -202,8 +204,8 @@ static bool microcode_fits_cpu(const struct microcode_patch *patch)
     return equiv.id == patch->processor_rev_id;
 }
 
-static int cf_check amd_compare(
-    const struct microcode_patch *old, const struct microcode_patch *new)
+static int cf_check amd_compare(const struct microcode_patch *old,
+                                const struct microcode_patch *new)
 {
     /* Both patches to compare are supposed to be applicable to local CPU. */
     ASSERT(microcode_fits_cpu(new));
@@ -235,9 +237,9 @@ static int cf_check apply_microcode(const struct microcode_patch *patch,
 
     if ( check_final_patch_levels(sig) )
     {
-        printk(XENLOG_ERR
-               "microcode: CPU%u current rev %#x unsafe to update\n",
-               cpu, sig->rev);
+        printk(XENLOG_ERR "microcode: CPU%u current rev %#x unsafe to update\n",
+               cpu,
+               sig->rev);
         return -ENXIO;
     }
 
@@ -258,13 +260,22 @@ static int cf_check apply_microcode(const struct microcode_patch *patch,
     {
         printk(XENLOG_ERR
                "microcode: CPU%u update rev %#x to %#x failed, result %#x\n",
-               cpu, old_rev, patch->patch_id, rev);
+               cpu,
+               old_rev,
+               patch->patch_id,
+               rev);
         return -EIO;
     }
 
-    printk(XENLOG_WARNING
-           "microcode: CPU%u updated from revision %#x to %#x, date = %04x-%02x-%02x\n",
-           cpu, old_rev, rev, patch->year, patch->month, patch->day);
+    printk(
+        XENLOG_WARNING
+        "microcode: CPU%u updated from revision %#x to %#x, date = %04x-%02x-%02x\n",
+        cpu,
+        old_rev,
+        rev,
+        patch->year,
+        patch->month,
+        patch->day);
 
     amd_check_zenbleed();
 
@@ -285,7 +296,7 @@ static int scan_equiv_cpu_table(const struct container_equiv_table *et)
         if ( !equiv.sig ) /* Cache details on first find. */
         {
             equiv.sig = sig->sig;
-            equiv.id  = et->eq[i].equiv_cpu;
+            equiv.id = et->eq[i].equiv_cpu;
             return 0;
         }
 
@@ -297,9 +308,12 @@ static int scan_equiv_cpu_table(const struct container_equiv_table *et)
              * one of the tables is wrong.  As we can't calculate the mapping,
              * we trusted the first table we saw.
              */
-            printk(XENLOG_ERR
-                   "microcode: Equiv mismatch: cpu %08x, got %04x, cached %04x\n",
-                   sig->sig, et->eq[i].equiv_cpu, equiv.id);
+            printk(
+                XENLOG_ERR
+                "microcode: Equiv mismatch: cpu %08x, got %04x, cached %04x\n",
+                sig->sig,
+                et->eq[i].equiv_cpu,
+                equiv.id);
             return -EINVAL;
         }
 
@@ -310,8 +324,9 @@ static int scan_equiv_cpu_table(const struct container_equiv_table *et)
     return -ESRCH;
 }
 
-static struct microcode_patch *cf_check cpu_request_microcode(
-    const void *buf, size_t size, bool make_copy)
+static struct microcode_patch *cf_check cpu_request_microcode(const void *buf,
+                                                              size_t size,
+                                                              bool make_copy)
 {
     const struct microcode_patch *saved = NULL;
     struct microcode_patch *patch = NULL;
@@ -331,13 +346,15 @@ static struct microcode_patch *cf_check cpu_request_microcode(
         }
 
         /* Move over UCODE_MAGIC. */
-        buf  += 4;
+        buf += 4;
         size -= 4;
 
-        if ( size < sizeof(*et) ||                   /* No space for header? */
-             (et = buf)->type != UCODE_EQUIV_TYPE || /* Not an Equivalence Table? */
-             size - sizeof(*et) < et->len ||         /* No space for table? */
-             et->len % sizeof(et->eq[0]) )           /* Not multiple of equiv_cpu_entry? */
+        if ( size < sizeof(*et) || /* No space for header? */
+             (et = buf)->type !=
+                 UCODE_EQUIV_TYPE || /* Not an Equivalence Table? */
+             size - sizeof(*et) < et->len || /* No space for table? */
+             et->len %
+                 sizeof(et->eq[0]) ) /* Not multiple of equiv_cpu_entry? */
         {
             printk(XENLOG_ERR "microcode: Bad equivalent cpu table\n");
             error = -EINVAL;
@@ -345,7 +362,7 @@ static struct microcode_patch *cf_check cpu_request_microcode(
         }
 
         /* Move over the Equiv table. */
-        buf  += sizeof(*et) + et->len;
+        buf += sizeof(*et) + et->len;
         size -= sizeof(*et) + et->len;
 
         error = scan_equiv_cpu_table(et);
@@ -365,10 +382,12 @@ static struct microcode_patch *cf_check cpu_request_microcode(
         {
             const struct container_microcode *mc;
 
-            if ( size < sizeof(*mc) ||                      /* No space for container header? */
-                 (mc = buf)->type != UCODE_UCODE_TYPE ||    /* Not a ucode blob? */
-                 size - sizeof(*mc) < mc->len ||            /* No space for blob? */
-                 mc->len < sizeof(struct microcode_patch) ) /* No space for patch header? */
+            if ( size < sizeof(*mc) || /* No space for container header? */
+                 (mc = buf)->type != UCODE_UCODE_TYPE || /* Not a ucode blob? */
+                 size - sizeof(*mc) < mc->len || /* No space for blob? */
+                 mc->len <
+                     sizeof(
+                         struct microcode_patch) ) /* No space for patch header? */
             {
                 printk(XENLOG_ERR "microcode: Bad microcode data\n");
                 error = -EINVAL;
@@ -382,7 +401,8 @@ static struct microcode_patch *cf_check cpu_request_microcode(
             {
                 printk(XENLOG_WARNING
                        "microcode: Bad microcode length 0x%08x for cpu 0x%04x\n",
-                       mc->len, mc->patch->processor_rev_id);
+                       mc->len,
+                       mc->patch->processor_rev_id);
                 /*
                  * If the blob size sanity check fails, trust the container
                  * length which has already been checked to be at least
@@ -397,8 +417,8 @@ static struct microcode_patch *cf_check cpu_request_microcode(
              */
             if ( microcode_fits_cpu(mc->patch) &&
                  (!saved ||
-                  compare_revisions(saved->patch_id,
-                                    mc->patch->patch_id) == NEW_UCODE) )
+                  compare_revisions(saved->patch_id, mc->patch->patch_id) ==
+                      NEW_UCODE) )
             {
                 saved = mc->patch;
                 saved_size = mc->len;
@@ -406,7 +426,7 @@ static struct microcode_patch *cf_check cpu_request_microcode(
 
             /* Move over the microcode blob. */
         skip:
-            buf  += sizeof(*mc) + mc->len;
+            buf += sizeof(*mc) + mc->len;
             size -= sizeof(*mc) + mc->len;
 
             /*
@@ -444,15 +464,15 @@ static struct microcode_patch *cf_check cpu_request_microcode(
     return patch;
 }
 
-static const char __initconst amd_cpio_path[] =
-    "kernel/x86/microcode/AuthenticAMD.bin";
+static const char
+    __initconst amd_cpio_path[] = "kernel/x86/microcode/AuthenticAMD.bin";
 
 static const struct microcode_ops __initconst_cf_clobber amd_ucode_ops = {
-    .cpu_request_microcode            = cpu_request_microcode,
-    .collect_cpu_info                 = collect_cpu_info,
-    .apply_microcode                  = apply_microcode,
-    .compare                          = amd_compare,
-    .cpio_path                        = amd_cpio_path,
+    .cpu_request_microcode = cpu_request_microcode,
+    .collect_cpu_info = collect_cpu_info,
+    .apply_microcode = apply_microcode,
+    .compare = amd_compare,
+    .cpio_path = amd_cpio_path,
 };
 
 void __init ucode_probe_amd(struct microcode_ops *ops)

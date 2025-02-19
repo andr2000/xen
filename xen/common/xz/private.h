@@ -18,12 +18,12 @@
 
 static inline u32 get_unaligned_le32(const void *p)
 {
-	return le32_to_cpup(p);
+    return le32_to_cpup(p);
 }
 
 static inline void put_unaligned_le32(u32 val, void *p)
 {
-	*(__force __le32*)p = cpu_to_le32(val);
+    *(__force __le32 *)p = cpu_to_le32(val);
 }
 
 #endif
@@ -59,9 +59,9 @@ static inline void put_unaligned_le32(u32 val, void *p)
  * be built with fewer features to minimize code size.
  */
 enum xz_mode {
-	XZ_SINGLE,
-	XZ_PREALLOC,
-	XZ_DYNALLOC
+    XZ_SINGLE,
+    XZ_PREALLOC,
+    XZ_DYNALLOC
 };
 
 /**
@@ -115,15 +115,15 @@ enum xz_mode {
  * is used instead of XZ_BUF_ERROR.
  */
 enum xz_ret {
-	XZ_OK,
-	XZ_STREAM_END,
-	XZ_UNSUPPORTED_CHECK,
-	XZ_MEM_ERROR,
-	XZ_MEMLIMIT_ERROR,
-	XZ_FORMAT_ERROR,
-	XZ_OPTIONS_ERROR,
-	XZ_DATA_ERROR,
-	XZ_BUF_ERROR
+    XZ_OK,
+    XZ_STREAM_END,
+    XZ_UNSUPPORTED_CHECK,
+    XZ_MEM_ERROR,
+    XZ_MEMLIMIT_ERROR,
+    XZ_FORMAT_ERROR,
+    XZ_OPTIONS_ERROR,
+    XZ_DATA_ERROR,
+    XZ_BUF_ERROR
 };
 
 /**
@@ -143,13 +143,13 @@ enum xz_ret {
  * the variables in_pos and out_pos are modified by the XZ code.
  */
 struct xz_buf {
-	const uint8_t *in;
-	size_t in_pos;
-	size_t in_size;
+    const uint8_t *in;
+    size_t in_pos;
+    size_t in_size;
 
-	uint8_t *out;
-	size_t out_pos;
-	size_t out_size;
+    uint8_t *out;
+    size_t out_pos;
+    size_t out_size;
 };
 
 /**
@@ -158,11 +158,11 @@ struct xz_buf {
 struct xz_dec;
 
 /* If no specific decoding mode is requested, enable support for all modes. */
-#if !defined(XZ_DEC_SINGLE) && !defined(XZ_DEC_PREALLOC) \
-		&& !defined(XZ_DEC_DYNALLOC)
-#	define XZ_DEC_SINGLE
-#	define XZ_DEC_PREALLOC
-#	define XZ_DEC_DYNALLOC
+#if !defined(XZ_DEC_SINGLE) && !defined(XZ_DEC_PREALLOC) &&                    \
+    !defined(XZ_DEC_DYNALLOC)
+#define XZ_DEC_SINGLE
+#define XZ_DEC_PREALLOC
+#define XZ_DEC_DYNALLOC
 #endif
 
 /*
@@ -171,29 +171,29 @@ struct xz_dec;
  * false at compile time and thus allow the compiler to omit unneeded code.
  */
 #ifdef XZ_DEC_SINGLE
-#	define DEC_IS_SINGLE(mode) ((mode) == XZ_SINGLE)
+#define DEC_IS_SINGLE(mode) ((mode) == XZ_SINGLE)
 #else
-#	define DEC_IS_SINGLE(mode) (false)
+#define DEC_IS_SINGLE(mode) (false)
 #endif
 
 #ifdef XZ_DEC_PREALLOC
-#	define DEC_IS_PREALLOC(mode) ((mode) == XZ_PREALLOC)
+#define DEC_IS_PREALLOC(mode) ((mode) == XZ_PREALLOC)
 #else
-#	define DEC_IS_PREALLOC(mode) (false)
+#define DEC_IS_PREALLOC(mode) (false)
 #endif
 
 #ifdef XZ_DEC_DYNALLOC
-#	define DEC_IS_DYNALLOC(mode) ((mode) == XZ_DYNALLOC)
+#define DEC_IS_DYNALLOC(mode) ((mode) == XZ_DYNALLOC)
 #else
-#	define DEC_IS_DYNALLOC(mode) (false)
+#define DEC_IS_DYNALLOC(mode) (false)
 #endif
 
 #if !defined(XZ_DEC_SINGLE)
-#	define DEC_IS_MULTI(mode) (true)
+#define DEC_IS_MULTI(mode) (true)
 #elif defined(XZ_DEC_PREALLOC) || defined(XZ_DEC_DYNALLOC)
-#	define DEC_IS_MULTI(mode) ((mode) != XZ_SINGLE)
+#define DEC_IS_MULTI(mode) ((mode) != XZ_SINGLE)
 #else
-#	define DEC_IS_MULTI(mode) (false)
+#define DEC_IS_MULTI(mode) (false)
 #endif
 
 /*
@@ -201,12 +201,11 @@ struct xz_dec;
  * XZ_DEC_BCJ is used to enable generic support for BCJ decoders.
  */
 #ifndef XZ_DEC_BCJ
-#	if defined(XZ_DEC_X86) || defined(XZ_DEC_POWERPC) \
-			|| defined(XZ_DEC_IA64) || defined(XZ_DEC_ARM) \
-			|| defined(XZ_DEC_ARM) || defined(XZ_DEC_ARMTHUMB) \
-			|| defined(XZ_DEC_SPARC)
-#		define XZ_DEC_BCJ
-#	endif
+#if defined(XZ_DEC_X86) || defined(XZ_DEC_POWERPC) || defined(XZ_DEC_IA64) ||  \
+    defined(XZ_DEC_ARM) || defined(XZ_DEC_ARM) || defined(XZ_DEC_ARMTHUMB) ||  \
+    defined(XZ_DEC_SPARC)
+#define XZ_DEC_BCJ
+#endif
 #endif
 
 /*
@@ -214,7 +213,7 @@ struct xz_dec;
  * before calling xz_dec_lzma2_run().
  */
 XZ_EXTERN struct xz_dec_lzma2 *xz_dec_lzma2_create(enum xz_mode mode,
-						   uint32_t dict_max);
+                                                   uint32_t dict_max);
 
 /*
  * Decode the LZMA2 properties (one byte) and reset the decoder. Return
@@ -222,12 +221,11 @@ XZ_EXTERN struct xz_dec_lzma2 *xz_dec_lzma2_create(enum xz_mode mode,
  * big enough, and XZ_OPTIONS_ERROR if props indicates something that this
  * decoder doesn't support.
  */
-XZ_EXTERN enum xz_ret xz_dec_lzma2_reset(struct xz_dec_lzma2 *s,
-					 uint8_t props);
+XZ_EXTERN enum xz_ret xz_dec_lzma2_reset(struct xz_dec_lzma2 *s, uint8_t props);
 
 /* Decode raw LZMA2 stream from b->in to b->out. */
 XZ_EXTERN enum xz_ret xz_dec_lzma2_run(struct xz_dec_lzma2 *s,
-				       struct xz_buf *b);
+                                       struct xz_buf *b);
 
 /* Free the memory allocated for the LZMA2 decoder. */
 XZ_EXTERN void xz_dec_lzma2_end(struct xz_dec_lzma2 *s);
@@ -253,8 +251,8 @@ XZ_EXTERN enum xz_ret xz_dec_bcj_reset(struct xz_dec_bcj *s, uint8_t id);
  * must be called directly.
  */
 XZ_EXTERN enum xz_ret xz_dec_bcj_run(struct xz_dec_bcj *s,
-				     struct xz_dec_lzma2 *lzma2,
-				     struct xz_buf *b);
+                                     struct xz_dec_lzma2 *lzma2,
+                                     struct xz_buf *b);
 
 /* Free the memory allocated for the BCJ filters. */
 #define xz_dec_bcj_end(s) free(s)

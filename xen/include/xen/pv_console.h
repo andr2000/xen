@@ -15,10 +15,17 @@ evtchn_port_t pv_console_evtchn(void);
 #else
 
 static inline void pv_console_init(void) {}
-static inline void pv_console_set_rx_handler(serial_rx_fn fn) { }
-static inline void pv_console_init_postirq(void) { }
-static inline void pv_console_puts(const char *buf, size_t nr) { }
-static inline size_t pv_console_rx(void) { return 0; }
+
+static inline void pv_console_set_rx_handler(serial_rx_fn fn) {}
+
+static inline void pv_console_init_postirq(void) {}
+
+static inline void pv_console_puts(const char *buf, size_t nr) {}
+
+static inline size_t pv_console_rx(void)
+{
+    return 0;
+}
 
 #endif /* !CONFIG_XEN_GUEST */
 #endif /* __XEN_PV_CONSOLE_H__ */

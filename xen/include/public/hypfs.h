@@ -32,9 +32,9 @@ struct xen_hypfs_direntry {
     uint8_t encoding;
 #define XEN_HYPFS_ENC_PLAIN    0
 #define XEN_HYPFS_ENC_GZIP     1
-    uint16_t pad;              /* Returned as 0. */
-    uint32_t content_len;      /* Current length of data. */
-    uint32_t max_write_len;    /* Max. length for writes (0 if read-only). */
+    uint16_t pad; /* Returned as 0. */
+    uint32_t content_len; /* Current length of data. */
+    uint32_t max_write_len; /* Max. length for writes (0 if read-only). */
 };
 typedef struct xen_hypfs_direntry xen_hypfs_direntry_t;
 

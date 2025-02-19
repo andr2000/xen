@@ -46,8 +46,9 @@ long do_platform_op(XEN_GUEST_HANDLE_PARAM(xen_platform_op_t) u_xenpf_op)
      */
     while ( !spin_trylock(&xenpf_lock) )
         if ( hypercall_preempt_check() )
-            return hypercall_create_continuation(
-                __HYPERVISOR_platform_op, "h", u_xenpf_op);
+            return hypercall_create_continuation(__HYPERVISOR_platform_op,
+                                                 "h",
+                                                 u_xenpf_op);
 
     switch ( op->cmd )
     {
@@ -55,7 +56,8 @@ long do_platform_op(XEN_GUEST_HANDLE_PARAM(xen_platform_op_t) u_xenpf_op)
         if ( likely(!op->u.settime64.mbz) )
             do_settime(op->u.settime64.secs,
                        op->u.settime64.nsecs,
-                       op->u.settime64.system_time + SECONDS(d->time_offset.seconds));
+                       op->u.settime64.system_time +
+                           SECONDS(d->time_offset.seconds));
         else
             ret = -EINVAL;
         break;

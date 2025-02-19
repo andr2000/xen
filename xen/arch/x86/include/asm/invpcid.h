@@ -17,17 +17,17 @@ static inline void invpcid(unsigned int pcid, unsigned long addr,
         uint64_t addr;
     } desc = { .pcid = pcid, .addr = addr };
 
-    asm volatile (
+    asm volatile(
 #ifdef HAVE_AS_INVPCID
-                  "invpcid %[desc], %q[type]"
-                  : /* No output */
-                  : [desc] "m" (desc), [type] "r" (type)
+        "invpcid %[desc], %q[type]"
+        : /* No output */
+        : [desc] "m"(desc), [type] "r"(type)
 #else
-                  INVPCID_OPCODE MODRM_ECX_01
-                  : /* No output */
-                  : "a" (type), "c" (&desc)
+        INVPCID_OPCODE MODRM_ECX_01
+        : /* No output */
+        : "a"(type), "c"(&desc)
 #endif
-                  : "memory" );
+        : "memory");
 }
 
 /* Flush all mappings for a given PCID and addr, not including globals */
@@ -54,7 +54,7 @@ static inline void invpcid_flush_all_nonglobals(void)
     invpcid(0, 0, X86_INVPCID_ALL_NON_GLOBAL);
 }
 
-#endif	/* _ASM_X86_INVPCID_H_ */
+#endif /* _ASM_X86_INVPCID_H_ */
 
 /*
  * Local variables:

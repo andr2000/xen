@@ -79,8 +79,7 @@
  */
 extern unsigned long __bad_xchg(volatile void *ptr, unsigned int size);
 
-static always_inline unsigned long __xchg(volatile void *ptr,
-                                          unsigned long new,
+static always_inline unsigned long __xchg(volatile void *ptr, unsigned long new,
                                           unsigned int size)
 {
     unsigned long ret;
@@ -209,21 +208,33 @@ static always_inline unsigned long __cmpxchg(volatile void *ptr,
     switch ( size )
     {
     case 1:
-        ret = emulate_cmpxchg_1_2((volatile uint8_t *)ptr, old, new,
-                                  ".aq", ".aqrl");
+        ret = emulate_cmpxchg_1_2((volatile uint8_t *)ptr,
+                                  old,
+                                  new,
+                                  ".aq",
+                                  ".aqrl");
         break;
     case 2:
-        ret = emulate_cmpxchg_1_2((volatile uint16_t *)ptr, old, new,
-                                   ".aq", ".aqrl");
+        ret = emulate_cmpxchg_1_2((volatile uint16_t *)ptr,
+                                  old,
+                                  new,
+                                  ".aq",
+                                  ".aqrl");
         break;
     case 4:
-        ret = _generic_cmpxchg((volatile uint32_t *)ptr, old, new,
-                          ".w.aq", ".w.aqrl");
+        ret = _generic_cmpxchg((volatile uint32_t *)ptr,
+                               old,
+                               new,
+                               ".w.aq",
+                               ".w.aqrl");
         break;
 #ifndef CONFIG_32BIT
     case 8:
-        ret = _generic_cmpxchg((volatile uint64_t *)ptr, old, new,
-                           ".d.aq", ".d.aqrl");
+        ret = _generic_cmpxchg((volatile uint64_t *)ptr,
+                               old,
+                               new,
+                               ".d.aq",
+                               ".d.aqrl");
         break;
 #endif
     default:

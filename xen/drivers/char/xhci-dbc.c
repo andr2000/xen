@@ -160,6 +160,7 @@ struct xhci_string_descriptor {
 struct xhci_dbc_ctx {
     union {
         uint32_t info[DBC_CTX_SIZE];
+
         struct {
             uint64_t string0_ptr;
             uint64_t manufacturer_ptr;
@@ -171,6 +172,7 @@ struct xhci_dbc_ctx {
             uint8_t serial_size;
         };
     };
+
     uint32_t ep_out[DBC_CTX_SIZE];
     uint32_t ep_in[DBC_CTX_SIZE];
 };
@@ -340,7 +342,8 @@ static bool __init dbc_init_xhc(struct dbc *dbc)
 
     /* IO BARs not allowed; BAR must be 64-bit */
     if ( (bar0 & PCI_BASE_ADDRESS_SPACE) != PCI_BASE_ADDRESS_SPACE_MEMORY ||
-         (bar0 & PCI_BASE_ADDRESS_MEM_TYPE_MASK) != PCI_BASE_ADDRESS_MEM_TYPE_64 )
+         (bar0 & PCI_BASE_ADDRESS_MEM_TYPE_MASK) !=
+             PCI_BASE_ADDRESS_MEM_TYPE_64 )
         return false;
 
     bar_val = (bar1 << 32) | (bar0 & PCI_BASE_ADDRESS_MEM_MASK);
@@ -502,8 +505,8 @@ static void xhci_trb_link_set_tc(struct xhci_trb *trb)
 }
 
 static void xhci_trb_ring_init(const struct dbc *dbc,
-                              struct xhci_trb_ring *ring, int producer,
-                              int doorbell)
+                               struct xhci_trb_ring *ring, int producer,
+                               int doorbell)
 {
     memset(ring->trb, 0, DBC_TRB_RING_CAP * sizeof(ring->trb[0]));
 
@@ -605,7 +608,7 @@ static void dbc_push_trb(struct dbc *dbc, struct xhci_trb_ring *ring,
 }
 
 static unsigned int dbc_push_work(struct dbc *dbc, struct dbc_work_ring *ring,
-                             const char *buf, unsigned int len)
+                                  const char *buf, unsigned int len)
 {
     unsigned int i = 0;
     unsigned int end, start = ring->enq;
@@ -676,7 +679,7 @@ static void dbc_pop_events(struct dbc *dbc)
 
     while ( xhci_trb_cyc(event) == er->cyc )
     {
-        switch (xhci_trb_type(event))
+        switch ( xhci_trb_type(event) )
         {
         case XHCI_TRB_TFRE:
             event_ptr = xhci_trb_tfre_ptr(event);
@@ -694,7 +697,9 @@ static void dbc_pop_events(struct dbc *dbc)
                 trb_idx = (event_ptr - ir->dma) >> XHCI_TRB_SHIFT;
                 if ( xhci_trb_tfre_cc(event) == XHCI_TRB_CC_SUCCESS ||
                      xhci_trb_tfre_cc(event) == XHCI_TRB_CC_SHORT_PACKET )
-                    dbc_rx_trb(dbc, &ir->trb[trb_idx], xhci_trb_tfre_len(event));
+                    dbc_rx_trb(dbc,
+                               &ir->trb[trb_idx],
+                               xhci_trb_tfre_len(event));
                 ir->deq = (trb_idx + 1) & (DBC_TRB_RING_CAP - 1);
             }
             else
@@ -745,8 +750,7 @@ static void dbc_init_ep(uint32_t *ep, uint64_t mbs, uint32_t type,
 }
 
 static void dbc_init_string_single(struct xhci_string_descriptor *string,
-                                   const char *ascii_str,
-                                   uint64_t *str_ptr,
+                                   const char *ascii_str, uint64_t *str_ptr,
                                    uint8_t *str_size_ptr)
 {
     size_t i, len = strlen(ascii_str);
@@ -768,22 +772,26 @@ static void dbc_init_strings(struct dbc *dbc, uint32_t *info)
     BUILD_BUG_ON(sizeof(DBC_STRING_PRODUCT) > MAX_STRING_LENGTH);
     BUILD_BUG_ON(sizeof(DBC_STRING_SERIAL) > MAX_STRING_LENGTH);
 
-    dbc_init_string_single(&dbc->dbc_str[0], DBC_STRING_LANGID,
+    dbc_init_string_single(&dbc->dbc_str[0],
+                           DBC_STRING_LANGID,
                            &dbc->dbc_ctx->string0_ptr,
                            &dbc->dbc_ctx->string0_size);
-    dbc_init_string_single(&dbc->dbc_str[1], DBC_STRING_MANUFACTURER,
+    dbc_init_string_single(&dbc->dbc_str[1],
+                           DBC_STRING_MANUFACTURER,
                            &dbc->dbc_ctx->manufacturer_ptr,
                            &dbc->dbc_ctx->manufacturer_size);
-    dbc_init_string_single(&dbc->dbc_str[2], DBC_STRING_PRODUCT,
+    dbc_init_string_single(&dbc->dbc_str[2],
+                           DBC_STRING_PRODUCT,
                            &dbc->dbc_ctx->product_ptr,
                            &dbc->dbc_ctx->product_size);
-    dbc_init_string_single(&dbc->dbc_str[3], DBC_STRING_SERIAL,
+    dbc_init_string_single(&dbc->dbc_str[3],
+                           DBC_STRING_SERIAL,
                            &dbc->dbc_ctx->serial_ptr,
                            &dbc->dbc_ctx->serial_size);
 }
 
-static void dbc_do_reset_debug_port(struct dbc *dbc,
-                                    unsigned int id, unsigned int count)
+static void dbc_do_reset_debug_port(struct dbc *dbc, unsigned int id,
+                                    unsigned int count)
 {
     uint32_t __iomem *ops_reg;
     uint32_t __iomem *portsc;
@@ -913,10 +921,8 @@ static int dbc_init_dbc(struct dbc *dbc)
 
     memset(dbc->dbc_ctx, 0, sizeof(*dbc->dbc_ctx));
     dbc_init_strings(dbc, dbc->dbc_ctx->info);
-    dbc_init_ep(dbc->dbc_ctx->ep_out, mbs, XHCI_EP_BULK_OUT,
-                dbc->dbc_oring.dma);
-    dbc_init_ep(dbc->dbc_ctx->ep_in, mbs, XHCI_EP_BULK_IN,
-                dbc->dbc_iring.dma);
+    dbc_init_ep(dbc->dbc_ctx->ep_out, mbs, XHCI_EP_BULK_OUT, dbc->dbc_oring.dma);
+    dbc_init_ep(dbc->dbc_ctx->ep_in, mbs, XHCI_EP_BULK_IN, dbc->dbc_iring.dma);
 
     writel(1, &reg->erstsz);
     writeq(virt_to_maddr(dbc->dbc_erst), &reg->erstba);
@@ -938,8 +944,7 @@ static int dbc_init_dbc(struct dbc *dbc)
     return 1;
 }
 
-static void dbc_init_work_ring(struct dbc *dbc,
-                               struct dbc_work_ring *wrk)
+static void dbc_init_work_ring(struct dbc *dbc, struct dbc_work_ring *wrk)
 {
     wrk->enq = 0;
     wrk->deq = 0;
@@ -1073,7 +1078,9 @@ static void dbc_flush(struct dbc *dbc, struct xhci_trb_ring *trb,
     }
     else
     {
-        dbc_push_trb(dbc, trb, wrk->dma + wrk->deq,
+        dbc_push_trb(dbc,
+                     trb,
+                     wrk->dma + wrk->deq,
                      DBC_WORK_RING_CAP - wrk->deq);
         wrk->deq = 0;
         if ( wrk->enq > 0 && !xhci_trb_ring_full(trb) )
@@ -1107,8 +1114,7 @@ static void dbc_enqueue_in(struct dbc *dbc, struct xhci_trb_ring *trb,
     if ( dbc_work_ring_full(wrk) )
         return;
 
-    dbc_push_trb(dbc, trb, wrk->dma + wrk->enq,
-                 dbc_work_ring_space_to_end(wrk));
+    dbc_push_trb(dbc, trb, wrk->dma + wrk->enq, dbc_work_ring_space_to_end(wrk));
 
     wmb();
     writel(db, &reg->db);
@@ -1207,8 +1213,7 @@ static void __init cf_check dbc_uart_init_postirq(struct serial_port *port)
         break;
     case XHCI_SHARE_HWDOM:
         if ( pci_hide_device(0, uart->dbc.sbdf.bus, uart->dbc.sbdf.devfn) )
-            printk(XENLOG_WARNING
-                   "Failed to hide %pp used for XHCI console\n",
+            printk(XENLOG_WARNING "Failed to hide %pp used for XHCI console\n",
                    &uart->dbc.sbdf);
         break;
     case XHCI_SHARE_ANY:
@@ -1216,27 +1221,28 @@ static void __init cf_check dbc_uart_init_postirq(struct serial_port *port)
         break;
     }
 #ifdef CONFIG_X86
-    if ( subpage_mmio_ro_add(
-             (uart->dbc.bar_val & PCI_BASE_ADDRESS_MEM_MASK) +
-              uart->dbc.xhc_dbc_offset,
-             sizeof(*uart->dbc.dbc_reg)) )
+    if ( subpage_mmio_ro_add((uart->dbc.bar_val & PCI_BASE_ADDRESS_MEM_MASK) +
+                                 uart->dbc.xhc_dbc_offset,
+                             sizeof(*uart->dbc.dbc_reg)) )
     {
-        printk(XENLOG_WARNING
-               "Error while marking MMIO range of XHCI console as R/O, "
-               "making the whole device R/O (share=no)\n");
+        printk(
+            XENLOG_WARNING
+            "Error while marking MMIO range of XHCI console as R/O, " "making the whole device R/O (share=no)\n");
         uart->dbc.share = XHCI_SHARE_NONE;
         if ( pci_ro_device(0, uart->dbc.sbdf.bus, uart->dbc.sbdf.devfn) )
             printk(XENLOG_WARNING
                    "Failed to mark read-only %pp used for XHCI console\n",
                    &uart->dbc.sbdf);
-        if ( rangeset_add_range(mmio_ro_ranges,
+        if ( rangeset_add_range(
+                 mmio_ro_ranges,
                  PFN_DOWN((uart->dbc.bar_val & PCI_BASE_ADDRESS_MEM_MASK) +
                           uart->dbc.xhc_dbc_offset),
                  PFN_UP((uart->dbc.bar_val & PCI_BASE_ADDRESS_MEM_MASK) +
-                        uart->dbc.xhc_dbc_offset +
-                        sizeof(*uart->dbc.dbc_reg)) - 1) )
-            printk(XENLOG_INFO
-                   "Error while adding MMIO range of device to mmio_ro_ranges\n");
+                        uart->dbc.xhc_dbc_offset + sizeof(*uart->dbc.dbc_reg)) -
+                     1) )
+            printk(
+                XENLOG_INFO
+                "Error while adding MMIO range of device to mmio_ro_ranges\n");
     }
 #endif
 }
@@ -1333,8 +1339,8 @@ struct dbc_dma_bufs {
      * DMA-reachable by the USB controller.
      */
 };
-static struct dbc_dma_bufs __section(".bss.page_aligned") __aligned(PAGE_SIZE)
-    dbc_dma_bufs;
+static struct dbc_dma_bufs __section(".bss.page_aligned")
+    __aligned(PAGE_SIZE) dbc_dma_bufs;
 
 static int __init cf_check xhci_parse_dbgp(const char *opt_dbgp)
 {
@@ -1360,8 +1366,7 @@ static int __init cf_check xhci_parse_dbgp(const char *opt_dbgp)
         e = parse_pci(opt_dbgp + 8, NULL, &bus, &slot, &func);
         if ( !e || (*e && *e != ',') )
         {
-            printk(XENLOG_ERR
-                   "Invalid dbgp= PCI device spec: '%s'\n",
+            printk(XENLOG_ERR "Invalid dbgp= PCI device spec: '%s'\n",
                    opt_dbgp + 8);
             return -EINVAL;
         }
@@ -1405,6 +1410,7 @@ static int __init cf_check xhci_parse_dbgp(const char *opt_dbgp)
 
     return 0;
 }
+
 custom_param("dbgp", xhci_parse_dbgp);
 
 void __init xhci_dbc_uart_init(void)
@@ -1427,10 +1433,10 @@ void __init xhci_dbc_uart_init(void)
     if ( dbc_open(dbc) )
     {
         iommu_add_extra_reserved_device_memory(
-                PFN_DOWN(virt_to_maddr(&dbc_dma_bufs)),
-                PFN_UP(sizeof(dbc_dma_bufs)),
-                uart->dbc.sbdf,
-                "XHCI console");
+            PFN_DOWN(virt_to_maddr(&dbc_dma_bufs)),
+            PFN_UP(sizeof(dbc_dma_bufs)),
+            uart->dbc.sbdf,
+            "XHCI console");
         serial_register_uart(SERHND_XHCI, &dbc_uart_driver, &dbc_uart);
     }
 }
@@ -1442,15 +1448,15 @@ static void dbc_dump(struct dbc *dbc)
 
     dbc_debug("XHCI DBC DUMP:\n");
     dbc_debug("    ctrl: 0x%x stat: 0x%x psc: 0x%x\n",
-              readl(&r->ctrl), readl(&r->st), readl(&r->portsc));
-    dbc_debug("    id: 0x%x, db: 0x%x\n",
-              readl(&r->id), readl(&r->db));
+              readl(&r->ctrl),
+              readl(&r->st),
+              readl(&r->portsc));
+    dbc_debug("    id: 0x%x, db: 0x%x\n", readl(&r->id), readl(&r->db));
     dbc_debug("    erstsz: %u, erstba: 0x%lx\n",
-              readl(&r->erstsz), readq(&r->erstba));
-    dbc_debug("    erdp: 0x%lx, cp: 0x%lx\n",
-              readq(&r->erdp), readq(&r->cp));
-    dbc_debug("    ddi1: 0x%x, ddi2: 0x%x\n",
-              readl(&r->ddi1), readl(&r->ddi2));
+              readl(&r->erstsz),
+              readq(&r->erstba));
+    dbc_debug("    erdp: 0x%lx, cp: 0x%lx\n", readq(&r->erdp), readq(&r->cp));
+    dbc_debug("    ddi1: 0x%x, ddi2: 0x%x\n", readl(&r->ddi1), readl(&r->ddi2));
     dbc_debug("    erstba == virt_to_dma(erst): %d\n",
               readq(&r->erstba) == virt_to_maddr(dbc->dbc_erst));
     dbc_debug("    erdp == virt_to_dma(erst[0].base): %d\n",

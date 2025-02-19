@@ -15,45 +15,49 @@
 
 static inline unsigned long ex_addr(const struct exception_table_entry *x)
 {
-	return EX_FIELD(x, addr);
+    return EX_FIELD(x, addr);
 }
 
 static inline unsigned long ex_cont(const struct exception_table_entry *x)
 {
-	return EX_FIELD(x, cont);
+    return EX_FIELD(x, cont);
 }
 
 static int init_or_livepatch cf_check cmp_ex(const void *a, const void *b)
 {
-	const struct exception_table_entry *l = a, *r = b;
-	unsigned long lip = ex_addr(l);
-	unsigned long rip = ex_addr(r);
+    const struct exception_table_entry *l = a, *r = b;
+    unsigned long lip = ex_addr(l);
+    unsigned long rip = ex_addr(r);
 
-	/* avoid overflow */
-	if (lip > rip)
-		return 1;
-	if (lip < rip)
-		return -1;
-	return 0;
+    /* avoid overflow */
+    if ( lip > rip )
+        return 1;
+    if ( lip < rip )
+        return -1;
+    return 0;
 }
 
 static void init_or_livepatch cf_check swap_ex(void *a, void *b, size_t size)
 {
-	struct exception_table_entry *l = a, *r = b, tmp;
-	long delta = b - a;
+    struct exception_table_entry *l = a, *r = b, tmp;
+    long delta = b - a;
 
-	tmp = *l;
-	l->addr = r->addr + delta;
-	l->cont = r->cont + delta;
-	r->addr = tmp.addr - delta;
-	r->cont = tmp.cont - delta;
+    tmp = *l;
+    l->addr = r->addr + delta;
+    l->cont = r->cont + delta;
+    r->addr = tmp.addr - delta;
+    r->cont = tmp.cont - delta;
 }
 
-void init_or_livepatch sort_exception_table(struct exception_table_entry *start,
-                                 const struct exception_table_entry *stop)
+void init_or_livepatch
+sort_exception_table(struct exception_table_entry *start,
+                     const struct exception_table_entry *stop)
 {
-    sort(start, stop - start,
-         sizeof(struct exception_table_entry), cmp_ex, swap_ex);
+    sort(start,
+         stop - start,
+         sizeof(struct exception_table_entry),
+         cmp_ex,
+         swap_ex);
 }
 
 void __init sort_exception_tables(void)
@@ -64,8 +68,7 @@ void __init sort_exception_tables(void)
 
 static unsigned long
 search_one_extable(const struct exception_table_entry *first,
-                   const struct exception_table_entry *end,
-                   unsigned long value)
+                   const struct exception_table_entry *end, unsigned long value)
 {
     const struct exception_table_entry *last = end - 1;
     const struct exception_table_entry *mid;
@@ -75,18 +78,18 @@ search_one_extable(const struct exception_table_entry *first,
     {
         mid = (last - first) / 2 + first;
         diff = ex_addr(mid) - value;
-        if (diff == 0)
+        if ( diff == 0 )
             return ex_cont(mid);
-        else if (diff < 0)
-            first = mid+1;
+        else if ( diff < 0 )
+            first = mid + 1;
         else
-            last = mid-1;
+            last = mid - 1;
     }
     return 0;
 }
 
-unsigned long
-search_exception_table(const struct cpu_user_regs *regs, unsigned long *stub_ra)
+unsigned long search_exception_table(const struct cpu_user_regs *regs,
+                                     unsigned long *stub_ra)
 {
     const struct virtual_region *region = find_text_region(regs->rip);
     unsigned long stub = this_cpu(stubs.addr);
@@ -114,16 +117,15 @@ search_exception_table(const struct cpu_user_regs *regs, unsigned long *stub_ra)
      *    about the exception back to the invoking code.
      */
     if ( regs->rip >= stub + STUB_BUF_SIZE / 2 &&
-         regs->rip < stub + STUB_BUF_SIZE &&
-         regs->rsp > (unsigned long)regs &&
+         regs->rip < stub + STUB_BUF_SIZE && regs->rsp > (unsigned long)regs &&
          regs->rsp < (unsigned long)get_cpu_info() )
     {
         unsigned long retaddr = *(unsigned long *)regs->rsp, fixup;
 
         region = find_text_region(retaddr);
         fixup = region && region->ex
-                ? search_one_extable(region->ex, region->ex_end, retaddr)
-                : 0;
+                    ? search_one_extable(region->ex, region->ex_end, retaddr)
+                    : 0;
         if ( fixup )
         {
             /*
@@ -155,15 +157,16 @@ int __init cf_check stub_selftest(void)
         uint64_t rax;
         union stub_exception_token res;
     } tests[] __initconst = {
+
 #define endbr64 0xf3, 0x0f, 0x1e, 0xfa
         { .opc = { endbr64, 0x0f, 0xb9, 0xc3, 0xc3 }, /* ud1 */
           .res.fields.trapnr = X86_EXC_UD },
         { .opc = { endbr64, 0x90, 0x02, 0x00, 0xc3 }, /* nop; add (%rax),%al */
           .rax = 0x0123456789abcdef,
-          .res.fields.trapnr = X86_EXC_GP },
+                       .res.fields.trapnr = X86_EXC_GP },
         { .opc = { endbr64, 0x02, 0x04, 0x04, 0xc3 }, /* add (%rsp,%rax),%al */
           .rax = 0xfedcba9876543210UL,
-          .res.fields.trapnr = X86_EXC_SS },
+                       .res.fields.trapnr = X86_EXC_SS },
         { .opc = { endbr64, 0xcc, 0xc3, 0xc3, 0xc3 }, /* int3 */
           .res.fields.trapnr = X86_EXC_BP },
 #undef endbr64
@@ -185,24 +188,24 @@ int __init cf_check stub_selftest(void)
         memcpy(ptr, tests[i].opc, ARRAY_SIZE(tests[i].opc));
         unmap_domain_page(ptr);
 
-        asm volatile ( "INDIRECT_CALL %[stb]\n"
-                       ".Lret%=:\n\t"
-                       ".pushsection .fixup,\"ax\"\n"
-                       ".Lfix%=:\n\t"
-                       "pop %[exn]\n\t"
-                       "jmp .Lret%=\n\t"
-                       ".popsection\n\t"
-                       _ASM_EXTABLE(.Lret%=, .Lfix%=)
-                       : [exn] "+m" (res) ASM_CALL_CONSTRAINT
-                       : [stb] "r" (addr), "a" (tests[i].rax));
+        asm volatile(
+            "INDIRECT_CALL %[stb]\n" ".Lret%=:\n\t" ".pushsection .fixup,\"ax\"\n" ".Lfix%=:\n\t" "pop %[exn]\n\t" "jmp .Lret%=\n\t" ".popsection\n\t" _ASM_EXTABLE(
+                    .Lret %=,
+                    .Lfix %=)
+            : [exn] "+m"(res)ASM_CALL_CONSTRAINT
+            : [stb] "r"(addr), "a"(tests[i].rax));
 
         if ( res.raw != tests[i].res.raw )
         {
-            printk("Selftest %u failed: Opc %*ph "
-                   "expected %s[%04x], got %s[%04x]\n",
-                   i, (int)ARRAY_SIZE(tests[i].opc), tests[i].opc,
-                   vector_name(tests[i].res.fields.trapnr), tests[i].res.fields.ec,
-                   vector_name(res.fields.trapnr), res.fields.ec);
+            printk(
+                "Selftest %u failed: Opc %*ph " "expected %s[%04x], got %s[%04x]\n",
+                i,
+                (int)ARRAY_SIZE(tests[i].opc),
+                tests[i].opc,
+                vector_name(tests[i].res.fields.trapnr),
+                tests[i].res.fields.ec,
+                vector_name(res.fields.trapnr),
+                res.fields.ec);
 
             fail = true;
         }
@@ -213,14 +216,15 @@ int __init cf_check stub_selftest(void)
 
     return 0;
 }
+
 __initcall(stub_selftest);
 #endif /* CONFIG_SELF_TESTS */
 
 unsigned long asmlinkage search_pre_exception_table(struct cpu_user_regs *regs)
 {
     unsigned long addr = regs->rip;
-    unsigned long fixup = search_one_extable(
-        __start___pre_ex_table, __stop___pre_ex_table, addr);
+    unsigned long fixup =
+        search_one_extable(__start___pre_ex_table, __stop___pre_ex_table, addr);
     if ( fixup )
     {
         dprintk(XENLOG_INFO, "Pre-exception: %p -> %p\n", _p(addr), _p(fixup));

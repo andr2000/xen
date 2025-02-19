@@ -53,8 +53,8 @@ static unsigned long *monitor_bitmap_for_msr(const struct domain *d, u32 *msr)
         return d->arch.monitor.msr_bitmap->low;
 
     case 0x40000000U ... 0x40001fffU:
-        BUILD_BUG_ON(
-            sizeof(d->arch.monitor.msr_bitmap->hypervisor) * 8 <= 0x1fff);
+        BUILD_BUG_ON(sizeof(d->arch.monitor.msr_bitmap->hypervisor) * 8 <=
+                     0x1fff);
         *msr &= 0x1fff;
         return d->arch.monitor.msr_bitmap->hypervisor;
 
@@ -180,7 +180,8 @@ int arch_monitor_domctl_event(struct domain *d,
 
         if ( requested_status )
         {
-            ad->monitor.write_ctrlreg_mask[mop->u.mov_to_cr.index] = mop->u.mov_to_cr.bitmask;
+            ad->monitor.write_ctrlreg_mask[mop->u.mov_to_cr.index] =
+                mop->u.mov_to_cr.bitmask;
             ad->monitor.write_ctrlreg_enabled |= ctrlreg_bitmask;
         }
         else
@@ -194,7 +195,7 @@ int arch_monitor_domctl_event(struct domain *d,
         {
             struct vcpu *v;
             /* Latches new CR3 or CR4 mask through CR0 code. */
-            for_each_vcpu ( d, v )
+            for_each_vcpu(d, v)
                 hvm_update_guest_cr(v, 0);
         }
 
@@ -269,8 +270,9 @@ int arch_monitor_domctl_event(struct domain *d,
         domain_pause(d);
         ad->monitor.descriptor_access_enabled = requested_status;
 
-        for_each_vcpu ( d, v )
-            alternative_vcall(hvm_funcs.set_descriptor_access_exiting, v,
+        for_each_vcpu(d, v)
+            alternative_vcall(hvm_funcs.set_descriptor_access_exiting,
+                              v,
                               requested_status);
 
         domain_unpause(d);
@@ -299,9 +301,9 @@ int arch_monitor_domctl_event(struct domain *d,
 
         domain_pause(d);
         ad->monitor.debug_exception_enabled = requested_status;
-        ad->monitor.debug_exception_sync = requested_status ?
-                                            mop->u.debug_exception.sync :
-                                            0;
+        ad->monitor.debug_exception_sync = requested_status
+                                               ? mop->u.debug_exception.sync
+                                               : 0;
         domain_unpause(d);
         break;
     }

@@ -2573,10 +2573,8 @@ static const unsigned char fontdata_8x8[FONTDATAMAX] = {
 
 };
 
-const struct font_desc font_vga_8x8 = {
-    "VGA8x8",
-    8,
-    8,
-    sizeof(fontdata_8x8) / 8,
-    fontdata_8x8
-};
+const struct font_desc font_vga_8x8 = { "VGA8x8",
+                                        8,
+                                        8,
+                                        sizeof(fontdata_8x8) / 8,
+                                        fontdata_8x8 };

@@ -17,17 +17,17 @@
  */
 char *strsep(char **s, const char *ct)
 {
-	char *sbegin = *s, *end;
+    char *sbegin = *s, *end;
 
-	if (sbegin == NULL)
-		return NULL;
+    if ( sbegin == NULL )
+        return NULL;
 
-	end = strpbrk(sbegin, ct);
-	if (end)
-		*end++ = '\0';
-	*s = end;
+    end = strpbrk(sbegin, ct);
+    if ( end )
+        *end++ = '\0';
+    *s = end;
 
-	return sbegin;
+    return sbegin;
 }
 
 /*

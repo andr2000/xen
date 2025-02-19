@@ -35,17 +35,9 @@ static int _p2m_get_mem_access(struct p2m_domain *p2m, gfn_t gfn,
 
     static const xenmem_access_t memaccess[] = {
 #define ACCESS(ac) [p2m_access_##ac] = XENMEM_access_##ac
-            ACCESS(n),
-            ACCESS(r),
-            ACCESS(w),
-            ACCESS(rw),
-            ACCESS(x),
-            ACCESS(rx),
-            ACCESS(wx),
-            ACCESS(rwx),
-            ACCESS(rx2rw),
-            ACCESS(n2rwx),
-            ACCESS(r_pw),
+        ACCESS(n),     ACCESS(r),     ACCESS(w),    ACCESS(rw),
+        ACCESS(x),     ACCESS(rx),    ACCESS(wx),   ACCESS(rwx),
+        ACCESS(rx2rw), ACCESS(n2rwx), ACCESS(r_pw),
 #undef ACCESS
     };
 
@@ -66,12 +58,11 @@ static int _p2m_get_mem_access(struct p2m_domain *p2m, gfn_t gfn,
     if ( (unsigned int)a >= ARRAY_SIZE(memaccess) )
         return -ERANGE;
 
-    *access =  memaccess[a];
+    *access = memaccess[a];
     return 0;
 }
 
-bool p2m_mem_access_emulate_check(struct vcpu *v,
-                                  const struct vm_event_st *rsp)
+bool p2m_mem_access_emulate_check(struct vcpu *v, const struct vm_event_st *rsp)
 {
     xenmem_access_t access;
     bool violation = true;
@@ -129,8 +120,7 @@ bool p2m_mem_access_emulate_check(struct vcpu *v,
     return violation;
 }
 
-bool p2m_mem_access_check(paddr_t gpa, unsigned long gla,
-                          struct npfec npfec,
+bool p2m_mem_access_check(paddr_t gpa, unsigned long gla, struct npfec npfec,
                           struct vm_event_st **req_ptr)
 {
     struct vcpu *v = current;
@@ -156,7 +146,13 @@ bool p2m_mem_access_check(paddr_t gpa, unsigned long gla,
 
     if ( npfec.write_access && p2ma == p2m_access_rx2rw )
     {
-        rc = p2m->set_entry(p2m, gfn, mfn, PAGE_ORDER_4K, p2mt, p2m_access_rw, -1);
+        rc = p2m->set_entry(p2m,
+                            gfn,
+                            mfn,
+                            PAGE_ORDER_4K,
+                            p2mt,
+                            p2m_access_rw,
+                            -1);
         ASSERT(rc == 0);
         gfn_unlock(p2m, gfn, 0);
         return true;
@@ -164,8 +160,13 @@ bool p2m_mem_access_check(paddr_t gpa, unsigned long gla,
     else if ( p2ma == p2m_access_n2rwx )
     {
         ASSERT(npfec.write_access || npfec.read_access || npfec.insn_fetch);
-        rc = p2m->set_entry(p2m, gfn, mfn, PAGE_ORDER_4K,
-                            p2mt, p2m_access_rwx, -1);
+        rc = p2m->set_entry(p2m,
+                            gfn,
+                            mfn,
+                            PAGE_ORDER_4K,
+                            p2mt,
+                            p2m_access_rwx,
+                            -1);
         ASSERT(rc == 0);
     }
     gfn_unlock(p2m, gfn, 0);
@@ -176,9 +177,11 @@ bool p2m_mem_access_check(paddr_t gpa, unsigned long gla,
         /* No listener */
         if ( p2m->access_required )
         {
-            gdprintk(XENLOG_INFO, "Memory access permissions failure, "
-                                  "no vm_event listener VCPU %d, dom %d\n",
-                                  v->vcpu_id, d->domain_id);
+            gdprintk(
+                XENLOG_INFO,
+                "Memory access permissions failure, " "no vm_event listener VCPU %d, dom %d\n",
+                v->vcpu_id,
+                d->domain_id);
             domain_crash(v->domain);
             return false;
         }
@@ -191,8 +194,13 @@ bool p2m_mem_access_check(paddr_t gpa, unsigned long gla,
                 /* A listener is not required, so clear the access
                  * restrictions.  This set must succeed: we have the
                  * gfn locked and just did a successful get_entry(). */
-                rc = p2m->set_entry(p2m, gfn, mfn, PAGE_ORDER_4K,
-                                    p2mt, p2m_access_rwx, -1);
+                rc = p2m->set_entry(p2m,
+                                    gfn,
+                                    mfn,
+                                    PAGE_ORDER_4K,
+                                    p2mt,
+                                    p2m_access_rwx,
+                                    -1);
                 ASSERT(rc == 0);
             }
             gfn_unlock(p2m, gfn, 0);
@@ -242,9 +250,9 @@ bool p2m_mem_access_check(paddr_t gpa, unsigned long gla,
             break;
         }
 
-        req->u.mem_access.flags |= npfec.read_access    ? MEM_ACCESS_R : 0;
-        req->u.mem_access.flags |= npfec.write_access   ? MEM_ACCESS_W : 0;
-        req->u.mem_access.flags |= npfec.insn_fetch     ? MEM_ACCESS_X : 0;
+        req->u.mem_access.flags |= npfec.read_access ? MEM_ACCESS_R : 0;
+        req->u.mem_access.flags |= npfec.write_access ? MEM_ACCESS_W : 0;
+        req->u.mem_access.flags |= npfec.insn_fetch ? MEM_ACCESS_X : 0;
     }
 
     /* Return whether vCPU pause is required (aka. sync event) */
@@ -260,7 +268,11 @@ static int p2m_set_altp2m_mem_access(struct domain *d, struct p2m_domain *hp2m,
     p2m_access_t old_a;
     int rc;
 
-    rc = altp2m_get_effective_entry(ap2m, gfn, &mfn, &t, &old_a,
+    rc = altp2m_get_effective_entry(ap2m,
+                                    gfn,
+                                    &mfn,
+                                    &t,
+                                    &old_a,
                                     AP2MGET_prepopulate);
     if ( rc )
         return rc;
@@ -273,8 +285,7 @@ static int p2m_set_altp2m_mem_access(struct domain *d, struct p2m_domain *hp2m,
 }
 
 static int set_mem_access(struct domain *d, struct p2m_domain *p2m,
-                          struct p2m_domain *ap2m, p2m_access_t a,
-                          gfn_t gfn)
+                          struct p2m_domain *ap2m, p2m_access_t a, gfn_t gfn)
 {
     int rc = 0;
 
@@ -289,8 +300,8 @@ static int set_mem_access(struct domain *d, struct p2m_domain *p2m,
     {
         p2m_access_t _a;
         p2m_type_t t;
-        mfn_t mfn = p2m_get_gfn_type_access(p2m, gfn, &t, &_a,
-                                            P2M_ALLOC, NULL, false);
+        mfn_t mfn =
+            p2m_get_gfn_type_access(p2m, gfn, &t, &_a, P2M_ALLOC, NULL, false);
 
         rc = p2m->set_entry(p2m, gfn, mfn, PAGE_ORDER_4K, t, a, -1);
     }
@@ -299,22 +310,13 @@ static int set_mem_access(struct domain *d, struct p2m_domain *p2m,
 }
 
 bool xenmem_access_to_p2m_access(const struct p2m_domain *p2m,
-                                 xenmem_access_t xaccess,
-                                 p2m_access_t *paccess)
+                                 xenmem_access_t xaccess, p2m_access_t *paccess)
 {
     static const p2m_access_t memaccess[] = {
 #define ACCESS(ac) [XENMEM_access_##ac] = p2m_access_##ac
-        ACCESS(n),
-        ACCESS(r),
-        ACCESS(w),
-        ACCESS(rw),
-        ACCESS(x),
-        ACCESS(rx),
-        ACCESS(wx),
-        ACCESS(rwx),
-        ACCESS(rx2rw),
-        ACCESS(n2rwx),
-        ACCESS(r_pw),
+        ACCESS(n),     ACCESS(r),     ACCESS(w),    ACCESS(rw),
+        ACCESS(x),     ACCESS(rx),    ACCESS(wx),   ACCESS(rwx),
+        ACCESS(rx2rw), ACCESS(n2rwx), ACCESS(r_pw),
 #undef ACCESS
     };
 
@@ -352,7 +354,7 @@ long p2m_set_mem_access(struct domain *d, gfn_t gfn, uint32_t nr,
     {
         if ( altp2m_idx >= min(ARRAY_SIZE(d->arch.altp2m_p2m), MAX_EPTP) ||
              d->arch.altp2m_eptp[array_index_nospec(altp2m_idx, MAX_EPTP)] ==
-             mfn_x(INVALID_MFN) )
+                 mfn_x(INVALID_MFN) )
             return -EINVAL;
 
         ap2m = array_access_nospec(d->arch.altp2m_p2m, altp2m_idx);
@@ -408,7 +410,7 @@ long p2m_set_mem_access_multi(struct domain *d,
     {
         if ( altp2m_idx >= min(ARRAY_SIZE(d->arch.altp2m_p2m), MAX_EPTP) ||
              d->arch.altp2m_eptp[array_index_nospec(altp2m_idx, MAX_EPTP)] ==
-             mfn_x(INVALID_MFN) )
+                 mfn_x(INVALID_MFN) )
             return -EINVAL;
 
         ap2m = array_access_nospec(d->arch.altp2m_p2m, altp2m_idx);
@@ -471,7 +473,7 @@ int p2m_get_mem_access(struct domain *d, gfn_t gfn, xenmem_access_t *access,
     {
         if ( altp2m_idx >= min(ARRAY_SIZE(d->arch.altp2m_p2m), MAX_EPTP) ||
              d->arch.altp2m_eptp[array_index_nospec(altp2m_idx, MAX_EPTP)] ==
-             mfn_x(INVALID_MFN) )
+                 mfn_x(INVALID_MFN) )
             return -EINVAL;
 
         p2m = array_access_nospec(d->arch.altp2m_p2m, altp2m_idx);

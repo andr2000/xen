@@ -89,7 +89,8 @@ struct dt_device_node {
     struct dt_device_node *parent;
     struct dt_device_node *child;
     struct dt_device_node *sibling;
-    struct dt_device_node *next; /* TODO: Remove it. Only use to know the last children */
+    struct dt_device_node
+        *next; /* TODO: Remove it. Only use to know the last children */
     struct dt_device_node *allnext;
 
     /* IOMMU specific fields */
@@ -122,6 +123,7 @@ static inline struct dt_device_node *dev_to_dt(struct device *dev)
 }
 
 #define MAX_PHANDLE_ARGS 16
+
 struct dt_phandle_args {
     struct dt_device_node *np;
     int args_count;
@@ -157,22 +159,22 @@ static inline bool dt_irq_is_level_triggered(const struct dt_irq *irq)
  * This structure is returned when an interrupt is mapped but not translated.
  */
 #define DT_MAX_IRQ_SPEC     4 /* We handle specifiers of at most 4 cells */
+
 struct dt_raw_irq {
     const struct dt_device_node *controller;
     u32 size;
     u32 specifier[DT_MAX_IRQ_SPEC];
 };
 
-typedef int (*device_tree_node_func)(const void *fdt,
-                                     int node, const char *name, int depth,
+typedef int (*device_tree_node_func)(const void *fdt, int node,
+                                     const char *name, int depth,
                                      u32 address_cells, u32 size_cells,
                                      void *data);
 
 extern const void *device_tree_flattened;
 
 int device_tree_for_each_node(const void *fdt, int node,
-                              device_tree_node_func func,
-                              void *data);
+                              device_tree_node_func func, void *data);
 
 /**
  * dt_unflatten_host_device_tree - Unflatten the host device tree
@@ -297,7 +299,7 @@ static inline paddr_t dt_read_paddr(const __be32 *cell, int size)
 /* Helper to convert a number of cells to bytes */
 static inline int dt_cells_to_size(int size)
 {
-    return (size * sizeof (u32));
+    return (size * sizeof(u32));
 }
 
 /* Helper to convert a number of bytes to cells, rounds down */
@@ -336,9 +338,8 @@ static inline bool dt_node_path_is_equal(const struct dt_device_node *np,
     return !dt_node_cmp(np->full_name, path);
 }
 
-static inline bool
-dt_device_type_is_equal(const struct dt_device_node *device,
-                        const char *type)
+static inline bool dt_device_type_is_equal(const struct dt_device_node *device,
+                                           const char *type)
 {
     return !dt_node_cmp(device->type, type);
 }
@@ -406,12 +407,11 @@ struct dt_device_node *dt_find_compatible_node(struct dt_device_node *from,
  * Find a property with a given name for a given node
  * and return the value.
  */
-const void *dt_get_property(const struct dt_device_node *np,
-                            const char *name, u32 *lenp);
+const void *dt_get_property(const struct dt_device_node *np, const char *name,
+                            u32 *lenp);
 
 const struct dt_property *dt_find_property(const struct dt_device_node *np,
                                            const char *name, u32 *lenp);
-
 
 /**
  * dt_property_read_u32 - Helper to read a u32 property.
@@ -421,8 +421,8 @@ const struct dt_property *dt_find_property(const struct dt_device_node *np,
  *
  * Return true if get the desired value.
  */
-bool dt_property_read_u32(const struct dt_device_node *np,
-                          const char *name, u32 *out_value);
+bool dt_property_read_u32(const struct dt_device_node *np, const char *name,
+                          u32 *out_value);
 /**
  * dt_property_read_u64 - Helper to read a u64 property.
  * @np: node to get the value
@@ -431,9 +431,8 @@ bool dt_property_read_u32(const struct dt_device_node *np,
  *
  * Return true if get the desired value.
  */
-bool dt_property_read_u64(const struct dt_device_node *np,
-                          const char *name, u64 *out_value);
-
+bool dt_property_read_u64(const struct dt_device_node *np, const char *name,
+                          u64 *out_value);
 
 /**
  * dt_property_read_variable_u32_array - Find and read an array of 32 bit
@@ -482,8 +481,8 @@ static inline int dt_property_read_u32_array(const struct dt_device_node *np,
                                              const char *propname,
                                              u32 *out_values, size_t sz)
 {
-    int ret = dt_property_read_variable_u32_array(np, propname, out_values,
-                              sz, 0);
+    int ret =
+        dt_property_read_variable_u32_array(np, propname, out_values, sz, 0);
     if ( ret >= 0 )
         return 0;
     else
@@ -692,8 +691,7 @@ int dt_device_get_irq(const struct dt_device_node *device, unsigned int index,
  * made. dt_irq_translate can be called after.
  */
 int dt_device_get_raw_irq(const struct dt_device_node *device,
-                          unsigned int index,
-                          struct dt_raw_irq *out_irq);
+                          unsigned int index, struct dt_raw_irq *out_irq);
 
 /**
  * dt_irq_translate - Translate an irq
@@ -710,8 +708,7 @@ int dt_irq_translate(const struct dt_raw_irq *raw, struct dt_irq *out_irq);
  */
 int dt_for_each_irq_map(const struct dt_device_node *dev,
                         int (*cb)(const struct dt_device_node *dev,
-                                  const struct dt_irq *dt_irq,
-                                  void *data),
+                                  const struct dt_irq *dt_irq, void *data),
                         void *data);
 
 /**
@@ -721,9 +718,8 @@ int dt_for_each_irq_map(const struct dt_device_node *dev,
  * @data: Caller data passed to callback
  */
 int dt_for_each_range(const struct dt_device_node *dev,
-                      int (*cb)(const struct dt_device_node *dev,
-                                uint64_t addr, uint64_t length,
-                                void *data),
+                      int (*cb)(const struct dt_device_node *dev, uint64_t addr,
+                                uint64_t length, void *data),
                       void *data);
 
 /**
@@ -831,8 +827,8 @@ void dt_set_cell(__be32 **cellp, int size, u64 val);
  * Write a range into a series of cells and update cellp to point to the
  * cell just after.
  */
-void dt_set_range(__be32 **cellp, const struct dt_device_node *np,
-                  u64 address, u64 size);
+void dt_set_range(__be32 **cellp, const struct dt_device_node *np, u64 address,
+                  u64 size);
 
 /**
  * dt_child_set_range - Write range into a series of cells
@@ -873,8 +869,7 @@ void dt_get_range(const __be32 **cellp, const struct dt_device_node *np,
  * Returns the device_node pointer.
  */
 struct dt_device_node *dt_parse_phandle(const struct dt_device_node *np,
-				                        const char *phandle_name,
-                                        int index);
+                                        const char *phandle_name, int index);
 
 /**
  * dt_parse_phandle_with_args() - Find a node pointed by phandle in a list
@@ -906,9 +901,8 @@ struct dt_device_node *dt_parse_phandle(const struct dt_device_node *np,
  * dt_parse_phandle_with_args(node3, "list", "#list-cells", 1, &args);
  */
 int dt_parse_phandle_with_args(const struct dt_device_node *np,
-                               const char *list_name,
-                               const char *cells_name, int index,
-                               struct dt_phandle_args *out_args);
+                               const char *list_name, const char *cells_name,
+                               int index, struct dt_phandle_args *out_args);
 
 /**
  * dt_count_phandle_with_args() - Find the number of phandles references in a property
@@ -926,8 +920,7 @@ int dt_parse_phandle_with_args(const struct dt_device_node *np,
  * phandle.
  */
 int dt_count_phandle_with_args(const struct dt_device_node *np,
-                               const char *list_name,
-                               const char *cells_name);
+                               const char *list_name, const char *cells_name);
 
 /**
  * dt_get_pci_domain_nr - Find the host bridge domain number
@@ -952,9 +945,9 @@ struct dt_device_node *dt_find_node_by_phandle(dt_phandle handle);
 #define dt_dprintk(fmt, args...)  \
     printk(XENLOG_DEBUG fmt, ## args)
 #else
-static inline void
-__attribute__ ((__format__ (__printf__, 1, 2)))
-dt_dprintk(const char *fmt, ...) {}
+static inline void __attribute__((__format__(__printf__, 1, 2)))
+dt_dprintk(const char *fmt, ...)
+{}
 #endif
 
 #endif /* __XEN_DEVICE_TREE_H */

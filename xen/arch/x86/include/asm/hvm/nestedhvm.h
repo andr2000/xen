@@ -8,15 +8,15 @@
 #ifndef _HVM_NESTEDHVM_H
 #define _HVM_NESTEDHVM_H
 
-#include <xen/types.h>         /* for uintNN_t */
-#include <xen/sched.h>         /* for struct vcpu, struct domain */
-#include <asm/hvm/vcpu.h>      /* for vcpu_nestedhvm */
+#include <xen/types.h> /* for uintNN_t */
+#include <xen/sched.h> /* for struct vcpu, struct domain */
+#include <asm/hvm/vcpu.h> /* for vcpu_nestedhvm */
 #include <public/hvm/params.h>
 
 enum nestedhvm_vmexits {
     NESTEDHVM_VMEXIT_ERROR = 0, /* inject VMEXIT w/ invalid VMCB */
     NESTEDHVM_VMEXIT_FATALERROR = 1, /* crash first level guest */
-    NESTEDHVM_VMEXIT_HOST = 2,  /* exit handled on host level */
+    NESTEDHVM_VMEXIT_HOST = 2, /* exit handled on host level */
     NESTEDHVM_VMEXIT_CONTINUE = 3, /* further handling */
     NESTEDHVM_VMEXIT_INJECT = 4, /* inject VMEXIT */
     NESTEDHVM_VMEXIT_DONE = 5, /* VMEXIT handled */
@@ -61,9 +61,8 @@ void nestedhvm_vmcx_flushtlb(struct p2m_domain *p2m);
 
 static inline bool nestedhvm_is_n2(struct vcpu *v)
 {
-    if ( !nestedhvm_enabled(v->domain) ||
-        nestedhvm_vmswitch_in_progress(v) ||
-        !nestedhvm_paging_mode_hap(v) )
+    if ( !nestedhvm_enabled(v->domain) || nestedhvm_vmswitch_in_progress(v) ||
+         !nestedhvm_paging_mode_hap(v) )
         return false;
 
     return nestedhvm_vcpu_in_guestmode(v);
@@ -72,8 +71,7 @@ static inline bool nestedhvm_is_n2(struct vcpu *v)
 static inline void nestedhvm_set_cr(struct vcpu *v, unsigned int cr,
                                     unsigned long value)
 {
-    if ( !nestedhvm_vmswitch_in_progress(v) &&
-         nestedhvm_vcpu_in_guestmode(v) )
+    if ( !nestedhvm_vmswitch_in_progress(v) && nestedhvm_vcpu_in_guestmode(v) )
         v->arch.hvm.nvcpu.guest_cr[cr] = value;
 }
 
@@ -81,7 +79,6 @@ static inline bool vvmcx_valid(const struct vcpu *v)
 {
     return vcpu_nestedhvm(v).nv_vvmcxaddr != INVALID_PADDR;
 }
-
 
 void start_nested_svm(struct hvm_function_table *hvm_function_table);
 void start_nested_vmx(struct hvm_function_table *hvm_function_table);

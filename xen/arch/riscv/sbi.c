@@ -23,7 +23,8 @@
 #include <asm/processor.h>
 #include <asm/sbi.h>
 
-static unsigned long __ro_after_init sbi_spec_version = SBI_SPEC_VERSION_DEFAULT;
+static unsigned long
+    __ro_after_init sbi_spec_version = SBI_SPEC_VERSION_DEFAULT;
 
 struct sbiret sbi_ecall(unsigned long ext, unsigned long fid,
                         unsigned long arg0, unsigned long arg1,
@@ -32,19 +33,19 @@ struct sbiret sbi_ecall(unsigned long ext, unsigned long fid,
 {
     struct sbiret ret;
 
-    register unsigned long a0 asm ("a0") = arg0;
-    register unsigned long a1 asm ("a1") = arg1;
-    register unsigned long a2 asm ("a2") = arg2;
-    register unsigned long a3 asm ("a3") = arg3;
-    register unsigned long a4 asm ("a4") = arg4;
-    register unsigned long a5 asm ("a5") = arg5;
-    register unsigned long a6 asm ("a6") = fid;
-    register unsigned long a7 asm ("a7") = ext;
+    register unsigned long a0 asm("a0") = arg0;
+    register unsigned long a1 asm("a1") = arg1;
+    register unsigned long a2 asm("a2") = arg2;
+    register unsigned long a3 asm("a3") = arg3;
+    register unsigned long a4 asm("a4") = arg4;
+    register unsigned long a5 asm("a5") = arg5;
+    register unsigned long a6 asm("a6") = fid;
+    register unsigned long a7 asm("a7") = ext;
 
-    asm volatile (  "ecall"
-                    : "+r" (a0), "+r" (a1)
-                    : "r" (a2), "r" (a3), "r" (a4), "r" (a5), "r" (a6), "r" (a7)
-                    : "memory");
+    asm volatile("ecall"
+                 : "+r"(a0), "+r"(a1)
+                 : "r"(a2), "r"(a3), "r"(a4), "r"(a5), "r"(a6), "r"(a7)
+                 : "memory");
     ret.error = a0;
     ret.value = a1;
 
@@ -120,38 +121,34 @@ static long sbi_ext_base_func(long fid)
         return ret.error;
 }
 
-static int sbi_rfence_v02_real(unsigned long fid,
-                               unsigned long hmask, unsigned long hbase,
-                               vaddr_t start, size_t size,
+static int sbi_rfence_v02_real(unsigned long fid, unsigned long hmask,
+                               unsigned long hbase, vaddr_t start, size_t size,
                                unsigned long arg4)
 {
-    struct sbiret ret = {0};
+    struct sbiret ret = { 0 };
     int result = 0;
 
     switch ( fid )
     {
     case SBI_EXT_RFENCE_REMOTE_FENCE_I:
-        ret = sbi_ecall(SBI_EXT_RFENCE, fid, hmask, hbase,
-                        0, 0, 0, 0);
+        ret = sbi_ecall(SBI_EXT_RFENCE, fid, hmask, hbase, 0, 0, 0, 0);
         break;
 
     case SBI_EXT_RFENCE_REMOTE_HFENCE_GVMA:
     case SBI_EXT_RFENCE_REMOTE_HFENCE_VVMA:
     case SBI_EXT_RFENCE_REMOTE_SFENCE_VMA:
-        ret = sbi_ecall(SBI_EXT_RFENCE, fid, hmask, hbase,
-                        start, size, 0, 0);
+        ret = sbi_ecall(SBI_EXT_RFENCE, fid, hmask, hbase, start, size, 0, 0);
         break;
 
     case SBI_EXT_RFENCE_REMOTE_SFENCE_VMA_ASID:
     case SBI_EXT_RFENCE_REMOTE_HFENCE_GVMA_VMID:
     case SBI_EXT_RFENCE_REMOTE_HFENCE_VVMA_ASID:
-        ret = sbi_ecall(SBI_EXT_RFENCE, fid, hmask, hbase,
-                        start, size, arg4, 0);
+        ret =
+            sbi_ecall(SBI_EXT_RFENCE, fid, hmask, hbase, start, size, arg4, 0);
         break;
 
     default:
-        printk("%s: unknown function ID [%#lx]\n",
-               __func__, fid);
+        printk("%s: unknown function ID [%#lx]\n", __func__, fid);
         result = -EINVAL;
         break;
     };
@@ -160,14 +157,16 @@ static int sbi_rfence_v02_real(unsigned long fid,
     {
         result = sbi_err_map_xen_errno(ret.error);
         printk("%s: hbase=%lu hmask=%#lx failed (error %ld)\n",
-               __func__, hbase, hmask, ret.error);
+               __func__,
+               hbase,
+               hmask,
+               ret.error);
     }
 
     return result;
 }
 
-static int cf_check sbi_rfence_v02(unsigned long fid,
-                                   const cpumask_t *cpu_mask,
+static int cf_check sbi_rfence_v02(unsigned long fid, const cpumask_t *cpu_mask,
                                    vaddr_t start, size_t size,
                                    unsigned long arg4, unsigned long arg5)
 {
@@ -181,7 +180,7 @@ static int cf_check sbi_rfence_v02(unsigned long fid,
     if ( !cpu_mask )
         return sbi_rfence_v02_real(fid, 0UL, -1UL, start, size, arg4);
 
-    for_each_cpu ( cpuid, cpu_mask )
+    for_each_cpu(cpuid, cpu_mask)
     {
         /*
          * Hart IDs might not necessarily be numbered contiguously in
@@ -210,8 +209,8 @@ static int cf_check sbi_rfence_v02(unsigned long fid,
             if ( hartid + BITS_PER_LONG <= htop ||
                  hbase + BITS_PER_LONG <= hartid )
             {
-                result = sbi_rfence_v02_real(fid, hmask, hbase,
-                                             start, size, arg4);
+                result =
+                    sbi_rfence_v02_real(fid, hmask, hbase, start, size, arg4);
                 hmask = 0;
                 if ( result )
                     break;
@@ -236,26 +235,27 @@ static int cf_check sbi_rfence_v02(unsigned long fid,
     }
 
     if ( hmask )
-        result = sbi_rfence_v02_real(fid, hmask, hbase,
-                                     start, size, arg4);
+        result = sbi_rfence_v02_real(fid, hmask, hbase, start, size, arg4);
 
     return result;
 }
 
-static int (* __ro_after_init sbi_rfence)(unsigned long fid,
-                                          const cpumask_t *cpu_mask,
-                                          vaddr_t start,
-                                          size_t size,
-                                          unsigned long arg4,
-                                          unsigned long arg5);
+static int (*__ro_after_init sbi_rfence)(unsigned long fid,
+                                         const cpumask_t *cpu_mask,
+                                         vaddr_t start, size_t size,
+                                         unsigned long arg4,
+                                         unsigned long arg5);
 
-int sbi_remote_sfence_vma(const cpumask_t *cpu_mask, vaddr_t start,
-                          size_t size)
+int sbi_remote_sfence_vma(const cpumask_t *cpu_mask, vaddr_t start, size_t size)
 {
     ASSERT(sbi_rfence);
 
     return sbi_rfence(SBI_EXT_RFENCE_REMOTE_SFENCE_VMA,
-                      cpu_mask, start, size, 0, 0);
+                      cpu_mask,
+                      start,
+                      size,
+                      0,
+                      0);
 }
 
 /* This function must always succeed. */
@@ -272,8 +272,7 @@ int sbi_probe_extension(long extid)
 {
     struct sbiret ret;
 
-    ret = sbi_ecall(SBI_EXT_BASE, SBI_EXT_BASE_PROBE_EXT, extid,
-                    0, 0, 0, 0, 0);
+    ret = sbi_ecall(SBI_EXT_BASE, SBI_EXT_BASE_PROBE_EXT, extid, 0, 0, 0, 0, 0);
     if ( !ret.error && ret.value )
         return ret.value;
 
@@ -295,7 +294,8 @@ int __init sbi_init(void)
     sbi_spec_version = sbi_get_spec_version();
 
     printk("SBI specification v%u.%u detected\n",
-            sbi_major_version(), sbi_minor_version());
+           sbi_major_version(),
+           sbi_minor_version());
 
     if ( !sbi_spec_is_0_1() )
     {
@@ -305,7 +305,8 @@ int __init sbi_init(void)
         BUG_ON((sbi_fw_id < 0) || (sbi_fw_version < 0));
 
         printk("SBI implementation ID=%#lx Version=%#lx\n",
-            sbi_fw_id, sbi_fw_version);
+               sbi_fw_id,
+               sbi_fw_version);
 
         if ( sbi_probe_extension(SBI_EXT_RFENCE) > 0 )
         {

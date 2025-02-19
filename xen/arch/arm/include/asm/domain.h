@@ -12,9 +12,8 @@
 #include <asm/vpl011.h>
 #include <public/hvm/params.h>
 
-struct hvm_domain
-{
-    uint64_t              params[HVM_NR_PARAMS];
+struct hvm_domain {
+    uint64_t params[HVM_NR_PARAMS];
 };
 
 #ifdef CONFIG_ARM_64
@@ -22,6 +21,7 @@ enum domain_type {
     DOMAIN_32BIT,
     DOMAIN_64BIT,
 };
+
 #define is_32bit_domain(d) ((d)->arch.type == DOMAIN_32BIT)
 #define is_64bit_domain(d) ((d)->arch.type == DOMAIN_64BIT)
 #else
@@ -59,8 +59,7 @@ struct paging_domain {
     unsigned long p2m_total_pages;
 };
 
-struct arch_domain
-{
+struct arch_domain {
 #ifdef CONFIG_ARM_64
     enum domain_type type;
 #endif
@@ -92,10 +91,10 @@ struct arch_domain
 #ifdef CONFIG_HWDOM_VUART
     struct vuart {
 #define VUART_BUF_SIZE 128
-        char                        *buf;
-        int                         idx;
-        const struct vuart_info     *info;
-        spinlock_t                  lock;
+        char *buf;
+        int idx;
+        const struct vuart_info *info;
+        spinlock_t lock;
     } vuart;
 #endif
 
@@ -108,7 +107,7 @@ struct arch_domain
 
     /* Monitor options */
     struct {
-        uint8_t privileged_call_enabled : 1;
+        uint8_t privileged_call_enabled:1;
     } monitor;
 
 #ifdef CONFIG_SBSA_VUART_CONSOLE
@@ -119,10 +118,9 @@ struct arch_domain
     void *tee;
 #endif
 
-}  __cacheline_aligned;
+} __cacheline_aligned;
 
-struct arch_vcpu
-{
+struct arch_vcpu {
     struct {
 #ifdef CONFIG_ARM_32
         register_t r4;
@@ -231,7 +229,7 @@ struct arch_vcpu
 
     struct vtimer phys_timer;
     struct vtimer virt_timer;
-    bool   vtimer_initialized;
+    bool vtimer_initialized;
 
     /*
      * The full P2M may require some cleaning (e.g when emulation
@@ -241,7 +239,7 @@ struct arch_vcpu
      */
     bool need_flush_to_ram;
 
-}  __cacheline_aligned;
+} __cacheline_aligned;
 
 void vcpu_show_registers(const struct vcpu *v);
 void vcpu_switch_to_aarch64_mode(struct vcpu *v);
@@ -306,6 +304,7 @@ struct arch_vcpu_io {
 };
 
 struct guest_memory_policy {};
+
 static inline void update_guest_memory_policy(struct vcpu *v,
                                               struct guest_memory_policy *gmp)
 {}

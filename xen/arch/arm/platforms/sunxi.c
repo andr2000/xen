@@ -40,7 +40,7 @@ static void __iomem *sunxi_map_watchdog(bool *new_wdt)
 
     node = dt_find_compatible_node(NULL, NULL, "allwinner,sun6i-a31-wdt");
     if ( node )
-       _new_wdt = true;
+        _new_wdt = true;
     else
         node = dt_find_compatible_node(NULL, NULL, "allwinner,sun4i-a10-wdt");
 
@@ -73,8 +73,7 @@ static void __iomem *sunxi_map_watchdog(bool *new_wdt)
 /* Enable watchdog to trigger a reset after 500 ms */
 static void sunxi_old_wdt_reset(void __iomem *wdt)
 {
-    writel(SUNXI_WDT_MODE_EN | SUNXI_WDT_MODE_RST_EN,
-           wdt + SUNXI_WDT_MODE_REG);
+    writel(SUNXI_WDT_MODE_EN | SUNXI_WDT_MODE_RST_EN, wdt + SUNXI_WDT_MODE_REG);
 }
 
 static void sunxi_new_wdt_reset(void __iomem *wdt)
@@ -99,32 +98,23 @@ static void sunxi_reset(void)
 
     iounmap(wdt);
 
-    for (;;)
+    for ( ;; )
         wfi();
 }
 
-static const char * const sunxi_v7_dt_compat[] __initconst =
-{
-    "allwinner,sun6i-a31",
-    "allwinner,sun6i-a31s",
-    "allwinner,sun7i-a20",
-    "allwinner,sun8i-a23",
-    "allwinner,sun8i-a33",
-    "allwinner,sun8i-h2-plus",
-    "allwinner,sun8i-h3",
-    NULL
-};
+static const char *const sunxi_v7_dt_compat[]
+    __initconst = { "allwinner,sun6i-a31", "allwinner,sun6i-a31s",
+                    "allwinner,sun7i-a20", "allwinner,sun8i-a23",
+                    "allwinner,sun8i-a33", "allwinner,sun8i-h2-plus",
+                    "allwinner,sun8i-h3",  NULL };
 
-static const char * const sunxi_v8_dt_compat[] __initconst =
-{
-    "allwinner,sun50i-a64",
-    "allwinner,sun50i-h5",
-    "allwinner,sun50i-h6",
-    NULL
-};
+static const char *const sunxi_v8_dt_compat[]
+    __initconst = { "allwinner,sun50i-a64",
+                    "allwinner,sun50i-h5",
+                    "allwinner,sun50i-h6",
+                    NULL };
 
-static const struct dt_device_match sunxi_blacklist_dev[] __initconst =
-{
+static const struct dt_device_match sunxi_blacklist_dev[] __initconst = {
     /*
      * The UARTs share a page which runs the risk of mapping the Xen console
      * UART to dom0, so don't map any of them.
@@ -134,14 +124,12 @@ static const struct dt_device_match sunxi_blacklist_dev[] __initconst =
 };
 
 PLATFORM_START(sunxi_v7, "Allwinner ARMv7")
-    .compatible = sunxi_v7_dt_compat,
-    .blacklist_dev = sunxi_blacklist_dev,
+    .compatible = sunxi_v7_dt_compat, .blacklist_dev = sunxi_blacklist_dev,
     .reset = sunxi_reset,
 PLATFORM_END
 
 PLATFORM_START(sunxi_v8, "Allwinner ARMv8")
-    .compatible = sunxi_v8_dt_compat,
-    .blacklist_dev = sunxi_blacklist_dev,
+    .compatible = sunxi_v8_dt_compat, .blacklist_dev = sunxi_blacklist_dev,
 PLATFORM_END
 
 /*

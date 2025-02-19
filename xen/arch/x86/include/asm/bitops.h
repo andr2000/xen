@@ -32,9 +32,9 @@
  */
 static inline void set_bit(int nr, volatile void *addr)
 {
-    asm volatile ( "lock; btsl %1,%0"
-                   : "+m" (ADDR) : "Ir" (nr) : "memory");
+    asm volatile("lock; btsl %1,%0" : "+m"(ADDR) : "Ir"(nr) : "memory");
 }
+
 #define set_bit(nr, addr) ({                            \
     if ( bitop_bad_size(addr) ) __bitop_bad_size();     \
     set_bit(nr, addr);                                  \
@@ -51,12 +51,14 @@ static inline void set_bit(int nr, volatile void *addr)
  */
 static inline void variable_set_bit(int nr, void *addr)
 {
-    asm volatile ( "btsl %1,%0" : "+m" (*(int *)addr) : "Ir" (nr) : "memory" );
+    asm volatile("btsl %1,%0" : "+m"(*(int *)addr) : "Ir"(nr) : "memory");
 }
+
 static inline void constant_set_bit(int nr, void *addr)
 {
     ((unsigned int *)addr)[nr >> 5] |= (1u << (nr & 31));
 }
+
 #define __set_bit(nr, addr) ({                          \
     if ( bitop_bad_size(addr) ) __bitop_bad_size();     \
     __builtin_constant_p(nr) ?                          \
@@ -73,9 +75,9 @@ static inline void constant_set_bit(int nr, void *addr)
  */
 static inline void clear_bit(int nr, volatile void *addr)
 {
-    asm volatile ( "lock; btrl %1,%0"
-                   : "+m" (ADDR) : "Ir" (nr) : "memory");
+    asm volatile("lock; btrl %1,%0" : "+m"(ADDR) : "Ir"(nr) : "memory");
 }
+
 #define clear_bit(nr, addr) ({                          \
     if ( bitop_bad_size(addr) ) __bitop_bad_size();     \
     clear_bit(nr, addr);                                \
@@ -92,12 +94,14 @@ static inline void clear_bit(int nr, volatile void *addr)
  */
 static inline void variable_clear_bit(int nr, void *addr)
 {
-    asm volatile ( "btrl %1,%0" : "+m" (*(int *)addr) : "Ir" (nr) : "memory" );
+    asm volatile("btrl %1,%0" : "+m"(*(int *)addr) : "Ir"(nr) : "memory");
 }
+
 static inline void constant_clear_bit(int nr, void *addr)
 {
     ((unsigned int *)addr)[nr >> 5] &= ~(1u << (nr & 31));
 }
+
 #define __clear_bit(nr, addr) ({                        \
     if ( bitop_bad_size(addr) ) __bitop_bad_size();     \
     __builtin_constant_p(nr) ?                          \
@@ -116,12 +120,14 @@ static inline void constant_clear_bit(int nr, void *addr)
  */
 static inline void variable_change_bit(int nr, void *addr)
 {
-    asm volatile ( "btcl %1,%0" : "+m" (*(int *)addr) : "Ir" (nr) : "memory" );
+    asm volatile("btcl %1,%0" : "+m"(*(int *)addr) : "Ir"(nr) : "memory");
 }
+
 static inline void constant_change_bit(int nr, void *addr)
 {
     ((unsigned int *)addr)[nr >> 5] ^= (1u << (nr & 31));
 }
+
 #define __change_bit(nr, addr) ({                       \
     if ( bitop_bad_size(addr) ) __bitop_bad_size();     \
     __builtin_constant_p(nr) ?                          \
@@ -140,9 +146,9 @@ static inline void constant_change_bit(int nr, void *addr)
  */
 static inline void change_bit(int nr, volatile void *addr)
 {
-    asm volatile ( "lock; btcl %1,%0"
-                    : "+m" (ADDR) : "Ir" (nr) : "memory");
+    asm volatile("lock; btcl %1,%0" : "+m"(ADDR) : "Ir"(nr) : "memory");
 }
+
 #define change_bit(nr, addr) ({                         \
     if ( bitop_bad_size(addr) ) __bitop_bad_size();     \
     change_bit(nr, addr);                               \
@@ -160,13 +166,16 @@ static inline int test_and_set_bit(int nr, volatile void *addr)
 {
     int oldbit;
 
-    asm volatile ( "lock; btsl %[nr], %[addr]\n\t"
-                   ASM_FLAG_OUT(, "sbbl %[old], %[old]\n\t")
-                   : [old] ASM_FLAG_OUT("=@ccc", "=r") (oldbit),
-                     [addr] "+m" (ADDR) : [nr] "Ir" (nr) : "memory" );
+    asm volatile(
+        "lock; btsl %[nr], %[addr]\n\t" ASM_FLAG_OUT(,
+                                                     "sbbl %[old], %[old]\n\t")
+        : [old] ASM_FLAG_OUT("=@ccc", "=r")(oldbit), [addr] "+m"(ADDR)
+        : [nr] "Ir"(nr)
+        : "memory");
 
     return oldbit;
 }
+
 #define test_and_set_bit(nr, addr) ({                   \
     if ( bitop_bad_size(addr) ) __bitop_bad_size();     \
     test_and_set_bit(nr, addr);                         \
@@ -185,13 +194,15 @@ static inline int arch__test_and_set_bit(int nr, volatile void *addr)
 {
     int oldbit;
 
-    asm volatile ( "btsl %[nr], %[addr]\n\t"
-                   ASM_FLAG_OUT(, "sbbl %[old], %[old]\n\t")
-                   : [old] ASM_FLAG_OUT("=@ccc", "=r") (oldbit),
-                     [addr] "+m" (*(int *)addr) : [nr] "Ir" (nr) : "memory" );
+    asm volatile(
+        "btsl %[nr], %[addr]\n\t" ASM_FLAG_OUT(, "sbbl %[old], %[old]\n\t")
+        : [old] ASM_FLAG_OUT("=@ccc", "=r")(oldbit), [addr] "+m"(*(int *)addr)
+        : [nr] "Ir"(nr)
+        : "memory");
 
     return oldbit;
 }
+
 #define arch__test_and_set_bit arch__test_and_set_bit
 
 /**
@@ -206,13 +217,16 @@ static inline int test_and_clear_bit(int nr, volatile void *addr)
 {
     int oldbit;
 
-    asm volatile ( "lock; btrl %[nr], %[addr]\n\t"
-                   ASM_FLAG_OUT(, "sbbl %[old], %[old]\n\t")
-                   : [old] ASM_FLAG_OUT("=@ccc", "=r") (oldbit),
-                     [addr] "+m" (ADDR) : [nr] "Ir" (nr) : "memory" );
+    asm volatile(
+        "lock; btrl %[nr], %[addr]\n\t" ASM_FLAG_OUT(,
+                                                     "sbbl %[old], %[old]\n\t")
+        : [old] ASM_FLAG_OUT("=@ccc", "=r")(oldbit), [addr] "+m"(ADDR)
+        : [nr] "Ir"(nr)
+        : "memory");
 
     return oldbit;
 }
+
 #define test_and_clear_bit(nr, addr) ({                 \
     if ( bitop_bad_size(addr) ) __bitop_bad_size();     \
     test_and_clear_bit(nr, addr);                       \
@@ -231,13 +245,15 @@ static inline int arch__test_and_clear_bit(int nr, volatile void *addr)
 {
     int oldbit;
 
-    asm volatile ( "btrl %[nr], %[addr]\n\t"
-                   ASM_FLAG_OUT(, "sbbl %[old], %[old]\n\t")
-                   : [old] ASM_FLAG_OUT("=@ccc", "=r") (oldbit),
-                     [addr] "+m" (*(int *)addr) : [nr] "Ir" (nr) : "memory" );
+    asm volatile(
+        "btrl %[nr], %[addr]\n\t" ASM_FLAG_OUT(, "sbbl %[old], %[old]\n\t")
+        : [old] ASM_FLAG_OUT("=@ccc", "=r")(oldbit), [addr] "+m"(*(int *)addr)
+        : [nr] "Ir"(nr)
+        : "memory");
 
     return oldbit;
 }
+
 #define arch__test_and_clear_bit arch__test_and_clear_bit
 
 /* WARNING: non atomic and it can be reordered! */
@@ -245,13 +261,15 @@ static inline int arch__test_and_change_bit(int nr, volatile void *addr)
 {
     int oldbit;
 
-    asm volatile ( "btcl %[nr], %[addr]\n\t"
-                   ASM_FLAG_OUT(, "sbbl %[old], %[old]\n\t")
-                   : [old] ASM_FLAG_OUT("=@ccc", "=r") (oldbit),
-                     [addr] "+m" (*(int *)addr) : [nr] "Ir" (nr) : "memory" );
+    asm volatile(
+        "btcl %[nr], %[addr]\n\t" ASM_FLAG_OUT(, "sbbl %[old], %[old]\n\t")
+        : [old] ASM_FLAG_OUT("=@ccc", "=r")(oldbit), [addr] "+m"(*(int *)addr)
+        : [nr] "Ir"(nr)
+        : "memory");
 
     return oldbit;
 }
+
 #define arch__test_and_change_bit arch__test_and_change_bit
 
 /**
@@ -266,13 +284,16 @@ static inline int test_and_change_bit(int nr, volatile void *addr)
 {
     int oldbit;
 
-    asm volatile ( "lock; btcl %[nr], %[addr]\n\t"
-                   ASM_FLAG_OUT(, "sbbl %[old], %[old]\n\t")
-                   : [old] ASM_FLAG_OUT("=@ccc", "=r") (oldbit),
-                     [addr] "+m" (ADDR) : [nr] "Ir" (nr) : "memory" );
+    asm volatile(
+        "lock; btcl %[nr], %[addr]\n\t" ASM_FLAG_OUT(,
+                                                     "sbbl %[old], %[old]\n\t")
+        : [old] ASM_FLAG_OUT("=@ccc", "=r")(oldbit), [addr] "+m"(ADDR)
+        : [nr] "Ir"(nr)
+        : "memory");
 
     return oldbit;
 }
+
 #define test_and_change_bit(nr, addr) ({                \
     if ( bitop_bad_size(addr) ) __bitop_bad_size();     \
     test_and_change_bit(nr, addr);                      \
@@ -282,10 +303,11 @@ static inline int variable_test_bit(int nr, const volatile void *addr)
 {
     int oldbit;
 
-    asm volatile ( "btl %[nr], %[addr]\n\t"
-                   ASM_FLAG_OUT(, "sbbl %[old], %[old]\n\t")
-                   : [old] ASM_FLAG_OUT("=@ccc", "=r") (oldbit)
-                   : [addr] "m" (CONST_ADDR), [nr] "Ir" (nr) : "memory" );
+    asm volatile(
+        "btl %[nr], %[addr]\n\t" ASM_FLAG_OUT(, "sbbl %[old], %[old]\n\t")
+        : [old] ASM_FLAG_OUT("=@ccc", "=r")(oldbit)
+        : [addr] "m"(CONST_ADDR), [nr] "Ir"(nr)
+        : "memory");
 
     return oldbit;
 }
@@ -296,14 +318,15 @@ static inline int variable_test_bit(int nr, const volatile void *addr)
         variable_test_bit(nr, addr);                    \
 })
 
-extern unsigned int __find_first_bit(
-    const unsigned long *addr, unsigned int size);
-extern unsigned int __find_next_bit(
-    const unsigned long *addr, unsigned int size, unsigned int offset);
-extern unsigned int __find_first_zero_bit(
-    const unsigned long *addr, unsigned int size);
-extern unsigned int __find_next_zero_bit(
-    const unsigned long *addr, unsigned int size, unsigned int offset);
+extern unsigned int __find_first_bit(const unsigned long *addr,
+                                     unsigned int size);
+extern unsigned int __find_next_bit(const unsigned long *addr,
+                                    unsigned int size, unsigned int offset);
+extern unsigned int __find_first_zero_bit(const unsigned long *addr,
+                                          unsigned int size);
+extern unsigned int __find_next_zero_bit(const unsigned long *addr,
+                                         unsigned int size,
+                                         unsigned int offset);
 
 static always_inline unsigned int __scanbit(unsigned long val, unsigned int max)
 {
@@ -311,11 +334,11 @@ static always_inline unsigned int __scanbit(unsigned long val, unsigned int max)
         alternative_io("bsf %[in],%[out]; cmovz %[max],%k[out]",
                        "rep; bsf %[in],%[out]",
                        X86_FEATURE_BMI1,
-                       [out] "=&r" (val),
-                       [in] "r" (val), [max] "r" (max));
+                       [out] "=&r"(val),
+                       [in] "r"(val),
+                       [max] "r"(max));
     else
-        asm ( "bsf %1,%0 ; cmovz %2,%k0"
-              : "=&r" (val) : "r" (val), "r" (max) );
+        asm("bsf %1,%0 ; cmovz %2,%k0" : "=&r"(val) : "r"(val), "r"(max));
     return (unsigned int)val;
 }
 
@@ -401,9 +424,7 @@ static always_inline unsigned int arch_ffs(unsigned int x)
          * non-zero without knowing it's exact value, in which case we don't
          * need to compensate for BSF's corner cases.  Otherwise...
          */
-        asm ( "bsf %[val], %[res]"
-              : [res] "=r" (r)
-              : [val] "rm" (x) );
+        asm("bsf %[val], %[res]" : [res] "=r"(r) : [val] "rm"(x));
     }
     else
     {
@@ -413,13 +434,12 @@ static always_inline unsigned int arch_ffs(unsigned int x)
          * undefined, but the architects have said that the register is
          * written back with it's old value (zero extended as normal).
          */
-        asm ( "bsf %[val], %[res]"
-              : [res] "=r" (r)
-              : [val] "rm" (x), "[res]" (-1) );
+        asm("bsf %[val], %[res]" : [res] "=r"(r) : [val] "rm"(x), "[res]"(-1));
     }
 
     return r + 1;
 }
+
 #define arch_ffs arch_ffs
 
 static always_inline unsigned int arch_ffsl(unsigned long x)
@@ -428,16 +448,13 @@ static always_inline unsigned int arch_ffsl(unsigned long x)
 
     /* See arch_ffs() for safety discussions. */
     if ( __builtin_constant_p(x > 0) && x > 0 )
-        asm ( "bsf %[val], %q[res]"
-              : [res] "=r" (r)
-              : [val] "rm" (x) );
+        asm("bsf %[val], %q[res]" : [res] "=r"(r) : [val] "rm"(x));
     else
-        asm ( "bsf %[val], %q[res]"
-              : [res] "=r" (r)
-              : [val] "rm" (x), "[res]" (-1) );
+        asm("bsf %[val], %q[res]" : [res] "=r"(r) : [val] "rm"(x), "[res]"(-1));
 
     return r + 1;
 }
+
 #define arch_ffsl arch_ffsl
 
 static always_inline unsigned int arch_fls(unsigned int x)
@@ -446,16 +463,13 @@ static always_inline unsigned int arch_fls(unsigned int x)
 
     /* See arch_ffs() for safety discussions. */
     if ( __builtin_constant_p(x > 0) && x > 0 )
-        asm ( "bsr %[val], %[res]"
-              : [res] "=r" (r)
-              : [val] "rm" (x) );
+        asm("bsr %[val], %[res]" : [res] "=r"(r) : [val] "rm"(x));
     else
-        asm ( "bsr %[val], %[res]"
-              : [res] "=r" (r)
-              : [val] "rm" (x), "[res]" (-1) );
+        asm("bsr %[val], %[res]" : [res] "=r"(r) : [val] "rm"(x), "[res]"(-1));
 
     return r + 1;
 }
+
 #define arch_fls arch_fls
 
 static always_inline unsigned int arch_flsl(unsigned long x)
@@ -464,16 +478,13 @@ static always_inline unsigned int arch_flsl(unsigned long x)
 
     /* See arch_ffs() for safety discussions. */
     if ( __builtin_constant_p(x > 0) && x > 0 )
-        asm ( "bsr %[val], %q[res]"
-              : [res] "=r" (r)
-              : [val] "rm" (x) );
+        asm("bsr %[val], %q[res]" : [res] "=r"(r) : [val] "rm"(x));
     else
-        asm ( "bsr %[val], %q[res]"
-              : [res] "=r" (r)
-              : [val] "rm" (x), "[res]" (-1) );
+        asm("bsr %[val], %q[res]" : [res] "=r"(r) : [val] "rm"(x), "[res]"(-1));
 
     return r + 1;
 }
+
 #define arch_flsl arch_flsl
 
 unsigned int arch_generic_hweightl(unsigned long x);
@@ -490,12 +501,14 @@ static always_inline unsigned int arch_hweightl(unsigned long x)
      * call (input in %rdi, output in %eax) but that's fine.
      */
     alternative_io("call arch_generic_hweightl",
-                   "popcnt %[val], %q[res]", X86_FEATURE_POPCNT,
-                   ASM_OUTPUT2([res] "=a" (r) ASM_CALL_CONSTRAINT),
-                   [val] "D" (x));
+                   "popcnt %[val], %q[res]",
+                   X86_FEATURE_POPCNT,
+                   ASM_OUTPUT2([res] "=a"(r)ASM_CALL_CONSTRAINT),
+                   [val] "D"(x));
 
     return r;
 }
+
 #define arch_hweightl arch_hweightl
 
 #endif /* _X86_BITOPS_H */

@@ -49,7 +49,7 @@ static inline struct page_info *virt_to_page(const void *v)
 #define PGT_writable_page PG_mask(1, 1)  /* has writable mappings?         */
 #define PGT_type_mask     PG_mask(1, 1)  /* Bits 31 or 63.                 */
 
- /* 2-bit count of uses of this frame as its current type. */
+/* 2-bit count of uses of this frame as its current type. */
 #define PGT_count_mask    PG_mask(3, 3)
 
 /* Cleared when the owning guest 'frees' this page. */
@@ -61,7 +61,7 @@ static inline struct page_info *virt_to_page(const void *v)
 /* Page is broken? */
 #define _PGC_broken       PG_shift(7)
 #define PGC_broken        PG_mask(1, 7)
- /* Mutually-exclusive page states: { inuse, offlining, offlined, free }. */
+/* Mutually-exclusive page states: { inuse, offlining, offlined, free }. */
 #define PGC_state         PG_mask(3, 9)
 #define PGC_state_inuse   PG_mask(0, 9)
 #define PGC_state_offlining PG_mask(1, 9)
@@ -92,7 +92,7 @@ static inline struct page_info *virt_to_page(const void *v)
      (mfn_to_maddr(mfn) <= virt_to_maddr((vaddr_t)_end - 1)))
 
 #define page_get_owner(_p)    (_p)->v.inuse.domain
-#define page_set_owner(_p,_d) ((_p)->v.inuse.domain = (_d))
+#define page_set_owner(_p, _d) ((_p)->v.inuse.domain = (_d))
 
 /* TODO: implement */
 #define mfn_valid(mfn) ({ (void) (mfn); 0; })
@@ -102,8 +102,7 @@ static inline struct page_info *virt_to_page(const void *v)
 
 #define PFN_ORDER(pfn_) ((pfn_)->v.free.order)
 
-struct page_info
-{
+struct page_info {
     /* Each frame can be threaded onto a doubly-linked list. */
     struct page_list_entry list;
 
@@ -117,6 +116,7 @@ struct page_info
             /* Type reference count and various PGT_xxx flags and fields. */
             unsigned long type_info;
         } inuse;
+
         /* Page is on a free list: ((count_info & PGC_count_mask) == 0). */
         union {
             struct {
@@ -126,7 +126,7 @@ struct page_info
                  * INVALID_DIRTY_IDX.
                  */
 #define INVALID_DIRTY_IDX ((1UL << (MAX_ORDER + 1)) - 1)
-                unsigned long first_dirty:MAX_ORDER + 1;
+                unsigned long first_dirty : MAX_ORDER + 1;
 
                 /* Do TLBs need flushing for safety before next page use? */
                 bool need_tlbflush:1;
@@ -164,9 +164,9 @@ struct page_info
          */
         uint32_t tlbflush_timestamp;
     };
+
     uint64_t pad;
 };
-
 
 #define FRAMETABLE_VIRT_START  (XEN_VIRT_START + GB(32))
 #define frame_table ((struct page_info *)FRAMETABLE_VIRT_START)
@@ -201,11 +201,12 @@ static inline void put_page_type(struct page_info *page)
 }
 
 /* TODO */
-static inline bool get_page_nr(struct page_info *page, const struct domain *domain,
-                        unsigned long nr)
+static inline bool get_page_nr(struct page_info *page,
+                               const struct domain *domain, unsigned long nr)
 {
     BUG_ON("unimplemented");
 }
+
 static inline void put_page_nr(struct page_info *page, unsigned long nr)
 {
     BUG_ON("unimplemented");

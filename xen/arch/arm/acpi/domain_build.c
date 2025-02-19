@@ -40,8 +40,8 @@ static int __init acpi_iomem_deny_access(struct domain *d)
         return rc;
 
     /* TODO: Deny MMIO access for SMMU, GIC ITS */
-    status = acpi_get_table(ACPI_SIG_SPCR, 0,
-                            (struct acpi_table_header **)&spcr);
+    status =
+        acpi_get_table(ACPI_SIG_SPCR, 0, (struct acpi_table_header **)&spcr);
 
     if ( ACPI_SUCCESS(status) )
     {
@@ -69,14 +69,14 @@ static int __init acpi_route_spis(struct domain *d)
      * Route the IRQ to hardware domain and permit the access.
      * The interrupt type will be set by set by the hardware domain.
      */
-    for( i = NR_LOCAL_IRQS; i < vgic_num_irqs(d); i++ )
+    for ( i = NR_LOCAL_IRQS; i < vgic_num_irqs(d); i++ )
     {
         /*
          * TODO: Exclude the SPIs SMMU uses which should not be routed to
          * the hardware domain.
          */
         desc = irq_to_desc(i);
-        if ( desc->action != NULL)
+        if ( desc->action != NULL )
             continue;
 
         /* XXX: Shall we use a proper devname? */
@@ -91,9 +91,7 @@ static int __init acpi_route_spis(struct domain *d)
 static int __init acpi_make_hypervisor_node(const struct kernel_info *kinfo,
                                             struct membank tbl_add[])
 {
-    const char compat[] =
-        "xen,xen-" XEN_VERSION_STRING "\0"
-        "xen,xen";
+    const char compat[] = "xen,xen-" XEN_VERSION_STRING "\0" "xen,xen";
     int res;
     /* Convenience alias */
     void *fdt = kinfo->fdt;
@@ -178,7 +176,7 @@ static int __init create_acpi_dtb(struct kernel_info *kinfo,
 
     return 0;
 
-  err:
+err:
     printk("Device tree generation failed (%d).\n", ret);
     xfree(kinfo->fdt);
     return -EINVAL;
@@ -191,7 +189,7 @@ static void __init acpi_map_other_tables(struct domain *d)
     u64 addr, size;
 
     /* Map all ACPI tables to Dom0 using 1:1 mappings. */
-    for( i = 0; i < acpi_gbl_root_table_list.count; i++ )
+    for ( i = 0; i < acpi_gbl_root_table_list.count; i++ )
     {
         addr = acpi_gbl_root_table_list.tables[i].address;
         size = acpi_gbl_root_table_list.tables[i].length;
@@ -202,16 +200,16 @@ static void __init acpi_map_other_tables(struct domain *d)
                                p2m_mmio_direct_c);
         if ( res )
         {
-             panic(XENLOG_ERR "Unable to map ACPI region 0x%"PRIx64
-                   " - 0x%"PRIx64" in domain\n",
-                   addr & PAGE_MASK, PAGE_ALIGN(addr + size) - 1);
+            panic(XENLOG_ERR "Unable to map ACPI region 0x%" PRIx64
+                             " - 0x%" PRIx64 " in domain\n",
+                  addr & PAGE_MASK,
+                  PAGE_ALIGN(addr + size) - 1);
         }
     }
 }
 
 static int __init acpi_create_rsdp(struct domain *d, struct membank tbl_add[])
 {
-
     struct acpi_table_rsdp *rsdp = NULL;
     u64 addr;
     u64 table_size = sizeof(struct acpi_table_rsdp);
@@ -219,14 +217,14 @@ static int __init acpi_create_rsdp(struct domain *d, struct membank tbl_add[])
     u8 checksum;
 
     addr = acpi_os_get_root_pointer();
-    if ( !addr  )
+    if ( !addr )
     {
         printk("Unable to get acpi root pointer\n");
         return -EINVAL;
     }
     rsdp = acpi_os_map_memory(addr, table_size);
-    base_ptr = d->arch.efi_acpi_table
-               + acpi_get_table_offset(tbl_add, TBL_RSDP);
+    base_ptr = d->arch.efi_acpi_table +
+               acpi_get_table_offset(tbl_add, TBL_RSDP);
     memcpy(base_ptr, rsdp, table_size);
     acpi_os_unmap_memory(rsdp, table_size);
 
@@ -236,8 +234,8 @@ static int __init acpi_create_rsdp(struct domain *d, struct membank tbl_add[])
     checksum = acpi_tb_checksum(ACPI_CAST_PTR(u8, rsdp), table_size);
     rsdp->checksum = rsdp->checksum - checksum;
 
-    tbl_add[TBL_RSDP].start = d->arch.efi_acpi_gpa
-                              + acpi_get_table_offset(tbl_add, TBL_RSDP);
+    tbl_add[TBL_RSDP].start = d->arch.efi_acpi_gpa +
+                              acpi_get_table_offset(tbl_add, TBL_RSDP);
     tbl_add[TBL_RSDP].size = table_size;
 
     return 0;
@@ -251,7 +249,7 @@ static void __init acpi_xsdt_modify_entry(u64 entry[],
     struct acpi_table_header *table;
     u64 size = sizeof(struct acpi_table_header);
 
-    for( i = 0; i < entry_count; i++ )
+    for ( i = 0; i < entry_count; i++ )
     {
         table = acpi_os_map_memory(entry[i], size);
         if ( ACPI_COMPARE_NAME(table->signature, signature) )
@@ -286,27 +284,31 @@ static int __init acpi_create_xsdt(struct domain *d, struct membank tbl_add[])
 
     /* Add place for STAO table in XSDT table */
     table_size = table->length + sizeof(u64);
-    entry_count = (table->length - sizeof(struct acpi_table_header))
-                  / sizeof(u64);
-    base_ptr = d->arch.efi_acpi_table
-               + acpi_get_table_offset(tbl_add, TBL_XSDT);
+    entry_count = (table->length - sizeof(struct acpi_table_header)) /
+                  sizeof(u64);
+    base_ptr = d->arch.efi_acpi_table +
+               acpi_get_table_offset(tbl_add, TBL_XSDT);
     memcpy(base_ptr, table, table->length);
     acpi_os_unmap_memory(table, sizeof(struct acpi_table_header));
     acpi_os_unmap_memory(rsdp_tbl, sizeof(struct acpi_table_rsdp));
 
     xsdt = (struct acpi_table_xsdt *)base_ptr;
-    acpi_xsdt_modify_entry(xsdt->table_offset_entry, entry_count,
-                           ACPI_SIG_FADT, tbl_add[TBL_FADT].start);
-    acpi_xsdt_modify_entry(xsdt->table_offset_entry, entry_count,
-                           ACPI_SIG_MADT, tbl_add[TBL_MADT].start);
+    acpi_xsdt_modify_entry(xsdt->table_offset_entry,
+                           entry_count,
+                           ACPI_SIG_FADT,
+                           tbl_add[TBL_FADT].start);
+    acpi_xsdt_modify_entry(xsdt->table_offset_entry,
+                           entry_count,
+                           ACPI_SIG_MADT,
+                           tbl_add[TBL_MADT].start);
     xsdt->table_offset_entry[entry_count] = tbl_add[TBL_STAO].start;
 
     xsdt->header.length = table_size;
     checksum = acpi_tb_checksum(ACPI_CAST_PTR(u8, xsdt), table_size);
     xsdt->header.checksum -= checksum;
 
-    tbl_add[TBL_XSDT].start = d->arch.efi_acpi_gpa
-                              + acpi_get_table_offset(tbl_add, TBL_XSDT);
+    tbl_add[TBL_XSDT].start = d->arch.efi_acpi_gpa +
+                              acpi_get_table_offset(tbl_add, TBL_XSDT);
     tbl_add[TBL_XSDT].size = table_size;
 
     return 0;
@@ -382,8 +384,9 @@ static int __init acpi_create_madt(struct domain *d, struct membank tbl_add[])
         return -EINVAL;
     }
     gicd = container_of(header, struct acpi_madt_generic_distributor, header);
-    memcpy(base_ptr + table_size, gicd,
-                sizeof(struct acpi_madt_generic_distributor));
+    memcpy(base_ptr + table_size,
+           gicd,
+           sizeof(struct acpi_madt_generic_distributor));
     table_size += sizeof(struct acpi_madt_generic_distributor);
 
     /* Add other subtables. */
@@ -426,8 +429,8 @@ static int __init acpi_create_fadt(struct domain *d, struct membank tbl_add[])
     }
 
     table_size = table->length;
-    base_ptr = d->arch.efi_acpi_table
-               + acpi_get_table_offset(tbl_add, TBL_FADT);
+    base_ptr = d->arch.efi_acpi_table +
+               acpi_get_table_offset(tbl_add, TBL_FADT);
     memcpy(base_ptr, table, table_size);
     fadt = (struct acpi_table_fadt *)base_ptr;
 
@@ -436,8 +439,8 @@ static int __init acpi_create_fadt(struct domain *d, struct membank tbl_add[])
     checksum = acpi_tb_checksum(ACPI_CAST_PTR(u8, fadt), table_size);
     fadt->header.checksum -= checksum;
 
-    tbl_add[TBL_FADT].start = d->arch.efi_acpi_gpa
-                              + acpi_get_table_offset(tbl_add, TBL_FADT);
+    tbl_add[TBL_FADT].start = d->arch.efi_acpi_gpa +
+                              acpi_get_table_offset(tbl_add, TBL_FADT);
     tbl_add[TBL_FADT].size = table_size;
 
     return 0;
@@ -487,8 +490,8 @@ static int __init estimate_acpi_efi_size(struct domain *d,
     acpi_os_unmap_memory(table, sizeof(struct acpi_table_header));
 
     acpi_size += ROUNDUP(sizeof(struct acpi_table_rsdp), 8);
-    d->arch.efi_acpi_len = PAGE_ALIGN(ROUNDUP(efi_size, 8)
-                                      + ROUNDUP(acpi_size, 8));
+    d->arch.efi_acpi_len =
+        PAGE_ALIGN(ROUNDUP(efi_size, 8) + ROUNDUP(acpi_size, 8));
 
     return 0;
 }
@@ -556,8 +559,8 @@ int __init prepare_acpi(struct domain *d, struct kernel_info *kinfo)
                           p2m_mmio_direct_c);
     if ( rc != 0 )
     {
-        printk(XENLOG_ERR "Unable to map EFI/ACPI table 0x%"PRIx64
-               " - 0x%"PRIx64" in domain %d\n",
+        printk(XENLOG_ERR "Unable to map EFI/ACPI table 0x%" PRIx64
+                          " - 0x%" PRIx64 " in domain %d\n",
                d->arch.efi_acpi_gpa & PAGE_MASK,
                PAGE_ALIGN(d->arch.efi_acpi_gpa + d->arch.efi_acpi_len) - 1,
                d->domain_id);

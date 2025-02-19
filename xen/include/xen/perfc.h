@@ -29,9 +29,9 @@
  * void perfc_print (counter)                  print out the counter
  */
 
-#define PERFCOUNTER( name, descr ) \
+#define PERFCOUNTER(name, descr) \
   PERFC_##name,
-#define PERFCOUNTER_ARRAY( name, descr, size ) \
+#define PERFCOUNTER_ARRAY(name, descr, size) \
   PERFC_##name,                                \
   PERFC_LAST_##name = PERFC_ ## name + (size) - sizeof(char[2 * !!(size) - 1]),
 
@@ -40,7 +40,7 @@
 
 enum {
 #include <xen/perfc_defn.h>
-	NUM_PERFCOUNTERS
+    NUM_PERFCOUNTERS
 };
 
 #undef PERFCOUNTER
@@ -53,20 +53,20 @@ typedef unsigned int perfc_t;
 DECLARE_PER_CPU(perfc_t[NUM_PERFCOUNTERS], perfcounters);
 
 #define perfc_value(x)    this_cpu(perfcounters)[PERFC_ ## x]
-#define perfc_valuea(x,y)                                               \
+#define perfc_valuea(x, y)                                               \
     ( (y) <= PERFC_LAST_ ## x - PERFC_ ## x ?                           \
 	 this_cpu(perfcounters)[PERFC_ ## x + (y)] : 0 )
-#define perfc_set(x,v)    (this_cpu(perfcounters)[PERFC_ ## x] = (v))
-#define perfc_seta(x,y,v)                                               \
+#define perfc_set(x, v)    (this_cpu(perfcounters)[PERFC_ ## x] = (v))
+#define perfc_seta(x, y, v)                                               \
     ( (y) <= PERFC_LAST_ ## x - PERFC_ ## x ?                           \
 	 this_cpu(perfcounters)[PERFC_ ## x + (y)] = (v) : (v) )
 #define perfc_incr(x)     (++this_cpu(perfcounters)[PERFC_ ## x])
 #define perfc_decr(x)     (--this_cpu(perfcounters)[PERFC_ ## x])
-#define perfc_incra(x,y)                                                \
+#define perfc_incra(x, y)                                                \
     ( (y) <= PERFC_LAST_ ## x - PERFC_ ## x ?                           \
 	 ++this_cpu(perfcounters)[PERFC_ ## x + (y)] : 0 )
-#define perfc_add(x,v)    (this_cpu(perfcounters)[PERFC_ ## x] += (v))
-#define perfc_adda(x,y,v)                                               \
+#define perfc_add(x, v)    (this_cpu(perfcounters)[PERFC_ ## x] += (v))
+#define perfc_adda(x, y, v)                                               \
     ( (y) <= PERFC_LAST_ ## x - PERFC_ ## x ?                           \
 	 this_cpu(perfcounters)[PERFC_ ## x + (y)] = (v) : (v) )
 
@@ -75,7 +75,7 @@ DECLARE_PER_CPU(perfc_t[NUM_PERFCOUNTERS], perfcounters);
  * with last bucket taking the rest.
  */
 #ifdef CONFIG_PERF_ARRAYS
-#define perfc_incr_histo(x,v)                                           \
+#define perfc_incr_histo(x, v)                                           \
     do {                                                                \
         if ( (v) == 0 )                                                 \
             perfc_incra(x, 0);                                          \
@@ -88,7 +88,7 @@ DECLARE_PER_CPU(perfc_t[NUM_PERFCOUNTERS], perfcounters);
             perfc_incra(x, PERFC_LAST_ ## x - PERFC_ ## x);             \
     } while ( 0 )
 #else
-#define perfc_incr_histo(x,v) ((void)0)
+#define perfc_incr_histo(x, v) ((void)0)
 #endif
 
 struct xen_sysctl_perfc_op;
@@ -97,20 +97,19 @@ int perfc_control(struct xen_sysctl_perfc_op *pc);
 extern void cf_check perfc_printall(unsigned char key);
 extern void cf_check perfc_reset(unsigned char key);
 
-
 #else /* CONFIG_PERF_COUNTERS */
 
 #define perfc_value(x)    (0)
-#define perfc_valuea(x,y) (0)
-#define perfc_set(x,v)    ((void)0)
-#define perfc_seta(x,y,v) ((void)0)
+#define perfc_valuea(x, y) (0)
+#define perfc_set(x, v)    ((void)0)
+#define perfc_seta(x, y, v) ((void)0)
 #define perfc_incr(x)     ((void)0)
 #define perfc_decr(x)     ((void)0)
-#define perfc_incra(x,y)  ((void)0)
-#define perfc_decra(x,y)  ((void)0)
-#define perfc_add(x,y)    ((void)0)
-#define perfc_adda(x,y,z) ((void)0)
-#define perfc_incr_histo(x,y,z) ((void)0)
+#define perfc_incra(x, y)  ((void)0)
+#define perfc_decra(x, y)  ((void)0)
+#define perfc_add(x, y)    ((void)0)
+#define perfc_adda(x, y, z) ((void)0)
+#define perfc_incr_histo(x, y, z) ((void)0)
 
 #endif /* CONFIG_PERF_COUNTERS */
 

@@ -19,16 +19,14 @@ static inline uint32_t rdpkru(void)
 {
     uint32_t pkru;
 
-    asm volatile ( ".byte 0x0f,0x01,0xee"
-                   : "=a" (pkru) : "c" (0) : "dx" );
+    asm volatile(".byte 0x0f,0x01,0xee" : "=a"(pkru) : "c"(0) : "dx");
 
     return pkru;
 }
 
 static inline void wrpkru(uint32_t pkru)
 {
-    asm volatile ( ".byte 0x0f,0x01,0xef"
-                   :: "a" (pkru), "d" (0), "c" (0) );
+    asm volatile(".byte 0x0f,0x01,0xef" ::"a"(pkru), "d"(0), "c"(0));
 }
 
 /*

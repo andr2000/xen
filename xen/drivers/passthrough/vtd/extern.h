@@ -54,10 +54,12 @@ void clear_fault_bits(struct vtd_iommu *iommu);
 int __must_check cf_check vtd_flush_context_reg(
     struct vtd_iommu *iommu, uint16_t did, uint16_t source_id,
     uint8_t function_mask, uint64_t type, bool flush_non_present_entry);
-int __must_check cf_check vtd_flush_iotlb_reg(
-    struct vtd_iommu *iommu, uint16_t did, uint64_t addr,
-    unsigned int size_order, uint64_t type, bool flush_non_present_entry,
-    bool flush_dev_iotlb);
+int __must_check cf_check vtd_flush_iotlb_reg(struct vtd_iommu *iommu,
+                                              uint16_t did, uint64_t addr,
+                                              unsigned int size_order,
+                                              uint64_t type,
+                                              bool flush_non_present_entry,
+                                              bool flush_dev_iotlb);
 
 struct vtd_iommu *ioapic_to_iommu(unsigned int apic_id);
 struct vtd_iommu *hpet_to_iommu(unsigned int hpet_id);
@@ -69,12 +71,12 @@ struct acpi_drhd_unit *find_ats_dev_drhd(struct vtd_iommu *iommu);
 
 int ats_device(const struct pci_dev *, const struct acpi_drhd_unit *);
 
-int dev_invalidate_iotlb(struct vtd_iommu *iommu, u16 did,
-                         u64 addr, unsigned int size_order, u64 type);
+int dev_invalidate_iotlb(struct vtd_iommu *iommu, u16 did, u64 addr,
+                         unsigned int size_order, u64 type);
 
 int __must_check qinval_device_iotlb_sync(struct vtd_iommu *iommu,
-                                          struct pci_dev *pdev,
-                                          u16 did, u16 size, u64 addr);
+                                          struct pci_dev *pdev, u16 did,
+                                          u16 size, u64 addr);
 
 uint64_t alloc_pgtable_maddr(unsigned long npages, nodeid_t node);
 void free_pgtable_maddr(u64 maddr);
@@ -86,13 +88,13 @@ int domain_context_mapping_one(struct domain *domain, struct vtd_iommu *iommu,
                                paddr_t pgd_maddr, unsigned int mode);
 int domain_context_unmap_one(struct domain *domain, struct vtd_iommu *iommu,
                              uint8_t bus, uint8_t devfn);
-int cf_check intel_iommu_get_reserved_device_memory(
-    iommu_grdm_t *func, void *ctxt);
+int cf_check intel_iommu_get_reserved_device_memory(iommu_grdm_t *func,
+                                                    void *ctxt);
 
-unsigned int cf_check io_apic_read_remap_rte(
-    unsigned int apic, unsigned int reg);
-void cf_check io_apic_write_remap_rte(
-    unsigned int apic, unsigned int pin, uint64_t rte);
+unsigned int cf_check io_apic_read_remap_rte(unsigned int apic,
+                                             unsigned int reg);
+void cf_check io_apic_write_remap_rte(unsigned int apic, unsigned int pin,
+                                      uint64_t rte);
 
 struct msi_desc;
 struct msi_msg;

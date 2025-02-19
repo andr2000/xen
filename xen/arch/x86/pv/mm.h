@@ -33,8 +33,8 @@ static inline l1_pgentry_t guest_get_eff_kern_l1e(unsigned long linear)
     return l1e;
 }
 
-static inline void paging_write_guest_entry(
-    struct vcpu *v, intpte_t *p, intpte_t new, mfn_t gmfn)
+static inline void paging_write_guest_entry(struct vcpu *v, intpte_t *p,
+                                            intpte_t new, mfn_t gmfn)
 {
     if ( unlikely(paging_mode_shadow(v->domain)) )
         shadow_write_guest_entry(v, p, new, gmfn);
@@ -42,10 +42,10 @@ static inline void paging_write_guest_entry(
         write_atomic(p, new);
 }
 
-
 /* Compare and exchange a guest pagetable entry.  Returns the old value. */
-static inline intpte_t paging_cmpxchg_guest_entry(
-    struct vcpu *v, intpte_t *p, intpte_t old, intpte_t new, mfn_t gmfn)
+static inline intpte_t paging_cmpxchg_guest_entry(struct vcpu *v, intpte_t *p,
+                                                  intpte_t old, intpte_t new,
+                                                  mfn_t gmfn)
 {
     if ( unlikely(paging_mode_shadow(v->domain)) )
         return shadow_cmpxchg_guest_entry(v, p, old, new, gmfn);
@@ -77,7 +77,7 @@ static inline bool update_intpte(intpte_t *p, intpte_t old, intpte_t new,
     else
 #endif
     {
-        for ( ; ; )
+        for ( ;; )
         {
             intpte_t _new = new, t;
 
@@ -90,7 +90,7 @@ static inline bool update_intpte(intpte_t *p, intpte_t old, intpte_t new,
                 break;
 
             /* Allowed to change in Accessed/Dirty flags only. */
-            BUG_ON((t ^ old) & ~(intpte_t)(_PAGE_ACCESSED|_PAGE_DIRTY));
+            BUG_ON((t ^ old) & ~(intpte_t)(_PAGE_ACCESSED | _PAGE_DIRTY));
 
             old = t;
         }
@@ -102,7 +102,7 @@ static inline bool update_intpte(intpte_t *p, intpte_t old, intpte_t new,
  * Macro that wraps the appropriate type-changes around update_intpte().
  * Arguments are: type, ptr, old, new, mfn, vcpu
  */
-#define UPDATE_ENTRY(_t,_p,_o,_n,_m,_v,_ad)                         \
+#define UPDATE_ENTRY(_t, _p, _o, _n, _m, _v, _ad)                         \
     update_intpte(&_t ## e_get_intpte(*(_p)),                       \
                   _t ## e_get_intpte(_o), _t ## e_get_intpte(_n),   \
                   (_m), (_v), (_ad))
@@ -116,7 +116,8 @@ static always_inline l1_pgentry_t adjust_guest_l1e(l1_pgentry_t l1e,
         /* _PAGE_GUEST_KERNEL page cannot have the Global bit set. */
         if ( (l1e_get_flags(l1e) & (_PAGE_GUEST_KERNEL | _PAGE_GLOBAL)) ==
              (_PAGE_GUEST_KERNEL | _PAGE_GLOBAL) )
-            gdprintk(XENLOG_WARNING, "Global bit is set in kernel page %lx\n",
+            gdprintk(XENLOG_WARNING,
+                     "Global bit is set in kernel page %lx\n",
                      l1e_get_pfn(l1e));
 
         if ( !(l1e_get_flags(l1e) & _PAGE_USER) )
@@ -143,8 +144,9 @@ static always_inline l3_pgentry_t adjust_guest_l3e(l3_pgentry_t l3e,
                                                    const struct domain *d)
 {
     if ( likely(l3e_get_flags(l3e) & _PAGE_PRESENT) )
-        l3e_add_flags(l3e, (likely(!is_pv_32bit_domain(d))
-                            ? _PAGE_USER : _PAGE_USER | _PAGE_RW));
+        l3e_add_flags(l3e,
+                      (likely(!is_pv_32bit_domain(d)) ? _PAGE_USER
+                                                      : _PAGE_USER | _PAGE_RW));
 
     return l3e;
 }
@@ -175,8 +177,9 @@ static always_inline l4_pgentry_t adjust_guest_l4e(l4_pgentry_t l4e,
      * this is no actual change in their behaviour.
      */
     if ( likely(l4e_get_flags(l4e) & _PAGE_PRESENT) )
-        l4e_add_flags(l4e, (_PAGE_ACCESSED |
-                            (is_pv_32bit_domain(d) ? 0 : _PAGE_USER)));
+        l4e_add_flags(l4e,
+                      (_PAGE_ACCESSED |
+                       (is_pv_32bit_domain(d) ? 0 : _PAGE_USER)));
 
     return l4e;
 }

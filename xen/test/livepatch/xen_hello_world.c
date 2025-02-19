@@ -26,7 +26,7 @@ static void revert_hook(void)
     printk(KERN_DEBUG "Hook unloaded.\n");
 }
 
-static void  hi_func(void)
+static void hi_func(void)
 {
     printk(KERN_DEBUG "%s: Hi! (called %u times)\n", __func__, ++cnt);
 };
@@ -47,15 +47,15 @@ LIVEPATCH_UNLOAD_HOOK(hi_func);
 
 LIVEPATCH_UNLOAD_HOOK(check_fnc);
 
-const struct livepatch_func __section(".livepatch.funcs")
-livepatch_xen_hello_world = {
-    .version = LIVEPATCH_PAYLOAD_VERSION,
-    .name = hello_world_patch_this_fnc,
-    .new_addr = xen_hello_world,
-    .old_addr = xen_extra_version,
-    .new_size = NEW_CODE_SZ,
-    .old_size = OLD_CODE_SZ,
-};
+const struct livepatch_func
+    __section(".livepatch.funcs") livepatch_xen_hello_world = {
+        .version = LIVEPATCH_PAYLOAD_VERSION,
+        .name = hello_world_patch_this_fnc,
+        .new_addr = xen_hello_world,
+        .old_addr = xen_extra_version,
+        .new_size = NEW_CODE_SZ,
+        .old_size = OLD_CODE_SZ,
+    };
 
 /*
  * Local variables:

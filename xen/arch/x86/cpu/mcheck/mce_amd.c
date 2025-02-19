@@ -74,10 +74,14 @@ static const struct mce_quirkdata {
     unsigned int cpu_stepping;
     enum mcequirk_amd_flags quirk;
 } mce_amd_quirks[] = {
-    { 0xf /* cpu family */, ANY /* all models */, ANY /* all steppings */,
-      MCEQUIRK_K8_GART },
-    { 0x10 /* cpu family */, ANY /* all models */, ANY /* all steppings */,
-      MCEQUIRK_F10_GART },
+    { 0xf /* cpu family */,
+     ANY /* all models */,
+     ANY /* all steppings */,
+     MCEQUIRK_K8_GART  },
+    { 0x10 /* cpu family */,
+     ANY /* all models */,
+     ANY /* all steppings */,
+     MCEQUIRK_F10_GART },
 };
 
 /* Error Code Types */
@@ -87,8 +91,7 @@ enum mc_ec_type {
     MC_EC_BUS_TYPE = 0x0800,
 };
 
-static enum mc_ec_type
-mc_ec2type(uint16_t errorcode)
+static enum mc_ec_type mc_ec2type(uint16_t errorcode)
 {
     if ( errorcode & MC_EC_BUS_TYPE )
         return MC_EC_BUS_TYPE;
@@ -171,7 +174,7 @@ mcequirk_lookup_amd_quirkdata(const struct cpuinfo_x86 *c)
             continue;
         if ( (mce_amd_quirks[i].cpu_stepping != ANY) &&
              (mce_amd_quirks[i].cpu_stepping != c->x86_mask) )
-                continue;
+            continue;
         return mce_amd_quirks[i].quirk;
     }
 
@@ -205,8 +208,9 @@ static void mcequirk_amd_apply(enum mcequirk_amd_flags flags)
     }
 }
 
-static struct mcinfo_extended *cf_check
-amd_f10_handler(struct mc_info *mi, uint16_t bank, uint64_t status)
+static struct mcinfo_extended *cf_check amd_f10_handler(struct mc_info *mi,
+                                                        uint16_t bank,
+                                                        uint64_t status)
 {
     struct mcinfo_extended *mc_ext;
 
@@ -241,8 +245,8 @@ amd_f10_handler(struct mc_info *mi, uint16_t bank, uint64_t status)
     return mc_ext;
 }
 
-static bool cf_check amd_need_clearbank_scan(
-    enum mca_source who, uint64_t status)
+static bool cf_check amd_need_clearbank_scan(enum mca_source who,
+                                             uint64_t status)
 {
     if ( who != MCA_MCE_SCAN )
         return true;
@@ -261,7 +265,7 @@ static bool cf_check amd_need_clearbank_scan(
 int vmce_amd_wrmsr(struct vcpu *v, uint32_t msr, uint64_t val)
 {
     /* Do nothing as we don't emulate this MC bank currently */
-    mce_printk(MCE_VERBOSE, "MCE: wr msr %#"PRIx64"\n", val);
+    mce_printk(MCE_VERBOSE, "MCE: wr msr %#" PRIx64 "\n", val);
     return 1;
 }
 
@@ -285,8 +289,7 @@ static const struct mce_callbacks __initconst_cf_clobber k10_callbacks = {
     .info_collect = amd_f10_handler,
 };
 
-enum mcheck_type
-amd_mcheck_init(const struct cpuinfo_x86 *c, bool bsp)
+enum mcheck_type amd_mcheck_init(const struct cpuinfo_x86 *c, bool bsp)
 {
     uint32_t i;
     enum mcequirk_amd_flags quirkflag = 0;
@@ -317,8 +320,7 @@ amd_mcheck_init(const struct cpuinfo_x86 *c, bool bsp)
     if ( quirkflag == MCEQUIRK_F10_GART )
         mcequirk_amd_apply(quirkflag);
 
-    if ( cpu_has(c, X86_FEATURE_AMD_PPIN) &&
-         (c == &boot_cpu_data || ppin_msr) )
+    if ( cpu_has(c, X86_FEATURE_AMD_PPIN) && (c == &boot_cpu_data || ppin_msr) )
     {
         uint64_t val;
 
@@ -337,6 +339,5 @@ amd_mcheck_init(const struct cpuinfo_x86 *c, bool bsp)
             ppin_msr = MSR_AMD_PPIN;
     }
 
-    return c->x86_vendor == X86_VENDOR_HYGON ?
-            mcheck_hygon : mcheck_amd_famXX;
+    return c->x86_vendor == X86_VENDOR_HYGON ? mcheck_hygon : mcheck_amd_famXX;
 }

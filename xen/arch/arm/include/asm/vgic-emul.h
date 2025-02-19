@@ -18,7 +18,7 @@
  */
 static inline bool vgic_reg64_check_access(struct hsr_dabt dabt)
 {
-    return ( dabt.size == DABT_DOUBLE_WORD || dabt.size == DABT_WORD );
+    return (dabt.size == DABT_DOUBLE_WORD || dabt.size == DABT_WORD);
 }
 
 #endif /* __ASM_ARM_VGIC_EMUL_H__ */

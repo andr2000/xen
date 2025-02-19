@@ -35,17 +35,18 @@
  */
 union instr {
     uint32_t value;
+
     struct {
-        unsigned int rt:5;     /* Rt register */
-        unsigned int rn:5;     /* Rn register */
+        unsigned int rt:5; /* Rt register */
+        unsigned int rn:5; /* Rn register */
         unsigned int fixed1:2; /* value == 01b */
-        signed int imm9:9;     /* imm9 */
+        signed int imm9:9; /* imm9 */
         unsigned int fixed2:1; /* value == 0b */
-        unsigned int opc:2;    /* opc */
+        unsigned int opc:2; /* opc */
         unsigned int fixed3:2; /* value == 00b */
-        unsigned int v:1;      /* vector */
+        unsigned int v:1; /* vector */
         unsigned int fixed4:3; /* value == 111b */
-        unsigned int size:2;   /* size */
+        unsigned int size:2; /* size */
     } ldr_str;
 };
 
@@ -70,8 +71,7 @@ union instr {
  * - Read or write
  */
 
-int decode_instruction(const struct cpu_user_regs *regs,
-                       mmio_info_t *info);
+int decode_instruction(const struct cpu_user_regs *regs, mmio_info_t *info);
 
 #endif /* __ARCH_ARM_DECODE_H_ */
 

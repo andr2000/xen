@@ -30,7 +30,7 @@
  */
 static inline unsigned int get_stack_page(unsigned long sp)
 {
-    return (sp & (STACK_SIZE-1)) >> PAGE_SHIFT;
+    return (sp & (STACK_SIZE - 1)) >> PAGE_SHIFT;
 }
 
 struct vcpu;
@@ -57,7 +57,7 @@ struct cpu_info {
     unsigned int shadow_spec_ctrl;
     unsigned int xen_spec_ctrl;
     unsigned int last_spec_ctrl;
-    uint8_t      scf; /* SCF_* */
+    uint8_t scf; /* SCF_* */
 
     /*
      * The following field controls copying of the L4 page table of 64-bit
@@ -65,14 +65,14 @@ struct cpu_info {
      * If set the L4 page table is being copied to the root page table and
      * the field will be reset.
      */
-    bool         root_pgt_changed;
+    bool root_pgt_changed;
 
     /*
      * use_pv_cr3 is set in case the value of pv_cr3 is to be written into
      * CR3 when returning from an interrupt. The main use is when returning
      * from a NMI or MCE to hypervisor code where pv_cr3 was active.
      */
-    bool         use_pv_cr3;
+    bool use_pv_cr3;
 
     /* get_stack_bottom() must be 16-byte aligned */
 };
@@ -87,7 +87,7 @@ static inline struct cpu_info *get_cpu_info(void)
 #ifdef __clang__
     /* Clang complains that sp in the else case is not initialised. */
     unsigned long sp;
-    asm ( "mov %%rsp, %0" : "=r" (sp) );
+    asm("mov %%rsp, %0" : "=r"(sp));
 #else
     register unsigned long sp asm("rsp");
 #endif
@@ -118,20 +118,20 @@ static inline struct cpu_info *get_cpu_info(void)
  * printed information.  The returned word is inside the interesting range.
  */
 unsigned long get_stack_trace_bottom(unsigned long sp);
-unsigned long get_stack_dump_bottom (unsigned long sp);
+unsigned long get_stack_dump_bottom(unsigned long sp);
 
 #ifdef CONFIG_LIVEPATCH
-# define CHECK_FOR_LIVEPATCH_WORK "call check_for_livepatch_work;"
+#define CHECK_FOR_LIVEPATCH_WORK "call check_for_livepatch_work;"
 #elif defined(CONFIG_DEBUG)
 /* Mimic the clobbering effect a call has on registers. */
-# define CHECK_FOR_LIVEPATCH_WORK \
+#define CHECK_FOR_LIVEPATCH_WORK \
     "mov $0x1234567890abcdef, %%rax\n\t" \
     "mov %%rax, %%rcx; mov %%rax, %%rdx\n\t" \
     "mov %%rax, %%rsi; mov %%rax, %%rdi\n\t" \
     "mov %%rax, %%r8; mov %%rax, %%r9\n\t" \
     "mov %%rax, %%r10; mov %%rax, %%r11\n\t"
 #else
-# define CHECK_FOR_LIVEPATCH_WORK ""
+#define CHECK_FOR_LIVEPATCH_WORK ""
 #endif
 
 #ifdef CONFIG_XEN_SHSTK
@@ -146,7 +146,7 @@ unsigned long get_stack_dump_bottom (unsigned long sp);
  * that many entries, and getting this wrong will cause us to #DF later.  Turn
  * it into a BUG() now for fractionally easier debugging.
  */
-# define SHADOW_STACK_WORK                                      \
+#define SHADOW_STACK_WORK                                      \
     "mov $1, %[ssp];"                                           \
     "rdsspd %[ssp];"                                            \
     "cmp $1, %[ssp];"                                           \
@@ -162,14 +162,14 @@ unsigned long get_stack_dump_bottom (unsigned long sp);
     "incsspq %q[val];"                                          \
     ".L_shstk_done.%=:"
 #else
-# define SHADOW_STACK_WORK ""
+#define SHADOW_STACK_WORK ""
 #endif
 
 #if __GNUC__ >= 9
-# define ssaj_has_attr_noreturn(fn) __builtin_has_attribute(fn, __noreturn__)
+#define ssaj_has_attr_noreturn(fn) __builtin_has_attribute(fn, __noreturn__)
 #else
 /* Simply can't check the property with older gcc. */
-# define ssaj_has_attr_noreturn(fn) true
+#define ssaj_has_attr_noreturn(fn) true
 #endif
 
 #define switch_stack_and_jump(fn, instr, constr)                        \

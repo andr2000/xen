@@ -8,8 +8,8 @@
 
 /* To contain the ELF Note header. */
 struct livepatch_build_id {
-   const void *p;
-   unsigned int len;
+    const void *p;
+    unsigned int len;
 };
 
 typedef struct payload livepatch_payload_t;
@@ -35,40 +35,43 @@ struct livepatch_hooks {
 
 struct livepatch_metadata {
     const char *data; /* Ptr to .modinfo section with ASCII data. */
-    uint32_t len;     /* Length of the metadata section. */
+    uint32_t len; /* Length of the metadata section. */
 };
 
 struct payload {
-    uint32_t state;                      /* One of the LIVEPATCH_STATE_*. */
-    int32_t rc;                          /* 0 or -XEN_EXX. */
-    bool reverted;                       /* Whether it was reverted. */
-    bool safe_to_reapply;                /* Can apply safely after revert. */
-    struct list_head list;               /* Linked to 'payload_list'. */
-    const void *text_addr;               /* Virtual address of .text. */
-    size_t text_size;                    /* .. and its size. */
-    const void *rw_addr;                 /* Virtual address of .data. */
-    size_t rw_size;                      /* .. and its size (if any). */
-    const void *ro_addr;                 /* Virtual address of .rodata. */
-    size_t ro_size;                      /* .. and its size (if any). */
-    unsigned int pages;                  /* Total pages for [text,rw,ro]_addr */
-    struct list_head applied_list;       /* Linked to 'applied_list'. */
-    const struct livepatch_func *funcs;  /* The array of functions to patch. */
-    struct livepatch_fstate *fstate;     /* State of patched functions. */
-    unsigned int nfuncs;                 /* Nr of functions to patch. */
+    uint32_t state; /* One of the LIVEPATCH_STATE_*. */
+    int32_t rc; /* 0 or -XEN_EXX. */
+    bool reverted; /* Whether it was reverted. */
+    bool safe_to_reapply; /* Can apply safely after revert. */
+    struct list_head list; /* Linked to 'payload_list'. */
+    const void *text_addr; /* Virtual address of .text. */
+    size_t text_size; /* .. and its size. */
+    const void *rw_addr; /* Virtual address of .data. */
+    size_t rw_size; /* .. and its size (if any). */
+    const void *ro_addr; /* Virtual address of .rodata. */
+    size_t ro_size; /* .. and its size (if any). */
+    unsigned int pages; /* Total pages for [text,rw,ro]_addr */
+    struct list_head applied_list; /* Linked to 'applied_list'. */
+    const struct livepatch_func *funcs; /* The array of functions to patch. */
+    struct livepatch_fstate *fstate; /* State of patched functions. */
+    unsigned int nfuncs; /* Nr of functions to patch. */
     const struct livepatch_symbol *symtab; /* All symbols. */
-    const char *strtab;                  /* Pointer to .strtab. */
-    struct virtual_region region;        /* symbol, bug.frame patching and
+    const char *strtab; /* Pointer to .strtab. */
+    struct virtual_region region; /* symbol, bug.frame patching and
                                             exception table (x86). */
-    unsigned int nsyms;                  /* Nr of entries in .strtab and symbols. */
-    struct livepatch_build_id id;        /* ELFNOTE_DESC(.note.gnu.build-id) of the payload. */
-    struct livepatch_build_id dep;       /* ELFNOTE_DESC(.livepatch.depends). */
-    livepatch_loadcall_t *const *load_funcs;   /* The array of funcs to call after */
-    livepatch_unloadcall_t *const *unload_funcs;/* load and unload of the payload. */
-    struct livepatch_hooks hooks;        /* Pre and post hooks for apply and revert */
-    unsigned int n_load_funcs;           /* Nr of the funcs to load and execute. */
-    unsigned int n_unload_funcs;         /* Nr of funcs to call durung unload. */
-    char name[XEN_LIVEPATCH_NAME_SIZE];  /* Name of it. */
-    struct livepatch_metadata metadata;  /* Module meta data record */
+    unsigned int nsyms; /* Nr of entries in .strtab and symbols. */
+    struct livepatch_build_id
+        id; /* ELFNOTE_DESC(.note.gnu.build-id) of the payload. */
+    struct livepatch_build_id dep; /* ELFNOTE_DESC(.livepatch.depends). */
+    livepatch_loadcall_t *const
+        *load_funcs; /* The array of funcs to call after */
+    livepatch_unloadcall_t *const
+        *unload_funcs; /* load and unload of the payload. */
+    struct livepatch_hooks hooks; /* Pre and post hooks for apply and revert */
+    unsigned int n_load_funcs; /* Nr of the funcs to load and execute. */
+    unsigned int n_unload_funcs; /* Nr of funcs to call durung unload. */
+    char name[XEN_LIVEPATCH_NAME_SIZE]; /* Name of it. */
+    struct livepatch_metadata metadata; /* Module meta data record */
 };
 
 /*

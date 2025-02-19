@@ -175,12 +175,12 @@ struct cpu_user_regs {
     __DECL_REG_LOHI(d);
     __DECL_REG_LO8(si);
     __DECL_REG_LO8(di);
-    uint32_t error_code;    /* private */
-    uint32_t entry_vector;  /* private */
+    uint32_t error_code; /* private */
+    uint32_t entry_vector; /* private */
     __DECL_REG_LO16(ip);
     uint16_t cs, _pad0[1];
-    uint8_t  saved_upcall_mask;
-    uint8_t  _pad1[3];
+    uint8_t saved_upcall_mask;
+    uint8_t _pad1[3];
     __DECL_REG_LO16(flags); /* rflags.IF == !saved_upcall_mask */
     __DECL_REG_LO8(sp);
     uint16_t ss, _pad2[3];

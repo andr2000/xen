@@ -40,8 +40,7 @@ static void __init xgene_check_pirq_eoi(void)
     const struct dt_device_node *node;
     int res;
     paddr_t dbase;
-    const struct dt_device_match xgene_dt_int_ctrl_match[] =
-    {
+    const struct dt_device_match xgene_dt_int_ctrl_match[] = {
         DT_MATCH_COMPATIBLE("arm,cortex-a15-gic"),
         { /*sentinel*/ },
     };
@@ -52,7 +51,8 @@ static void __init xgene_check_pirq_eoi(void)
 
     res = dt_device_get_paddr(node, 0, &dbase, NULL);
     if ( res )
-        panic("%s: Cannot find a valid address for the distributor\n", __func__);
+        panic("%s: Cannot find a valid address for the distributor\n",
+              __func__);
 
     /*
      * In old X-Gene Storm firmware and DT, secure mode addresses have
@@ -61,8 +61,8 @@ static void __init xgene_check_pirq_eoi(void)
      * with older firmware.
      */
     if ( dbase == XGENE_SEC_GICV2_DIST_ADDR )
-        panic("OLD X-Gene Firmware is not supported by Xen.\n"
-              "Please upgrade your firmware to the latest version\n");
+        panic(
+            "OLD X-Gene Firmware is not supported by Xen.\n" "Please upgrade your firmware to the latest version\n");
 }
 
 static uint32_t xgene_storm_quirks(void)
@@ -84,7 +84,8 @@ static void xgene_storm_reset(void)
 
     if ( !addr )
     {
-        printk("XGENE: Unable to map xgene reset address, can not reset XGENE...\n");
+        printk(
+            "XGENE: Unable to map xgene reset address, can not reset XGENE...\n");
         return;
     }
 
@@ -109,17 +110,12 @@ static int xgene_storm_init(void)
     return 0;
 }
 
-static const char * const xgene_storm_dt_compat[] __initconst =
-{
-    "apm,xgene-storm",
-    NULL
-};
+static const char *const xgene_storm_dt_compat[]
+    __initconst = { "apm,xgene-storm", NULL };
 
 PLATFORM_START(xgene_storm, "APM X-GENE STORM")
-    .compatible = xgene_storm_dt_compat,
-    .init = xgene_storm_init,
-    .reset = xgene_storm_reset,
-    .quirks = xgene_storm_quirks,
+    .compatible = xgene_storm_dt_compat, .init = xgene_storm_init,
+    .reset = xgene_storm_reset, .quirks = xgene_storm_quirks,
 PLATFORM_END
 
 /*

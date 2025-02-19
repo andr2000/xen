@@ -15,12 +15,8 @@
 #include <asm/platform.h>
 #include <asm/smccc.h>
 
-static const char * const imx8qm_dt_compat[] __initconst =
-{
-    "fsl,imx8qm",
-    "fsl,imx8qxp",
-    NULL
-};
+static const char *const imx8qm_dt_compat[]
+    __initconst = { "fsl,imx8qm", "fsl,imx8qxp", NULL };
 
 #define IMX_SIP_FID(fid) \
     ARM_SMCCC_CALL_VAL(ARM_SMCCC_FAST_CALL, \
@@ -57,7 +53,8 @@ static bool imx8qm_is_sip_time_call_ok(uint32_t subfunction_id)
     case IMX_SIP_TIME_SF_WDOG_SET_PRETIME:
         return true;
     default:
-        gprintk(XENLOG_WARNING, "imx8qm: smc: time: Unknown subfunction id %x\n",
+        gprintk(XENLOG_WARNING,
+                "imx8qm: smc: time: Unknown subfunction id %x\n",
                 subfunction_id);
         return false;
     }
@@ -71,8 +68,9 @@ static bool imx8qm_smc(struct cpu_user_regs *regs)
 
     if ( !cpus_have_const_cap(ARM_SMCCC_1_1) )
     {
-        printk_once(XENLOG_WARNING
-                    "imx8qm: smc: no SMCCC 1.1 support. Disabling firmware calls\n");
+        printk_once(
+            XENLOG_WARNING
+            "imx8qm: smc: no SMCCC 1.1 support. Disabling firmware calls\n");
 
         return false;
     }
@@ -100,12 +98,13 @@ static bool imx8qm_smc(struct cpu_user_regs *regs)
         /* subfunction_id is the fuse number, no sensible check possible */
         goto allow_call;
     default:
-        gprintk(XENLOG_WARNING, "imx8qm: smc: Unknown function id %x\n",
+        gprintk(XENLOG_WARNING,
+                "imx8qm: smc: Unknown function id %x\n",
                 function_id);
         return false;
     }
 
- allow_call:
+allow_call:
     arm_smccc_1_1_smc(function_id,
                       subfunction_id,
                       get_user_reg(regs, 2),
@@ -125,8 +124,7 @@ static bool imx8qm_smc(struct cpu_user_regs *regs)
 }
 
 PLATFORM_START(imx8qm, "i.MX 8Q{M,XP}")
-    .compatible = imx8qm_dt_compat,
-    .smc = imx8qm_smc,
+    .compatible = imx8qm_dt_compat, .smc = imx8qm_smc,
 PLATFORM_END
 
 /*

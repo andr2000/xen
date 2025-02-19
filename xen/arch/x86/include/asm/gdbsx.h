@@ -19,8 +19,8 @@ int gdbsx_domctl(struct domain *d, struct xen_domctl *domctl, bool *copyback);
 
 static inline void domain_pause_for_debugger(void) {}
 
-static inline int gdbsx_domctl(
-    struct domain *d, struct xen_domctl *domctl, bool *copyback)
+static inline int gdbsx_domctl(struct domain *d, struct xen_domctl *domctl,
+                               bool *copyback)
 {
     return -ENOSYS;
 }

@@ -49,10 +49,12 @@ enum hvm_intsrc {
     hvm_intsrc_mce,
     hvm_intsrc_vector
 };
+
 struct hvm_intack {
     uint8_t source; /* enum hvm_intsrc */
     uint8_t vector;
 };
+
 #define hvm_intack(src, vec)   ((struct hvm_intack) { hvm_intsrc_##src, vec })
 #define hvm_intack_none        hvm_intack(none, 0)
 #define hvm_intack_pic(vec)    hvm_intack(pic, vec)
@@ -60,13 +62,14 @@ struct hvm_intack {
 #define hvm_intack_nmi         hvm_intack(nmi, 2)
 #define hvm_intack_mce         hvm_intack(mce, 18)
 #define hvm_intack_vector(vec) hvm_intack(vector, vec)
+
 enum hvm_intblk {
-    hvm_intblk_none,      /* not blocked (deliverable) */
-    hvm_intblk_shadow,    /* MOV-SS or STI shadow */
+    hvm_intblk_none, /* not blocked (deliverable) */
+    hvm_intblk_shadow, /* MOV-SS or STI shadow */
     hvm_intblk_rflags_ie, /* RFLAGS.IE == 0 */
-    hvm_intblk_tpr,       /* LAPIC TPR too high */
-    hvm_intblk_nmi_iret,  /* NMI blocked until IRET */
-    hvm_intblk_arch,      /* SVM/VMX specific reason */
+    hvm_intblk_tpr, /* LAPIC TPR too high */
+    hvm_intblk_nmi_iret, /* NMI blocked until IRET */
+    hvm_intblk_arch, /* SVM/VMX specific reason */
 };
 
 /* These happen to be the same as the VMX interrupt shadow definitions. */
@@ -102,29 +105,26 @@ struct hvm_function_table {
 
     struct {
         /* Indicate HAP capabilities. */
-        bool hap:1,
-             hap_superpage_1gb:1,
-             hap_superpage_2mb:1,
+        bool hap:1, hap_superpage_1gb:1, hap_superpage_2mb:1,
 
-             /* Altp2m capabilities */
-             altp2m:1,
-             singlestep:1,
-            
-             /* Hardware virtual interrupt delivery enable? */
-             virtual_intr_delivery:1,
+            /* Altp2m capabilities */
+            altp2m:1, singlestep:1,
 
-             /* Nested virt capabilities */
-             nested_virt:1;
+            /* Hardware virtual interrupt delivery enable? */
+            virtual_intr_delivery:1,
+
+            /* Nested virt capabilities */
+            nested_virt:1;
     } caps;
 
     /*
      * Initialise/destroy HVM domain/vcpu resources
      */
-    int  (*domain_initialise)(struct domain *d);
+    int (*domain_initialise)(struct domain *d);
     void (*domain_creation_finished)(struct domain *d);
     void (*domain_relinquish_resources)(struct domain *d);
     void (*domain_destroy)(struct domain *d);
-    int  (*vcpu_initialise)(struct vcpu *v);
+    int (*vcpu_initialise)(struct vcpu *v);
     void (*vcpu_destroy)(struct vcpu *v);
 
     /* save and load hvm guest cpu context for save/restore */
@@ -134,10 +134,8 @@ struct hvm_function_table {
     /* Examine specifics of the guest state. */
     unsigned int (*get_interrupt_shadow)(struct vcpu *v);
     void (*set_interrupt_shadow)(struct vcpu *v, unsigned int intr_shadow);
-    void (*get_nonreg_state)(struct vcpu *v,
-                             struct hvm_vcpu_nonreg_state *nrs);
-    void (*set_nonreg_state)(struct vcpu *v,
-                             struct hvm_vcpu_nonreg_state *nrs);
+    void (*get_nonreg_state)(struct vcpu *v, struct hvm_vcpu_nonreg_state *nrs);
+    void (*set_nonreg_state)(struct vcpu *v, struct hvm_vcpu_nonreg_state *nrs);
     int (*guest_x86_mode)(struct vcpu *v);
     unsigned int (*get_cpl)(struct vcpu *v);
     void (*get_segment_register)(struct vcpu *v, enum x86_segment seg,
@@ -161,8 +159,8 @@ struct hvm_function_table {
 
     void (*fpu_leave)(struct vcpu *v);
 
-    int  (*get_guest_pat)(struct vcpu *v, uint64_t *gpat);
-    int  (*set_guest_pat)(struct vcpu *v, uint64_t gpat);
+    int (*get_guest_pat)(struct vcpu *v, uint64_t *gpat);
+    int (*set_guest_pat)(struct vcpu *v, uint64_t gpat);
 
     void (*set_tsc_offset)(struct vcpu *v, u64 offset, u64 at_tsc);
 
@@ -174,10 +172,10 @@ struct hvm_function_table {
     bool (*get_pending_event)(struct vcpu *v, struct x86_event *info);
     void (*invlpg)(struct vcpu *v, unsigned long linear);
 
-    int  (*cpu_up_prepare)(unsigned int cpu);
+    int (*cpu_up_prepare)(unsigned int cpu);
     void (*cpu_dead)(unsigned int cpu);
 
-    int  (*cpu_up)(void);
+    int (*cpu_up)(void);
     void (*cpu_down)(void);
 
     /* Copy up to 15 bytes from cached instruction bytes at current rIP. */
@@ -197,10 +195,11 @@ struct hvm_function_table {
     int (*nhvm_vcpu_initialise)(struct vcpu *v);
     void (*nhvm_vcpu_destroy)(struct vcpu *v);
     int (*nhvm_vcpu_reset)(struct vcpu *v);
-    int (*nhvm_vcpu_vmexit_event)(struct vcpu *v, const struct x86_event *event);
+    int (*nhvm_vcpu_vmexit_event)(struct vcpu *v,
+                                  const struct x86_event *event);
     uint64_t (*nhvm_vcpu_p2m_base)(struct vcpu *v);
-    bool (*nhvm_vmcx_guest_intercepts_event)(
-        struct vcpu *v, unsigned int vector, int errcode);
+    bool (*nhvm_vmcx_guest_intercepts_event)(struct vcpu *v,
+                                             unsigned int vector, int errcode);
 
     bool (*nhvm_vmcx_hap_enabled)(struct vcpu *v);
 
@@ -219,9 +218,9 @@ struct hvm_function_table {
     void (*update_vlapic_mode)(struct vcpu *v);
 
     /*Walk nested p2m  */
-    int (*nhvm_hap_walk_L1_p2m)(struct vcpu *v, paddr_t L2_gpa,
-                                paddr_t *L1_gpa, unsigned int *page_order,
-                                uint8_t *p2m_acc, struct npfec npfec);
+    int (*nhvm_hap_walk_L1_p2m)(struct vcpu *v, paddr_t L2_gpa, paddr_t *L1_gpa,
+                                unsigned int *page_order, uint8_t *p2m_acc,
+                                struct npfec npfec);
 
     void (*enable_msr_interception)(struct domain *d, uint32_t msr);
 
@@ -247,7 +246,7 @@ struct hvm_function_table {
      */
     struct {
         /* number of bits of the fractional part of TSC scaling ratio */
-        uint8_t  ratio_frac_bits;
+        uint8_t ratio_frac_bits;
         /* maximum-allowed TSC scaling ratio */
         uint64_t max_ratio;
     } tsc_scaling;
@@ -284,16 +283,13 @@ void hvm_init_guest_time(struct domain *d);
 void hvm_set_guest_time(struct vcpu *v, u64 guest_time);
 uint64_t hvm_get_guest_time_fixed(const struct vcpu *v, uint64_t at_tsc);
 
-int vmsi_deliver(
-    struct domain *d, int vector,
-    uint8_t dest, uint8_t dest_mode,
-    uint8_t delivery_mode, uint8_t trig_mode);
+int vmsi_deliver(struct domain *d, int vector, uint8_t dest, uint8_t dest_mode,
+                 uint8_t delivery_mode, uint8_t trig_mode);
 struct hvm_pirq_dpci;
 void vmsi_deliver_pirq(struct domain *d, const struct hvm_pirq_dpci *pirq_dpci);
 int hvm_girq_dest_2_vcpu_id(struct domain *d, uint8_t dest, uint8_t dest_mode);
 
-enum hvm_intblk
-hvm_interrupt_blocked(struct vcpu *v, struct hvm_intack intack);
+enum hvm_intblk hvm_interrupt_blocked(struct vcpu *v, struct hvm_intack intack);
 
 void hvm_init_hypercall_page(struct domain *d, void *ptr);
 
@@ -318,10 +314,16 @@ uint8_t hvm_combine_hw_exceptions(uint8_t vec1, uint8_t vec2);
 
 void hvm_set_rdtsc_exiting(struct domain *d, bool enable);
 
-enum hvm_task_switch_reason { TSW_jmp, TSW_iret, TSW_call_or_int };
-void hvm_task_switch(
-    uint16_t tss_sel, enum hvm_task_switch_reason taskswitch_reason,
-    int32_t errcode, unsigned int insn_len, unsigned int extra_eflags);
+enum hvm_task_switch_reason {
+    TSW_jmp,
+    TSW_iret,
+    TSW_call_or_int
+};
+
+void hvm_task_switch(uint16_t tss_sel,
+                     enum hvm_task_switch_reason taskswitch_reason,
+                     int32_t errcode, unsigned int insn_len,
+                     unsigned int extra_eflags);
 
 enum hvm_access_type {
     hvm_access_insn_fetch,
@@ -330,31 +332,29 @@ enum hvm_access_type {
     hvm_access_write
 };
 
-bool hvm_vcpu_virtual_to_linear(
-    struct vcpu *v,
-    enum x86_segment seg,
-    const struct segment_register *reg,
-    unsigned long offset,
-    unsigned int bytes,
-    enum hvm_access_type access_type,
-    const struct segment_register *active_cs,
-    unsigned long *linear_addr);
+bool hvm_vcpu_virtual_to_linear(struct vcpu *v, enum x86_segment seg,
+                                const struct segment_register *reg,
+                                unsigned long offset, unsigned int bytes,
+                                enum hvm_access_type access_type,
+                                const struct segment_register *active_cs,
+                                unsigned long *linear_addr);
 
 static inline bool hvm_virtual_to_linear_addr(
-    enum x86_segment seg,
-    const struct segment_register *reg,
-    unsigned long offset,
-    unsigned int bytes,
-    enum hvm_access_type access_type,
-    const struct segment_register *active_cs,
-    unsigned long *linear)
+    enum x86_segment seg, const struct segment_register *reg,
+    unsigned long offset, unsigned int bytes, enum hvm_access_type access_type,
+    const struct segment_register *active_cs, unsigned long *linear)
 {
-    return hvm_vcpu_virtual_to_linear(current, seg, reg, offset, bytes,
-                                      access_type, active_cs, linear);
+    return hvm_vcpu_virtual_to_linear(current,
+                                      seg,
+                                      reg,
+                                      offset,
+                                      bytes,
+                                      access_type,
+                                      active_cs,
+                                      linear);
 }
 
-void *hvm_map_guest_frame_rw(unsigned long gfn, bool permanent,
-                             bool *writable);
+void *hvm_map_guest_frame_rw(unsigned long gfn, bool permanent, bool *writable);
 void *hvm_map_guest_frame_ro(unsigned long gfn, bool permanent);
 void hvm_unmap_guest_frame(void *p, bool permanent);
 void hvm_mapped_guest_frames_mark_dirty(struct domain *d);
@@ -438,15 +438,13 @@ static inline void hvm_domain_creation_finished(struct domain *d)
         alternative_vcall(hvm_funcs.domain_creation_finished, d);
 }
 
-static inline int
-hvm_guest_x86_mode(struct vcpu *v)
+static inline int hvm_guest_x86_mode(struct vcpu *v)
 {
     ASSERT(v == current);
     return alternative_call(hvm_funcs.guest_x86_mode, v);
 }
 
-static inline void
-hvm_update_host_cr3(struct vcpu *v)
+static inline void hvm_update_host_cr3(struct vcpu *v)
 {
     if ( hvm_funcs.update_host_cr3 )
         alternative_vcall(hvm_funcs.update_host_cr3, v);
@@ -491,8 +489,7 @@ static inline void hvm_flush_guest_tlbs(void)
         hvm_asid_flush_core();
 }
 
-static inline unsigned int
-hvm_get_cpl(struct vcpu *v)
+static inline unsigned int hvm_get_cpl(struct vcpu *v)
 {
     return alternative_call(hvm_funcs.get_cpl, v);
 }
@@ -518,9 +515,8 @@ hvm_get_cpl(struct vcpu *v)
 #define has_viridian_synic(d) \
     (is_viridian_domain(d) && (viridian_feature_mask(d) & HVMPV_synic))
 
-static inline void hvm_inject_exception(
-    unsigned int vector, unsigned int type,
-    unsigned int insn_len, int error_code)
+static inline void hvm_inject_exception(unsigned int vector, unsigned int type,
+                                        unsigned int insn_len, int error_code)
 {
     struct x86_event event = {
         .vector = vector,
@@ -594,7 +590,8 @@ static inline void hvm_cpu_down(void)
 static inline unsigned int hvm_get_insn_bytes(struct vcpu *v, uint8_t *buf)
 {
     return (hvm_funcs.get_insn_bytes
-            ? alternative_call(hvm_funcs.get_insn_bytes, v, buf) : 0);
+                ? alternative_call(hvm_funcs.get_insn_bytes, v, buf)
+                : 0);
 }
 
 static inline void hvm_sanitize_regs_fields(struct cpu_user_regs *regs,
@@ -634,9 +631,9 @@ static inline void hvm_sanitize_regs_fields(struct cpu_user_regs *regs,
 
 /* inject vmexit into l1 guest. l1 guest will see a VMEXIT due to
  * 'trapnr' exception.
- */ 
-static inline int nhvm_vcpu_vmexit_event(
-    struct vcpu *v, const struct x86_event *event)
+ */
+static inline int nhvm_vcpu_vmexit_event(struct vcpu *v,
+                                         const struct x86_event *event)
 {
     return alternative_call(hvm_funcs.nhvm_vcpu_vmexit_event, v, event);
 }
@@ -650,11 +647,14 @@ static inline uint64_t nhvm_vcpu_p2m_base(struct vcpu *v)
 }
 
 /* returns true, when l1 guest intercepts the specified trap */
-static inline bool nhvm_vmcx_guest_intercepts_event(
-    struct vcpu *v, unsigned int vector, int errcode)
+static inline bool nhvm_vmcx_guest_intercepts_event(struct vcpu *v,
+                                                    unsigned int vector,
+                                                    int errcode)
 {
-    return alternative_call(hvm_funcs.nhvm_vmcx_guest_intercepts_event, v,
-                            vector, errcode);
+    return alternative_call(hvm_funcs.nhvm_vmcx_guest_intercepts_event,
+                            v,
+                            vector,
+                            errcode);
 }
 
 /* returns true when l1 guest wants to use hap to run l2 guest */
@@ -669,12 +669,18 @@ static inline enum hvm_intblk nhvm_interrupt_blocked(struct vcpu *v)
     return alternative_call(hvm_funcs.nhvm_intr_blocked, v);
 }
 
-static inline int nhvm_hap_walk_L1_p2m(
-    struct vcpu *v, paddr_t L2_gpa, paddr_t *L1_gpa, unsigned int *page_order,
-    uint8_t *p2m_acc, struct npfec npfec)
+static inline int nhvm_hap_walk_L1_p2m(struct vcpu *v, paddr_t L2_gpa,
+                                       paddr_t *L1_gpa,
+                                       unsigned int *page_order,
+                                       uint8_t *p2m_acc, struct npfec npfec)
 {
     return alternative_call(hvm_funcs.nhvm_hap_walk_L1_p2m,
-        v, L2_gpa, L1_gpa, page_order, p2m_acc, npfec);
+                            v,
+                            L2_gpa,
+                            L1_gpa,
+                            page_order,
+                            p2m_acc,
+                            npfec);
 }
 
 static inline void hvm_enable_msr_interception(struct domain *d, uint32_t msr)
@@ -746,8 +752,8 @@ static inline int hvm_vmtrace_output_position(struct vcpu *v, uint64_t *pos)
     return -EOPNOTSUPP;
 }
 
-static inline int hvm_vmtrace_set_option(
-    struct vcpu *v, uint64_t key, uint64_t value)
+static inline int hvm_vmtrace_set_option(struct vcpu *v, uint64_t key,
+                                         uint64_t value)
 {
     if ( hvm_funcs.vmtrace_set_option )
         return alternative_call(hvm_funcs.vmtrace_set_option, v, key, value);
@@ -755,8 +761,8 @@ static inline int hvm_vmtrace_set_option(
     return -EOPNOTSUPP;
 }
 
-static inline int hvm_vmtrace_get_option(
-    struct vcpu *v, uint64_t key, uint64_t *value)
+static inline int hvm_vmtrace_get_option(struct vcpu *v, uint64_t key,
+                                         uint64_t *value)
 {
     if ( hvm_funcs.vmtrace_get_option )
         return alternative_call(hvm_funcs.vmtrace_get_option, v, key, value);
@@ -828,7 +834,7 @@ static inline void hvm_sync_pir_to_irr(struct vcpu *v)
         alternative_vcall(hvm_funcs.sync_pir_to_irr, v);
 }
 
-#else  /* CONFIG_HVM */
+#else /* CONFIG_HVM */
 
 #define hvm_enabled false
 
@@ -868,7 +874,6 @@ static inline bool nhvm_vmcx_hap_enabled(const struct vcpu *v)
     ASSERT_UNREACHABLE();
     return false;
 }
-
 
 /* Called by common code */
 static inline int hvm_cpu_up(void)
@@ -935,14 +940,14 @@ static inline int hvm_vmtrace_output_position(struct vcpu *v, uint64_t *pos)
     return -EOPNOTSUPP;
 }
 
-static inline int hvm_vmtrace_set_option(
-    struct vcpu *v, uint64_t key, uint64_t value)
+static inline int hvm_vmtrace_set_option(struct vcpu *v, uint64_t key,
+                                         uint64_t value)
 {
     return -EOPNOTSUPP;
 }
 
-static inline int hvm_vmtrace_get_option(
-    struct vcpu *v, uint64_t key, uint64_t *value)
+static inline int hvm_vmtrace_get_option(struct vcpu *v, uint64_t key,
+                                         uint64_t *value)
 {
     return -EOPNOTSUPP;
 }
@@ -952,6 +957,7 @@ static inline uint64_t hvm_get_reg(struct vcpu *v, unsigned int reg)
     ASSERT_UNREACHABLE();
     return 0;
 }
+
 static inline void hvm_set_reg(struct vcpu *v, unsigned int reg, uint64_t val)
 {
     ASSERT_UNREACHABLE();
@@ -979,7 +985,7 @@ static inline void hvm_set_reg(struct vcpu *v, unsigned int reg, uint64_t val)
 
 #define arch_vcpu_block(v) ((void)(v))
 
-#endif  /* CONFIG_HVM */
+#endif /* CONFIG_HVM */
 
 #endif /* __ASM_X86_HVM_HVM_H__ */
 

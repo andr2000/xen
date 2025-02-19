@@ -61,62 +61,54 @@ static inline void set_bit(int nr, volatile void *addr)
 {
     set_bits(BITOP_MASK(nr), (volatile unsigned int *)addr + BITOP_WORD(nr));
 }
+
 static inline void clear_bit(int nr, volatile void *addr)
 {
     clear_bits(BITOP_MASK(nr), (volatile unsigned int *)addr + BITOP_WORD(nr));
 }
 
-static inline unsigned int test_and_clear_bits(
-    unsigned int mask,
-    volatile unsigned int *p)
+static inline unsigned int test_and_clear_bits(unsigned int mask,
+                                               volatile unsigned int *p)
 {
     unsigned int old, t;
 
-    asm volatile ( PPC_ATOMIC_ENTRY_BARRIER
-                   "1: lwarx %0,0,%3,0\n"
-                   "andc %1,%0,%2\n"
-                   "stwcx. %1,0,%3\n"
-                   "bne- 1b\n"
-                   PPC_ATOMIC_EXIT_BARRIER
-                   : "=&r" (old), "=&r" (t)
-                   : "r" (mask), "r" (p)
-                   : "cc", "memory" );
+    asm volatile(
+        PPC_ATOMIC_ENTRY_BARRIER
+        "1: lwarx %0,0,%3,0\n" "andc %1,%0,%2\n" "stwcx. %1,0,%3\n" "bne- 1b\n" PPC_ATOMIC_EXIT_BARRIER
+        : "=&r"(old), "=&r"(t)
+        : "r"(mask), "r"(p)
+        : "cc", "memory");
 
     return (old & mask);
 }
 
-static inline int test_and_clear_bit(unsigned int nr,
-                                     volatile void *addr)
+static inline int test_and_clear_bit(unsigned int nr, volatile void *addr)
 {
-    return test_and_clear_bits(
-        BITOP_MASK(nr),
-        (volatile unsigned int *)addr + BITOP_WORD(nr)) != 0;
+    return test_and_clear_bits(BITOP_MASK(nr),
+                               (volatile unsigned int *)addr +
+                                   BITOP_WORD(nr)) != 0;
 }
 
-static inline unsigned int test_and_set_bits(
-    unsigned int mask,
-    volatile unsigned int *p)
+static inline unsigned int test_and_set_bits(unsigned int mask,
+                                             volatile unsigned int *p)
 {
     unsigned int old, t;
 
-    asm volatile ( PPC_ATOMIC_ENTRY_BARRIER
-                   "1: lwarx %0,0,%3,0\n"
-                   "or%I2 %1,%0,%2\n"
-                   "stwcx. %1,0,%3\n"
-                   "bne- 1b\n"
-                   PPC_ATOMIC_EXIT_BARRIER
-                   : "=&r" (old), "=&r" (t)
-                   : "rK" (mask), "r" (p)
-                   : "cc", "memory" );
+    asm volatile(
+        PPC_ATOMIC_ENTRY_BARRIER
+        "1: lwarx %0,0,%3,0\n" "or%I2 %1,%0,%2\n" "stwcx. %1,0,%3\n" "bne- 1b\n" PPC_ATOMIC_EXIT_BARRIER
+        : "=&r"(old), "=&r"(t)
+        : "rK"(mask), "r"(p)
+        : "cc", "memory");
 
     return (old & mask);
 }
 
 static inline int test_and_set_bit(unsigned int nr, volatile void *addr)
 {
-    return test_and_set_bits(
-        BITOP_MASK(nr),
-        (volatile unsigned int *)addr + BITOP_WORD(nr)) != 0;
+    return test_and_set_bits(BITOP_MASK(nr),
+                             (volatile unsigned int *)addr + BITOP_WORD(nr)) !=
+           0;
 }
 
 #define arch_ffs(x)  ((x) ? 1 + __builtin_ctz(x) : 0)

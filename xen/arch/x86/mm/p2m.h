@@ -15,7 +15,11 @@ void p2m_pod_init(struct p2m_domain *p2m);
 int p2m_init_logdirty(struct p2m_domain *p2m);
 void p2m_free_logdirty(struct p2m_domain *p2m);
 #else
-static inline int p2m_init_logdirty(struct p2m_domain *p2m) { return 0; }
+static inline int p2m_init_logdirty(struct p2m_domain *p2m)
+{
+    return 0;
+}
+
 static inline void p2m_free_logdirty(struct p2m_domain *p2m) {}
 #endif
 

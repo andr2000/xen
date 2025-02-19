@@ -76,8 +76,7 @@ static inline cycles_t get_cycles(void)
 }
 
 /* List of timer's IRQ */
-enum timer_ppi
-{
+enum timer_ppi {
     TIMER_PHYS_SECURE_PPI = 0,
     TIMER_PHYS_NONSECURE_PPI = 1,
     TIMER_VIRT_PPI = 2,

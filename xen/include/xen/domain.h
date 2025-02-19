@@ -80,7 +80,7 @@ void cf_check free_pirq_struct(void *ptr);
  *  - arch_vcpu_destroy() is called only if arch_vcpu_create() previously
  *    succeeded.
  */
-int  arch_vcpu_create(struct vcpu *v);
+int arch_vcpu_create(struct vcpu *v);
 void arch_vcpu_destroy(struct vcpu *v);
 
 int map_guest_area(struct vcpu *v, paddr_t gaddr, unsigned int size,
@@ -89,8 +89,7 @@ int map_guest_area(struct vcpu *v, paddr_t gaddr, unsigned int size,
 void unmap_guest_area(struct vcpu *v, struct guest_area *area);
 
 struct xen_domctl_createdomain;
-int arch_domain_create(struct domain *d,
-                       struct xen_domctl_createdomain *config,
+int arch_domain_create(struct domain *d, struct xen_domctl_createdomain *config,
                        unsigned int flags);
 
 int arch_domain_teardown(struct domain *d);
@@ -136,8 +135,8 @@ void domctl_lock_release(void);
  * point in the future. If this function returns an error code then the
  * function has not been and will not be executed.
  */
-int continue_hypercall_on_cpu(
-    unsigned int cpu, long (*func)(void *data), void *data);
+int continue_hypercall_on_cpu(unsigned int cpu, long (*func)(void *data),
+                              void *data);
 
 /*
  * Companion to continue_hypercall_on_cpu(), to feed func()'s result back into
@@ -164,7 +163,10 @@ struct vnuma_info {
 #ifndef CONFIG_PV_SHIM_EXCLUSIVE
 void vnuma_destroy(struct vnuma_info *vnuma);
 #else
-static inline void vnuma_destroy(struct vnuma_info *vnuma) { ASSERT(!vnuma); }
+static inline void vnuma_destroy(struct vnuma_info *vnuma)
+{
+    ASSERT(!vnuma);
+}
 #endif
 
 extern bool vmtrace_available;

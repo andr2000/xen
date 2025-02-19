@@ -27,10 +27,10 @@ static bool has_sb_instruction(const struct arm_cpu_capabilities *entry)
 static const struct arm_cpu_capabilities arm_features[] = {
 #ifdef CONFIG_ARM_64
     {
-        .desc = "Speculation barrier instruction (SB)",
-        .capability = ARM_HAS_SB,
-        .matches = has_sb_instruction,
-    },
+                        .desc = "Speculation barrier instruction (SB)",
+                        .capability = ARM_HAS_SB,
+                        .matches = has_sb_instruction,
+                        },
 #endif
     {},
 };
@@ -135,9 +135,9 @@ void identify_cpu(struct cpuinfo_arm *c)
     c->aux64.bits[0] = READ_SYSREG(ID_AA64AFR0_EL1);
     c->aux64.bits[1] = READ_SYSREG(ID_AA64AFR1_EL1);
 
-    c->mm64.bits[0]  = READ_SYSREG(ID_AA64MMFR0_EL1);
-    c->mm64.bits[1]  = READ_SYSREG(ID_AA64MMFR1_EL1);
-    c->mm64.bits[2]  = READ_SYSREG(ID_AA64MMFR2_EL1);
+    c->mm64.bits[0] = READ_SYSREG(ID_AA64MMFR0_EL1);
+    c->mm64.bits[1] = READ_SYSREG(ID_AA64MMFR1_EL1);
+    c->mm64.bits[2] = READ_SYSREG(ID_AA64MMFR2_EL1);
 
     c->isa64.bits[0] = READ_SYSREG(ID_AA64ISAR0_EL1);
     c->isa64.bits[1] = READ_SYSREG(ID_AA64ISAR1_EL1);
@@ -166,12 +166,12 @@ void identify_cpu(struct cpuinfo_arm *c)
 
         c->aux32.bits[0] = READ_SYSREG(ID_AFR0_EL1);
 
-        c->mm32.bits[0]  = READ_SYSREG(ID_MMFR0_EL1);
-        c->mm32.bits[1]  = READ_SYSREG(ID_MMFR1_EL1);
-        c->mm32.bits[2]  = READ_SYSREG(ID_MMFR2_EL1);
-        c->mm32.bits[3]  = READ_SYSREG(ID_MMFR3_EL1);
-        c->mm32.bits[4]  = READ_SYSREG(ID_MMFR4_EL1);
-        c->mm32.bits[5]  = READ_SYSREG(ID_MMFR5_EL1);
+        c->mm32.bits[0] = READ_SYSREG(ID_MMFR0_EL1);
+        c->mm32.bits[1] = READ_SYSREG(ID_MMFR1_EL1);
+        c->mm32.bits[2] = READ_SYSREG(ID_MMFR2_EL1);
+        c->mm32.bits[3] = READ_SYSREG(ID_MMFR3_EL1);
+        c->mm32.bits[4] = READ_SYSREG(ID_MMFR4_EL1);
+        c->mm32.bits[5] = READ_SYSREG(ID_MMFR5_EL1);
 
         c->isa32.bits[0] = READ_SYSREG(ID_ISAR0_EL1);
         c->isa32.bits[1] = READ_SYSREG(ID_ISAR1_EL1);
@@ -237,6 +237,7 @@ static int __init create_domain_cpuinfo(void)
 
     return 0;
 }
+
 /*
  * This function needs to be run after all smp are started to have
  * cpuinfo structures for all cores.

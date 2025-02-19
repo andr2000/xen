@@ -202,8 +202,7 @@ int arch_sanitise_domain_config(struct xen_domctl_createdomain *config)
     BUG_ON("unimplemented");
 }
 
-int arch_domain_create(struct domain *d,
-                       struct xen_domctl_createdomain *config,
+int arch_domain_create(struct domain *d, struct xen_domctl_createdomain *config,
                        unsigned int flags)
 {
     BUG_ON("unimplemented");
@@ -304,8 +303,8 @@ struct vcpu *alloc_vcpu_struct(const struct domain *d)
     BUG_ON("unimplemented");
 }
 
-unsigned long
-hypercall_create_continuation(unsigned int op, const char *format, ...)
+unsigned long hypercall_create_continuation(unsigned int op, const char *format,
+                                            ...)
 {
     BUG_ON("unimplemented");
 }

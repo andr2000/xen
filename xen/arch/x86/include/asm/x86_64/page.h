@@ -47,6 +47,7 @@ static inline unsigned long virt_to_maddr(unsigned long va)
 
     return xen_phys_start + va - XEN_VIRT_START;
 }
+
 #define virt_to_maddr(va) virt_to_maddr((unsigned long)(va))
 
 static inline void *maddr_to_virt(unsigned long ma)
@@ -62,10 +63,22 @@ static inline void *maddr_to_virt(unsigned long ma)
 typedef u64 intpte_t;
 #define PRIpte "016lx"
 
-typedef struct { intpte_t l1; } l1_pgentry_t;
-typedef struct { intpte_t l2; } l2_pgentry_t;
-typedef struct { intpte_t l3; } l3_pgentry_t;
-typedef struct { intpte_t l4; } l4_pgentry_t;
+typedef struct {
+    intpte_t l1;
+} l1_pgentry_t;
+
+typedef struct {
+    intpte_t l2;
+} l2_pgentry_t;
+
+typedef struct {
+    intpte_t l3;
+} l3_pgentry_t;
+
+typedef struct {
+    intpte_t l4;
+} l4_pgentry_t;
+
 typedef l4_pgentry_t root_pgentry_t;
 
 #endif /* !__ASSEMBLY__ */

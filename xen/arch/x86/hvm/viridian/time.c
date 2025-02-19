@@ -86,8 +86,7 @@ static uint64_t trc_val(const struct domain *d, int64_t offset)
 
 static void time_ref_count_freeze(const struct domain *d)
 {
-    struct viridian_time_ref_count *trc =
-        &d->arch.hvm.viridian->time_ref_count;
+    struct viridian_time_ref_count *trc = &d->arch.hvm.viridian->time_ref_count;
 
     if ( test_and_clear_bit(_TRC_running, &trc->flags) )
         trc->val = trc_val(d, trc->off);
@@ -98,8 +97,7 @@ static void time_ref_count_thaw(const struct domain *d)
     struct viridian_domain *vd = d->arch.hvm.viridian;
     struct viridian_time_ref_count *trc = &vd->time_ref_count;
 
-    if ( d->is_shutting_down ||
-         test_and_set_bit(_TRC_running, &trc->flags) )
+    if ( d->is_shutting_down || test_and_set_bit(_TRC_running, &trc->flags) )
         return;
 
     trc->off = (int64_t)trc->val - trc_val(d, 0);
@@ -146,8 +144,7 @@ static void start_stimer(struct viridian_stimer *vs)
     s_time_t timeout;
 
     if ( !test_and_set_bit(stimerx, &vv->stimer_enabled) )
-        printk(XENLOG_G_INFO "%pv: VIRIDIAN STIMER%u: enabled\n", v,
-               stimerx);
+        printk(XENLOG_G_INFO "%pv: VIRIDIAN STIMER%u: enabled\n", v, stimerx);
 
     if ( vs->config.periodic )
     {
@@ -228,8 +225,10 @@ static void poll_stimer(struct vcpu *v, unsigned int stimerx)
     if ( !test_bit(stimerx, &vv->stimer_pending) )
         return;
 
-    if ( !viridian_synic_deliver_timer_msg(v, vs->config.sintx,
-                                           stimerx, vs->expiration,
+    if ( !viridian_synic_deliver_timer_msg(v,
+                                           vs->config.sintx,
+                                           stimerx,
+                                           vs->expiration,
                                            time_ref_count(v->domain)) )
         return;
 
@@ -247,7 +246,7 @@ void viridian_time_poll_timers(struct vcpu *v)
     unsigned int i;
 
     if ( !vv->stimer_pending )
-       return;
+        return;
 
     for ( i = 0; i < ARRAY_SIZE(vv->stimer); i++ )
         poll_stimer(v, i);
@@ -296,7 +295,7 @@ void viridian_time_domain_freeze(const struct domain *d)
     if ( d->is_dying || !is_viridian_domain(d) )
         return;
 
-    for_each_vcpu ( d, v )
+    for_each_vcpu(d, v)
         time_vcpu_freeze(v);
 
     time_ref_count_freeze(d);
@@ -311,7 +310,7 @@ void viridian_time_domain_thaw(const struct domain *d)
 
     time_ref_count_thaw(d);
 
-    for_each_vcpu ( d, v )
+    for_each_vcpu(d, v)
         time_vcpu_thaw(v);
 }
 
@@ -346,8 +345,7 @@ int viridian_time_wrmsr(struct vcpu *v, uint32_t idx, uint64_t val)
     case HV_X64_MSR_STIMER3_CONFIG:
     {
         unsigned int stimerx = (idx - HV_X64_MSR_STIMER0_CONFIG) / 2;
-        struct viridian_stimer *vs =
-            &array_access_nospec(vv->stimer, stimerx);
+        struct viridian_stimer *vs = &array_access_nospec(vv->stimer, stimerx);
 
         if ( !(viridian_feature_mask(d) & HVMPV_stimer) )
             return X86EMUL_EXCEPTION;
@@ -371,8 +369,7 @@ int viridian_time_wrmsr(struct vcpu *v, uint32_t idx, uint64_t val)
     case HV_X64_MSR_STIMER3_COUNT:
     {
         unsigned int stimerx = (idx - HV_X64_MSR_STIMER0_CONFIG) / 2;
-        struct viridian_stimer *vs =
-            &array_access_nospec(vv->stimer, stimerx);
+        struct viridian_stimer *vs = &array_access_nospec(vv->stimer, stimerx);
 
         if ( !(viridian_feature_mask(d) & HVMPV_stimer) )
             return X86EMUL_EXCEPTION;
@@ -381,7 +378,7 @@ int viridian_time_wrmsr(struct vcpu *v, uint32_t idx, uint64_t val)
 
         vs->count = val;
 
-        if ( !vs->count  )
+        if ( !vs->count )
             vs->config.enable = 0;
         else if ( vs->config.auto_enable )
             vs->config.enable = 1;
@@ -393,8 +390,11 @@ int viridian_time_wrmsr(struct vcpu *v, uint32_t idx, uint64_t val)
     }
 
     default:
-        gdprintk(XENLOG_INFO, "%s: unimplemented MSR %#x (%016"PRIx64")\n",
-                 __func__, idx, val);
+        gdprintk(XENLOG_INFO,
+                 "%s: unimplemented MSR %#x (%016" PRIx64 ")\n",
+                 __func__,
+                 idx,
+                 val);
         return X86EMUL_EXCEPTION;
     }
 
@@ -451,8 +451,8 @@ int viridian_time_rdmsr(const struct vcpu *v, uint32_t idx, uint64_t *val)
     case HV_X64_MSR_STIMER3_CONFIG:
     {
         unsigned int stimerx = (idx - HV_X64_MSR_STIMER0_CONFIG) / 2;
-        const struct viridian_stimer *vs =
-            &array_access_nospec(vv->stimer, stimerx);
+        const struct viridian_stimer *vs = &array_access_nospec(vv->stimer,
+                                                                stimerx);
         union hv_stimer_config config = vs->config;
 
         if ( !(viridian_feature_mask(d) & HVMPV_stimer) )
@@ -475,8 +475,8 @@ int viridian_time_rdmsr(const struct vcpu *v, uint32_t idx, uint64_t *val)
     case HV_X64_MSR_STIMER3_COUNT:
     {
         unsigned int stimerx = (idx - HV_X64_MSR_STIMER0_CONFIG) / 2;
-        const struct viridian_stimer *vs =
-            &array_access_nospec(vv->stimer, stimerx);
+        const struct viridian_stimer *vs = &array_access_nospec(vv->stimer,
+                                                                stimerx);
 
         if ( !(viridian_feature_mask(d) & HVMPV_stimer) )
             return X86EMUL_EXCEPTION;
@@ -535,16 +535,14 @@ void viridian_time_domain_deinit(const struct domain *d)
     viridian_unmap_guest_page(&d->arch.hvm.viridian->reference_tsc);
 }
 
-void viridian_time_save_vcpu_ctxt(
-    const struct vcpu *v, struct hvm_viridian_vcpu_context *ctxt)
+void viridian_time_save_vcpu_ctxt(const struct vcpu *v,
+                                  struct hvm_viridian_vcpu_context *ctxt)
 {
     const struct viridian_vcpu *vv = v->arch.hvm.viridian;
     unsigned int i;
 
-    BUILD_BUG_ON(ARRAY_SIZE(vv->stimer) !=
-                 ARRAY_SIZE(ctxt->stimer_config_msr));
-    BUILD_BUG_ON(ARRAY_SIZE(vv->stimer) !=
-                 ARRAY_SIZE(ctxt->stimer_count_msr));
+    BUILD_BUG_ON(ARRAY_SIZE(vv->stimer) != ARRAY_SIZE(ctxt->stimer_config_msr));
+    BUILD_BUG_ON(ARRAY_SIZE(vv->stimer) != ARRAY_SIZE(ctxt->stimer_count_msr));
 
     for ( i = 0; i < ARRAY_SIZE(vv->stimer); i++ )
     {
@@ -555,8 +553,8 @@ void viridian_time_save_vcpu_ctxt(
     }
 }
 
-void viridian_time_load_vcpu_ctxt(
-    struct vcpu *v, const struct hvm_viridian_vcpu_context *ctxt)
+void viridian_time_load_vcpu_ctxt(struct vcpu *v,
+                                  const struct hvm_viridian_vcpu_context *ctxt)
 {
     struct viridian_vcpu *vv = v->arch.hvm.viridian;
     unsigned int i;
@@ -570,8 +568,8 @@ void viridian_time_load_vcpu_ctxt(
     }
 }
 
-void viridian_time_save_domain_ctxt(
-    const struct domain *d, struct hvm_viridian_domain_context *ctxt)
+void viridian_time_save_domain_ctxt(const struct domain *d,
+                                    struct hvm_viridian_domain_context *ctxt)
 {
     const struct viridian_domain *vd = d->arch.hvm.viridian;
 

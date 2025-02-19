@@ -63,17 +63,19 @@ static uint64_t __initdata shim_max_nrpages;
 
 static int __init cf_check parse_shim_mem(const char *s)
 {
-    do {
+    do
+    {
         if ( !strncmp(s, "min:", 4) )
-            shim_min_nrpages = parse_size_and_unit(s+4, &s) >> PAGE_SHIFT;
+            shim_min_nrpages = parse_size_and_unit(s + 4, &s) >> PAGE_SHIFT;
         else if ( !strncmp(s, "max:", 4) )
-            shim_max_nrpages = parse_size_and_unit(s+4, &s) >> PAGE_SHIFT;
+            shim_max_nrpages = parse_size_and_unit(s + 4, &s) >> PAGE_SHIFT;
         else
             shim_nrpages = parse_size_and_unit(s, &s) >> PAGE_SHIFT;
     } while ( *s++ == ',' );
 
     return s[-1] ? -EINVAL : 0;
 }
+
 custom_param("shim_mem", parse_shim_mem);
 
 uint64_t pv_shim_mem(uint64_t avail)
@@ -88,12 +90,14 @@ uint64_t pv_shim_mem(uint64_t avail)
 
     if ( total_pages - avail > shim_nrpages )
         panic("pages used by shim > shim_nrpages (%#lx > %#lx)\n",
-              total_pages - avail, shim_nrpages);
+              total_pages - avail,
+              shim_nrpages);
 
     shim_nrpages -= total_pages - avail;
 
     printk("shim used pages %#lx reserving %#lx free pages\n",
-           total_pages - avail, shim_nrpages);
+           total_pages - avail,
+           shim_nrpages);
 
     return shim_nrpages;
 }
@@ -101,10 +105,13 @@ uint64_t pv_shim_mem(uint64_t avail)
 static void __init mark_pfn_as_ram(uint64_t pfn)
 {
     if ( !e820_add_range(pfn << PAGE_SHIFT,
-                         (pfn << PAGE_SHIFT) + PAGE_SIZE, E820_RAM) &&
-         !e820_change_range_type(&e820, pfn << PAGE_SHIFT,
+                         (pfn << PAGE_SHIFT) + PAGE_SIZE,
+                         E820_RAM) &&
+         !e820_change_range_type(&e820,
+                                 pfn << PAGE_SHIFT,
                                  (pfn << PAGE_SHIFT) + PAGE_SIZE,
-                                 E820_RESERVED, E820_RAM) )
+                                 E820_RESERVED,
+                                 E820_RAM) )
         panic("Unable to add/change memory type of pfn %#lx to RAM\n", pfn);
 }
 
@@ -130,7 +137,8 @@ void __init pv_shim_fixup_e820(void)
 #undef MARK_PARAM_RAM
 }
 
-const struct platform_bad_page *__init pv_shim_reserved_pages(unsigned int *size)
+const struct platform_bad_page *__init
+pv_shim_reserved_pages(unsigned int *size)
 {
     ASSERT(xen_guest);
 
@@ -154,8 +162,8 @@ static void __init replace_va_mapping(struct domain *d, l4_pgentry_t *l4start,
 
     put_page_and_type(page);
 
-    *pl1e = l1e_from_mfn(mfn, (!is_pv_32bit_domain(d) ? L1_PROT
-                                                      : COMPAT_L1_PROT));
+    *pl1e = l1e_from_mfn(mfn,
+                         (!is_pv_32bit_domain(d) ? L1_PROT : COMPAT_L1_PROT));
     unmap_domain_page(pl1e);
 }
 
@@ -211,7 +219,8 @@ void __init pv_shim_setup_dom(struct domain *d, l4_pgentry_t *l4start,
     SET_AND_MAP_PARAM(HVM_PARAM_STORE_EVTCHN, si->store_evtchn, 0);
     SET_AND_MAP_PARAM(HVM_PARAM_CONSOLE_EVTCHN, si->console.domU.evtchn, 0);
     if ( !pv_console )
-        SET_AND_MAP_PARAM(HVM_PARAM_CONSOLE_PFN, si->console.domU.mfn,
+        SET_AND_MAP_PARAM(HVM_PARAM_CONSOLE_PFN,
+                          si->console.domU.mfn,
                           console_va);
 #undef SET_AND_MAP_PARAM
     else
@@ -226,8 +235,10 @@ void __init pv_shim_setup_dom(struct domain *d, l4_pgentry_t *l4start,
         si->console.domU.mfn = mfn_x(console_mfn);
         share_xen_page_with_guest(mfn_to_page(console_mfn), d, SHARE_rw);
         replace_va_mapping(d, l4start, console_va, console_mfn);
-        dom0_update_physmap(compat, (console_va - va_start) >> PAGE_SHIFT,
-                            mfn_x(console_mfn), vphysmap);
+        dom0_update_physmap(compat,
+                            (console_va - va_start) >> PAGE_SHIFT,
+                            mfn_x(console_mfn),
+                            vphysmap);
         consoled_set_ring_addr(page);
     }
 
@@ -247,7 +258,9 @@ static void write_start_info(struct domain *d)
     start_info_t *si = map_domain_page(_mfn(compat ? regs->edx : regs->rdx));
     uint64_t param;
 
-    snprintf(si->magic, sizeof(si->magic), "xen-3.0-x86_%s",
+    snprintf(si->magic,
+             sizeof(si->magic),
+             "xen-3.0-x86_%s",
              compat ? "32p" : "64");
     si->nr_pages = domain_tot_pages(d);
     si->shared_info = virt_to_maddr(d->shared_info);
@@ -292,7 +305,7 @@ int pv_shim_shutdown(uint8_t reason)
                                            &old_console_pfn));
 
     /* Pause the other vcpus before starting the migration. */
-    for_each_vcpu ( d, v )
+    for_each_vcpu(d, v)
         if ( v != current )
             vcpu_pause_by_systemcontroller(v);
 
@@ -303,7 +316,7 @@ int pv_shim_shutdown(uint8_t reason)
     if ( rc )
     {
         time_resume();
-        for_each_vcpu ( d, v )
+        for_each_vcpu(d, v)
             if ( v != current )
                 vcpu_unpause_by_systemcontroller(v);
 
@@ -380,7 +393,7 @@ int pv_shim_shutdown(uint8_t reason)
      */
     write_start_info(d);
 
-    for_each_vcpu ( d, v )
+    for_each_vcpu(d, v)
     {
         /* Unmap guest vcpu_info page and runstate/time areas. */
         unmap_guest_area(v, &v->vcpu_info_area);
@@ -442,11 +455,12 @@ long pv_shim_event_channel_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
         break;                                                              \
         }
 
-    EVTCHN_FORWARD(alloc_unbound, port)
-    EVTCHN_FORWARD(bind_interdomain, local_port)
+        EVTCHN_FORWARD(alloc_unbound, port)
+        EVTCHN_FORWARD(bind_interdomain, local_port)
 #undef EVTCHN_FORWARD
 
-    case EVTCHNOP_bind_virq: {
+    case EVTCHNOP_bind_virq:
+    {
         struct evtchn_bind_virq virq;
         struct evtchn_alloc_unbound alloc = {
             .dom = DOMID_SELF,
@@ -481,7 +495,8 @@ long pv_shim_event_channel_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
         break;
     }
 
-    case EVTCHNOP_status: {
+    case EVTCHNOP_status:
+    {
         struct evtchn_status status;
 
         if ( copy_from_guest(&status, arg, 1) != 0 )
@@ -502,7 +517,8 @@ long pv_shim_event_channel_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
         break;
     }
 
-    case EVTCHNOP_bind_vcpu: {
+    case EVTCHNOP_bind_vcpu:
+    {
         struct evtchn_bind_vcpu vcpu;
 
         if ( copy_from_guest(&vcpu, arg, 1) != 0 )
@@ -523,7 +539,8 @@ long pv_shim_event_channel_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
         break;
     }
 
-    case EVTCHNOP_close: {
+    case EVTCHNOP_close:
+    {
         if ( copy_from_guest(&close, arg, 1) != 0 )
             return -EFAULT;
 
@@ -552,7 +569,8 @@ long pv_shim_event_channel_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
         break;
     }
 
-    case EVTCHNOP_bind_ipi: {
+    case EVTCHNOP_bind_ipi:
+    {
         struct evtchn_bind_ipi ipi;
 
         if ( copy_from_guest(&ipi, arg, 1) != 0 )
@@ -583,7 +601,8 @@ long pv_shim_event_channel_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
         break;
     }
 
-    case EVTCHNOP_unmask: {
+    case EVTCHNOP_unmask:
+    {
         struct evtchn_unmask unmask;
 
         if ( copy_from_guest(&unmask, arg, 1) != 0 )
@@ -595,7 +614,8 @@ long pv_shim_event_channel_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
         break;
     }
 
-    case EVTCHNOP_send: {
+    case EVTCHNOP_send:
+    {
         struct evtchn_send send;
 
         if ( copy_from_guest(&send, arg, 1) != 0 )
@@ -612,7 +632,8 @@ long pv_shim_event_channel_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
         break;
     }
 
-    case EVTCHNOP_reset: {
+    case EVTCHNOP_reset:
+    {
         struct evtchn_reset reset;
 
         if ( copy_from_guest(&reset, arg, 1) != 0 )
@@ -647,15 +668,14 @@ void pv_shim_inject_evtchn(unsigned int port)
 }
 
 #ifdef CONFIG_PV32
-# include <compat/grant_table.h>
+#include <compat/grant_table.h>
 #else
-# define compat_gnttab_setup_table gnttab_setup_table
-# undef compat_handle_okay
-# define compat_handle_okay guest_handle_okay
+#define compat_gnttab_setup_table gnttab_setup_table
+#undef compat_handle_okay
+#define compat_handle_okay guest_handle_okay
 #endif
 
-long pv_shim_grant_table_op(unsigned int cmd,
-                            XEN_GUEST_HANDLE_PARAM(void) uop,
+long pv_shim_grant_table_op(unsigned int cmd, XEN_GUEST_HANDLE_PARAM(void) uop,
                             unsigned int count)
 {
     struct domain *d = current->domain;
@@ -675,10 +695,9 @@ long pv_shim_grant_table_op(unsigned int cmd,
 
         if ( unlikely(compat ? copy_from_guest(&cmp, uop, 1)
                              : copy_from_guest(&nat, uop, 1)) ||
-             unlikely(compat ? !compat_handle_okay(cmp.frame_list,
-                                                   cmp.nr_frames)
-                             : !guest_handle_okay(nat.frame_list,
-                                                  nat.nr_frames)) )
+             unlikely(compat
+                          ? !compat_handle_okay(cmp.frame_list, cmp.nr_frames)
+                          : !guest_handle_okay(nat.frame_list, nat.nr_frames)) )
         {
             rc = -EFAULT;
             break;
@@ -701,7 +720,8 @@ long pv_shim_grant_table_op(unsigned int cmd,
             };
 
             rc = xen_hypercall_grant_table_op(GNTTABOP_query_size,
-                                              &query_size, 1);
+                                              &query_size,
+                                              1);
             if ( rc )
             {
                 spin_unlock(&grant_lock);
@@ -774,8 +794,10 @@ long pv_shim_grant_table_op(unsigned int cmd,
             }
             else
 #endif
-            if ( __copy_to_guest_offset(nat.frame_list, i,
-                                        &grant_frames[i], 1) )
+                if ( __copy_to_guest_offset(nat.frame_list,
+                                            i,
+                                            &grant_frames[i],
+                                            1) )
             {
                 nat.status = GNTST_bad_virt_addr;
                 rc = -EFAULT;
@@ -818,8 +840,8 @@ long pv_shim_grant_table_op(unsigned int cmd,
 
 #ifndef CONFIG_GRANT_TABLE
 /* Thin wrapper(s) needed. */
-long do_grant_table_op(
-    unsigned int cmd, XEN_GUEST_HANDLE_PARAM(void) uop, unsigned int count)
+long do_grant_table_op(unsigned int cmd, XEN_GUEST_HANDLE_PARAM(void) uop,
+                       unsigned int count)
 {
     if ( !pv_shim )
         return -ENOSYS;
@@ -828,8 +850,8 @@ long do_grant_table_op(
 }
 
 #ifdef CONFIG_PV32
-int compat_grant_table_op(
-    unsigned int cmd, XEN_GUEST_HANDLE_PARAM(void) uop, unsigned int count)
+int compat_grant_table_op(unsigned int cmd, XEN_GUEST_HANDLE_PARAM(void) uop,
+                          unsigned int count)
 {
     if ( !pv_shim )
         return -ENOSYS;
@@ -861,8 +883,10 @@ long cf_check pv_shim_cpu_up(void *data)
         if ( rc )
         {
             domain_unlock(d);
-            gprintk(XENLOG_ERR, "Failed to bring up CPU#%u: %ld\n",
-                    v->vcpu_id, rc);
+            gprintk(XENLOG_ERR,
+                    "Failed to bring up CPU#%u: %ld\n",
+                    v->vcpu_id,
+                    rc);
             return rc;
         }
 
@@ -891,8 +915,10 @@ long cf_check pv_shim_cpu_down(void *data)
     {
         rc = cpu_down_helper((void *)(unsigned long)v->vcpu_id);
         if ( rc )
-            gprintk(XENLOG_ERR, "Failed to bring down CPU#%u: %ld\n",
-                    v->vcpu_id, rc);
+            gprintk(XENLOG_ERR,
+                    "Failed to bring down CPU#%u: %ld\n",
+                    v->vcpu_id,
+                    rc);
         /*
          * NB: do not propagate errors from cpu_down_helper failing. The shim
          * is going to run with extra CPUs, but that's not going to prevent
@@ -916,7 +942,7 @@ static unsigned long batch_memory_op(unsigned int cmd, unsigned int order,
     unsigned long done = 0;
 
     set_xen_guest_handle(xmr.extent_start, pfns);
-    page_list_for_each ( pg, list )
+    page_list_for_each(pg, list)
     {
         pfns[xmr.nr_extents++] = mfn_x(page_to_mfn(pg));
         if ( xmr.nr_extents == ARRAY_SIZE(pfns) || !page_list_next(pg, list) )
@@ -942,7 +968,7 @@ void pv_shim_online_memory(unsigned int nr, unsigned int order)
         return;
 
     spin_lock(&balloon_lock);
-    page_list_for_each_safe ( page, tmp, &balloon )
+    page_list_for_each_safe(page, tmp, &balloon)
     {
         /* TODO: add support for splitting high order memory chunks. */
         if ( page->v.free.order != order )
@@ -958,7 +984,8 @@ void pv_shim_online_memory(unsigned int nr, unsigned int order)
     if ( nr )
         gprintk(XENLOG_WARNING,
                 "failed to allocate %u extents of order %u for onlining\n",
-                nr, order);
+                nr,
+                order);
 
     nr = batch_memory_op(XENMEM_populate_physmap, order, &list);
     while ( nr-- )
@@ -995,8 +1022,8 @@ void pv_shim_offline_memory(unsigned int nr, unsigned int order)
     if ( nr + 1 )
         gprintk(XENLOG_WARNING,
                 "failed to reserve %u extents of order %u for offlining\n",
-                nr + 1, order);
-
+                nr + 1,
+                order);
 
     nr = batch_memory_op(XENMEM_decrease_reservation, order, &list);
     spin_lock(&balloon_lock);

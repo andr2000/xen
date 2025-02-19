@@ -142,7 +142,7 @@ int domain_vgic_init(struct domain *d, unsigned int nr_spis)
     dist->nr_spis = nr_spis;
     dist->spis = xzalloc_array(struct vgic_irq, nr_spis);
     if ( !dist->spis )
-        return  -ENOMEM;
+        return -ENOMEM;
 
     /*
      * In the following code we do not take the irq struct lock since
@@ -215,7 +215,7 @@ int vcpu_vgic_init(struct vcpu *v)
 void domain_vgic_free(struct domain *d)
 {
     struct vgic_dist *dist = &d->arch.vgic;
-        int i, ret;
+    int i, ret;
 
     for ( i = 0; i < dist->nr_spis; i++ )
     {
@@ -228,7 +228,9 @@ void domain_vgic_free(struct domain *d)
         if ( ret )
             dprintk(XENLOG_G_WARNING,
                     "d%u: Failed to release virq %u ret = %d\n",
-                    d->domain_id, 32 + i, ret);
+                    d->domain_id,
+                    32 + i,
+                    ret);
     }
 
     dist->ready = false;

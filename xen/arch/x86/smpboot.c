@@ -66,18 +66,20 @@ static cpumask_t *secondary_socket_cpumask;
 
 struct cpuinfo_x86 cpu_data[NR_CPUS];
 
-u32 x86_cpu_to_apicid[NR_CPUS] __read_mostly =
-	{ [0 ... NR_CPUS-1] = BAD_APICID };
+u32 x86_cpu_to_apicid[NR_CPUS] __read_mostly = { [0 ... NR_CPUS - 1] =
+                                                     BAD_APICID };
 
 static int cpu_error;
+
 static enum cpu_state {
-    CPU_STATE_DYING,    /* slave -> master: I am dying */
-    CPU_STATE_DEAD,     /* slave -> master: I am completely dead */
-    CPU_STATE_INIT,     /* master -> slave: Early bringup phase 1 */
-    CPU_STATE_CALLOUT,  /* master -> slave: Early bringup phase 2 */
-    CPU_STATE_CALLIN,   /* slave -> master: Completed phase 2 */
-    CPU_STATE_ONLINE    /* master -> slave: Go fully online now. */
+    CPU_STATE_DYING, /* slave -> master: I am dying */
+    CPU_STATE_DEAD, /* slave -> master: I am completely dead */
+    CPU_STATE_INIT, /* master -> slave: Early bringup phase 1 */
+    CPU_STATE_CALLOUT, /* master -> slave: Early bringup phase 2 */
+    CPU_STATE_CALLIN, /* slave -> master: Completed phase 2 */
+    CPU_STATE_ONLINE /* master -> slave: Go fully online now. */
 } cpu_state;
+
 #define set_cpu_state(state) do { smp_mb(); cpu_state = (state); } while (0)
 
 void *stack_base[NR_CPUS];
@@ -132,7 +134,7 @@ static void synchronize_tsc_master(unsigned int slave)
         tsc_value = rdtsc_ordered();
         smp_wmb();
         atomic_inc(&tsc_count);
-        while ( atomic_read(&tsc_count) != (i<<1) )
+        while ( atomic_read(&tsc_count) != (i << 1) )
             cpu_relax();
     }
 
@@ -153,7 +155,7 @@ static void synchronize_tsc_slave(unsigned int slave)
 
     for ( i = 1; i <= 5; i++ )
     {
-        while ( atomic_read(&tsc_count) != ((i<<1)-1) )
+        while ( atomic_read(&tsc_count) != ((i << 1) - 1) )
             cpu_relax();
         smp_rmb();
         /*
@@ -199,7 +201,9 @@ static void smp_callin(void)
 
     if ( cpu_has_hypervisor && (rc = hypervisor_ap_setup()) != 0 )
     {
-        printk("CPU%d: Failed to initialise hypervisor functions. Not coming online.\n", cpu);
+        printk(
+            "CPU%d: Failed to initialise hypervisor functions. Not coming online.\n",
+            cpu);
         cpu_error = rc;
         goto halt;
     }
@@ -250,7 +254,7 @@ static void set_cpu_sibling_map(unsigned int cpu)
 
     if ( c[cpu].x86_num_siblings > 1 )
     {
-        for_each_cpu ( i, &cpu_sibling_setup_map )
+        for_each_cpu(i, &cpu_sibling_setup_map)
         {
             if ( cpu == i || c[cpu].phys_proc_id != c[i].phys_proc_id )
                 continue;
@@ -269,7 +273,8 @@ static void set_cpu_sibling_map(unsigned int cpu)
             else
                 printk(XENLOG_WARNING
                        "CPU%u: unclear relationship with CPU%u\n",
-                       cpu, i);
+                       cpu,
+                       i);
         }
     }
 
@@ -281,7 +286,7 @@ static void set_cpu_sibling_map(unsigned int cpu)
         return;
     }
 
-    for_each_cpu ( i, &cpu_sibling_setup_map )
+    for_each_cpu(i, &cpu_sibling_setup_map)
     {
         if ( c[cpu].phys_proc_id == c[i].phys_proc_id )
         {
@@ -461,7 +466,8 @@ static int wakeup_secondary_cpu(int phys_apicid, unsigned long start_eip)
         {
             Dprintk("Waiting for send to finish...\n");
             timeout = 0;
-            do {
+            do
+            {
                 Dprintk("+");
                 udelay(100);
                 send_status = apic_read(APIC_ICR) & APIC_ICR_BUSY;
@@ -475,7 +481,8 @@ static int wakeup_secondary_cpu(int phys_apicid, unsigned long start_eip)
 
             Dprintk("Waiting for send to finish...\n");
             timeout = 0;
-            do {
+            do
+            {
                 Dprintk("+");
                 udelay(100);
                 send_status = apic_read(APIC_ICR) & APIC_ICR_BUSY;
@@ -499,7 +506,7 @@ static int wakeup_secondary_cpu(int phys_apicid, unsigned long start_eip)
 
     for ( i = 0; i < 2; i++ )
     {
-        Dprintk("Sending STARTUP #%d.\n", i+1);
+        Dprintk("Sending STARTUP #%d.\n", i + 1);
         apic_write(APIC_ESR, 0);
         apic_read(APIC_ESR);
         Dprintk("After apic_write.\n");
@@ -519,7 +526,8 @@ static int wakeup_secondary_cpu(int phys_apicid, unsigned long start_eip)
 
             Dprintk("Waiting for send to finish...\n");
             timeout = 0;
-            do {
+            do
+            {
                 Dprintk("+");
                 udelay(100);
                 send_status = apic_read(APIC_ICR) & APIC_ICR_BUSY;
@@ -579,8 +587,7 @@ static int do_boot_cpu(int apicid, int cpu)
 
     /* So we see what's up   */
     if ( opt_cpu_info )
-        printk("Booting processor %d/%d eip %lx\n",
-               cpu, apicid, start_eip);
+        printk("Booting processor %d/%d eip %lx\n", cpu, apicid, start_eip);
 
     stack_start = stack_base[cpu] + STACK_SIZE - sizeof(struct cpu_info);
 
@@ -668,7 +675,9 @@ unsigned long alloc_stub_page(unsigned int cpu, unsigned long *mfn)
     }
 
     stub_va = XEN_VIRT_END - FIXADDR_X_SIZE - (cpu + 1) * PAGE_SIZE;
-    if ( map_pages_to_xen(stub_va, page_to_mfn(pg), 1,
+    if ( map_pages_to_xen(stub_va,
+                          page_to_mfn(pg),
+                          1,
                           PAGE_HYPERVISOR_RX | MAP_SMALL_PAGES) )
     {
         if ( !*mfn )
@@ -709,7 +718,7 @@ static int clone_mapping(const void *ptr, root_pgentry_t *rpt)
         return -EINVAL;
 
     pl3e = map_l3t_from_l4e(idle_pg_table[root_table_offset(linear)]) +
-        l3_table_offset(linear);
+           l3_table_offset(linear);
 
     flags = l3e_get_flags(*pl3e);
     ASSERT(flags & _PAGE_PRESENT);
@@ -806,7 +815,7 @@ static int clone_mapping(const void *ptr, root_pgentry_t *rpt)
         l1e_write(pl1e, l1e_from_pfn(pfn, flags));
 
     rc = 0;
- out:
+out:
     unmap_domain_page(pl1e);
     unmap_domain_page(pl2e);
     unmap_domain_page(pl3e);
@@ -845,8 +854,8 @@ int setup_cpu_root_pgt(unsigned int cpu)
     {
         const char *ptr;
 
-        for ( rc = 0, ptr = _stextentry;
-              !rc && ptr < _etextentry; ptr += PAGE_SIZE )
+        for ( rc = 0, ptr = _stextentry; !rc && ptr < _etextentry;
+              ptr += PAGE_SIZE )
             rc = clone_mapping(ptr, rpt);
 
         if ( rc )
@@ -889,7 +898,8 @@ static void cleanup_cpu_root_pgt(unsigned int cpu)
     per_cpu(root_pgt, cpu) = NULL;
 
     for ( r = root_table_offset(DIRECTMAP_VIRT_START);
-          r < root_table_offset(HYPERVISOR_VIRT_END); ++r )
+          r < root_table_offset(HYPERVISOR_VIRT_END);
+          ++r )
     {
         l3_pgentry_t *l3t;
         mfn_t l3mfn;
@@ -1049,7 +1059,7 @@ static int cpu_smpboot_alloc(unsigned int cpu)
 
     if ( stack_base[cpu] == NULL &&
          (stack_base[cpu] = cpu_alloc_stack(cpu)) == NULL )
-            goto out;
+        goto out;
 
     info = get_cpu_info_from_stack((unsigned long)stack_base[cpu]);
     info->processor_id = cpu;
@@ -1059,8 +1069,8 @@ static int cpu_smpboot_alloc(unsigned int cpu)
     if ( gdt == NULL )
         goto out;
     per_cpu(gdt, cpu) = gdt;
-    per_cpu(gdt_l1e, cpu) =
-        l1e_from_pfn(virt_to_mfn(gdt), __PAGE_HYPERVISOR_RW);
+    per_cpu(gdt_l1e, cpu) = l1e_from_pfn(virt_to_mfn(gdt),
+                                         __PAGE_HYPERVISOR_RW);
     memcpy(gdt, boot_gdt, NR_RESERVED_GDT_PAGES * PAGE_SIZE);
     BUILD_BUG_ON(NR_CPUS > 0x10000);
     gdt[PER_CPU_GDT_ENTRY - FIRST_RESERVED_GDT_ENTRY].a = cpu;
@@ -1069,8 +1079,8 @@ static int cpu_smpboot_alloc(unsigned int cpu)
     per_cpu(compat_gdt, cpu) = gdt = alloc_xenheap_pages(0, memflags);
     if ( gdt == NULL )
         goto out;
-    per_cpu(compat_gdt_l1e, cpu) =
-        l1e_from_pfn(virt_to_mfn(gdt), __PAGE_HYPERVISOR_RW);
+    per_cpu(compat_gdt_l1e, cpu) = l1e_from_pfn(virt_to_mfn(gdt),
+                                                __PAGE_HYPERVISOR_RW);
     memcpy(gdt, boot_compat_gdt, NR_RESERVED_GDT_PAGES * PAGE_SIZE);
     gdt[PER_CPU_GDT_ENTRY - FIRST_RESERVED_GDT_ENTRY].a = cpu;
 #endif
@@ -1083,7 +1093,8 @@ static int cpu_smpboot_alloc(unsigned int cpu)
     disable_each_ist(idt_tables[cpu]);
 
     for ( stub_page = 0, i = cpu & ~(STUBS_PER_PAGE - 1);
-          i < nr_cpu_ids && i <= (cpu | (STUBS_PER_PAGE - 1)); ++i )
+          i < nr_cpu_ids && i <= (cpu | (STUBS_PER_PAGE - 1));
+          ++i )
         if ( cpu_online(i) && cpu_to_node(i) == node )
         {
             per_cpu(stubs.mfn, cpu) = per_cpu(stubs.mfn, i);
@@ -1112,15 +1123,15 @@ static int cpu_smpboot_alloc(unsigned int cpu)
 
     rc = 0;
 
- out:
+out:
     if ( rc )
         cpu_smpboot_free(cpu, true);
 
     return rc;
 }
 
-static int cf_check cpu_smpboot_callback(
-    struct notifier_block *nfb, unsigned long action, void *hcpu)
+static int cf_check cpu_smpboot_callback(struct notifier_block *nfb,
+                                         unsigned long action, void *hcpu)
 {
     unsigned int cpu = (unsigned long)hcpu;
     int rc = 0;
@@ -1142,9 +1153,8 @@ static int cf_check cpu_smpboot_callback(
     return notifier_from_errno(rc);
 }
 
-static struct notifier_block cpu_smpboot_nfb = {
-    .notifier_call = cpu_smpboot_callback
-};
+static struct notifier_block cpu_smpboot_nfb = { .notifier_call =
+                                                     cpu_smpboot_callback };
 
 void __init smp_prepare_cpus(void)
 {
@@ -1184,9 +1194,9 @@ void __init smp_prepare_cpus(void)
     init_uniprocessor:
         physids_clear(phys_cpu_present_map);
         physid_set(0, phys_cpu_present_map);
-        if (APIC_init_uniprocessor())
-            printk(KERN_NOTICE "Local APIC not detected."
-                   " Using dummy APIC emulation.\n");
+        if ( APIC_init_uniprocessor() )
+            printk(KERN_NOTICE
+                   "Local APIC not detected." " Using dummy APIC emulation.\n");
         return;
     }
 
@@ -1242,14 +1252,13 @@ void __init smp_prepare_boot_cpu(void)
     get_cpu_info()->pv_cr3 = 0;
 }
 
-static void
-remove_siblinginfo(int cpu)
+static void remove_siblinginfo(int cpu)
 {
     int sibling;
 
     cpumask_clear_cpu(cpu, socket_cpumask[cpu_to_socket(cpu)]);
 
-    for_each_cpu ( sibling, per_cpu(cpu_core_mask, cpu) )
+    for_each_cpu(sibling, per_cpu(cpu_core_mask, cpu))
     {
         cpumask_clear_cpu(cpu, per_cpu(cpu_core_mask, sibling));
         /* Last thread sibling in this cpu core going down. */
@@ -1307,11 +1316,13 @@ int cpu_add(uint32_t apic_id, uint32_t acpi_id, uint32_t pxm)
 {
     int cpu = -1;
 
-    dprintk(XENLOG_DEBUG, "cpu_add apic_id %x acpi_id %x pxm %x\n",
-            apic_id, acpi_id, pxm);
+    dprintk(XENLOG_DEBUG,
+            "cpu_add apic_id %x acpi_id %x pxm %x\n",
+            apic_id,
+            acpi_id,
+            pxm);
 
-    if ( (acpi_id >= MAX_MADT_ENTRIES) ||
-         (apic_id >= MAX_APICS) ||
+    if ( (acpi_id >= MAX_MADT_ENTRIES) || (apic_id >= MAX_APICS) ||
          (pxm >= 256) )
         return -EINVAL;
 
@@ -1320,8 +1331,7 @@ int cpu_add(uint32_t apic_id, uint32_t acpi_id, uint32_t pxm)
     /* Detect if the cpu has been added before */
     if ( x86_acpiid_to_apicid[acpi_id] != BAD_APICID )
     {
-        cpu = (x86_acpiid_to_apicid[acpi_id] != apic_id)
-            ? -EINVAL : -EEXIST;
+        cpu = (x86_acpiid_to_apicid[acpi_id] != apic_id) ? -EINVAL : -EEXIST;
         goto out;
     }
 
@@ -1342,15 +1352,14 @@ int cpu_add(uint32_t apic_id, uint32_t acpi_id, uint32_t pxm)
 
         if ( node == NUMA_NO_NODE )
         {
-            dprintk(XENLOG_WARNING,
-                    "Setup node failed for pxm %x\n", pxm);
+            dprintk(XENLOG_WARNING, "Setup node failed for pxm %x\n", pxm);
             x86_acpiid_to_apicid[acpi_id] = BAD_APICID;
             mp_unregister_lapic(apic_id, cpu);
             cpu = -ENOSPC;
             goto out;
         }
         if ( apic_id < MAX_LOCAL_APIC )
-             apicid_to_node[apic_id] = node;
+            apicid_to_node[apic_id] = node;
     }
 
     /* Physically added CPUs do not have synchronised TSC. */
@@ -1358,8 +1367,7 @@ int cpu_add(uint32_t apic_id, uint32_t acpi_id, uint32_t pxm)
     {
         printk_once(
             XENLOG_WARNING
-            "New CPU %u may have skewed TSC and break cross-CPU TSC coherency\n"
-            "Consider using \"tsc=skewed\" to force emulation where appropriate\n",
+            "New CPU %u may have skewed TSC and break cross-CPU TSC coherency\n" "Consider using \"tsc=skewed\" to force emulation where appropriate\n",
             cpu);
         cpumask_set_cpu(cpu, &tsc_sync_cpu_mask);
     }
@@ -1367,11 +1375,10 @@ int cpu_add(uint32_t apic_id, uint32_t acpi_id, uint32_t pxm)
     srat_detect_node(cpu);
     numa_add_cpu(cpu);
     dprintk(XENLOG_INFO, "Add CPU %x with index %x\n", apic_id, cpu);
- out:
+out:
     cpu_hotplug_done();
     return cpu;
 }
-
 
 int __cpu_up(unsigned int cpu)
 {
@@ -1383,8 +1390,9 @@ int __cpu_up(unsigned int cpu)
     if ( (!x2apic_enabled && apicid >= APIC_ALL_CPUS) ||
          (iommu_intremap != iommu_intremap_full && (apicid >> 8)) )
     {
-        printk("Unsupported: APIC ID %#x in xAPIC mode w/o interrupt remapping\n",
-               apicid);
+        printk(
+            "Unsupported: APIC ID %#x in xAPIC mode w/o interrupt remapping\n",
+            apicid);
         return -EINVAL;
     }
 
@@ -1402,7 +1410,6 @@ int __cpu_up(unsigned int cpu)
 
     return 0;
 }
-
 
 void __init smp_cpus_done(void)
 {

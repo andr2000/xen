@@ -15,20 +15,15 @@
 static const char livepatch_exceptions_str[] = "xen_extra_version";
 extern const char *xen_hello_world(void);
 
-const struct livepatch_func __section(".livepatch.funcs")
-livepatch_exceptions = {
+const struct livepatch_func __section(
+    ".livepatch.funcs") livepatch_exceptions = {
     .version = LIVEPATCH_PAYLOAD_VERSION,
     .name = livepatch_exceptions_str,
     .new_addr = xen_hello_world,
     .old_addr = xen_extra_version,
     .new_size = EXPECT_BYTES_COUNT,
     .old_size = EXPECT_BYTES_COUNT,
-    .expect = {
-        .enabled = 1,
-        .len = EXPECT_BYTES_COUNT,
-        .data = EXPECT_BYTES
-    },
-
+    .expect = { .enabled = 1, .len = EXPECT_BYTES_COUNT, .data = EXPECT_BYTES },
 };
 
 /*

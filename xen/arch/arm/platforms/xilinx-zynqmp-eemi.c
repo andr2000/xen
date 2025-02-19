@@ -88,7 +88,9 @@ bool zynqmp_eemi(struct cpu_user_regs *regs)
         if ( !domain_has_node_access(current->domain, nodeid) )
         {
             gprintk(XENLOG_WARNING,
-                    "zynqmp-pm: fn=%u No access to node %u\n", pm_fn, nodeid);
+                    "zynqmp-pm: fn=%u No access to node %u\n",
+                    pm_fn,
+                    nodeid);
             ret = XST_PM_NO_ACCESS;
             goto done;
         }
@@ -99,7 +101,9 @@ bool zynqmp_eemi(struct cpu_user_regs *regs)
         if ( !domain_has_reset_access(current->domain, nodeid) )
         {
             gprintk(XENLOG_WARNING,
-                    "zynqmp-pm: fn=%u No access to reset %u\n", pm_fn, nodeid);
+                    "zynqmp-pm: fn=%u No access to reset %u\n",
+                    pm_fn,
+                    nodeid);
             ret = XST_PM_NO_ACCESS;
             goto done;
         }
@@ -115,7 +119,9 @@ bool zynqmp_eemi(struct cpu_user_regs *regs)
     case EEMI_FID(PM_MMIO_WRITE):
     case EEMI_FID(PM_MMIO_READ):
         gprintk(XENLOG_WARNING,
-                "zynqmp-pm: fn=%u No MMIO access to %u\n", pm_fn, nodeid);
+                "zynqmp-pm: fn=%u No MMIO access to %u\n",
+                pm_fn,
+                nodeid);
         ret = XST_PM_NO_ACCESS;
         goto done;
 

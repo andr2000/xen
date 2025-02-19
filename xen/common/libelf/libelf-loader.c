@@ -25,15 +25,18 @@
 
 /* Number of section header needed in order to fit the SYMTAB and STRTAB. */
 #define ELF_BSDSYM_SECTIONS 3
+
 struct elf_sym_header {
     uint32_t size;
+
     struct {
         elf_ehdr header;
         elf_shdr section[ELF_BSDSYM_SECTIONS];
     } elf_header;
 } __attribute__((packed));
 
-elf_errorstatus elf_init(struct elf_binary *elf, const char *image_input, size_t size)
+elf_errorstatus elf_init(struct elf_binary *elf, const char *image_input,
+                         size_t size)
 {
     ELF_HANDLE_DECL(elf_shdr) shdr;
     unsigned i, count, section, link;
@@ -54,21 +57,25 @@ elf_errorstatus elf_init(struct elf_binary *elf, const char *image_input, size_t
 
     /* Sanity check phdr. */
     offset = elf_uval(elf, elf->ehdr, e_phoff) +
-        elf_uval(elf, elf->ehdr, e_phentsize) * elf_phdr_count(elf);
+             elf_uval(elf, elf->ehdr, e_phentsize) * elf_phdr_count(elf);
     if ( offset > elf->size )
     {
-        elf_err(elf, "ELF: phdr overflow (off %" PRIx64 " > size %lx)\n",
-                offset, (unsigned long)elf->size);
+        elf_err(elf,
+                "ELF: phdr overflow (off %" PRIx64 " > size %lx)\n",
+                offset,
+                (unsigned long)elf->size);
         return -1;
     }
 
     /* Sanity check shdr. */
     offset = elf_uval(elf, elf->ehdr, e_shoff) +
-        elf_uval(elf, elf->ehdr, e_shentsize) * elf_shdr_count(elf);
+             elf_uval(elf, elf->ehdr, e_shentsize) * elf_shdr_count(elf);
     if ( offset > elf->size )
     {
-        elf_err(elf, "ELF: shdr overflow (off %" PRIx64 " > size %lx)\n",
-                offset, (unsigned long)elf->size);
+        elf_err(elf,
+                "ELF: shdr overflow (off %" PRIx64 " > size %lx)\n",
+                offset,
+                (unsigned long)elf->size);
         return -1;
     }
 
@@ -109,20 +116,21 @@ elf_errorstatus elf_init(struct elf_binary *elf, const char *image_input, size_t
 }
 
 #ifndef __XEN__
-void elf_call_log_callback(struct elf_binary *elf, bool iserr,
-                           const char *fmt,...) {
+void elf_call_log_callback(struct elf_binary *elf, bool iserr, const char *fmt,
+                           ...)
+{
     va_list al;
 
-    if (!elf->log_callback)
+    if ( !elf->log_callback )
         return;
-    if (!(iserr || elf->verbose))
+    if ( !(iserr || elf->verbose) )
         return;
 
-    va_start(al,fmt);
+    va_start(al, fmt);
     elf->log_callback(elf, elf->log_caller_data, iserr, fmt, al);
     va_end(al);
 }
-    
+
 void elf_set_log(struct elf_binary *elf, elf_log_callback *log_callback,
                  void *log_caller_data, bool verbose)
 {
@@ -131,9 +139,9 @@ void elf_set_log(struct elf_binary *elf, elf_log_callback *log_callback,
     elf->verbose = verbose;
 }
 
-static elf_errorstatus elf_load_image(struct elf_binary *elf,
-                          elf_ptrval dst, elf_ptrval src,
-                          uint64_t filesz, uint64_t memsz)
+static elf_errorstatus elf_load_image(struct elf_binary *elf, elf_ptrval dst,
+                                      elf_ptrval src, uint64_t filesz,
+                                      uint64_t memsz)
 {
     elf_memcpy_safe(elf, dst, src, filesz);
     elf_memset_safe(elf, dst + filesz, 0, memsz - filesz);
@@ -161,24 +169,27 @@ static elf_errorstatus elf_memcpy(struct vcpu *v, void *dst, void *src,
     }
 #endif
 
-    res = src ? raw_copy_to_guest(dst, src, size) :
-                raw_clear_guest(dst, size);
+    res = src ? raw_copy_to_guest(dst, src, size) : raw_clear_guest(dst, size);
 
     return res ? -1 : 0;
 }
 
-static elf_errorstatus elf_load_image(struct elf_binary *elf, elf_ptrval dst, elf_ptrval src, uint64_t filesz, uint64_t memsz)
+static elf_errorstatus elf_load_image(struct elf_binary *elf, elf_ptrval dst,
+                                      elf_ptrval src, uint64_t filesz,
+                                      uint64_t memsz)
 {
     elf_errorstatus rc;
     if ( filesz > ULONG_MAX || memsz > ULONG_MAX )
         return -1;
     /* We trust the dom0 kernel image completely, so we don't care
      * about overruns etc. here. */
-    rc = elf_memcpy(elf->vcpu, ELF_UNSAFE_PTR(dst), ELF_UNSAFE_PTR(src),
-                    filesz);
+    rc =
+        elf_memcpy(elf->vcpu, ELF_UNSAFE_PTR(dst), ELF_UNSAFE_PTR(src), filesz);
     if ( rc != 0 )
         return -1;
-    rc = elf_memcpy(elf->vcpu, ELF_UNSAFE_PTR(dst + filesz), NULL,
+    rc = elf_memcpy(elf->vcpu,
+                    ELF_UNSAFE_PTR(dst + filesz),
+                    NULL,
                     memsz - filesz);
     if ( rc != 0 )
         return -1;
@@ -205,8 +216,8 @@ void elf_parse_bsdsyms(struct elf_binary *elf, uint64_t pstart)
 
     /* Space for the ELF header and section headers */
     sz += offsetof(struct elf_sym_header, elf_header.section) +
-          ELF_BSDSYM_SECTIONS * (elf_64bit(elf) ? sizeof(Elf64_Shdr) :
-                                                  sizeof(Elf32_Shdr));
+          ELF_BSDSYM_SECTIONS *
+              (elf_64bit(elf) ? sizeof(Elf64_Shdr) : sizeof(Elf32_Shdr));
     sz = elf_round_up(elf, sz);
 
     /*
@@ -230,7 +241,7 @@ void elf_parse_bsdsyms(struct elf_binary *elf, uint64_t pstart)
     sz = elf_round_up(elf, sz + elf_uval(elf, shdr, sh_size));
 
     elf->bsd_symtab_pstart = pstart;
-    elf->bsd_symtab_pend   = pstart + sz;
+    elf->bsd_symtab_pend = pstart + sz;
 }
 
 static void elf_load_bsdsyms(struct elf_binary *elf)
@@ -326,16 +337,19 @@ do {                                                                \
      * Set the size of the ELF header and the section headers, based on the
      * size of our local copy.
      */
-    ehdr_size = elf_64bit(elf) ? sizeof(header.elf_header.header.e64) :
-                                 sizeof(header.elf_header.header.e32);
-    shdr_size = elf_64bit(elf) ? sizeof(header.elf_header.section[0].e64) :
-                                 sizeof(header.elf_header.section[0].e32);
+    ehdr_size = elf_64bit(elf) ? sizeof(header.elf_header.header.e64)
+                               : sizeof(header.elf_header.header.e32);
+    shdr_size = elf_64bit(elf) ? sizeof(header.elf_header.section[0].e64)
+                               : sizeof(header.elf_header.section[0].e32);
 
     /* Fill the ELF header, copied from the original ELF header. */
-    header_handle = ELF_MAKE_HANDLE(elf_ehdr,
-                                ELF_REALPTR2PTRVAL(&header.elf_header.header));
-    elf_memcpy_safe(elf, ELF_HANDLE_PTRVAL(header_handle),
-                    ELF_HANDLE_PTRVAL(elf->ehdr), ehdr_size);
+    header_handle =
+        ELF_MAKE_HANDLE(elf_ehdr,
+                        ELF_REALPTR2PTRVAL(&header.elf_header.header));
+    elf_memcpy_safe(elf,
+                    ELF_HANDLE_PTRVAL(header_handle),
+                    ELF_HANDLE_PTRVAL(elf->ehdr),
+                    ehdr_size);
 
     /*
      * Set the ELF header size, section header entry size and version
@@ -346,7 +360,9 @@ do {                                                                \
     elf_store_field_bitness(elf, header_handle, e_version, EV_CURRENT);
 
     /* Set the offset to the shdr array. */
-    elf_store_field_bitness(elf, header_handle, e_shoff,
+    elf_store_field_bitness(elf,
+                            header_handle,
+                            e_shoff,
                             offsetof(typeof(header.elf_header), section));
 
     /* Set the right number of section headers. */
@@ -365,10 +381,12 @@ do {                                                                \
      * where the sections are actually loaded (relative to the ELF header
      * location).
      */
-    section_handle = ELF_MAKE_HANDLE(elf_shdr,
-                ELF_REALPTR2PTRVAL(&header.elf_header.section[SYMTAB_INDEX]));
+    section_handle = ELF_MAKE_HANDLE(
+        elf_shdr,
+        ELF_REALPTR2PTRVAL(&header.elf_header.section[SYMTAB_INDEX]));
 
-    elf_memcpy_safe(elf, ELF_HANDLE_PTRVAL(section_handle),
+    elf_memcpy_safe(elf,
+                    ELF_HANDLE_PTRVAL(section_handle),
                     ELF_HANDLE_PTRVAL(elf->sym_tab),
                     shdr_size);
 
@@ -376,7 +394,8 @@ do {                                                                \
     link = elf_uval(elf, section_handle, sh_link);
 
     /* Load symtab into guest memory. */
-    rc = elf_load_image(elf, symtab_base,
+    rc = elf_load_image(elf,
+                        symtab_base,
                         elf_section_start(elf, section_handle),
                         elf_uval(elf, section_handle, sh_size),
                         elf_uval(elf, section_handle, sh_size));
@@ -387,19 +406,22 @@ do {                                                                \
     }
 
     /* Adjust the sh_offset and sh_link of the copied section header. */
-    elf_store_field_bitness(elf, section_handle, sh_offset,
+    elf_store_field_bitness(elf,
+                            section_handle,
+                            sh_offset,
                             symtab_base - elf_header_base);
-    elf_store_field_bitness(elf, section_handle, sh_link,
-                            STRTAB_INDEX);
+    elf_store_field_bitness(elf, section_handle, sh_link, STRTAB_INDEX);
 
     /* Calculate the guest address where strtab is loaded. */
-    strtab_base = elf_round_up(elf, symtab_base +
-                               elf_uval(elf, section_handle, sh_size));
+    strtab_base =
+        elf_round_up(elf, symtab_base + elf_uval(elf, section_handle, sh_size));
 
     /* Load strtab section header. */
-    section_handle = ELF_MAKE_HANDLE(elf_shdr,
-            ELF_REALPTR2PTRVAL(&header.elf_header.section[STRTAB_INDEX]));
-    elf_memcpy_safe(elf, ELF_HANDLE_PTRVAL(section_handle),
+    section_handle = ELF_MAKE_HANDLE(
+        elf_shdr,
+        ELF_REALPTR2PTRVAL(&header.elf_header.section[STRTAB_INDEX]));
+    elf_memcpy_safe(elf,
+                    ELF_HANDLE_PTRVAL(section_handle),
                     ELF_HANDLE_PTRVAL(elf_shdr_by_index(elf, link)),
                     shdr_size);
 
@@ -410,7 +432,8 @@ do {                                                                \
     }
 
     /* Load strtab into guest memory. */
-    rc = elf_load_image(elf, strtab_base,
+    rc = elf_load_image(elf,
+                        strtab_base,
                         elf_section_start(elf, section_handle),
                         elf_uval(elf, section_handle, sh_size),
                         elf_uval(elf, section_handle, sh_size));
@@ -420,7 +443,9 @@ do {                                                                \
         return;
     }
 
-    elf_store_field_bitness(elf, section_handle, sh_offset,
+    elf_store_field_bitness(elf,
+                            section_handle,
+                            sh_offset,
                             strtab_base - elf_header_base);
 
     /* Store the whole size (including headers and loaded sections). */
@@ -429,8 +454,11 @@ do {                                                                \
 
     /* Load the size plus ELF header. */
     header_size = offsetof(typeof(header), elf_header.section);
-    rc = elf_load_image(elf, header_base, ELF_REALPTR2PTRVAL(&header),
-                        header_size, header_size);
+    rc = elf_load_image(elf,
+                        header_base,
+                        ELF_REALPTR2PTRVAL(&header),
+                        header_size,
+                        header_size);
     if ( rc != 0 )
     {
         elf_mark_broken(elf, "unable to load ELF headers into guest memory");
@@ -445,13 +473,16 @@ do {                                                                \
      */
     for ( i = 0; i < ELF_BSDSYM_SECTIONS; i++ )
     {
-        rc = elf_load_image(elf, header_base + header_size + shdr_size * i,
+        rc = elf_load_image(elf,
+                            header_base + header_size + shdr_size * i,
                             ELF_REALPTR2PTRVAL(&header.elf_header.section[i]),
-                            shdr_size, shdr_size);
+                            shdr_size,
+                            shdr_size);
         if ( rc != 0 )
         {
-            elf_mark_broken(elf,
-                        "unable to load ELF section header into guest memory");
+            elf_mark_broken(
+                elf,
+                "unable to load ELF section header into guest memory");
             return;
         }
     }
@@ -483,8 +514,10 @@ void elf_parse_binary(struct elf_binary *elf)
         paddr = elf_uval(elf, phdr, p_paddr);
         memsz = elf_uval(elf, phdr, p_memsz);
         palign = elf_uval(elf, phdr, p_align);
-        elf_msg(elf, "ELF: phdr: paddr=%#" PRIx64 " memsz=%#" PRIx64 "\n",
-                paddr, memsz);
+        elf_msg(elf,
+                "ELF: phdr: paddr=%#" PRIx64 " memsz=%#" PRIx64 "\n",
+                paddr,
+                memsz);
         if ( low > paddr )
             low = paddr;
         if ( high < paddr + memsz )
@@ -495,8 +528,10 @@ void elf_parse_binary(struct elf_binary *elf)
     elf->pstart = low;
     elf->pend = high;
     elf->palign = max_align;
-    elf_msg(elf, "ELF: memory: %#" PRIx64 " -> %#" PRIx64 "\n",
-            elf->pstart, elf->pend);
+    elf_msg(elf,
+            "ELF: memory: %#" PRIx64 " -> %#" PRIx64 "\n",
+            elf->pstart,
+            elf->pend);
 }
 
 elf_errorstatus elf_load_binary(struct elf_binary *elf)
@@ -534,16 +569,23 @@ elf_errorstatus elf_load_binary(struct elf_binary *elf)
          */
         if ( remain_allow_copy < memsz )
         {
-            elf_mark_broken(elf, "program segments total to more"
-                            " than the input image size");
+            elf_mark_broken(
+                elf,
+                "program segments total to more" " than the input image size");
             break;
         }
         remain_allow_copy -= memsz;
 
         elf_msg(elf,
-                "ELF: phdr %u at %#"ELF_PRPTRVAL" -> %#"ELF_PRPTRVAL"\n",
-                i, dest, (elf_ptrval)(dest + filesz));
-        if ( elf_load_image(elf, dest, ELF_IMAGE_BASE(elf) + offset, filesz, memsz) != 0 )
+                "ELF: phdr %u at %#" ELF_PRPTRVAL " -> %#" ELF_PRPTRVAL "\n",
+                i,
+                dest,
+                (elf_ptrval)(dest + filesz));
+        if ( elf_load_image(elf,
+                            dest,
+                            ELF_IMAGE_BASE(elf) + offset,
+                            filesz,
+                            memsz) != 0 )
             return -1;
     }
 
@@ -556,7 +598,7 @@ elf_ptrval elf_get_ptr(struct elf_binary *elf, unsigned long addr)
     return ELF_REALPTR2PTRVAL(elf->dest_base) + addr - elf->pstart;
 }
 
-uint64_t elf_lookup_addr(struct elf_binary * elf, const char *symbol)
+uint64_t elf_lookup_addr(struct elf_binary *elf, const char *symbol)
 {
     ELF_HANDLE_DECL(elf_sym) sym;
     uint64_t value;
@@ -569,8 +611,11 @@ uint64_t elf_lookup_addr(struct elf_binary * elf, const char *symbol)
     }
 
     value = elf_uval(elf, sym, st_value);
-    elf_msg(elf, "%s: symbol \"%s\" at 0x%" PRIx64 "\n", __func__,
-            symbol, value);
+    elf_msg(elf,
+            "%s: symbol \"%s\" at 0x%" PRIx64 "\n",
+            __func__,
+            symbol,
+            value);
     return value;
 }
 

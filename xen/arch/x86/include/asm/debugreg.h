@@ -126,8 +126,8 @@ unsigned int x86_merge_dr6(const struct cpu_policy *p, unsigned int dr6,
  */
 static inline unsigned int x86_bp_width(unsigned int dr7, unsigned int bp)
 {
-    unsigned int raw = (dr7 >> (DR_CONTROL_SHIFT +
-                                DR_CONTROL_SIZE * bp + 2)) & 3;
+    unsigned int raw = (dr7 >> (DR_CONTROL_SHIFT + DR_CONTROL_SIZE * bp + 2)) &
+                       3;
 
     /*
      * If the top bit is set (i.e. we've got an 4 or 8 byte wide breakpoint),

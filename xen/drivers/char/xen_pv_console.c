@@ -62,12 +62,14 @@ void pv_console_init(void)
     cons_evtchn = raw_evtchn;
 
     printk("Initialised PV console at 0x%p with pfn %#lx and evtchn %#x\n",
-            cons_ring, raw_pfn, cons_evtchn);
+           cons_ring,
+           raw_pfn,
+           cons_evtchn);
     pv_console = true;
 
     return;
 
- error:
+error:
     printk("Couldn't initialise PV console\n");
 }
 

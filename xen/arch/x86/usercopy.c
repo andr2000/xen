@@ -11,7 +11,7 @@
 #include <asm/uaccess.h>
 
 #ifndef GUARD
-# define GUARD UA_KEEP
+#define GUARD UA_KEEP
 #endif
 
 unsigned int copy_to_guest_ll(void __user *to, const void *from, unsigned int n)
@@ -19,46 +19,36 @@ unsigned int copy_to_guest_ll(void __user *to, const void *from, unsigned int n)
     GUARD(unsigned dummy);
 
     stac();
-    asm volatile (
-        GUARD(
-        "    guest_access_mask_ptr %[to], %q[scratch1], %q[scratch2]\n"
-        )
-        "1:  rep movsb\n"
-        "2:\n"
-        _ASM_EXTABLE(1b, 2b)
-        : [cnt] "+c" (n), [to] "+D" (to), [from] "+S" (from)
-          GUARD(, [scratch1] "=&r" (dummy), [scratch2] "=&r" (dummy))
-        :: "memory" );
+    asm volatile(
+        GUARD("    guest_access_mask_ptr %[to], %q[scratch1], %q[scratch2]\n") "1:  rep movsb\n" "2:\n" _ASM_EXTABLE(
+            1b,
+            2b)
+        : [cnt] "+c"(n),
+          [to] "+D"(to),
+          [from] "+S"(from)
+              GUARD(, [scratch1] "=&r"(dummy), [scratch2] "=&r"(dummy))::
+                  "memory");
     clac();
 
     return n;
 }
 
-unsigned int copy_from_guest_ll(void *to, const void __user *from, unsigned int n)
+unsigned int copy_from_guest_ll(void *to, const void __user *from,
+                                unsigned int n)
 {
     unsigned dummy;
 
     stac();
-    asm volatile (
-        GUARD(
-        "    guest_access_mask_ptr %[from], %q[scratch1], %q[scratch2]\n"
-        )
-        "1:  rep movsb\n"
-        "2:\n"
-        ".section .fixup,\"ax\"\n"
-        "6:  mov  %[cnt], %k[from]\n"
-        "    xchg %%eax, %[aux]\n"
-        "    xor  %%eax, %%eax\n"
-        "    rep stosb\n"
-        "    xchg %[aux], %%eax\n"
-        "    mov  %k[from], %[cnt]\n"
-        "    jmp 2b\n"
-        ".previous\n"
-        _ASM_EXTABLE(1b, 6b)
-        : [cnt] "+c" (n), [to] "+D" (to), [from] "+S" (from),
-          [aux] "=&r" (dummy)
-          GUARD(, [scratch1] "=&r" (dummy), [scratch2] "=&r" (dummy))
-        :: "memory" );
+    asm volatile(
+        GUARD("    guest_access_mask_ptr %[from], %q[scratch1], %q[scratch2]\n") "1:  rep movsb\n" "2:\n" ".section .fixup,\"ax\"\n" "6:  mov  %[cnt], %k[from]\n" "    xchg %%eax, %[aux]\n" "    xor  %%eax, %%eax\n" "    rep stosb\n" "    xchg %[aux], %%eax\n" "    mov  %k[from], %[cnt]\n" "    jmp 2b\n" ".previous\n" _ASM_EXTABLE(
+            1b,
+            6b)
+        : [cnt] "+c"(n),
+          [to] "+D"(to),
+          [from] "+S"(from),
+          [aux] "=&r"(dummy)
+              GUARD(, [scratch1] "=&r"(dummy), [scratch2] "=&r"(dummy))::
+                  "memory");
     clac();
 
     return n;
@@ -101,14 +91,15 @@ unsigned int clear_guest_pv(void __user *to, unsigned int n)
         long dummy;
 
         stac();
-        asm volatile (
-            "    guest_access_mask_ptr %[to], %[scratch1], %[scratch2]\n"
-            "1:  rep stosb\n"
-            "2:\n"
-            _ASM_EXTABLE(1b,2b)
-            : [cnt] "+c" (n), [to] "+D" (to), [scratch1] "=&r" (dummy),
-              [scratch2] "=&r" (dummy)
-            : "a" (0) );
+        asm volatile(
+            "    guest_access_mask_ptr %[to], %[scratch1], %[scratch2]\n" "1:  rep stosb\n" "2:\n" _ASM_EXTABLE(
+                1b,
+                2b)
+            : [cnt] "+c"(n),
+              [to] "+D"(to),
+              [scratch1] "=&r"(dummy),
+              [scratch2] "=&r"(dummy)
+            : "a"(0));
         clac();
     }
 
@@ -139,13 +130,13 @@ unsigned int copy_from_guest_pv(void *to, const void __user *from,
     return n;
 }
 
-# undef GUARD
-# define GUARD UA_DROP
-# define copy_to_guest_ll copy_to_unsafe_ll
-# define copy_from_guest_ll copy_from_unsafe_ll
-# undef __user
-# define __user
-# include __FILE__
+#undef GUARD
+#define GUARD UA_DROP
+#define copy_to_guest_ll copy_to_unsafe_ll
+#define copy_from_guest_ll copy_from_unsafe_ll
+#undef __user
+#define __user
+#include __FILE__
 
 #endif /* GUARD(1) */
 

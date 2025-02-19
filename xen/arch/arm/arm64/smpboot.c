@@ -11,7 +11,7 @@
 #include <asm/psci.h>
 
 struct smp_enable_ops {
-        int             (*prepare_cpu)(int cpu);
+    int (*prepare_cpu)(int cpu);
 };
 
 static paddr_t cpu_release_addr[NR_CPUS];
@@ -21,7 +21,7 @@ static int __init smp_spin_table_cpu_up(int cpu)
 {
     paddr_t __iomem *release;
 
-    if (!cpu_release_addr[cpu])
+    if ( !cpu_release_addr[cpu] )
     {
         printk("CPU%d: No release addr\n", cpu);
         return -ENODEV;
@@ -77,7 +77,7 @@ static int __init dt_arch_cpu_init(int cpu, struct dt_device_node *dn)
     const char *enable_method;
 
     enable_method = dt_get_property(dn, "enable-method", NULL);
-    if (!enable_method)
+    if ( !enable_method )
     {
         printk("CPU%d has no enable method\n", cpu);
         return -EINVAL;

@@ -5,8 +5,8 @@
 
 struct cov_sysctl_ops {
     uint32_t (*get_size)(void);
-    void     (*reset_counters)(void);
-    int      (*dump)(XEN_GUEST_HANDLE_PARAM(char), uint32_t *);
+    void (*reset_counters)(void);
+    int (*dump)(XEN_GUEST_HANDLE_PARAM(char), uint32_t *);
 };
 extern const struct cov_sysctl_ops cov_ops;
 

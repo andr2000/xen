@@ -14,12 +14,12 @@
  */
 void *(memset)(void *s, int c, size_t n)
 {
-	char *xs = (char *) s;
+    char *xs = (char *)s;
 
-	while (n--)
-		*xs++ = c;
+    while ( n-- )
+        *xs++ = c;
 
-	return s;
+    return s;
 }
 
 /*

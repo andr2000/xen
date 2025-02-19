@@ -25,8 +25,8 @@ integer_param("tboot", opt_tboot_pa);
 /* Global pointer to shared data; NULL means no measured launch. */
 tboot_shared_t *g_tboot_shared;
 
-static vmac_t domain_mac;     /* MAC for all domains during S3 */
-static vmac_t xenheap_mac;    /* MAC for xen heap during S3 */
+static vmac_t domain_mac; /* MAC for all domains during S3 */
+static vmac_t xenheap_mac; /* MAC for xen heap during S3 */
 static vmac_t frametable_mac; /* MAC for frame table during S3 */
 
 /* used by tboot_protect_mem_regions() and/or tboot_parse_dmar_table() */
@@ -53,24 +53,24 @@ static bool __ro_after_init is_vtd;
 #define TXTCR_HEAP_SIZE             0x0308
 
 #define SHA1_SIZE      20
-typedef uint8_t   sha1_hash_t[SHA1_SIZE];
+typedef uint8_t sha1_hash_t[SHA1_SIZE];
 
 typedef struct __packed {
-    uint32_t     version;             /* currently 6 */
-    sha1_hash_t  bios_acm_id;
-    uint32_t     edx_senter_flags;
-    uint64_t     mseg_valid;
-    sha1_hash_t  sinit_hash;
-    sha1_hash_t  mle_hash;
-    sha1_hash_t  stm_hash;
-    sha1_hash_t  lcp_policy_hash;
-    uint32_t     lcp_policy_control;
-    uint32_t     rlp_wakeup_addr;
-    uint32_t     reserved;
-    uint32_t     num_mdrs;
-    uint32_t     mdrs_off;
-    uint32_t     num_vtd_dmars;
-    uint32_t     vtd_dmars_off;
+    uint32_t version; /* currently 6 */
+    sha1_hash_t bios_acm_id;
+    uint32_t edx_senter_flags;
+    uint64_t mseg_valid;
+    sha1_hash_t sinit_hash;
+    sha1_hash_t mle_hash;
+    sha1_hash_t stm_hash;
+    sha1_hash_t lcp_policy_hash;
+    uint32_t lcp_policy_control;
+    uint32_t rlp_wakeup_addr;
+    uint32_t reserved;
+    uint32_t num_mdrs;
+    uint32_t mdrs_off;
+    uint32_t num_vtd_dmars;
+    uint32_t vtd_dmars_off;
 } sinit_mle_data_t;
 
 static void __init tboot_copy_memory(unsigned char *va, uint32_t size,
@@ -130,14 +130,18 @@ void __init tboot_probe(void)
 
     txt_heap_base = txt_heap_size = sinit_base = sinit_size = 0;
     /* TXT Heap */
-    tboot_copy_memory((unsigned char *)&txt_heap_base, sizeof(txt_heap_base),
+    tboot_copy_memory((unsigned char *)&txt_heap_base,
+                      sizeof(txt_heap_base),
                       TXT_PUB_CONFIG_REGS_BASE + TXTCR_HEAP_BASE);
-    tboot_copy_memory((unsigned char *)&txt_heap_size, sizeof(txt_heap_size),
+    tboot_copy_memory((unsigned char *)&txt_heap_size,
+                      sizeof(txt_heap_size),
                       TXT_PUB_CONFIG_REGS_BASE + TXTCR_HEAP_SIZE);
     /* SINIT */
-    tboot_copy_memory((unsigned char *)&sinit_base, sizeof(sinit_base),
+    tboot_copy_memory((unsigned char *)&sinit_base,
+                      sizeof(sinit_base),
                       TXT_PUB_CONFIG_REGS_BASE + TXTCR_SINIT_BASE);
-    tboot_copy_memory((unsigned char *)&sinit_size, sizeof(sinit_size),
+    tboot_copy_memory((unsigned char *)&sinit_size,
+                      sizeof(sinit_size),
                       TXT_PUB_CONFIG_REGS_BASE + TXTCR_SINIT_SIZE);
     clear_fixmap(FIX_TBOOT_MAP_ADDRESS);
 }
@@ -149,6 +153,7 @@ void __init tboot_probe(void)
 #define dma_pte_present(p) (((p).val & 3) != 0)
 #define dma_pte_addr(p) ((p).val & PAGE_MASK_4K)
 #define agaw_to_level(val) ((val)+2)
+
 struct dma_pte {
     u64 val;
 };
@@ -189,7 +194,7 @@ static void wipe_ctx(vmac_ctx_t *ctx)
      * Make sure the compiler won't optimize out the memset(), for the local
      * variable (at the call sites) going out of scope right afterwards.
      */
-    asm volatile ( "" :: "m" (*ctx) );
+    asm volatile("" ::"m"(*ctx));
 }
 
 static void tboot_gen_domain_integrity(const uint8_t key[TB_KEY_SIZE],
@@ -201,7 +206,7 @@ static void tboot_gen_domain_integrity(const uint8_t key[TB_KEY_SIZE],
     vmac_ctx_t ctx;
 
     vmac_set_key((uint8_t *)key, &ctx);
-    for_each_domain( d )
+    for_each_domain(d)
     {
         if ( !(d->options & XEN_DOMCTL_CDF_s3_integrity) )
             continue;
@@ -220,7 +225,8 @@ static void tboot_gen_domain_integrity(const uint8_t key[TB_KEY_SIZE],
         {
             const struct domain_iommu *dio = dom_iommu(d);
 
-            update_iommu_mac(&ctx, dio->arch.vtd.pgd_maddr,
+            update_iommu_mac(&ctx,
+                             dio->arch.vtd.pgd_maddr,
                              agaw_to_level(dio->arch.vtd.agaw));
         }
     }
@@ -248,10 +254,9 @@ static void tboot_gen_xenheap_integrity(const uint8_t key[TB_KEY_SIZE],
             continue;
         if ( is_xen_fixed_mfn(_mfn(mfn)) )
             continue; /* skip Xen */
-        if ( (mfn >= PFN_DOWN(g_tboot_shared->tboot_base - 3 * PAGE_SIZE))
-             && (mfn < PFN_UP(g_tboot_shared->tboot_base
-                              + g_tboot_shared->tboot_size
-                              + 3 * PAGE_SIZE)) )
+        if ( (mfn >= PFN_DOWN(g_tboot_shared->tboot_base - 3 * PAGE_SIZE)) &&
+             (mfn < PFN_UP(g_tboot_shared->tboot_base +
+                           g_tboot_shared->tboot_size + 3 * PAGE_SIZE)) )
             continue; /* skip tboot and its page tables */
 
         if ( is_page_in_use(page) && is_special_page(page) )
@@ -271,7 +276,7 @@ static void tboot_gen_frametable_integrity(const uint8_t key[TB_KEY_SIZE],
     vmac_ctx_t ctx;
 
     vmac_set_key((uint8_t *)key, &ctx);
-    for ( sidx = 0; ; sidx = nidx )
+    for ( sidx = 0;; sidx = nidx )
     {
         eidx = find_next_zero_bit(pdx_group_valid, max_idx, sidx);
         nidx = find_next_bit(pdx_group_valid, max_idx, eidx);
@@ -303,12 +308,16 @@ void tboot_shutdown(uint32_t shutdown_type)
     map_base = maddr_to_mfn(g_tboot_shared->tboot_base);
     map_size = PFN_UP(g_tboot_shared->tboot_size);
 
-    err = map_pages_to_xen(mfn_to_maddr(map_base), map_base, map_size,
+    err = map_pages_to_xen(mfn_to_maddr(map_base),
+                           map_base,
+                           map_size,
                            __PAGE_HYPERVISOR);
     if ( err != 0 )
     {
-        printk("error (%#x) mapping tboot pages (mfns) @ %"PRI_mfn", %#x\n",
-               err, mfn_x(map_base), map_size);
+        printk("error (%#x) mapping tboot pages (mfns) @ %" PRI_mfn ", %#x\n",
+               err,
+               mfn_x(map_base),
+               map_size);
         return;
     }
 
@@ -333,8 +342,10 @@ void tboot_shutdown(uint32_t shutdown_type)
         g_tboot_shared->mac_regions[1].start = (uint64_t)__pa(&_stext);
         g_tboot_shared->mac_regions[1].size = __2M_rodata_end - _stext;
         /* hypervisor .data + .bss */
-        g_tboot_shared->mac_regions[2].start = (uint64_t)__pa(&__2M_rwdata_start);
-        g_tboot_shared->mac_regions[2].size = __2M_rwdata_end - __2M_rwdata_start;
+        g_tboot_shared->mac_regions[2].start =
+            (uint64_t)__pa(&__2M_rwdata_start);
+        g_tboot_shared->mac_regions[2].size = __2M_rwdata_end -
+                                              __2M_rwdata_start;
         if ( efi_boot_mem_unused(&s, &e) )
         {
             g_tboot_shared->mac_regions[2].size =
@@ -372,7 +383,7 @@ void tboot_shutdown(uint32_t shutdown_type)
     if ( idle_vcpu[0] )
         write_ptbase(idle_vcpu[0]);
 
-    ((void(*)(void))(unsigned long)g_tboot_shared->shutdown_entry)();
+    ((void (*)(void))(unsigned long)g_tboot_shared->shutdown_entry)();
 
     BUG(); /* should not reach here */
 }
@@ -392,25 +403,32 @@ int __init tboot_protect_mem_regions(void)
     /* TXT Heap */
     if ( txt_heap_base == 0 )
         return 0;
-    rc = e820_change_range_type(&e820, txt_heap_base,
+    rc = e820_change_range_type(&e820,
+                                txt_heap_base,
                                 txt_heap_base + txt_heap_size,
-                                E820_RESERVED, E820_UNUSABLE);
+                                E820_RESERVED,
+                                E820_UNUSABLE);
     if ( !rc )
         return 0;
 
     /* SINIT */
     if ( sinit_base == 0 )
         return 0;
-    rc = e820_change_range_type(&e820, sinit_base,
+    rc = e820_change_range_type(&e820,
+                                sinit_base,
                                 sinit_base + sinit_size,
-                                E820_RESERVED, E820_UNUSABLE);
+                                E820_RESERVED,
+                                E820_UNUSABLE);
     if ( !rc )
         return 0;
 
     /* TXT Private Space */
-    rc = e820_change_range_type(&e820, TXT_PRIV_CONFIG_REGS_BASE,
-                 TXT_PRIV_CONFIG_REGS_BASE + NR_TXT_CONFIG_PAGES * PAGE_SIZE,
-                 E820_RESERVED, E820_UNUSABLE);
+    rc = e820_change_range_type(&e820,
+                                TXT_PRIV_CONFIG_REGS_BASE,
+                                TXT_PRIV_CONFIG_REGS_BASE +
+                                    NR_TXT_CONFIG_PAGES * PAGE_SIZE,
+                                E820_RESERVED,
+                                E820_UNUSABLE);
     if ( !rc )
         return 0;
 
@@ -450,7 +468,8 @@ int __init cf_check tboot_parse_dmar_table(acpi_table_handler dmar_handler)
     pa += size;
     /* now points to SinitMleDataSize; set to SinitMleData */
     pa += sizeof(uint64_t);
-    tboot_copy_memory((unsigned char *)&sinit_mle_data, sizeof(sinit_mle_data),
+    tboot_copy_memory((unsigned char *)&sinit_mle_data,
+                      sizeof(sinit_mle_data),
                       pa);
     /* get addr of DMAR table */
     pa += sinit_mle_data.vtd_dmars_off - sizeof(uint64_t);
@@ -503,13 +522,19 @@ void tboot_s3_error(int error)
 
     switch ( error )
     {
-    case -1: what = "Xen heap"; break;
-    case -2: what = "frame table"; break;
-    case -3: what = "domains"; break;
+    case -1:
+        what = "Xen heap";
+        break;
+    case -2:
+        what = "frame table";
+        break;
+    case -3:
+        what = "domains";
+        break;
     }
 
-    printk("MAC for %s before S3 is: 0x%08"PRIx64"\n", what, orig_mac);
-    printk("MAC for %s after S3 is: 0x%08"PRIx64"\n", what, resume_mac);
+    printk("MAC for %s before S3 is: 0x%08" PRIx64 "\n", what, orig_mac);
+    printk("MAC for %s after S3 is: 0x%08" PRIx64 "\n", what, resume_mac);
     panic("Memory integrity was lost on resume (%d)\n", error);
 }
 

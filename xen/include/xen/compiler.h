@@ -4,15 +4,15 @@
 #if !defined(__GNUC__) || (__GNUC__ < 4)
 #error Sorry, your compiler is too old/not recognized.
 #elif CONFIG_CC_IS_GCC
-# if defined(CONFIG_ARM_32) && CONFIG_GCC_VERSION < 40900
-#  error Sorry, your version of GCC is too old - please use 4.9 or newer.
-# elif defined(CONFIG_ARM_64) && CONFIG_GCC_VERSION < 50100
+#if defined(CONFIG_ARM_32) && CONFIG_GCC_VERSION < 40900
+#error Sorry, your version of GCC is too old - please use 4.9 or newer.
+#elif defined(CONFIG_ARM_64) && CONFIG_GCC_VERSION < 50100
 /*
  * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=63293
  * https://lore.kernel.org/r/20210107111841.GN1551@shell.armlinux.org.uk
  */
-#  error Sorry, your version of GCC is too old - please use 5.1 or newer.
-# endif
+#error Sorry, your version of GCC is too old - please use 5.1 or newer.
+#endif
 #endif
 
 #define barrier()     __asm__ __volatile__("": : :"memory")
@@ -31,18 +31,18 @@
 #define __weak        __attribute__((__weak__))
 
 #if !defined(CONFIG_CC_IS_CLANG) || CONFIG_CLANG_VERSION >= 140000
-# define nocall       __attribute__((__error__("Nonstandard ABI")))
+#define nocall       __attribute__((__error__("Nonstandard ABI")))
 #else
-# define nocall
+#define nocall
 #endif
 
 #ifdef CONFIG_XEN_IBT
-# define cf_check     __attribute__((__cf_check__))
+#define cf_check     __attribute__((__cf_check__))
 #else
-# define cf_check
+#define cf_check
 #endif
 
-#if (!defined(__clang__) && (__GNUC__ == 4) && (__GNUC_MINOR__ < 5))
+#if ( !defined(__clang__) && (__GNUC__ == 4) && (__GNUC_MINOR__ < 5) )
 #define unreachable() do {} while (1)
 #else
 #define unreachable() __builtin_unreachable()
@@ -58,10 +58,10 @@
  *
  *  gcc: https://gcc.gnu.org/onlinedocs/gcc/Statement-Attributes.html#Statement-Attributes
  */
-#if (!defined(__clang__) && (__GNUC__ >= 7))
-# define fallthrough        __attribute__((__fallthrough__))
+#if ( !defined(__clang__) && (__GNUC__ >= 7) )
+#define fallthrough        __attribute__((__fallthrough__))
 #else
-# define fallthrough        do {} while (0)  /* fallthrough */
+#define fallthrough        do {} while (0)  /* fallthrough */
 #endif
 
 #ifdef __clang__
@@ -108,7 +108,7 @@
 #define __must_check __attribute__((__warn_unused_result__))
 #define __nonnull(...) __attribute__((__nonnull__(__VA_ARGS__)))
 
-#define offsetof(a,b) __builtin_offsetof(a,b)
+#define offsetof(a, b) __builtin_offsetof(a,b)
 
 #if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
 #define alignof __alignof__
@@ -141,15 +141,15 @@
 
 /* See gcc bug 100680. */
 #if CONFIG_GCC_VERSION >= 110000 && CONFIG_GCC_VERSION < 110300
-# define gcc11_wrap(x) RELOC_HIDE(x, 0)
+#define gcc11_wrap(x) RELOC_HIDE(x, 0)
 #else
-# define gcc11_wrap(x) (x)
+#define gcc11_wrap(x) (x)
 #endif
 
 #ifdef __GCC_ASM_FLAG_OUTPUTS__
-# define ASM_FLAG_OUT(yes, no) yes
+#define ASM_FLAG_OUT(yes, no) yes
 #else
-# define ASM_FLAG_OUT(yes, no) no
+#define ASM_FLAG_OUT(yes, no) no
 #endif
 
 /* Mark a function or variable as being used only to interface with asm */
@@ -174,14 +174,14 @@
  * http://bugs.llvm.org/show_bug.cgi?id=32595 
  */
 #ifdef __clang__
-# define CLANG_DISABLE_WARN_GCC_COMPAT_START                    \
+#define CLANG_DISABLE_WARN_GCC_COMPAT_START                    \
     _Pragma("clang diagnostic push")                            \
     _Pragma("clang diagnostic ignored \"-Wgcc-compat\"")
-# define CLANG_DISABLE_WARN_GCC_COMPAT_END                      \
+#define CLANG_DISABLE_WARN_GCC_COMPAT_END                      \
     _Pragma("clang diagnostic pop")
 #else
-# define CLANG_DISABLE_WARN_GCC_COMPAT_START
-# define CLANG_DISABLE_WARN_GCC_COMPAT_END
+#define CLANG_DISABLE_WARN_GCC_COMPAT_START
+#define CLANG_DISABLE_WARN_GCC_COMPAT_END
 #endif
 
 #endif /* __LINUX_COMPILER_H */

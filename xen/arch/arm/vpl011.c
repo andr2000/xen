@@ -101,8 +101,7 @@ static void vpl011_write_data_xen(struct domain *d, uint8_t data)
     }
     else
     {
-        if ( intf->out_prod == SBSA_UART_OUT_BUF_SIZE - 2 ||
-             data == '\n' )
+        if ( intf->out_prod == SBSA_UART_OUT_BUF_SIZE - 2 || data == '\n' )
         {
             if ( data != '\n' )
                 intf->out[intf->out_prod++] = '\n';
@@ -298,7 +297,7 @@ static void vpl011_write_data(struct domain *d, uint8_t data)
      * data will be silently dropped.
      */
     if ( xencons_queued(out_prod, out_cons, sizeof(intf->out)) !=
-         sizeof (intf->out) )
+         sizeof(intf->out) )
     {
         unsigned int fifo_level;
 
@@ -340,14 +339,12 @@ static void vpl011_write_data(struct domain *d, uint8_t data)
     notify_via_xen_event_channel(d, vpl011->evtchn);
 }
 
-static int vpl011_mmio_read(struct vcpu *v,
-                            mmio_info_t *info,
-                            register_t *r,
+static int vpl011_mmio_read(struct vcpu *v, mmio_info_t *info, register_t *r,
                             void *priv)
 {
     struct hsr_dabt dabt = info->dabt;
-    uint32_t vpl011_reg = (uint32_t)(info->gpa -
-                                     v->domain->arch.vpl011.base_addr);
+    uint32_t vpl011_reg =
+        (uint32_t)(info->gpa - v->domain->arch.vpl011.base_addr);
     struct vpl011 *vpl011 = &v->domain->arch.vpl011;
     struct domain *d = v->domain;
     unsigned long flags;
@@ -355,7 +352,8 @@ static int vpl011_mmio_read(struct vcpu *v,
     switch ( vpl011_reg )
     {
     case DR:
-        if ( !vpl011_reg32_check_access(dabt) ) goto bad_width;
+        if ( !vpl011_reg32_check_access(dabt) )
+            goto bad_width;
 
         if ( vpl011->backend_in_domain )
             *r = vreg_reg32_extract(vpl011_read_data(d), info);
@@ -364,14 +362,16 @@ static int vpl011_mmio_read(struct vcpu *v,
         return 1;
 
     case RSR:
-        if ( !vpl011_reg32_check_access(dabt) ) goto bad_width;
+        if ( !vpl011_reg32_check_access(dabt) )
+            goto bad_width;
 
         /* It always returns 0 as there are no physical errors. */
         *r = 0;
         return 1;
 
     case FR:
-        if ( !vpl011_reg32_check_access(dabt) ) goto bad_width;
+        if ( !vpl011_reg32_check_access(dabt) )
+            goto bad_width;
 
         VPL011_LOCK(d, flags);
         *r = vreg_reg32_extract(vpl011->uartfr, info);
@@ -379,7 +379,8 @@ static int vpl011_mmio_read(struct vcpu *v,
         return 1;
 
     case RIS:
-        if ( !vpl011_reg32_check_access(dabt) ) goto bad_width;
+        if ( !vpl011_reg32_check_access(dabt) )
+            goto bad_width;
 
         VPL011_LOCK(d, flags);
         *r = vreg_reg32_extract(vpl011->uartris, info);
@@ -387,16 +388,17 @@ static int vpl011_mmio_read(struct vcpu *v,
         return 1;
 
     case MIS:
-        if ( !vpl011_reg32_check_access(dabt) ) goto bad_width;
+        if ( !vpl011_reg32_check_access(dabt) )
+            goto bad_width;
 
         VPL011_LOCK(d, flags);
-        *r = vreg_reg32_extract(vpl011->uartris & vpl011->uartimsc,
-                                info);
+        *r = vreg_reg32_extract(vpl011->uartris & vpl011->uartimsc, info);
         VPL011_UNLOCK(d, flags);
         return 1;
 
     case IMSC:
-        if ( !vpl011_reg32_check_access(dabt) ) goto bad_width;
+        if ( !vpl011_reg32_check_access(dabt) )
+            goto bad_width;
 
         VPL011_LOCK(d, flags);
         *r = vreg_reg32_extract(vpl011->uartimsc, info);
@@ -404,14 +406,17 @@ static int vpl011_mmio_read(struct vcpu *v,
         return 1;
 
     case ICR:
-        if ( !vpl011_reg32_check_access(dabt) ) goto bad_width;
+        if ( !vpl011_reg32_check_access(dabt) )
+            goto bad_width;
 
         /* Only write is valid. */
         return 0;
 
     default:
-        gprintk(XENLOG_ERR, "vpl011: unhandled read r%d offset %#08x\n",
-                dabt.reg, vpl011_reg);
+        gprintk(XENLOG_ERR,
+                "vpl011: unhandled read r%d offset %#08x\n",
+                dabt.reg,
+                vpl011_reg);
         goto read_as_zero;
     }
 
@@ -423,20 +428,20 @@ read_as_zero:
     return 1;
 
 bad_width:
-    gprintk(XENLOG_ERR, "vpl011: bad read width %d r%d offset %#08x\n",
-            dabt.size, dabt.reg, vpl011_reg);
+    gprintk(XENLOG_ERR,
+            "vpl011: bad read width %d r%d offset %#08x\n",
+            dabt.size,
+            dabt.reg,
+            vpl011_reg);
     return 0;
-
 }
 
-static int vpl011_mmio_write(struct vcpu *v,
-                             mmio_info_t *info,
-                             register_t r,
+static int vpl011_mmio_write(struct vcpu *v, mmio_info_t *info, register_t r,
                              void *priv)
 {
     struct hsr_dabt dabt = info->dabt;
-    uint32_t vpl011_reg = (uint32_t)(info->gpa -
-                                     v->domain->arch.vpl011.base_addr);
+    uint32_t vpl011_reg =
+        (uint32_t)(info->gpa - v->domain->arch.vpl011.base_addr);
     struct vpl011 *vpl011 = &v->domain->arch.vpl011;
     struct domain *d = v->domain;
     unsigned long flags;
@@ -447,7 +452,8 @@ static int vpl011_mmio_write(struct vcpu *v,
     {
         uint32_t data = 0;
 
-        if ( !vpl011_reg32_check_access(dabt) ) goto bad_width;
+        if ( !vpl011_reg32_check_access(dabt) )
+            goto bad_width;
 
         vreg_reg32_update(&data, r, info);
         data &= 0xFF;
@@ -459,7 +465,8 @@ static int vpl011_mmio_write(struct vcpu *v,
     }
 
     case RSR: /* Nothing to clear. */
-        if ( !vpl011_reg32_check_access(dabt) ) goto bad_width;
+        if ( !vpl011_reg32_check_access(dabt) )
+            goto bad_width;
 
         return 1;
 
@@ -469,7 +476,8 @@ static int vpl011_mmio_write(struct vcpu *v,
         goto write_ignore;
 
     case IMSC:
-        if ( !vpl011_reg32_check_access(dabt) ) goto bad_width;
+        if ( !vpl011_reg32_check_access(dabt) )
+            goto bad_width;
 
         VPL011_LOCK(d, flags);
         vreg_reg32_update(&vpl011->uartimsc, r, info);
@@ -478,7 +486,8 @@ static int vpl011_mmio_write(struct vcpu *v,
         return 1;
 
     case ICR:
-        if ( !vpl011_reg32_check_access(dabt) ) goto bad_width;
+        if ( !vpl011_reg32_check_access(dabt) )
+            goto bad_width;
 
         VPL011_LOCK(d, flags);
         vreg_reg32_clearbits(&vpl011->uartris, r, info);
@@ -487,8 +496,10 @@ static int vpl011_mmio_write(struct vcpu *v,
         return 1;
 
     default:
-        gprintk(XENLOG_ERR, "vpl011: unhandled write r%d offset %#08x\n",
-                dabt.reg, vpl011_reg);
+        gprintk(XENLOG_ERR,
+                "vpl011: unhandled write r%d offset %#08x\n",
+                dabt.reg,
+                vpl011_reg);
         goto write_ignore;
     }
 
@@ -496,10 +507,12 @@ write_ignore:
     return 1;
 
 bad_width:
-    gprintk(XENLOG_ERR, "vpl011: bad write width %d r%d offset %#08x\n",
-            dabt.size, dabt.reg, vpl011_reg);
+    gprintk(XENLOG_ERR,
+            "vpl011: bad write width %d r%d offset %#08x\n",
+            dabt.size,
+            dabt.reg,
+            vpl011_reg);
     return 0;
-
 }
 
 static const struct mmio_handler_ops vpl011_mmio_handler = {
@@ -507,8 +520,7 @@ static const struct mmio_handler_ops vpl011_mmio_handler = {
     .write = vpl011_mmio_write,
 };
 
-static void vpl011_data_avail(struct domain *d,
-                              XENCONS_RING_IDX in_fifo_level,
+static void vpl011_data_avail(struct domain *d, XENCONS_RING_IDX in_fifo_level,
                               XENCONS_RING_IDX in_size,
                               XENCONS_RING_IDX out_fifo_level,
                               XENCONS_RING_IDX out_size)
@@ -581,7 +593,8 @@ void vpl011_rx_char_xen(struct domain *d, char c)
 
     in_cons = intf->in_cons;
     in_prod = intf->in_prod;
-    if ( xencons_queued(in_prod, in_cons, sizeof(intf->in)) == sizeof(intf->in) )
+    if ( xencons_queued(in_prod, in_cons, sizeof(intf->in)) ==
+         sizeof(intf->in) )
     {
         VPL011_UNLOCK(d, flags);
         return;
@@ -590,11 +603,13 @@ void vpl011_rx_char_xen(struct domain *d, char c)
     intf->in[xencons_mask(in_prod, sizeof(intf->in))] = c;
     intf->in_prod = ++in_prod;
 
-    in_fifo_level = xencons_queued(in_prod,
-                                   in_cons,
-                                   sizeof(intf->in));
+    in_fifo_level = xencons_queued(in_prod, in_cons, sizeof(intf->in));
 
-    vpl011_data_avail(d, in_fifo_level, sizeof(intf->in), 0, SBSA_UART_FIFO_SIZE);
+    vpl011_data_avail(d,
+                      in_fifo_level,
+                      sizeof(intf->in),
+                      0,
+                      SBSA_UART_FIFO_SIZE);
     VPL011_UNLOCK(d, flags);
 }
 
@@ -616,16 +631,15 @@ static void vpl011_notification(struct vcpu *v, unsigned int port)
 
     smp_rmb();
 
-    in_fifo_level = xencons_queued(in_prod,
-                                   in_cons,
-                                   sizeof(intf->in));
+    in_fifo_level = xencons_queued(in_prod, in_cons, sizeof(intf->in));
 
-    out_fifo_level = xencons_queued(out_prod,
-                                    out_cons,
-                                    sizeof(intf->out));
+    out_fifo_level = xencons_queued(out_prod, out_cons, sizeof(intf->out));
 
-    vpl011_data_avail(v->domain, in_fifo_level, sizeof(intf->in),
-                      out_fifo_level, sizeof(intf->out));
+    vpl011_data_avail(v->domain,
+                      in_fifo_level,
+                      sizeof(intf->in),
+                      out_fifo_level,
+                      sizeof(intf->out));
 
     VPL011_UNLOCK(d, flags);
 }
@@ -670,8 +684,9 @@ int domain_vpl011_init(struct domain *d, struct vpl011_init_info *info)
          */
         if ( uart->size < GUEST_PL011_SIZE )
         {
-            printk(XENLOG_ERR
-                   "vpl011: Can't re-use the Xen UART MMIO region as it is too small.\n");
+            printk(
+                XENLOG_ERR
+                "vpl011: Can't re-use the Xen UART MMIO region as it is too small.\n");
             return -EINVAL;
         }
     }
@@ -690,14 +705,16 @@ int domain_vpl011_init(struct domain *d, struct vpl011_init_info *info)
         vpl011->backend_in_domain = true;
 
         /* Map the guest PFN to Xen address space. */
-        rc =  prepare_ring_for_helper(d,
-                                      gfn_x(info->gfn),
-                                      &vpl011->backend.dom.ring_page,
-                                      &vpl011->backend.dom.ring_buf);
+        rc = prepare_ring_for_helper(d,
+                                     gfn_x(info->gfn),
+                                     &vpl011->backend.dom.ring_page,
+                                     &vpl011->backend.dom.ring_buf);
         if ( rc < 0 )
             goto out;
 
-        rc = alloc_unbound_xen_event_channel(d, 0, info->console_domid,
+        rc = alloc_unbound_xen_event_channel(d,
+                                             0,
+                                             info->console_domid,
                                              vpl011_notification);
         if ( rc < 0 )
             goto out1;
@@ -727,8 +744,11 @@ int domain_vpl011_init(struct domain *d, struct vpl011_init_info *info)
 
     spin_lock_init(&vpl011->lock);
 
-    register_mmio_handler(d, &vpl011_mmio_handler,
-                          vpl011->base_addr, GUEST_PL011_SIZE, NULL);
+    register_mmio_handler(d,
+                          &vpl011_mmio_handler,
+                          vpl011->base_addr,
+                          GUEST_PL011_SIZE,
+                          NULL);
 
     return 0;
 

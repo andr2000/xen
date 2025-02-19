@@ -90,8 +90,8 @@ struct ffa_mem_transaction_int {
 struct ffa_shm_mem {
     struct list_head list;
     uint16_t sender_id;
-    uint16_t ep_id;     /* endpoint, the one lending */
-    uint64_t handle;    /* FFA_HANDLE_INVALID if not set yet */
+    uint16_t ep_id; /* endpoint, the one lending */
+    uint64_t handle; /* FFA_HANDLE_INVALID if not set yet */
     unsigned int page_count;
     struct page_info *pages[];
 };
@@ -167,8 +167,8 @@ static int get_shm_pages(struct domain *d, struct ffa_shm_mem *shm,
                 return FFA_RET_INVALID_PARAMETERS;
 
             gfn = gaddr_to_gfn(addr + m * FFA_PAGE_SIZE);
-            shm->pages[pg_idx] = get_page_from_gfn(d, gfn_x(gfn), &t,
-						   P2M_ALLOC);
+            shm->pages[pg_idx] =
+                get_page_from_gfn(d, gfn_x(gfn), &t, P2M_ALLOC);
             if ( !shm->pages[pg_idx] )
                 return FFA_RET_DENIED;
             /* Only normal RW RAM for now */
@@ -180,7 +180,7 @@ static int get_shm_pages(struct domain *d, struct ffa_shm_mem *shm,
 
     /* The ranges must add up */
     if ( pg_idx < shm->page_count )
-            return FFA_RET_INVALID_PARAMETERS;
+        return FFA_RET_INVALID_PARAMETERS;
 
     return FFA_RET_OK;
 }
@@ -277,8 +277,7 @@ static void free_ffa_shm_mem(struct domain *d, struct ffa_shm_mem *shm)
     xfree(shm);
 }
 
-static void init_range(struct ffa_address_range *addr_range,
-                       paddr_t pa)
+static void init_range(struct ffa_address_range *addr_range, paddr_t pa)
 {
     memset(addr_range, 0, sizeof(*addr_range));
     addr_range->address = pa;
@@ -337,7 +336,8 @@ static int share_shm(struct ffa_shm_mem *shm)
         region_descr->address_range_count++;
     }
 
-    tot_len = ADDR_RANGE_OFFSET(descr->mem_access_count, region_count,
+    tot_len = ADDR_RANGE_OFFSET(descr->mem_access_count,
+                                region_count,
                                 region_descr->address_range_count);
     if ( tot_len > max_frag_len )
         return FFA_RET_NOT_SUPPORTED;
@@ -421,7 +421,7 @@ static int read_mem_transaction(uint32_t ffa_vers, const void *buf, size_t blen,
      * any valid value so being out of range means that something is wrong.
      */
     if ( mem_reg_attr > UINT8_MAX || flags > UINT8_MAX || size > UINT8_MAX ||
-        count > UINT8_MAX || offs > UINT16_MAX )
+         count > UINT8_MAX || offs > UINT16_MAX )
         return FFA_RET_INVALID_PARAMETERS;
 
     /* Check that the endpoint memory access descriptor array fits */
@@ -568,7 +568,8 @@ void ffa_handle_mem_share(struct cpu_user_regs *regs)
      * Check that the Composite memory region descriptor fits.
      */
     if ( sizeof(*region_descr) + region_offs +
-         range_count * sizeof(struct ffa_address_range) > frag_len )
+             range_count * sizeof(struct ffa_address_range) >
+         frag_len )
     {
         ret = FFA_RET_INVALID_PARAMETERS;
         goto out;
@@ -598,10 +599,10 @@ out_unlock:
     spin_unlock(&ctx->tx_lock);
 
 out_set_ret:
-    if ( ret == 0)
-            ffa_set_regs_success(regs, handle_lo, handle_hi);
+    if ( ret == 0 )
+        ffa_set_regs_success(regs, handle_lo, handle_hi);
     else
-            ffa_set_regs_error(regs, ret);
+        ffa_set_regs_error(regs, ret);
 }
 
 /* Must only be called with ctx->lock held */
@@ -666,10 +667,12 @@ bool ffa_shm_domain_destroy(struct domain *d)
 
         uint64_to_regpair(&handle_hi, &handle_lo, shm->handle);
         res = ffa_mem_reclaim(handle_lo, handle_hi, 0);
-        switch ( res ) {
+        switch ( res )
+        {
         case FFA_RET_OK:
             printk(XENLOG_G_DEBUG "%pd: ffa: Reclaimed handle %#lx\n",
-                   d, shm->handle);
+                   d,
+                   shm->handle);
             list_del(&shm->list);
             free_ffa_shm_mem(d, shm);
             break;
@@ -678,8 +681,11 @@ bool ffa_shm_domain_destroy(struct domain *d)
              * A temporary error that may get resolved a bit later, it's
              * worth retrying.
              */
-            printk(XENLOG_G_INFO "%pd: ffa: Failed to reclaim handle %#lx : %d\n",
-                   d, shm->handle, res);
+            printk(XENLOG_G_INFO
+                   "%pd: ffa: Failed to reclaim handle %#lx : %d\n",
+                   d,
+                   shm->handle,
+                   res);
             break; /* We will retry later */
         default:
             /*
@@ -691,8 +697,11 @@ bool ffa_shm_domain_destroy(struct domain *d)
              * FFA_RET_NO_MEMORY might be a temporary error as it it could
              * succeed if retried later, but treat it as permanent for now.
              */
-            printk(XENLOG_G_INFO "%pd: ffa: Permanent failure to reclaim handle %#lx : %d\n",
-                   d, shm->handle, res);
+            printk(XENLOG_G_INFO
+                   "%pd: ffa: Permanent failure to reclaim handle %#lx : %d\n",
+                   d,
+                   shm->handle,
+                   res);
 
             /*
              * Remove the shm from the list and free it, but don't drop

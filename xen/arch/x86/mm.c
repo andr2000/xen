@@ -142,10 +142,10 @@
 #define virt_to_mfn(v) _mfn(__virt_to_mfn(v))
 
 /* Mapping of the fixmap space needed early. */
-l1_pgentry_t __section(".bss.page_aligned") __aligned(PAGE_SIZE)
-    l1_fixmap[L1_PAGETABLE_ENTRIES];
-l1_pgentry_t __section(".bss.page_aligned") __aligned(PAGE_SIZE)
-    l1_fixmap_x[L1_PAGETABLE_ENTRIES]; /* SAF-1-safe */
+l1_pgentry_t __section(".bss.page_aligned")
+    __aligned(PAGE_SIZE) l1_fixmap[L1_PAGETABLE_ENTRIES];
+l1_pgentry_t __section(".bss.page_aligned")
+    __aligned(PAGE_SIZE) l1_fixmap_x[L1_PAGETABLE_ENTRIES]; /* SAF-1-safe */
 
 bool __read_mostly machine_to_phys_mapping_valid;
 
@@ -198,6 +198,7 @@ static int __init cf_check parse_mmio_relax(const char *s)
 
     return 0;
 }
+
 custom_param("mmio-relax", parse_mmio_relax);
 
 static void __init init_frametable_chunk(void *start, void *end)
@@ -210,10 +211,10 @@ static void __init init_frametable_chunk(void *start, void *end)
     ASSERT(!(s & ((1 << L2_PAGETABLE_SHIFT) - 1)));
     for ( ; s < e; s += step << PAGE_SHIFT )
     {
-        step = 1UL << (cpu_has_page1gb &&
-                       !(s & ((1UL << L3_PAGETABLE_SHIFT) - 1)) ?
-                       L3_PAGETABLE_SHIFT - PAGE_SHIFT :
-                       L2_PAGETABLE_SHIFT - PAGE_SHIFT);
+        step = 1UL
+               << (cpu_has_page1gb && !(s & ((1UL << L3_PAGETABLE_SHIFT) - 1))
+                       ? L3_PAGETABLE_SHIFT - PAGE_SHIFT
+                       : L2_PAGETABLE_SHIFT - PAGE_SHIFT);
         /*
          * The hardcoded 4 below is arbitrary - just pick whatever you think
          * is reasonable to waste as a trade-off for using a large page.
@@ -237,7 +238,7 @@ void __init init_frametable(void)
     BUILD_BUG_ON(XEN_VIRT_END > FRAMETABLE_VIRT_START);
     BUILD_BUG_ON(FRAMETABLE_VIRT_START & ((1UL << L2_PAGETABLE_SHIFT) - 1));
 
-    for ( sidx = 0; ; sidx = nidx )
+    for ( sidx = 0;; sidx = nidx )
     {
         eidx = find_next_zero_bit(pdx_group_valid, max_idx, sidx);
         nidx = find_next_bit(pdx_group_valid, max_idx, eidx);
@@ -255,8 +256,8 @@ void __init init_frametable(void)
 }
 
 #ifndef NDEBUG
-static unsigned int __read_mostly root_pgt_pv_xen_slots
-    = ROOT_PAGETABLE_PV_XEN_SLOTS;
+static unsigned int __read_mostly root_pgt_pv_xen_slots =
+    ROOT_PAGETABLE_PV_XEN_SLOTS;
 static l4_pgentry_t __read_mostly split_l4e;
 #else
 #define root_pgt_pv_xen_slots ROOT_PAGETABLE_PV_XEN_SLOTS
@@ -287,9 +288,9 @@ void __init arch_init_memory(void)
      * Basic guest-accessible flags:
      *   PRESENT, R/W, USER, A/D, AVAIL[0,1,2], AVAIL_HIGH, NX (if available).
      */
-    base_disallow_mask =
-        ~(_PAGE_PRESENT | _PAGE_RW | _PAGE_USER | _PAGE_ACCESSED |
-          _PAGE_DIRTY | _PAGE_AVAIL | _PAGE_AVAIL_HIGH | _PAGE_NX);
+    base_disallow_mask = ~(_PAGE_PRESENT | _PAGE_RW | _PAGE_USER |
+                           _PAGE_ACCESSED | _PAGE_DIRTY | _PAGE_AVAIL |
+                           _PAGE_AVAIL_HIGH | _PAGE_NX);
 
     /*
      * First 1MB of RAM is historically marked as I/O.
@@ -304,8 +305,7 @@ void __init arch_init_memory(void)
     /* Any areas not specified as RAM by the e820 map are considered I/O. */
     for ( i = 0, pfn = 0; pfn < max_page; i++ )
     {
-        while ( (i < e820.nr_map) &&
-                (e820.map[i].type != E820_RAM) &&
+        while ( (i < e820.nr_map) && (e820.map[i].type != E820_RAM) &&
                 (e820.map[i].type != E820_UNUSABLE) )
             i++;
 
@@ -317,10 +317,11 @@ void __init arch_init_memory(void)
         else
         {
             /* Mark as I/O just up as far as next RAM region. */
-            rstart_pfn = min_t(unsigned long, max_page,
-                               PFN_UP(e820.map[i].addr));
-            rend_pfn   = max_t(unsigned long, rstart_pfn,
-                               PFN_DOWN(e820.map[i].addr + e820.map[i].size));
+            rstart_pfn =
+                min_t(unsigned long, max_page, PFN_UP(e820.map[i].addr));
+            rend_pfn = max_t(unsigned long,
+                             rstart_pfn,
+                             PFN_DOWN(e820.map[i].addr + e820.map[i].size));
         }
 
         /*
@@ -369,7 +370,7 @@ void __init arch_init_memory(void)
                 if ( !mfn_eq(l3mfn, INVALID_MFN) )
                 {
                     const l3_pgentry_t *l3idle = map_l3t_from_l4e(
-                            idle_pg_table[l4_table_offset(split_va)]);
+                        idle_pg_table[l4_table_offset(split_va)]);
                     l3_pgentry_t *l3tab = map_domain_page(l3mfn);
 
                     for ( i = 0; i < l3_table_offset(split_va); ++i )
@@ -498,8 +499,8 @@ void share_xen_page_with_guest(struct page_info *page, struct domain *d,
     nrspin_lock(&d->page_alloc_lock);
 
     /* The incremented type count pins as writable or read-only. */
-    page->u.inuse.type_info =
-        (flags == SHARE_ro ? PGT_none : PGT_writable_page);
+    page->u.inuse.type_info = (flags == SHARE_ro ? PGT_none
+                                                 : PGT_writable_page);
     page->u.inuse.type_info |= PGT_validated | 1;
 
     page_set_owner(page, d);
@@ -533,8 +534,8 @@ void write_ptbase(struct vcpu *v)
     struct cpu_info *cpu_info = get_cpu_info();
     unsigned long new_cr4;
 
-    new_cr4 = (is_pv_domain(d) && !is_idle_domain(d))
-              ? pv_make_cr4(v) : mmu_cr4_features;
+    new_cr4 = (is_pv_domain(d) && !is_idle_domain(d)) ? pv_make_cr4(v)
+                                                      : mmu_cr4_features;
 
     if ( is_pv_domain(d) && d->arch.pv.xpti )
     {
@@ -593,9 +594,8 @@ static inline void set_tlbflush_timestamp(struct page_info *page)
         page_set_tlbflush_timestamp(page);
 }
 
-const char __section(".bss.page_aligned.const") __aligned(PAGE_SIZE)
-    zero_page[PAGE_SIZE];
-
+const char __section(".bss.page_aligned.const")
+    __aligned(PAGE_SIZE) zero_page[PAGE_SIZE];
 
 static int _get_page_type(struct page_info *page, unsigned long type,
                           bool preemptible);
@@ -606,7 +606,8 @@ static bool inc_linear_entries(struct page_info *pg)
 {
     typeof(pg->linear_pt_count) nc = read_atomic(&pg->linear_pt_count), oc;
 
-    do {
+    do
+    {
         /*
          * The check below checks for the "linear use" count being non-zero
          * as well as overflow.  Signed integer overflow is undefined behavior
@@ -637,7 +638,8 @@ static bool inc_linear_uses(struct page_info *pg)
 {
     typeof(pg->linear_pt_count) nc = read_atomic(&pg->linear_pt_count), oc;
 
-    do {
+    do
+    {
         /* See the respective comment in inc_linear_entries(). */
         BUILD_BUG_ON(sizeof(nc) >= sizeof(int));
         oc = nc--;
@@ -809,8 +811,8 @@ struct mmio_emul_range_ctxt {
     unsigned long mfn;
 };
 
-static int cf_check print_mmio_emul_range(
-    unsigned long s, unsigned long e, void *arg)
+static int cf_check print_mmio_emul_range(unsigned long s, unsigned long e,
+                                          void *arg)
 {
     const struct mmio_emul_range_ctxt *ctxt = arg;
 
@@ -837,7 +839,9 @@ static int cf_check print_mmio_emul_range(
         if ( print )
             printk(XENLOG_G_INFO
                    "d%d: Forcing write emulation on MFNs %lx-%lx\n",
-                   ctxt->d->domain_id, s, e);
+                   ctxt->d->domain_id,
+                   s,
+                   e);
     }
 
     return 1;
@@ -850,9 +854,8 @@ static int cf_check print_mmio_emul_range(
  *  <0  => error code
  *  >0  => the page flags to be flipped
  */
-int
-get_page_from_l1e(
-    l1_pgentry_t l1e, struct domain *l1e_owner, struct domain *pg_owner)
+int get_page_from_l1e(l1_pgentry_t l1e, struct domain *l1e_owner,
+                      struct domain *pg_owner)
 {
     unsigned long mfn = l1e_get_pfn(l1e);
     struct page_info *page = mfn_to_page(_mfn(mfn));
@@ -894,8 +897,10 @@ get_page_from_l1e(
             if ( mfn != (PADDR_MASK >> PAGE_SHIFT) ) /* INVALID_MFN? */
             {
                 gdprintk(XENLOG_WARNING,
-                         "d%d non-privileged attempt to map MMIO space %"PRI_mfn"\n",
-                         pg_owner->domain_id, mfn);
+                         "d%d non-privileged attempt to map MMIO space %" PRI_mfn
+                         "\n",
+                         pg_owner->domain_id,
+                         mfn);
                 return -EPERM;
             }
             return -EINVAL;
@@ -907,8 +912,11 @@ get_page_from_l1e(
             if ( mfn != (PADDR_MASK >> PAGE_SHIFT) ) /* INVALID_MFN? */
             {
                 gdprintk(XENLOG_WARNING,
-                         "d%d attempted to map MMIO space %"PRI_mfn" in d%d to d%d\n",
-                         curr->domain->domain_id, mfn, pg_owner->domain_id,
+                         "d%d attempted to map MMIO space %" PRI_mfn
+                         " in d%d to d%d\n",
+                         curr->domain->domain_id,
+                         mfn,
+                         pg_owner->domain_id,
                          l1e_owner->domain_id);
                 return -EPERM;
             }
@@ -944,9 +952,12 @@ get_page_from_l1e(
                   test_bit(bdf, ro_map)) )
                 printk(XENLOG_G_WARNING
                        "d%d: Forcing read-only access to MFN %lx\n",
-                       l1e_owner->domain_id, mfn);
+                       l1e_owner->domain_id,
+                       mfn);
             else
-                rangeset_report_ranges(mmio_ro_ranges, 0, ~0UL,
+                rangeset_report_ranges(mmio_ro_ranges,
+                                       0,
+                                       ~0UL,
                                        print_mmio_emul_range,
                                        &(struct mmio_emul_range_ctxt){
                                            .d = l1e_owner,
@@ -986,7 +997,8 @@ get_page_from_l1e(
         {
             gdprintk(XENLOG_WARNING,
                      "pg_owner d%d l1e_owner d%d, but real_pg_owner d%d\n",
-                     pg_owner->domain_id, l1e_owner->domain_id,
+                     pg_owner->domain_id,
+                     l1e_owner->domain_id,
                      real_pg_owner ? real_pg_owner->domain_id : -1);
             goto could_not_pin;
         }
@@ -1035,11 +1047,15 @@ get_page_from_l1e(
 
     return 0;
 
- could_not_pin:
-    gdprintk(XENLOG_WARNING, "Error getting mfn %" PRI_mfn " (pfn %" PRI_pfn
+could_not_pin:
+    gdprintk(XENLOG_WARNING,
+             "Error getting mfn %" PRI_mfn " (pfn %" PRI_pfn
              ") from L1 entry %" PRIpte " for l1e_owner d%d, pg_owner d%d\n",
-             mfn, get_gpfn_from_mfn(mfn),
-             l1e_get_intpte(l1e), l1e_owner->domain_id, pg_owner->domain_id);
+             mfn,
+             get_gpfn_from_mfn(mfn),
+             l1e_get_intpte(l1e),
+             l1e_owner->domain_id,
+             pg_owner->domain_id);
     if ( real_pg_owner != NULL )
         put_page(page);
     return -EBUSY;
@@ -1059,18 +1075,16 @@ get_page_from_l1e(
 
 #ifdef CONFIG_PV
 
-static int get_page_and_type_from_mfn(
-    mfn_t mfn, unsigned long type, struct domain *d,
-    unsigned int flags)
+static int get_page_and_type_from_mfn(mfn_t mfn, unsigned long type,
+                                      struct domain *d, unsigned int flags)
 {
     struct page_info *page = mfn_to_page(mfn);
     int rc;
     bool preemptible = flags & PTF_preemptible,
          partial_set = flags & PTF_partial_set,
-         retain_ref  = flags & PTF_retain_ref_on_restart;
+         retain_ref = flags & PTF_retain_ref_on_restart;
 
-    if ( likely(!partial_set) &&
-         unlikely(!get_page_from_mfn(mfn, d)) )
+    if ( likely(!partial_set) && unlikely(!get_page_from_mfn(mfn, d)) )
         return -EINVAL;
 
     rc = _get_page_type(page, type, preemptible);
@@ -1121,16 +1135,17 @@ static int get_page_and_type_from_mfn(
 }
 
 define_get_linear_pagetable(l2);
-static int
-get_page_from_l2e(
-    l2_pgentry_t l2e, mfn_t l2mfn, struct domain *d, unsigned int flags)
+
+static int get_page_from_l2e(l2_pgentry_t l2e, mfn_t l2mfn, struct domain *d,
+                             unsigned int flags)
 {
     unsigned long mfn = l2e_get_pfn(l2e);
     int rc;
 
     if ( unlikely((l2e_get_flags(l2e) & L2_DISALLOW_MASK)) )
     {
-        gdprintk(XENLOG_WARNING, "Bad L2 flags %x\n",
+        gdprintk(XENLOG_WARNING,
+                 "Bad L2 flags %x\n",
                  l2e_get_flags(l2e) & L2_DISALLOW_MASK);
         return -EINVAL;
     }
@@ -1145,23 +1160,25 @@ get_page_from_l2e(
 }
 
 define_get_linear_pagetable(l3);
-static int
-get_page_from_l3e(
-    l3_pgentry_t l3e, mfn_t l3mfn, struct domain *d, unsigned int flags)
+
+static int get_page_from_l3e(l3_pgentry_t l3e, mfn_t l3mfn, struct domain *d,
+                             unsigned int flags)
 {
     int rc;
 
     if ( unlikely((l3e_get_flags(l3e) & l3_disallow_mask(d))) )
     {
-        gdprintk(XENLOG_WARNING, "Bad L3 flags %x\n",
+        gdprintk(XENLOG_WARNING,
+                 "Bad L3 flags %x\n",
                  l3e_get_flags(l3e) & l3_disallow_mask(d));
         return -EINVAL;
     }
 
-    rc = get_page_and_type_from_mfn(
-        l3e_get_mfn(l3e), PGT_l2_page_table, d, flags | PTF_preemptible);
-    if ( unlikely(rc == -EINVAL) &&
-         !is_pv_32bit_domain(d) &&
+    rc = get_page_and_type_from_mfn(l3e_get_mfn(l3e),
+                                    PGT_l2_page_table,
+                                    d,
+                                    flags | PTF_preemptible);
+    if ( unlikely(rc == -EINVAL) && !is_pv_32bit_domain(d) &&
          get_l3_linear_pagetable(l3e, l3mfn, d) )
         rc = 0;
 
@@ -1169,21 +1186,24 @@ get_page_from_l3e(
 }
 
 define_get_linear_pagetable(l4);
-static int
-get_page_from_l4e(
-    l4_pgentry_t l4e, mfn_t l4mfn, struct domain *d, unsigned int flags)
+
+static int get_page_from_l4e(l4_pgentry_t l4e, mfn_t l4mfn, struct domain *d,
+                             unsigned int flags)
 {
     int rc;
 
     if ( unlikely((l4e_get_flags(l4e) & L4_DISALLOW_MASK)) )
     {
-        gdprintk(XENLOG_WARNING, "Bad L4 flags %x\n",
+        gdprintk(XENLOG_WARNING,
+                 "Bad L4 flags %x\n",
                  l4e_get_flags(l4e) & L4_DISALLOW_MASK);
         return -EINVAL;
     }
 
-    rc = get_page_and_type_from_mfn(
-        l4e_get_mfn(l4e), PGT_l3_page_table, d, flags | PTF_preemptible);
+    rc = get_page_and_type_from_mfn(l4e_get_mfn(l4e),
+                                    PGT_l3_page_table,
+                                    d,
+                                    flags | PTF_preemptible);
     if ( unlikely(rc == -EINVAL) && get_l4_linear_pagetable(l4e, l4mfn, d) )
         rc = 0;
 
@@ -1196,9 +1216,9 @@ static int _put_page_type(struct page_info *page, unsigned int flags,
 
 void put_page_from_l1e(l1_pgentry_t l1e, struct domain *l1e_owner)
 {
-    unsigned long     pfn = l1e_get_pfn(l1e);
+    unsigned long pfn = l1e_get_pfn(l1e);
     struct page_info *page;
-    struct domain    *pg_owner;
+    struct domain *pg_owner;
 
     if ( !(l1e_get_flags(l1e) & _PAGE_PRESENT) || is_iomem_page(_mfn(pfn)) )
         return;
@@ -1225,12 +1245,13 @@ void put_page_from_l1e(l1_pgentry_t l1e, struct domain *l1e_owner)
      * condition.
      */
 #if _PAGE_GNTTAB
-    if ( (l1e_get_flags(l1e) & _PAGE_GNTTAB) &&
-         !l1e_owner->is_shutting_down && !l1e_owner->is_dying )
+    if ( (l1e_get_flags(l1e) & _PAGE_GNTTAB) && !l1e_owner->is_shutting_down &&
+         !l1e_owner->is_dying )
     {
         gprintk(XENLOG_WARNING,
                 "Attempt to implicitly unmap %pd's grant PTE %" PRIpte "\n",
-                l1e_owner, l1e_get_intpte(l1e));
+                l1e_owner,
+                l1e_get_intpte(l1e));
         pv_inject_hw_exception(X86_EXC_GP, 0);
     }
 #endif
@@ -1274,7 +1295,7 @@ static int put_data_pages(struct page_info *page, bool writeable, int pt_shift)
     unsigned int i, count = 1 << (pt_shift - PAGE_SHIFT);
 
     ASSERT(!(mfn_x(page_to_mfn(page)) & (count - 1)));
-    for ( i = 0; i < count ; i++, page++ )
+    for ( i = 0; i < count; i++, page++ )
         if ( writeable )
             put_page_and_type(page);
         else
@@ -1289,7 +1310,8 @@ static int put_data_pages(struct page_info *page, bool writeable, int pt_shift)
  */
 static int put_page_from_l2e(l2_pgentry_t l2e, mfn_t l2mfn, unsigned int flags)
 {
-    if ( !(l2e_get_flags(l2e) & _PAGE_PRESENT) || mfn_eq(l2e_get_mfn(l2e), l2mfn) )
+    if ( !(l2e_get_flags(l2e) & _PAGE_PRESENT) ||
+         mfn_eq(l2e_get_mfn(l2e), l2mfn) )
         return 1;
 
     if ( l2e_get_flags(l2e) & _PAGE_PSE )
@@ -1302,7 +1324,8 @@ static int put_page_from_l2e(l2_pgentry_t l2e, mfn_t l2mfn, unsigned int flags)
 
 static int put_page_from_l3e(l3_pgentry_t l3e, mfn_t l3mfn, unsigned int flags)
 {
-    if ( !(l3e_get_flags(l3e) & _PAGE_PRESENT) || mfn_eq(l3e_get_mfn(l3e), l3mfn) )
+    if ( !(l3e_get_flags(l3e) & _PAGE_PRESENT) ||
+         mfn_eq(l3e_get_mfn(l3e), l3mfn) )
         return 1;
 
     if ( unlikely(l3e_get_flags(l3e) & _PAGE_PSE) )
@@ -1315,7 +1338,8 @@ static int put_page_from_l3e(l3_pgentry_t l3e, mfn_t l3mfn, unsigned int flags)
 
 static int put_page_from_l4e(l4_pgentry_t l4e, mfn_t l4mfn, unsigned int flags)
 {
-    if ( !(l4e_get_flags(l4e) & _PAGE_PRESENT) || mfn_eq(l4e_get_mfn(l4e), l4mfn) )
+    if ( !(l4e_get_flags(l4e) & _PAGE_PRESENT) ||
+         mfn_eq(l4e_get_mfn(l4e), l4mfn) )
         return 1;
 
     return put_pt_page(l4e_get_page(l4e), mfn_to_page(l4mfn), flags);
@@ -1324,9 +1348,9 @@ static int put_page_from_l4e(l4_pgentry_t l4e, mfn_t l4mfn, unsigned int flags)
 static int promote_l1_table(struct page_info *page)
 {
     struct domain *d = page_get_owner(page);
-    l1_pgentry_t  *pl1e;
-    unsigned int   i;
-    int            ret = 0;
+    l1_pgentry_t *pl1e;
+    unsigned int i;
+    int ret = 0;
 
     pl1e = __map_domain_page(page);
 
@@ -1361,10 +1385,12 @@ static int promote_l1_table(struct page_info *page)
     unmap_domain_page(pl1e);
     return 0;
 
- fail:
+fail:
     gdprintk(XENLOG_WARNING,
-             "Failure %d in promote_l1_table: slot %#x\n", ret, i);
- out:
+             "Failure %d in promote_l1_table: slot %#x\n",
+             ret,
+             i);
+out:
     while ( i-- > 0 )
         put_page_from_l1e(pl1e[i], d);
 
@@ -1413,11 +1439,11 @@ static bool pae_xen_mappings_check(const struct domain *d,
 static int promote_l2_table(struct page_info *page, unsigned long type)
 {
     struct domain *d = page_get_owner(page);
-    mfn_t         l2mfn = page_to_mfn(page);
-    l2_pgentry_t  *pl2e;
-    unsigned int   i;
-    int            rc = 0;
-    unsigned int   partial_flags = page->partial_flags;
+    mfn_t l2mfn = page_to_mfn(page);
+    l2_pgentry_t *pl2e;
+    unsigned int i;
+    int rc = 0;
+    unsigned int partial_flags = page->partial_flags;
 
     pl2e = map_domain_page(l2mfn);
 
@@ -1465,13 +1491,16 @@ static int promote_l2_table(struct page_info *page, unsigned long type)
         if ( rc == -EINTR && i )
         {
             page->nr_validated_ptes = i;
-            page->partial_flags = partial_flags;;
+            page->partial_flags = partial_flags;
+            ;
             rc = -ERESTART;
         }
         else if ( rc < 0 && rc != -EINTR )
         {
             gdprintk(XENLOG_WARNING,
-                     "Failure %d in promote_l2_table: slot %#x\n", rc, i);
+                     "Failure %d in promote_l2_table: slot %#x\n",
+                     rc,
+                     i);
             ASSERT(current->arch.old_guest_table == NULL);
             if ( i )
             {
@@ -1512,12 +1541,12 @@ static int promote_l2_table(struct page_info *page, unsigned long type)
 static int promote_l3_table(struct page_info *page)
 {
     struct domain *d = page_get_owner(page);
-    mfn_t          l3mfn = page_to_mfn(page);
-    l3_pgentry_t  *pl3e;
-    unsigned int   i;
-    int            rc = 0;
-    unsigned int   partial_flags = page->partial_flags;
-    l3_pgentry_t   l3e = l3e_empty();
+    mfn_t l3mfn = page_to_mfn(page);
+    l3_pgentry_t *pl3e;
+    unsigned int i;
+    int rc = 0;
+    unsigned int partial_flags = page->partial_flags;
+    l3_pgentry_t l3e = l3e_empty();
 
     /*
      * PAE pgdirs above 4GB are unacceptable if a 32-bit guest does not
@@ -1525,10 +1554,9 @@ static int promote_l3_table(struct page_info *page)
      * address bits. We cut some slack for control tools (before vcpu0 is
      * initialised).
      */
-    if ( is_pv_32bit_domain(d) &&
-         unlikely(!VM_ASSIST(d, pae_extended_cr3)) &&
-         mfn_x(l3mfn) >= PFN_DOWN(GB(4)) &&
-         d->vcpu[0] && d->vcpu[0]->is_initialised )
+    if ( is_pv_32bit_domain(d) && unlikely(!VM_ASSIST(d, pae_extended_cr3)) &&
+         mfn_x(l3mfn) >= PFN_DOWN(GB(4)) && d->vcpu[0] &&
+         d->vcpu[0]->is_initialised )
     {
         gdprintk(XENLOG_WARNING,
                  "PAE pgd must be below 4GB (%#lx >= 0x100000)",
@@ -1561,10 +1589,13 @@ static int promote_l3_table(struct page_info *page)
                  (l3e_get_flags(l3e) & l3_disallow_mask(d)) )
                 rc = -EINVAL;
             else
-                rc = get_page_and_type_from_mfn(
-                    l3e_get_mfn(l3e),
-                    PGT_l2_page_table | PGT_pae_xen_l2, d,
-                    partial_flags | PTF_preemptible | PTF_retain_ref_on_restart);
+                rc = get_page_and_type_from_mfn(l3e_get_mfn(l3e),
+                                                PGT_l2_page_table |
+                                                    PGT_pae_xen_l2,
+                                                d,
+                                                partial_flags |
+                                                    PTF_preemptible |
+                                                    PTF_retain_ref_on_restart);
 
             if ( !rc )
             {
@@ -1583,7 +1614,9 @@ static int promote_l3_table(struct page_info *page)
             rc = -EINTR;
         }
         else
-            rc = get_page_from_l3e(l3e, l3mfn, d,
+            rc = get_page_from_l3e(l3e,
+                                   l3mfn,
+                                   d,
                                    partial_flags | PTF_retain_ref_on_restart);
 
         if ( rc == -ERESTART )
@@ -1607,7 +1640,9 @@ static int promote_l3_table(struct page_info *page)
     if ( rc < 0 && rc != -ERESTART && rc != -EINTR )
     {
         gdprintk(XENLOG_WARNING,
-                 "Failure %d in promote_l3_table: slot %#x\n", rc, i);
+                 "Failure %d in promote_l3_table: slot %#x\n",
+                 rc,
+                 i);
         if ( i )
         {
             page->nr_validated_ptes = i;
@@ -1657,8 +1692,8 @@ static int promote_l3_table(struct page_info *page)
  * appropriate slots.  Pagetables not shared with guests will gain the
  * extended directmap.
  */
-void init_xen_l4_slots(l4_pgentry_t *l4t, mfn_t l4mfn,
-                       const struct domain *d, mfn_t sl4mfn, bool ro_mpt)
+void init_xen_l4_slots(l4_pgentry_t *l4t, mfn_t l4mfn, const struct domain *d,
+                       mfn_t sl4mfn, bool ro_mpt)
 {
     /*
      * PV vcpus need a shortened directmap.  HVM and Idle vcpus get the full
@@ -1682,8 +1717,9 @@ void init_xen_l4_slots(l4_pgentry_t *l4t, mfn_t l4mfn,
 
     /* Slot 259: Shadow linear mappings (if applicable) .*/
     l4t[l4_table_offset(SH_LINEAR_PT_VIRT_START)] =
-        mfn_eq(sl4mfn, INVALID_MFN) ? l4e_empty() :
-        l4e_from_mfn(sl4mfn, __PAGE_HYPERVISOR_RW);
+        mfn_eq(sl4mfn, INVALID_MFN)
+            ? l4e_empty()
+            : l4e_from_mfn(sl4mfn, __PAGE_HYPERVISOR_RW);
 
     /* Slot 260: Per-domain mappings. */
     l4t[l4_table_offset(PERDOMAIN_VIRT_START)] =
@@ -1710,27 +1746,27 @@ void init_xen_l4_slots(l4_pgentry_t *l4t, mfn_t l4mfn,
         memcpy(&l4t[l4_table_offset(XEN_VIRT_START)],
                &idle_pg_table[l4_table_offset(XEN_VIRT_START)],
                (ROOT_PAGETABLE_FIRST_XEN_SLOT + root_pgt_pv_xen_slots -
-                l4_table_offset(XEN_VIRT_START)) * sizeof(*l4t));
+                l4_table_offset(XEN_VIRT_START)) *
+                   sizeof(*l4t));
 
         next = &l4t[ROOT_PAGETABLE_FIRST_XEN_SLOT + root_pgt_pv_xen_slots];
 
         if ( l4e_get_intpte(split_l4e) )
             *next++ = split_l4e;
 
-        memset(next, 0,
-               _p(&l4t[ROOT_PAGETABLE_LAST_XEN_SLOT + 1]) - _p(next));
+        memset(next, 0, _p(&l4t[ROOT_PAGETABLE_LAST_XEN_SLOT + 1]) - _p(next));
     }
     else
 #endif
     {
-        unsigned int slots = (short_directmap
-                              ? ROOT_PAGETABLE_PV_XEN_SLOTS
-                              : ROOT_PAGETABLE_XEN_SLOTS);
+        unsigned int slots = (short_directmap ? ROOT_PAGETABLE_PV_XEN_SLOTS
+                                              : ROOT_PAGETABLE_XEN_SLOTS);
 
         memcpy(&l4t[l4_table_offset(XEN_VIRT_START)],
                &idle_pg_table[l4_table_offset(XEN_VIRT_START)],
                (ROOT_PAGETABLE_FIRST_XEN_SLOT + slots -
-                l4_table_offset(XEN_VIRT_START)) * sizeof(*l4t));
+                l4_table_offset(XEN_VIRT_START)) *
+                   sizeof(*l4t));
     }
 }
 
@@ -1762,11 +1798,11 @@ void zap_ro_mpt(mfn_t mfn)
 static int promote_l4_table(struct page_info *page)
 {
     struct domain *d = page_get_owner(page);
-    mfn_t          l4mfn = page_to_mfn(page);
-    l4_pgentry_t  *pl4e = map_domain_page(l4mfn);
-    unsigned int   i;
-    int            rc = 0;
-    unsigned int   partial_flags = page->partial_flags;
+    mfn_t l4mfn = page_to_mfn(page);
+    l4_pgentry_t *pl4e = map_domain_page(l4mfn);
+    unsigned int i;
+    int rc = 0;
+    unsigned int partial_flags = page->partial_flags;
 
     for ( i = page->nr_validated_ptes; i < L4_PAGETABLE_ENTRIES;
           i++, partial_flags = 0 )
@@ -1785,7 +1821,9 @@ static int promote_l4_table(struct page_info *page)
             rc = -EINTR;
         }
         else
-            rc = get_page_from_l4e(l4e, l4mfn, d,
+            rc = get_page_from_l4e(l4e,
+                                   l4mfn,
+                                   d,
                                    partial_flags | PTF_retain_ref_on_restart);
 
         if ( rc == -ERESTART )
@@ -1798,7 +1836,9 @@ static int promote_l4_table(struct page_info *page)
         {
             if ( rc != -EINTR )
                 gdprintk(XENLOG_WARNING,
-                         "Failure %d in promote_l4_table: slot %#x\n", rc, i);
+                         "Failure %d in promote_l4_table: slot %#x\n",
+                         rc,
+                         i);
             if ( i )
             {
                 page->nr_validated_ptes = i;
@@ -1820,7 +1860,8 @@ static int promote_l4_table(struct page_info *page)
                          * not, it's safer to leak a type ref on production
                          * builds.
                          */
-                        if ( current->arch.old_guest_table == l4e_get_page(l4e) )
+                        if ( current->arch.old_guest_table ==
+                             l4e_get_page(l4e) )
                         {
                             ASSERT(current->arch.old_guest_table_partial);
                             page->partial_flags = PTF_partial_set;
@@ -1842,8 +1883,7 @@ static int promote_l4_table(struct page_info *page)
 
     if ( !rc )
     {
-        init_xen_l4_slots(pl4e, l4mfn,
-                          d, INVALID_MFN, VM_ASSIST(d, m2p_strict));
+        init_xen_l4_slots(pl4e, l4mfn, d, INVALID_MFN, VM_ASSIST(d, m2p_strict));
         atomic_inc(&d->arch.pv.nr_l4_pages);
     }
     unmap_domain_page(pl4e);
@@ -1855,7 +1895,7 @@ static void demote_l1_table(struct page_info *page)
 {
     struct domain *d = page_get_owner(page);
     l1_pgentry_t *pl1e;
-    unsigned int  i;
+    unsigned int i;
 
     pl1e = __map_domain_page(page);
 
@@ -1865,7 +1905,6 @@ static void demote_l1_table(struct page_info *page)
     unmap_domain_page(pl1e);
 }
 
-
 static int demote_l2_table(struct page_info *page)
 {
     struct domain *d = page_get_owner(page);
@@ -1873,11 +1912,12 @@ static int demote_l2_table(struct page_info *page)
     l2_pgentry_t *pl2e;
     int rc = 0;
     unsigned int partial_flags = page->partial_flags,
-        i = page->nr_validated_ptes - !(partial_flags & PTF_partial_set);
+                 i = page->nr_validated_ptes -
+                     !(partial_flags & PTF_partial_set);
 
     pl2e = map_domain_page(l2mfn);
 
-    for ( ; ; )
+    for ( ;; )
     {
         if ( is_guest_l2_slot(d, page->u.inuse.type_info, i) )
             rc = put_page_from_l2e(pl2e[i], l2mfn, partial_flags);
@@ -1925,11 +1965,12 @@ static int demote_l3_table(struct page_info *page)
     l3_pgentry_t *pl3e;
     int rc = 0;
     unsigned int partial_flags = page->partial_flags,
-        i = page->nr_validated_ptes - !(partial_flags & PTF_partial_set);
+                 i = page->nr_validated_ptes -
+                     !(partial_flags & PTF_partial_set);
 
     pl3e = map_domain_page(l3mfn);
 
-    for ( ; ; )
+    for ( ;; )
     {
         rc = put_page_from_l3e(pl3e[i], l3mfn, partial_flags);
         if ( rc < 0 )
@@ -1972,9 +2013,10 @@ static int demote_l4_table(struct page_info *page)
     l4_pgentry_t *pl4e = map_domain_page(l4mfn);
     int rc = 0;
     unsigned partial_flags = page->partial_flags,
-        i = page->nr_validated_ptes - !(partial_flags & PTF_partial_set);
+             i = page->nr_validated_ptes - !(partial_flags & PTF_partial_set);
 
-    do {
+    do
+    {
         if ( is_guest_l4_slot(d, i) )
             rc = put_page_from_l4e(pl4e[i], l4mfn, partial_flags);
         if ( rc < 0 )
@@ -2028,11 +2070,13 @@ static int demote_l4_table(struct page_info *page)
  */
 static DEFINE_PER_CPU(struct page_info *, current_locked_page);
 
-static inline void current_locked_page_set(struct page_info *page) {
+static inline void current_locked_page_set(struct page_info *page)
+{
     this_cpu(current_locked_page) = page;
 }
 
-static inline bool current_locked_page_check(struct page_info *page) {
+static inline bool current_locked_page_check(struct page_info *page)
+{
     return this_cpu(current_locked_page) == page;
 }
 
@@ -2040,7 +2084,8 @@ static inline bool current_locked_page_check(struct page_info *page) {
  * We need a separate "not-equal" check so the non-debug stubs can
  * always return true.
  */
-static inline bool current_locked_page_ne_check(struct page_info *page) {
+static inline bool current_locked_page_ne_check(struct page_info *page)
+{
     return this_cpu(current_locked_page) != page;
 }
 #else
@@ -2055,12 +2100,12 @@ int page_lock_unsafe(struct page_info *page)
 
     ASSERT(current_locked_page_check(NULL));
 
-    do {
+    do
+    {
         while ( (x = page->u.inuse.type_info) & PGT_locked )
             cpu_relax();
         nx = x + (1 | PGT_locked);
-        if ( !(x & PGT_validated) ||
-             !(x & PGT_count_mask) ||
+        if ( !(x & PGT_validated) || !(x & PGT_count_mask) ||
              !(nx & PGT_count_mask) )
             return 0;
     } while ( cmpxchg(&page->u.inuse.type_info, x, nx) != x );
@@ -2076,7 +2121,8 @@ void page_unlock(struct page_info *page)
 
     ASSERT(current_locked_page_check(page));
 
-    do {
+    do
+    {
         x = y;
         ASSERT((x & PGT_count_mask) && (x & PGT_locked));
 
@@ -2114,7 +2160,8 @@ static always_inline void l3t_lock(struct page_info *page)
 {
     unsigned long x, nx;
 
-    do {
+    do
+    {
         while ( (x = page->u.inuse.type_info) & PGT_locked )
             cpu_relax();
         nx = x | PGT_locked;
@@ -2127,7 +2174,8 @@ static void l3t_unlock(struct page_info *page)
 {
     unsigned long x, nx, y = page->u.inuse.type_info;
 
-    do {
+    do
+    {
         x = y;
         BUG_ON(!(x & PGT_locked));
         nx = x & ~PGT_locked;
@@ -2150,15 +2198,15 @@ static void l3t_unlock(struct page_info *page)
  * have _PAGE_RW altered without this requiring re-validation.
  */
 #ifndef CONFIG_PV_LINEAR_PT
-# define FASTPATH_PDE_FLAG_WHITELIST (FASTPATH_FLAG_WHITELIST | _PAGE_RW)
+#define FASTPATH_PDE_FLAG_WHITELIST (FASTPATH_FLAG_WHITELIST | _PAGE_RW)
 #else
-# define FASTPATH_PDE_FLAG_WHITELIST FASTPATH_FLAG_WHITELIST
+#define FASTPATH_PDE_FLAG_WHITELIST FASTPATH_FLAG_WHITELIST
 #endif
 
 /* Update the L1 entry at pl1e to new value nl1e. */
-static int mod_l1_entry(l1_pgentry_t *pl1e, l1_pgentry_t nl1e,
-                        mfn_t gl1mfn, unsigned int cmd,
-                        struct vcpu *pt_vcpu, struct domain *pg_dom)
+static int mod_l1_entry(l1_pgentry_t *pl1e, l1_pgentry_t nl1e, mfn_t gl1mfn,
+                        unsigned int cmd, struct vcpu *pt_vcpu,
+                        struct domain *pg_dom)
 {
     bool preserve_ad = (cmd == MMU_PT_UPDATE_PRESERVE_AD);
     l1_pgentry_t ol1e = l1e_read(pl1e);
@@ -2174,7 +2222,8 @@ static int mod_l1_entry(l1_pgentry_t *pl1e, l1_pgentry_t nl1e,
 
         if ( unlikely(l1e_get_flags(nl1e) & disallow) )
         {
-            gdprintk(XENLOG_WARNING, "Bad L1 flags %#x\n",
+            gdprintk(XENLOG_WARNING,
+                     "Bad L1 flags %#x\n",
                      l1e_get_flags(nl1e) & disallow);
             return -EINVAL;
         }
@@ -2185,8 +2234,9 @@ static int mod_l1_entry(l1_pgentry_t *pl1e, l1_pgentry_t nl1e,
         {
             p2m_type_t p2mt;
             gfn_t gfn = _gfn(l1e_get_pfn(nl1e));
-            p2m_query_t q = l1e_get_flags(nl1e) & _PAGE_RW ?
-                            P2M_ALLOC | P2M_UNSHARE : P2M_ALLOC;
+            p2m_query_t q = l1e_get_flags(nl1e) & _PAGE_RW
+                                ? P2M_ALLOC | P2M_UNSHARE
+                                : P2M_ALLOC;
 
             page = get_page_from_gfn(pg_dom, gfn_x(gfn), &p2mt, q);
 
@@ -2220,8 +2270,8 @@ static int mod_l1_entry(l1_pgentry_t *pl1e, l1_pgentry_t nl1e,
         /* Fast path for sufficiently-similar mappings. */
         if ( !l1e_has_changed(ol1e, nl1e, ~FASTPATH_FLAG_WHITELIST) )
         {
-            rc = UPDATE_ENTRY(l1, pl1e, ol1e, nl1e, gl1mfn, pt_vcpu,
-                              preserve_ad);
+            rc =
+                UPDATE_ENTRY(l1, pl1e, ol1e, nl1e, gl1mfn, pt_vcpu, preserve_ad);
             if ( page )
                 put_page(page);
             return rc ? 0 : -EBUSY;
@@ -2244,7 +2294,12 @@ static int mod_l1_entry(l1_pgentry_t *pl1e, l1_pgentry_t nl1e,
         if ( page )
             put_page(page);
 
-        if ( unlikely(!UPDATE_ENTRY(l1, pl1e, ol1e, nl1e, gl1mfn, pt_vcpu,
+        if ( unlikely(!UPDATE_ENTRY(l1,
+                                    pl1e,
+                                    ol1e,
+                                    nl1e,
+                                    gl1mfn,
+                                    pt_vcpu,
                                     preserve_ad)) )
         {
             ol1e = nl1e;
@@ -2253,8 +2308,9 @@ static int mod_l1_entry(l1_pgentry_t *pl1e, l1_pgentry_t nl1e,
     }
     else if ( pv_l1tf_check_l1e(pt_dom, nl1e) )
         return -ERESTART;
-    else if ( unlikely(!UPDATE_ENTRY(l1, pl1e, ol1e, nl1e, gl1mfn, pt_vcpu,
-                                     preserve_ad)) )
+    else if (
+        unlikely(
+            !UPDATE_ENTRY(l1, pl1e, ol1e, nl1e, gl1mfn, pt_vcpu, preserve_ad)) )
     {
         return -EBUSY;
     }
@@ -2263,13 +2319,9 @@ static int mod_l1_entry(l1_pgentry_t *pl1e, l1_pgentry_t nl1e,
     return rc;
 }
 
-
 /* Update the L2 entry at pl2e to new value nl2e. pl2e is within frame mfn. */
-static int mod_l2_entry(l2_pgentry_t *pl2e,
-                        l2_pgentry_t nl2e,
-                        mfn_t mfn,
-                        int preserve_ad,
-                        struct vcpu *vcpu)
+static int mod_l2_entry(l2_pgentry_t *pl2e, l2_pgentry_t nl2e, mfn_t mfn,
+                        int preserve_ad, struct vcpu *vcpu)
 {
     l2_pgentry_t ol2e;
     struct domain *d = vcpu->domain;
@@ -2279,7 +2331,8 @@ static int mod_l2_entry(l2_pgentry_t *pl2e,
 
     if ( unlikely(!is_guest_l2_slot(d, type, pgentry_ptr_to_slot(pl2e))) )
     {
-        gdprintk(XENLOG_WARNING, "L2 update in Xen-private area, slot %#lx\n",
+        gdprintk(XENLOG_WARNING,
+                 "L2 update in Xen-private area, slot %#lx\n",
                  pgentry_ptr_to_slot(pl2e));
         return -EPERM;
     }
@@ -2290,8 +2343,9 @@ static int mod_l2_entry(l2_pgentry_t *pl2e,
     {
         if ( unlikely(l2e_get_flags(nl2e) & L2_DISALLOW_MASK) )
         {
-            gdprintk(XENLOG_WARNING, "Bad L2 flags %x\n",
-                    l2e_get_flags(nl2e) & L2_DISALLOW_MASK);
+            gdprintk(XENLOG_WARNING,
+                     "Bad L2 flags %x\n",
+                     l2e_get_flags(nl2e) & L2_DISALLOW_MASK);
             return -EINVAL;
         }
 
@@ -2308,8 +2362,8 @@ static int mod_l2_entry(l2_pgentry_t *pl2e,
         if ( unlikely((rc = get_page_from_l2e(nl2e, mfn, d, 0)) < 0) )
             return rc;
 
-        if ( unlikely(!UPDATE_ENTRY(l2, pl2e, ol2e, nl2e, mfn, vcpu,
-                                    preserve_ad)) )
+        if ( unlikely(
+                 !UPDATE_ENTRY(l2, pl2e, ol2e, nl2e, mfn, vcpu, preserve_ad)) )
         {
             ol2e = nl2e;
             rc = -EBUSY;
@@ -2317,8 +2371,8 @@ static int mod_l2_entry(l2_pgentry_t *pl2e,
     }
     else if ( pv_l1tf_check_l2e(d, nl2e) )
         return -ERESTART;
-    else if ( unlikely(!UPDATE_ENTRY(l2, pl2e, ol2e, nl2e, mfn, vcpu,
-                                     preserve_ad)) )
+    else if (
+        unlikely(!UPDATE_ENTRY(l2, pl2e, ol2e, nl2e, mfn, vcpu, preserve_ad)) )
     {
         return -EBUSY;
     }
@@ -2329,11 +2383,8 @@ static int mod_l2_entry(l2_pgentry_t *pl2e,
 }
 
 /* Update the L3 entry at pl3e to new value nl3e. pl3e is within frame mfn. */
-static int mod_l3_entry(l3_pgentry_t *pl3e,
-                        l3_pgentry_t nl3e,
-                        mfn_t mfn,
-                        int preserve_ad,
-                        struct vcpu *vcpu)
+static int mod_l3_entry(l3_pgentry_t *pl3e, l3_pgentry_t nl3e, mfn_t mfn,
+                        int preserve_ad, struct vcpu *vcpu)
 {
     l3_pgentry_t ol3e;
     struct domain *d = vcpu->domain;
@@ -2352,8 +2403,9 @@ static int mod_l3_entry(l3_pgentry_t *pl3e,
     {
         if ( unlikely(l3e_get_flags(nl3e) & l3_disallow_mask(d)) )
         {
-            gdprintk(XENLOG_WARNING, "Bad L3 flags %x\n",
-                    l3e_get_flags(nl3e) & l3_disallow_mask(d));
+            gdprintk(XENLOG_WARNING,
+                     "Bad L3 flags %x\n",
+                     l3e_get_flags(nl3e) & l3_disallow_mask(d));
             return -EINVAL;
         }
 
@@ -2371,8 +2423,8 @@ static int mod_l3_entry(l3_pgentry_t *pl3e,
             return rc;
         rc = 0;
 
-        if ( unlikely(!UPDATE_ENTRY(l3, pl3e, ol3e, nl3e, mfn, vcpu,
-                                    preserve_ad)) )
+        if ( unlikely(
+                 !UPDATE_ENTRY(l3, pl3e, ol3e, nl3e, mfn, vcpu, preserve_ad)) )
         {
             ol3e = nl3e;
             rc = -EFAULT;
@@ -2380,8 +2432,8 @@ static int mod_l3_entry(l3_pgentry_t *pl3e,
     }
     else if ( pv_l1tf_check_l3e(d, nl3e) )
         return -ERESTART;
-    else if ( unlikely(!UPDATE_ENTRY(l3, pl3e, ol3e, nl3e, mfn, vcpu,
-                                     preserve_ad)) )
+    else if (
+        unlikely(!UPDATE_ENTRY(l3, pl3e, ol3e, nl3e, mfn, vcpu, preserve_ad)) )
     {
         return -EFAULT;
     }
@@ -2391,11 +2443,8 @@ static int mod_l3_entry(l3_pgentry_t *pl3e,
 }
 
 /* Update the L4 entry at pl4e to new value nl4e. pl4e is within frame mfn. */
-static int mod_l4_entry(l4_pgentry_t *pl4e,
-                        l4_pgentry_t nl4e,
-                        mfn_t mfn,
-                        int preserve_ad,
-                        struct vcpu *vcpu)
+static int mod_l4_entry(l4_pgentry_t *pl4e, l4_pgentry_t nl4e, mfn_t mfn,
+                        int preserve_ad, struct vcpu *vcpu)
 {
     struct domain *d = vcpu->domain;
     l4_pgentry_t ol4e;
@@ -2403,7 +2452,8 @@ static int mod_l4_entry(l4_pgentry_t *pl4e,
 
     if ( unlikely(!is_guest_l4_slot(d, pgentry_ptr_to_slot(pl4e))) )
     {
-        gdprintk(XENLOG_WARNING, "L4 update in Xen-private area, slot %#lx\n",
+        gdprintk(XENLOG_WARNING,
+                 "L4 update in Xen-private area, slot %#lx\n",
                  pgentry_ptr_to_slot(pl4e));
         return -EINVAL;
     }
@@ -2414,8 +2464,9 @@ static int mod_l4_entry(l4_pgentry_t *pl4e,
     {
         if ( unlikely(l4e_get_flags(nl4e) & L4_DISALLOW_MASK) )
         {
-            gdprintk(XENLOG_WARNING, "Bad L4 flags %x\n",
-                    l4e_get_flags(nl4e) & L4_DISALLOW_MASK);
+            gdprintk(XENLOG_WARNING,
+                     "Bad L4 flags %x\n",
+                     l4e_get_flags(nl4e) & L4_DISALLOW_MASK);
             return -EINVAL;
         }
 
@@ -2433,8 +2484,8 @@ static int mod_l4_entry(l4_pgentry_t *pl4e,
             return rc;
         rc = 0;
 
-        if ( unlikely(!UPDATE_ENTRY(l4, pl4e, ol4e, nl4e, mfn, vcpu,
-                                    preserve_ad)) )
+        if ( unlikely(
+                 !UPDATE_ENTRY(l4, pl4e, ol4e, nl4e, mfn, vcpu, preserve_ad)) )
         {
             ol4e = nl4e;
             rc = -EFAULT;
@@ -2442,8 +2493,8 @@ static int mod_l4_entry(l4_pgentry_t *pl4e,
     }
     else if ( pv_l1tf_check_l4e(d, nl4e) )
         return -ERESTART;
-    else if ( unlikely(!UPDATE_ENTRY(l4, pl4e, ol4e, nl4e, mfn, vcpu,
-                                     preserve_ad)) )
+    else if (
+        unlikely(!UPDATE_ENTRY(l4, pl4e, ol4e, nl4e, mfn, vcpu, preserve_ad)) )
     {
         return -EFAULT;
     }
@@ -2525,12 +2576,12 @@ void put_page(struct page_info *page)
 {
     unsigned long nx, x, y = page->count_info;
 
-    do {
+    do
+    {
         ASSERT((y & PGC_count_mask) != 0);
-        x  = y;
+        x = y;
         nx = x - 1;
-    }
-    while ( unlikely((y = cmpxchg(&page->count_info, x, nx)) != x) );
+    } while ( unlikely((y = cmpxchg(&page->count_info, x, nx)) != x) );
 
     if ( unlikely((nx & PGC_count_mask) == 0) )
     {
@@ -2538,17 +2589,18 @@ void put_page(struct page_info *page)
             free_domheap_page(page);
         else
             gdprintk(XENLOG_WARNING,
-                     "Leaking mfn %" PRI_mfn "\n", mfn_x(page_to_mfn(page)));
+                     "Leaking mfn %" PRI_mfn "\n",
+                     mfn_x(page_to_mfn(page)));
     }
 }
-
 
 struct domain *page_get_owner_and_reference(struct page_info *page)
 {
     unsigned long x, y = page->count_info;
     struct domain *owner;
 
-    do {
+    do
+    {
         x = y;
         /*
          * Count ==  0: Page is not allocated, so we cannot take a reference.
@@ -2557,15 +2609,13 @@ struct domain *page_get_owner_and_reference(struct page_info *page)
          */
         if ( unlikely(((x + 2) & PGC_count_mask) <= 2) )
             return NULL;
-    }
-    while ( (y = cmpxchg(&page->count_info, x, x + 1)) != x );
+    } while ( (y = cmpxchg(&page->count_info, x, x + 1)) != x );
 
     owner = page_get_owner(page);
     ASSERT(owner);
 
     return owner;
 }
-
 
 bool get_page(struct page_info *page, const struct domain *domain)
 {
@@ -2576,9 +2626,13 @@ bool get_page(struct page_info *page, const struct domain *domain)
 
     if ( !paging_mode_refcounts(domain) && !domain->is_dying )
         gprintk(XENLOG_INFO,
-                "Error mfn %"PRI_mfn": rd=%pd od=%pd caf=%08lx taf=%"PRtype_info"\n",
-                mfn_x(page_to_mfn(page)), domain, owner,
-                page->count_info - !!owner, page->u.inuse.type_info);
+                "Error mfn %" PRI_mfn
+                ": rd=%pd od=%pd caf=%08lx taf=%" PRtype_info "\n",
+                mfn_x(page_to_mfn(page)),
+                domain,
+                owner,
+                page->count_info - !!owner,
+                page->u.inuse.type_info);
 
     if ( owner )
         put_page(page);
@@ -2600,18 +2654,18 @@ static void get_page_light(struct page_info *page)
 {
     unsigned long x, nx, y = page->count_info;
 
-    do {
-        x  = y;
+    do
+    {
+        x = y;
         nx = x + 1;
         BUG_ON(!(x & PGC_count_mask)); /* Not allocated? */
         BUG_ON(!(nx & PGC_count_mask)); /* Overflow? */
         y = cmpxchg(&page->count_info, x, nx);
-    }
-    while ( unlikely(y != x) );
+    } while ( unlikely(y != x) );
 }
 
 static int validate_page(struct page_info *page, unsigned long type,
-                           int preemptible)
+                         int preemptible)
 {
 #ifdef CONFIG_PV
     struct domain *owner = page_get_owner(page);
@@ -2643,7 +2697,8 @@ static int validate_page(struct page_info *page, unsigned long type,
         break;
     default:
         printk("Bad type in validate_page %lx t=%" PRtype_info " c=%lx\n",
-               type, page->u.inuse.type_info,
+               type,
+               page->u.inuse.type_info,
                page->count_info);
         rc = -EINVAL;
         BUG();
@@ -2658,24 +2713,27 @@ static int validate_page(struct page_info *page, unsigned long type,
         break;
     case -EINTR:
         ASSERT((page->u.inuse.type_info &
-                (PGT_count_mask|PGT_validated|PGT_partial)) == 1);
+                (PGT_count_mask | PGT_validated | PGT_partial)) == 1);
         page->u.inuse.type_info &= ~PGT_count_mask;
         break;
     default:
         ASSERT(rc < 0);
-        gdprintk(XENLOG_WARNING, "Error while validating mfn %" PRI_mfn
-                 " (pfn %" PRI_pfn ") for type %" PRtype_info
-                 ": caf=%08lx taf=%" PRtype_info "\n",
+        gdprintk(XENLOG_WARNING,
+                 "Error while validating mfn %" PRI_mfn " (pfn %" PRI_pfn
+                 ") for type %" PRtype_info ": caf=%08lx taf=%" PRtype_info
+                 "\n",
                  mfn_x(page_to_mfn(page)),
                  get_gpfn_from_mfn(mfn_x(page_to_mfn(page))),
-                 type, page->count_info, page->u.inuse.type_info);
+                 type,
+                 page->count_info,
+                 page->u.inuse.type_info);
         if ( page != current->arch.old_guest_table )
             page->u.inuse.type_info = 0;
         else
         {
             ASSERT((page->u.inuse.type_info &
                     (PGT_count_mask | PGT_validated)) == 1);
-    case -ERESTART:
+        case -ERESTART:
             get_page_light(page);
             page->u.inuse.type_info |= PGT_partial;
         }
@@ -2689,9 +2747,7 @@ static int validate_page(struct page_info *page, unsigned long type,
 #endif
 }
 
-
-int devalidate_page(struct page_info *page, unsigned long type,
-                   int preemptible)
+int devalidate_page(struct page_info *page, unsigned long type, int preemptible)
 {
 #ifdef CONFIG_PV
     struct domain *owner = page_get_owner(page);
@@ -2734,8 +2790,10 @@ int devalidate_page(struct page_info *page, unsigned long type,
         rc = demote_l4_table(page);
         break;
     default:
-        gdprintk(XENLOG_WARNING, "type %" PRtype_info " mfn %" PRI_mfn "\n",
-                 type, mfn_x(page_to_mfn(page)));
+        gdprintk(XENLOG_WARNING,
+                 "type %" PRtype_info " mfn %" PRI_mfn "\n",
+                 type,
+                 mfn_x(page_to_mfn(page)));
         rc = -EINVAL;
         BUG();
     }
@@ -2746,7 +2804,6 @@ int devalidate_page(struct page_info *page, unsigned long type,
     return -EINVAL;
 #endif
 }
-
 
 static int _put_final_page_type(struct page_info *page, unsigned long type,
                                 bool preemptible, struct page_info *ptpg)
@@ -2772,7 +2829,7 @@ static int _put_final_page_type(struct page_info *page, unsigned long type,
     else if ( rc == -EINTR )
     {
         ASSERT((page->u.inuse.type_info &
-                (PGT_count_mask|PGT_validated|PGT_partial)) == 1);
+                (PGT_count_mask | PGT_validated | PGT_partial)) == 1);
         smp_wmb();
         page->u.inuse.type_info |= PGT_validated;
     }
@@ -2787,7 +2844,6 @@ static int _put_final_page_type(struct page_info *page, unsigned long type,
     return rc;
 }
 
-
 static int _put_page_type(struct page_info *page, unsigned int flags,
                           struct page_info *ptpg)
 {
@@ -2796,9 +2852,9 @@ static int _put_page_type(struct page_info *page, unsigned int flags,
 
     ASSERT(current_locked_page_ne_check(page));
 
-    for ( ; ; )
+    for ( ;; )
     {
-        x  = y;
+        x = y;
         nx = x - 1;
 
         /*
@@ -2829,7 +2885,7 @@ static int _put_page_type(struct page_info *page, unsigned int flags,
         {
         case 0:
             if ( unlikely((nx & PGT_type_mask) <= PGT_l4_page_table) &&
-                 likely(nx & (PGT_validated|PGT_partial)) )
+                 likely(nx & (PGT_validated | PGT_partial)) )
             {
                 int rc;
 
@@ -2838,9 +2894,9 @@ static int _put_page_type(struct page_info *page, unsigned int flags,
                  * 'free' is safe because the refcnt is non-zero and validated
                  * bit is clear => other ops will spin or fail.
                  */
-                nx = x & ~(PGT_validated|PGT_partial);
-                if ( unlikely((y = cmpxchg(&page->u.inuse.type_info,
-                                           x, nx)) != x) )
+                nx = x & ~(PGT_validated | PGT_partial);
+                if ( unlikely((y = cmpxchg(&page->u.inuse.type_info, x, nx)) !=
+                              x) )
                     break;
                 /* We cleared the 'valid bit' so we do the clean up. */
                 rc = _put_final_page_type(page, x, preemptible, ptpg);
@@ -2896,7 +2952,6 @@ static int _put_page_type(struct page_info *page, unsigned int flags,
     }
 }
 
-
 static int _get_page_type(struct page_info *page, unsigned long type,
                           bool preemptible)
 {
@@ -2906,15 +2961,15 @@ static int _get_page_type(struct page_info *page, unsigned long type,
     ASSERT(!(type & ~(PGT_type_mask | PGT_pae_xen_l2)));
     ASSERT(!in_irq());
 
-    for ( unsigned long y = ACCESS_ONCE(page->u.inuse.type_info); ; )
+    for ( unsigned long y = ACCESS_ONCE(page->u.inuse.type_info);; )
     {
-        x  = y;
+        x = y;
         nx = x + 1;
 
         if ( unlikely((nx & PGT_count_mask) == 0) )
         {
             gdprintk(XENLOG_WARNING,
-                     "Type count overflow on mfn %"PRI_mfn"\n",
+                     "Type count overflow on mfn %" PRI_mfn "\n",
                      mfn_x(page_to_mfn(page)));
             return -EINVAL;
         }
@@ -2935,7 +2990,7 @@ static int _get_page_type(struct page_info *page, unsigned long type,
                 nx |= type;
             }
         }
-        else if ( unlikely((x & (PGT_type_mask|PGT_pae_xen_l2)) != type) )
+        else if ( unlikely((x & (PGT_type_mask | PGT_pae_xen_l2)) != type) )
         {
             /*
              * else, we're trying to take a new reference, of the wrong type.
@@ -2955,9 +3010,11 @@ static int _get_page_type(struct page_info *page, unsigned long type,
                  (type == PGT_l3_page_table) )
                 return -EINVAL;
             gdprintk(XENLOG_WARNING,
-                     "Bad type (saw %" PRtype_info " != exp %" PRtype_info ") "
-                     "for mfn %" PRI_mfn " (pfn %" PRI_pfn ")\n",
-                     x, type, mfn_x(page_to_mfn(page)),
+                     "Bad type (saw %" PRtype_info " != exp %" PRtype_info
+                     ") " "for mfn %" PRI_mfn " (pfn %" PRI_pfn ")\n",
+                     x,
+                     type,
+                     mfn_x(page_to_mfn(page)),
                      get_gpfn_from_mfn(mfn_x(page_to_mfn(page))));
             return -EINVAL;
         }
@@ -2984,7 +3041,8 @@ static int _get_page_type(struct page_info *page, unsigned long type,
                  * or fully validated), then restart our attempt to acquire a
                  * type reference.
                  */
-                do {
+                do
+                {
                     if ( preemptible && hypercall_preempt_check() )
                         return -EINTR;
                     cpu_relax();
@@ -3068,9 +3126,9 @@ static int _get_page_type(struct page_info *page, unsigned long type,
                  */
                 flush_mask(mask,
                            (x & PGT_type_mask) &&
-                           (x & PGT_type_mask) <= PGT_root_page_table
-                           ? FLUSH_TLB | FLUSH_NO_ASSIST
-                           : FLUSH_TLB);
+                                   (x & PGT_type_mask) <= PGT_root_page_table
+                               ? FLUSH_TLB | FLUSH_NO_ASSIST
+                               : FLUSH_TLB);
             }
         }
     }
@@ -3086,10 +3144,13 @@ static int _get_page_type(struct page_info *page, unsigned long type,
             mfn_t mfn = page_to_mfn(page);
 
             if ( (x & PGT_type_mask) == PGT_writable_page )
-                rc = iommu_legacy_unmap(d, _dfn(mfn_x(mfn)),
+                rc = iommu_legacy_unmap(d,
+                                        _dfn(mfn_x(mfn)),
                                         1UL << PAGE_ORDER_4K);
             else
-                rc = iommu_legacy_map(d, _dfn(mfn_x(mfn)), mfn,
+                rc = iommu_legacy_map(d,
+                                      _dfn(mfn_x(mfn)),
+                                      mfn,
                                       1UL << PAGE_ORDER_4K,
                                       IOMMUF_readable | IOMMUF_writable);
 
@@ -3137,7 +3198,7 @@ static int _get_page_type(struct page_info *page, unsigned long type,
         rc = validate_page(page, type, preemptible);
     }
 
- out:
+out:
     /*
      * Did we drop the PGT_partial bit when acquiring the typeref?  If so,
      * drop the general reference that went along with it.
@@ -3189,8 +3250,8 @@ int put_old_guest_table(struct vcpu *v)
 
     rc = _put_page_type(v->arch.old_guest_table,
                         PTF_preemptible |
-                        ( v->arch.old_guest_table_partial ?
-                          PTF_partial_set : 0 ),
+                            (v->arch.old_guest_table_partial ? PTF_partial_set
+                                                             : 0),
                         v->arch.old_guest_ptpg);
 
     if ( rc == -ERESTART || rc == -EINTR )
@@ -3251,7 +3312,8 @@ int vcpu_destroy_pagetables(struct vcpu *v)
     }
 
     /* Free that page if non-zero */
-    do {
+    do
+    {
         if ( mfn )
         {
             page = mfn_to_page(_mfn(mfn));
@@ -3312,9 +3374,11 @@ int new_guest_cr3(mfn_t mfn)
 
         rc = mod_l4_entry(pl4e,
                           l4e_from_mfn(mfn,
-                                       (_PAGE_PRESENT | _PAGE_RW |
-                                        _PAGE_USER | _PAGE_ACCESSED)),
-                          gt_mfn, 0, curr);
+                                       (_PAGE_PRESENT | _PAGE_RW | _PAGE_USER |
+                                        _PAGE_ACCESSED)),
+                          gt_mfn,
+                          0,
+                          curr);
         unmap_domain_page(pl4e);
         switch ( rc )
         {
@@ -3351,7 +3415,10 @@ int new_guest_cr3(mfn_t mfn)
         return 0;
     }
 
-    rc = get_page_and_type_from_mfn(mfn, PGT_root_page_table, d, PTF_preemptible);
+    rc = get_page_and_type_from_mfn(mfn,
+                                    PGT_root_page_table,
+                                    d,
+                                    PTF_preemptible);
     switch ( rc )
     {
     case 0:
@@ -3412,8 +3479,9 @@ int new_guest_cr3(mfn_t mfn)
 #endif
 
 #ifdef CONFIG_PV
-static int vcpumask_to_pcpumask(
-    struct domain *d, XEN_GUEST_HANDLE_PARAM(const_void) bmap, cpumask_t *pmask)
+static int vcpumask_to_pcpumask(struct domain *d,
+                                XEN_GUEST_HANDLE_PARAM(const_void) bmap,
+                                cpumask_t *pmask)
 {
     unsigned int vcpu_id, vcpu_bias, offs;
     unsigned long vmask;
@@ -3421,16 +3489,17 @@ static int vcpumask_to_pcpumask(
     bool is_native = !is_pv_32bit_domain(d);
 
     cpumask_clear(pmask);
-    for ( vmask = 0, offs = 0; ; ++offs )
+    for ( vmask = 0, offs = 0;; ++offs )
     {
         vcpu_bias = offs * (is_native ? BITS_PER_LONG : 32);
         if ( vcpu_bias >= d->max_vcpus )
             return 0;
 
-        if ( unlikely(is_native ?
-                      copy_from_guest_offset(&vmask, bmap, offs, 1) :
-                      copy_from_guest_offset((unsigned int *)&vmask, bmap,
-                                             offs, 1)) )
+        if ( unlikely(is_native ? copy_from_guest_offset(&vmask, bmap, offs, 1)
+                                : copy_from_guest_offset((unsigned int *)&vmask,
+                                                         bmap,
+                                                         offs,
+                                                         1)) )
         {
             cpumask_clear(pmask);
             return -EFAULT;
@@ -3454,11 +3523,8 @@ static int vcpumask_to_pcpumask(
     }
 }
 
-long do_mmuext_op(
-    XEN_GUEST_HANDLE_PARAM(mmuext_op_t) uops,
-    unsigned int count,
-    XEN_GUEST_HANDLE_PARAM(uint) pdone,
-    unsigned int foreigndom)
+long do_mmuext_op(XEN_GUEST_HANDLE_PARAM(mmuext_op_t) uops, unsigned int count,
+                  XEN_GUEST_HANDLE_PARAM(uint) pdone, unsigned int foreigndom)
 {
     struct mmuext_op op;
     unsigned long type;
@@ -3471,9 +3537,12 @@ long do_mmuext_op(
     if ( unlikely(rc) )
     {
         if ( likely(rc == -ERESTART) )
-            rc = hypercall_create_continuation(
-                     __HYPERVISOR_mmuext_op, "hihi", uops, count, pdone,
-                     foreigndom);
+            rc = hypercall_create_continuation(__HYPERVISOR_mmuext_op,
+                                               "hihi",
+                                               uops,
+                                               count,
+                                               pdone,
+                                               foreigndom);
         return rc;
     }
 
@@ -3592,7 +3661,8 @@ long do_mmuext_op(
                 else if ( rc != -ERESTART )
                     gdprintk(XENLOG_WARNING,
                              "Error %d while pinning mfn %" PRI_mfn "\n",
-                             rc, mfn_x(page_to_mfn(page)));
+                             rc,
+                             mfn_x(page_to_mfn(page)));
                 if ( page != curr->arch.old_guest_table )
                     put_page(page);
                 break;
@@ -3620,13 +3690,13 @@ long do_mmuext_op(
                 bool drop_ref;
 
                 nrspin_lock(&pg_owner->page_alloc_lock);
-                drop_ref = (pg_owner->is_dying &&
-                            test_and_clear_bit(_PGT_pinned,
-                                               &page->u.inuse.type_info));
+                drop_ref =
+                    (pg_owner->is_dying &&
+                     test_and_clear_bit(_PGT_pinned, &page->u.inuse.type_info));
                 nrspin_unlock(&pg_owner->page_alloc_lock);
                 if ( drop_ref )
                 {
-        pin_drop:
+                pin_drop:
                     if ( type == PGT_l1_page_table )
                         put_page_and_type(page);
                     else
@@ -3648,7 +3718,8 @@ long do_mmuext_op(
             {
                 gdprintk(XENLOG_WARNING,
                          "mfn %" PRI_mfn " bad, or bad owner d%d\n",
-                         op.arg1.mfn, pg_owner->domain_id);
+                         op.arg1.mfn,
+                         pg_owner->domain_id);
                 rc = -EINVAL;
                 break;
             }
@@ -3657,7 +3728,8 @@ long do_mmuext_op(
             {
                 put_page(page);
                 gdprintk(XENLOG_WARNING,
-                         "mfn %" PRI_mfn " not pinned\n", op.arg1.mfn);
+                         "mfn %" PRI_mfn " not pinned\n",
+                         op.arg1.mfn);
                 rc = -EINVAL;
                 break;
             }
@@ -3694,7 +3766,8 @@ long do_mmuext_op(
                 rc = new_guest_cr3(_mfn(op.arg1.mfn));
             break;
 
-        case MMUEXT_NEW_USER_BASEPTR: {
+        case MMUEXT_NEW_USER_BASEPTR:
+        {
             unsigned long old_mfn;
 
             if ( unlikely(currd != pg_owner) )
@@ -3714,8 +3787,10 @@ long do_mmuext_op(
 
             if ( op.arg1.mfn != 0 )
             {
-                rc = get_page_and_type_from_mfn(
-                    _mfn(op.arg1.mfn), PGT_root_page_table, currd, PTF_preemptible);
+                rc = get_page_and_type_from_mfn(_mfn(op.arg1.mfn),
+                                                PGT_root_page_table,
+                                                currd,
+                                                PTF_preemptible);
 
                 if ( unlikely(rc) )
                 {
@@ -3724,7 +3799,8 @@ long do_mmuext_op(
                     else if ( rc != -ERESTART )
                         gdprintk(XENLOG_WARNING,
                                  "Error %d installing new mfn %" PRI_mfn "\n",
-                                 rc, op.arg1.mfn);
+                                 rc,
+                                 op.arg1.mfn);
                     break;
                 }
 
@@ -3781,10 +3857,10 @@ long do_mmuext_op(
 
             if ( unlikely(currd != pg_owner) )
                 rc = -EPERM;
-            else if ( unlikely(vcpumask_to_pcpumask(currd,
-                                   guest_handle_to_param(op.arg2.vcpumask,
-                                                         const_void),
-                                   mask)) )
+            else if ( unlikely(vcpumask_to_pcpumask(
+                          currd,
+                          guest_handle_to_param(op.arg2.vcpumask, const_void),
+                          mask)) )
                 rc = -EINVAL;
             if ( unlikely(rc) )
                 break;
@@ -3852,7 +3928,9 @@ long do_mmuext_op(
                       (ents && ((ptr & (PAGE_SIZE - 1)) || !__addr_ok(ptr))) )
             {
                 gdprintk(XENLOG_WARNING,
-                         "Bad args to SET_LDT: ptr=%lx, ents=%x\n", ptr, ents);
+                         "Bad args to SET_LDT: ptr=%lx, ents=%x\n",
+                         ptr,
+                         ents);
                 rc = -EINVAL;
             }
             else if ( (curr->arch.pv.ldt_ents != ents) ||
@@ -3880,7 +3958,8 @@ long do_mmuext_op(
                 if ( page )
                     put_page(page);
                 gdprintk(XENLOG_WARNING,
-                         "Error clearing mfn %" PRI_mfn "\n", op.arg1.mfn);
+                         "Error clearing mfn %" PRI_mfn "\n",
+                         op.arg1.mfn);
                 rc = -EINVAL;
                 break;
             }
@@ -3897,8 +3976,8 @@ long do_mmuext_op(
         {
             struct page_info *src_page, *dst_page;
 
-            src_page = get_page_from_gfn(pg_owner, op.arg2.src_mfn, &p2mt,
-                                         P2M_ALLOC);
+            src_page =
+                get_page_from_gfn(pg_owner, op.arg2.src_mfn, &p2mt, P2M_ALLOC);
             if ( unlikely(p2mt != p2m_ram_rw) && src_page )
             {
                 put_page(src_page);
@@ -3913,22 +3992,24 @@ long do_mmuext_op(
                 break;
             }
 
-            dst_page = get_page_from_gfn(pg_owner, op.arg1.mfn, &p2mt,
-                                         P2M_ALLOC);
+            dst_page =
+                get_page_from_gfn(pg_owner, op.arg1.mfn, &p2mt, P2M_ALLOC);
             if ( unlikely(p2mt != p2m_ram_rw) && dst_page )
             {
                 put_page(dst_page);
                 dst_page = NULL;
             }
-            rc = (dst_page &&
-                  get_page_type(dst_page, PGT_writable_page)) ? 0 : -EINVAL;
+            rc = (dst_page && get_page_type(dst_page, PGT_writable_page))
+                     ? 0
+                     : -EINVAL;
             if ( unlikely(rc) )
             {
                 put_page(src_page);
                 if ( dst_page )
                     put_page(dst_page);
                 gdprintk(XENLOG_WARNING,
-                         "Error copying to mfn %" PRI_mfn "\n", op.arg1.mfn);
+                         "Error copying to mfn %" PRI_mfn "\n",
+                         op.arg1.mfn);
                 break;
             }
 
@@ -3952,7 +4033,7 @@ long do_mmuext_op(
             break;
         }
 
- done:
+    done:
         if ( unlikely(rc) )
             break;
 
@@ -3960,9 +4041,12 @@ long do_mmuext_op(
     }
 
     if ( rc == -ERESTART )
-        rc = hypercall_create_continuation(
-            __HYPERVISOR_mmuext_op, "hihi",
-            uops, (count - i) | MMU_UPDATE_PREEMPTED, pdone, foreigndom);
+        rc = hypercall_create_continuation(__HYPERVISOR_mmuext_op,
+                                           "hihi",
+                                           uops,
+                                           (count - i) | MMU_UPDATE_PREEMPTED,
+                                           pdone,
+                                           foreigndom);
     else if ( curr->arch.old_guest_table )
     {
         XEN_GUEST_HANDLE_PARAM(void) null;
@@ -3974,9 +4058,12 @@ long do_mmuext_op(
          * our continuation, we pass this in place of "foreigndom", building
          * on the fact that this argument isn't needed anymore.
          */
-        rc = hypercall_create_continuation(
-                __HYPERVISOR_mmuext_op, "hihi", null,
-                MMU_UPDATE_PREEMPTED, null, rc);
+        rc = hypercall_create_continuation(__HYPERVISOR_mmuext_op,
+                                           "hihi",
+                                           null,
+                                           MMU_UPDATE_PREEMPTED,
+                                           null,
+                                           rc);
     }
 
     put_pg_owner(pg_owner);
@@ -3993,11 +4080,9 @@ long do_mmuext_op(
     return rc;
 }
 
-long do_mmu_update(
-    XEN_GUEST_HANDLE_PARAM(mmu_update_t) ureqs,
-    unsigned int count,
-    XEN_GUEST_HANDLE_PARAM(uint) pdone,
-    unsigned int foreigndom)
+long do_mmu_update(XEN_GUEST_HANDLE_PARAM(mmu_update_t) ureqs,
+                   unsigned int count, XEN_GUEST_HANDLE_PARAM(uint) pdone,
+                   unsigned int foreigndom)
 {
     struct mmu_update req;
     void *va = NULL;
@@ -4008,7 +4093,7 @@ long do_mmu_update(
     struct domain *d = v->domain, *pt_owner = d, *pg_owner;
     mfn_t map_mfn = INVALID_MFN, mfn;
     bool flush_linear_pt = false, flush_root_pt_local = false,
-        flush_root_pt_others = false;
+         flush_root_pt_others = false;
     uint32_t xsm_needed = 0;
     uint32_t xsm_checked = 0;
     int rc = put_old_guest_table(curr);
@@ -4016,9 +4101,12 @@ long do_mmu_update(
     if ( unlikely(rc) )
     {
         if ( likely(rc == -ERESTART) )
-            rc = hypercall_create_continuation(
-                     __HYPERVISOR_mmu_update, "hihi", ureqs, count, pdone,
-                     foreigndom);
+            rc = hypercall_create_continuation(__HYPERVISOR_mmu_update,
+                                               "hihi",
+                                               ureqs,
+                                               count,
+                                               pdone,
+                                               foreigndom);
         return rc;
     }
 
@@ -4079,7 +4167,7 @@ long do_mmu_update(
             break;
         }
 
-        cmd = req.ptr & (sizeof(l1_pgentry_t)-1);
+        cmd = req.ptr & (sizeof(l1_pgentry_t) - 1);
 
         switch ( cmd )
         {
@@ -4107,7 +4195,11 @@ long do_mmu_update(
             }
             if ( xsm_needed != xsm_checked )
             {
-                rc = xsm_mmu_update(XSM_TARGET, d, pt_owner, pg_owner, xsm_needed);
+                rc = xsm_mmu_update(XSM_TARGET,
+                                    d,
+                                    pt_owner,
+                                    pg_owner,
+                                    xsm_needed);
                 if ( rc )
                     break;
                 xsm_checked = xsm_needed;
@@ -4149,15 +4241,22 @@ long do_mmu_update(
                 switch ( page->u.inuse.type_info & PGT_type_mask )
                 {
                 case PGT_l1_page_table:
-                    rc = mod_l1_entry(va, l1e_from_intpte(req.val), mfn,
-                                      cmd, v, pg_owner);
+                    rc = mod_l1_entry(va,
+                                      l1e_from_intpte(req.val),
+                                      mfn,
+                                      cmd,
+                                      v,
+                                      pg_owner);
                     break;
 
                 case PGT_l2_page_table:
                     if ( unlikely(pg_owner != pt_owner) )
                         break;
-                    rc = mod_l2_entry(va, l2e_from_intpte(req.val), mfn,
-                                      cmd == MMU_PT_UPDATE_PRESERVE_AD, v);
+                    rc = mod_l2_entry(va,
+                                      l2e_from_intpte(req.val),
+                                      mfn,
+                                      cmd == MMU_PT_UPDATE_PRESERVE_AD,
+                                      v);
                     if ( !rc )
                         flush_linear_pt = true;
                     break;
@@ -4165,8 +4264,11 @@ long do_mmu_update(
                 case PGT_l3_page_table:
                     if ( unlikely(pg_owner != pt_owner) )
                         break;
-                    rc = mod_l3_entry(va, l3e_from_intpte(req.val), mfn,
-                                      cmd == MMU_PT_UPDATE_PRESERVE_AD, v);
+                    rc = mod_l3_entry(va,
+                                      l3e_from_intpte(req.val),
+                                      mfn,
+                                      cmd == MMU_PT_UPDATE_PRESERVE_AD,
+                                      v);
                     if ( !rc )
                         flush_linear_pt = true;
                     break;
@@ -4174,8 +4276,11 @@ long do_mmu_update(
                 case PGT_l4_page_table:
                     if ( unlikely(pg_owner != pt_owner) )
                         break;
-                    rc = mod_l4_entry(va, l4e_from_intpte(req.val), mfn,
-                                      cmd == MMU_PT_UPDATE_PRESERVE_AD, v);
+                    rc = mod_l4_entry(va,
+                                      l4e_from_intpte(req.val),
+                                      mfn,
+                                      cmd == MMU_PT_UPDATE_PRESERVE_AD,
+                                      v);
                     if ( !rc )
                         flush_linear_pt = true;
                     if ( !rc && pt_owner->arch.pv.xpti )
@@ -4196,8 +4301,10 @@ long do_mmu_update(
                          */
                         if ( (page->u.inuse.type_info & PGT_count_mask) >
                              (1 + !!(page->u.inuse.type_info & PGT_pinned) +
-                              mfn_eq(pagetable_get_mfn(curr->arch.guest_table_user),
-                                     mfn) + local_in_use) )
+                              mfn_eq(pagetable_get_mfn(
+                                         curr->arch.guest_table_user),
+                                     mfn) +
+                              local_in_use) )
                             flush_root_pt_others = true;
                     }
                     break;
@@ -4276,9 +4383,12 @@ long do_mmu_update(
     }
 
     if ( rc == -ERESTART )
-        rc = hypercall_create_continuation(
-            __HYPERVISOR_mmu_update, "hihi",
-            ureqs, (count - i) | MMU_UPDATE_PREEMPTED, pdone, foreigndom);
+        rc = hypercall_create_continuation(__HYPERVISOR_mmu_update,
+                                           "hihi",
+                                           ureqs,
+                                           (count - i) | MMU_UPDATE_PREEMPTED,
+                                           pdone,
+                                           foreigndom);
     else if ( curr->arch.old_guest_table )
     {
         XEN_GUEST_HANDLE_PARAM(void) null;
@@ -4290,9 +4400,12 @@ long do_mmu_update(
          * our continuation, we pass this in place of "foreigndom", building
          * on the fact that this argument isn't needed anymore.
          */
-        rc = hypercall_create_continuation(
-                __HYPERVISOR_mmu_update, "hihi", null,
-                MMU_UPDATE_PREEMPTED, null, rc);
+        rc = hypercall_create_continuation(__HYPERVISOR_mmu_update,
+                                           "hihi",
+                                           null,
+                                           MMU_UPDATE_PREEMPTED,
+                                           null,
+                                           rc);
     }
 
     put_pg_owner(pg_owner);
@@ -4349,8 +4462,9 @@ long do_mmu_update(
 
         /* Flush the remote dirty CPUs.  Does not include the local CPU. */
         if ( !cpumask_empty(mask) )
-            flush_mask(mask, FLUSH_TLB |
-                       (flush_root_pt_others ? FLUSH_ROOT_PGTBL : 0));
+            flush_mask(mask,
+                       FLUSH_TLB |
+                           (flush_root_pt_others ? FLUSH_ROOT_PGTBL : 0));
     }
     else
         /* Sanity check.  flush_root_pt_* implies flush_linear_pt. */
@@ -4358,7 +4472,7 @@ long do_mmu_update(
 
     perfc_add(num_page_updates, i);
 
- out:
+out:
     if ( pt_owner != d )
         rcu_unlock_domain(pt_owner);
 
@@ -4390,8 +4504,7 @@ long do_mmu_update(
  * The caller should either call free_domheap_page() to free the
  * page, or assign_pages() to put it back on some domain's page list.
  */
-int steal_page(
-    struct domain *d, struct page_info *page, unsigned int memflags)
+int steal_page(struct domain *d, struct page_info *page, unsigned int memflags)
 {
     unsigned long x, y;
     bool drop_dom_ref = false;
@@ -4416,11 +4529,14 @@ int steal_page(
      * the domain.
      */
     y = page->count_info;
-    do {
+    do
+    {
         x = y;
-        if ( (x & (PGC_count_mask|PGC_allocated)) != (2 | PGC_allocated) )
+        if ( (x & (PGC_count_mask | PGC_allocated)) != (2 | PGC_allocated) )
             goto fail_put;
-        y = cmpxchg(&page->count_info, x, x & ~(PGC_count_mask|PGC_allocated));
+        y = cmpxchg(&page->count_info,
+                    x,
+                    x & ~(PGC_count_mask | PGC_allocated));
     } while ( y != x );
 
     /*
@@ -4448,8 +4564,8 @@ int steal_page(
      */
     nrspin_lock(&d->page_alloc_lock);
 
-    BUG_ON(page->u.inuse.type_info & (PGT_count_mask | PGT_locked |
-                                      PGT_pinned));
+    BUG_ON(page->u.inuse.type_info &
+           (PGT_count_mask | PGT_locked | PGT_pinned));
     page->u.inuse.type_info = 0;
     page_set_owner(page, NULL);
     page_list_del(page, &d->page_list);
@@ -4465,30 +4581,33 @@ int steal_page(
 
     return 0;
 
- fail_put:
+fail_put:
     put_page(page);
- fail:
-    gdprintk(XENLOG_WARNING, "Bad steal mfn %" PRI_mfn
+fail:
+    gdprintk(XENLOG_WARNING,
+             "Bad steal mfn %" PRI_mfn
              " from d%d (owner d%d) caf=%08lx taf=%" PRtype_info "\n",
-             mfn_x(page_to_mfn(page)), d->domain_id,
+             mfn_x(page_to_mfn(page)),
+             d->domain_id,
              owner ? owner->domain_id : DOMID_INVALID,
-             page->count_info, page->u.inuse.type_info);
+             page->count_info,
+             page->u.inuse.type_info);
     return rc;
 }
 
 #ifdef CONFIG_PV
-static int __do_update_va_mapping(
-    unsigned long va, u64 val64, unsigned long flags, struct domain *pg_owner)
+static int __do_update_va_mapping(unsigned long va, u64 val64,
+                                  unsigned long flags, struct domain *pg_owner)
 {
-    l1_pgentry_t   val = l1e_from_intpte(val64);
-    struct vcpu   *v   = current;
-    struct domain *d   = v->domain;
+    l1_pgentry_t val = l1e_from_intpte(val64);
+    struct vcpu *v = current;
+    struct domain *d = v->domain;
     struct page_info *gl1pg;
-    l1_pgentry_t  *pl1e;
-    unsigned long  bmap_ptr;
-    mfn_t          gl1mfn;
-    cpumask_t     *mask = NULL;
-    int            rc;
+    l1_pgentry_t *pl1e;
+    unsigned long bmap_ptr;
+    mfn_t gl1mfn;
+    cpumask_t *mask = NULL;
+    int rc;
 
     perfc_incr(calls_to_update_va);
 
@@ -4520,7 +4639,7 @@ static int __do_update_va_mapping(
     page_unlock(gl1pg);
     put_page(gl1pg);
 
- out:
+out:
     if ( pl1e )
         unmap_domain_page(pl1e);
 
@@ -4545,8 +4664,9 @@ static int __do_update_va_mapping(
             break;
         default:
             mask = this_cpu(scratch_cpumask);
-            rc = vcpumask_to_pcpumask(d, const_guest_handle_from_ptr(bmap_ptr,
-                                                                     void),
+            rc = vcpumask_to_pcpumask(d,
+                                      const_guest_handle_from_ptr(bmap_ptr,
+                                                                  void),
                                       mask);
             break;
         }
@@ -4565,8 +4685,9 @@ static int __do_update_va_mapping(
             break;
         default:
             mask = this_cpu(scratch_cpumask);
-            rc = vcpumask_to_pcpumask(d, const_guest_handle_from_ptr(bmap_ptr,
-                                                                     void),
+            rc = vcpumask_to_pcpumask(d,
+                                      const_guest_handle_from_ptr(bmap_ptr,
+                                                                  void),
                                       mask);
             break;
         }
@@ -4578,20 +4699,22 @@ static int __do_update_va_mapping(
     return rc;
 }
 
-long do_update_va_mapping(
-    unsigned long va, u64 val64, unsigned long flags)
+long do_update_va_mapping(unsigned long va, u64 val64, unsigned long flags)
 {
     int rc = __do_update_va_mapping(va, val64, flags, current->domain);
 
     if ( rc == -ERESTART )
-        rc = hypercall_create_continuation(
-            __HYPERVISOR_update_va_mapping, "lll", va, val64, flags);
+        rc = hypercall_create_continuation(__HYPERVISOR_update_va_mapping,
+                                           "lll",
+                                           va,
+                                           val64,
+                                           flags);
 
     return rc;
 }
 
-long do_update_va_mapping_otherdomain(
-    unsigned long va, u64 val64, unsigned long flags, domid_t domid)
+long do_update_va_mapping_otherdomain(unsigned long va, u64 val64,
+                                      unsigned long flags, domid_t domid)
 {
     struct domain *pg_owner;
     int rc;
@@ -4606,29 +4729,39 @@ long do_update_va_mapping_otherdomain(
     if ( rc == -ERESTART )
         rc = hypercall_create_continuation(
             __HYPERVISOR_update_va_mapping_otherdomain,
-            "llli", va, val64, flags, domid);
+            "llli",
+            va,
+            val64,
+            flags,
+            domid);
 
     return rc;
 }
 #endif /* CONFIG_PV */
 
 #ifdef CONFIG_PV32
-int compat_update_va_mapping(
-    unsigned int va, uint32_t lo, uint32_t hi, unsigned int flags)
+int compat_update_va_mapping(unsigned int va, uint32_t lo, uint32_t hi,
+                             unsigned int flags)
 {
-    int rc = __do_update_va_mapping(va, ((uint64_t)hi << 32) | lo,
-                                    flags, current->domain);
+    int rc = __do_update_va_mapping(va,
+                                    ((uint64_t)hi << 32) | lo,
+                                    flags,
+                                    current->domain);
 
     if ( rc == -ERESTART )
-        rc = hypercall_create_continuation(
-            __HYPERVISOR_update_va_mapping, "iiii", va, lo, hi, flags);
+        rc = hypercall_create_continuation(__HYPERVISOR_update_va_mapping,
+                                           "iiii",
+                                           va,
+                                           lo,
+                                           hi,
+                                           flags);
 
     return rc;
 }
 
-int compat_update_va_mapping_otherdomain(
-    unsigned int va, uint32_t lo, uint32_t hi, unsigned int flags,
-    domid_t domid)
+int compat_update_va_mapping_otherdomain(unsigned int va, uint32_t lo,
+                                         uint32_t hi, unsigned int flags,
+                                         domid_t domid)
 {
     struct domain *pg_owner;
     int rc;
@@ -4643,7 +4776,12 @@ int compat_update_va_mapping_otherdomain(
     if ( rc == -ERESTART )
         rc = hypercall_create_continuation(
             __HYPERVISOR_update_va_mapping_otherdomain,
-            "iiiii", va, lo, hi, flags, domid);
+            "iiiii",
+            va,
+            lo,
+            hi,
+            flags,
+            domid);
 
     return rc;
 }
@@ -4652,8 +4790,7 @@ int compat_update_va_mapping_otherdomain(
 typedef struct e820entry e820entry_t;
 DEFINE_XEN_GUEST_HANDLE(e820entry_t);
 
-struct memory_map_context
-{
+struct memory_map_context {
     unsigned int n;
     unsigned long s;
     struct xen_memory_map map;
@@ -4683,12 +4820,13 @@ static int _handle_iomem_range(unsigned long s, unsigned long e,
     return 0;
 }
 
-static int cf_check handle_iomem_range(
-    unsigned long s, unsigned long e, void *p)
+static int cf_check handle_iomem_range(unsigned long s, unsigned long e,
+                                       void *p)
 {
     int err = 0;
 
-    do {
+    do
+    {
         unsigned long low = -1UL;
         unsigned int i;
 
@@ -4821,8 +4959,10 @@ long arch_memory_op(unsigned long cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
             if ( s > ctxt.s )
             {
                 rc = rangeset_report_ranges(current->domain->iomem_caps,
-                                            ctxt.s, s - 1,
-                                            handle_iomem_range, &ctxt);
+                                            ctxt.s,
+                                            s - 1,
+                                            handle_iomem_range,
+                                            &ctxt);
                 if ( !rc )
                     rc = handle_iomem_range(s, s, &ctxt);
                 if ( rc )
@@ -4840,8 +4980,11 @@ long arch_memory_op(unsigned long cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
 
         if ( ctxt.s )
         {
-            rc = rangeset_report_ranges(current->domain->iomem_caps, ctxt.s,
-                                        ~0UL, handle_iomem_range, &ctxt);
+            rc = rangeset_report_ranges(current->domain->iomem_caps,
+                                        ctxt.s,
+                                        ~0UL,
+                                        handle_iomem_range,
+                                        &ctxt);
             if ( !rc && ctxt.s )
                 rc = handle_iomem_range(~0UL, ~0UL, &ctxt);
             if ( rc )
@@ -4858,11 +5001,10 @@ long arch_memory_op(unsigned long cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
 
     case XENMEM_machphys_mapping:
     {
-        struct xen_machphys_mapping mapping = {
-            .v_start = MACH2PHYS_VIRT_START,
-            .v_end   = MACH2PHYS_VIRT_END,
-            .max_mfn = MACH2PHYS_NR_ENTRIES - 1
-        };
+        struct xen_machphys_mapping mapping = { .v_start = MACH2PHYS_VIRT_START,
+                                                .v_end = MACH2PHYS_VIRT_END,
+                                                .max_mfn =
+                                                    MACH2PHYS_NR_ENTRIES - 1 };
 
         if ( !mem_hotplug && is_hardware_domain(current->domain) )
             mapping.max_mfn = max_page - 1;
@@ -4903,8 +5045,10 @@ long arch_memory_op(unsigned long cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
 
         if ( rc == -ERESTART )
         {
-            rc = hypercall_create_continuation(
-                __HYPERVISOR_memory_op, "lh", cmd, arg);
+            rc = hypercall_create_continuation(__HYPERVISOR_memory_op,
+                                               "lh",
+                                               cmd,
+                                               arg);
         }
         else if ( rc >= 0 )
         {
@@ -4944,10 +5088,8 @@ static struct subpage_ro_range *subpage_mmio_find_page(mfn_t mfn)
  * - 1 on success - subsequent range in the page
  * - <0 on error
  */
-static int __init subpage_mmio_ro_add_page(
-    mfn_t mfn,
-    unsigned int offset_s,
-    unsigned int offset_e)
+static int __init subpage_mmio_ro_add_page(mfn_t mfn, unsigned int offset_s,
+                                           unsigned int offset_e)
 {
     struct subpage_ro_range *entry = NULL;
     bool new_entry = false;
@@ -4974,10 +5116,8 @@ static int __init subpage_mmio_ro_add_page(
     return !new_entry;
 }
 
-static void __init subpage_mmio_ro_remove_page(
-    mfn_t mfn,
-    unsigned int offset_s,
-    unsigned int offset_e)
+static void __init subpage_mmio_ro_remove_page(mfn_t mfn, unsigned int offset_s,
+                                               unsigned int offset_e)
 {
     struct subpage_ro_range *entry = NULL;
     unsigned int i;
@@ -4998,9 +5138,7 @@ static void __init subpage_mmio_ro_remove_page(
     xfree(entry);
 }
 
-int __init subpage_mmio_ro_add(
-    paddr_t start,
-    size_t size)
+int __init subpage_mmio_ro_add(paddr_t start, size_t size)
 {
     mfn_t mfn_start = maddr_to_mfn(start);
     paddr_t end = start + size - 1;
@@ -5032,17 +5170,15 @@ int __init subpage_mmio_ro_add(
 
     if ( subpage_start )
     {
-        offset_end = mfn_eq(mfn_start, mfn_end) ?
-                     PAGE_OFFSET(end) :
-                     (PAGE_SIZE - 1);
-        rc = subpage_mmio_ro_add_page(mfn_start,
-                                      PAGE_OFFSET(start),
-                                      offset_end);
+        offset_end = mfn_eq(mfn_start, mfn_end) ? PAGE_OFFSET(end)
+                                                : (PAGE_SIZE - 1);
+        rc =
+            subpage_mmio_ro_add_page(mfn_start, PAGE_OFFSET(start), offset_end);
         if ( rc < 0 )
             goto err_unlock;
         /* Check if not marking R/W part of a page intended to be fully R/O */
-        ASSERT(rc || !rangeset_contains_singleton(mmio_ro_ranges,
-                                                  mfn_x(mfn_start)));
+        ASSERT(rc ||
+               !rangeset_contains_singleton(mmio_ro_ranges, mfn_x(mfn_start)));
     }
 
     if ( subpage_end )
@@ -5051,8 +5187,8 @@ int __init subpage_mmio_ro_add(
         if ( rc < 0 )
             goto err_unlock_remove;
         /* Check if not marking R/W part of a page intended to be fully R/O */
-        ASSERT(rc || !rangeset_contains_singleton(mmio_ro_ranges,
-                                                  mfn_x(mfn_end)));
+        ASSERT(rc ||
+               !rangeset_contains_singleton(mmio_ro_ranges, mfn_x(mfn_end)));
     }
 
     rc = rangeset_add_range(mmio_ro_ranges, mfn_x(mfn_start), mfn_x(mfn_end));
@@ -5061,18 +5197,17 @@ int __init subpage_mmio_ro_add(
 
     return 0;
 
- err_remove:
+err_remove:
     if ( subpage_end )
         subpage_mmio_ro_remove_page(mfn_end, 0, PAGE_OFFSET(end));
- err_unlock_remove:
+err_unlock_remove:
     if ( subpage_start )
         subpage_mmio_ro_remove_page(mfn_start, PAGE_OFFSET(start), offset_end);
- err_unlock:
+err_unlock:
     return rc;
 }
 
-static void __iomem *subpage_mmio_map_page(
-    struct subpage_ro_range *entry)
+static void __iomem *subpage_mmio_map_page(struct subpage_ro_range *entry)
 {
     void __iomem *mapped_page;
 
@@ -5096,11 +5231,8 @@ static void __iomem *subpage_mmio_map_page(
     return entry->mapped;
 }
 
-static void subpage_mmio_write_emulate(
-    mfn_t mfn,
-    unsigned int offset,
-    const void *data,
-    unsigned int len)
+static void subpage_mmio_write_emulate(mfn_t mfn, unsigned int offset,
+                                       const void *data, unsigned int len)
 {
     struct subpage_ro_range *entry;
     volatile void __iomem *addr;
@@ -5112,10 +5244,12 @@ static void subpage_mmio_write_emulate(
 
     if ( test_bit(offset / MMIO_RO_SUBPAGE_GRAN, entry->ro_elems) )
     {
- write_ignored:
+    write_ignored:
         gprintk(XENLOG_WARNING,
-                "ignoring write to R/O MMIO 0x%"PRI_mfn"%03x len %u\n",
-                mfn_x(mfn), offset, len);
+                "ignoring write to R/O MMIO 0x%" PRI_mfn "%03x len %u\n",
+                mfn_x(mfn),
+                offset,
+                len);
         return;
     }
 
@@ -5123,24 +5257,25 @@ static void subpage_mmio_write_emulate(
     if ( !addr )
     {
         gprintk(XENLOG_ERR,
-                "Failed to map page for MMIO write at 0x%"PRI_mfn"%03x\n",
-                mfn_x(mfn), offset);
+                "Failed to map page for MMIO write at 0x%" PRI_mfn "%03x\n",
+                mfn_x(mfn),
+                offset);
         return;
     }
 
     switch ( len )
     {
     case 1:
-        writeb(*(const uint8_t*)data, addr);
+        writeb(*(const uint8_t *)data, addr);
         break;
     case 2:
-        writew(*(const uint16_t*)data, addr);
+        writew(*(const uint16_t *)data, addr);
         break;
     case 4:
-        writel(*(const uint32_t*)data, addr);
+        writel(*(const uint32_t *)data, addr);
         break;
     case 8:
-        writeq(*(const uint64_t*)data, addr);
+        writeq(*(const uint64_t *)data, addr);
         break;
     default:
         /* mmio_ro_emulated_write() already validated the size */
@@ -5173,12 +5308,9 @@ bool subpage_mmio_write_accept(mfn_t mfn, unsigned long gla)
 }
 #endif
 
-int cf_check mmio_ro_emulated_write(
-    enum x86_segment seg,
-    unsigned long offset,
-    void *p_data,
-    unsigned int bytes,
-    struct x86_emulate_ctxt *ctxt)
+int cf_check mmio_ro_emulated_write(enum x86_segment seg, unsigned long offset,
+                                    void *p_data, unsigned int bytes,
+                                    struct x86_emulate_ctxt *ctxt)
 {
     struct mmio_ro_emulate_ctxt *mmio_ro_ctxt = ctxt->data;
 
@@ -5186,23 +5318,25 @@ int cf_check mmio_ro_emulated_write(
     if ( ((bytes | offset) & (bytes - 1)) || !bytes ||
          offset != mmio_ro_ctxt->cr2 )
     {
-        gdprintk(XENLOG_WARNING, "bad access (cr2=%lx, addr=%lx, bytes=%u)\n",
-                mmio_ro_ctxt->cr2, offset, bytes);
+        gdprintk(XENLOG_WARNING,
+                 "bad access (cr2=%lx, addr=%lx, bytes=%u)\n",
+                 mmio_ro_ctxt->cr2,
+                 offset,
+                 bytes);
         return X86EMUL_UNHANDLEABLE;
     }
 
-    subpage_mmio_write_emulate(mmio_ro_ctxt->mfn, PAGE_OFFSET(offset),
-                               p_data, bytes);
+    subpage_mmio_write_emulate(mmio_ro_ctxt->mfn,
+                               PAGE_OFFSET(offset),
+                               p_data,
+                               bytes);
 
     return X86EMUL_OKAY;
 }
 
-int cf_check mmcfg_intercept_write(
-    enum x86_segment seg,
-    unsigned long offset,
-    void *p_data,
-    unsigned int bytes,
-    struct x86_emulate_ctxt *ctxt)
+int cf_check mmcfg_intercept_write(enum x86_segment seg, unsigned long offset,
+                                   void *p_data, unsigned int bytes,
+                                   struct x86_emulate_ctxt *ctxt)
 {
     struct mmio_ro_emulate_ctxt *mmio_ctxt = ctxt->data;
 
@@ -5213,16 +5347,25 @@ int cf_check mmcfg_intercept_write(
     if ( ((bytes | offset) & (bytes - 1)) || bytes > 4 || !bytes ||
          offset != mmio_ctxt->cr2 )
     {
-        gdprintk(XENLOG_WARNING, "bad write (cr2=%lx, addr=%lx, bytes=%u)\n",
-                mmio_ctxt->cr2, offset, bytes);
+        gdprintk(XENLOG_WARNING,
+                 "bad write (cr2=%lx, addr=%lx, bytes=%u)\n",
+                 mmio_ctxt->cr2,
+                 offset,
+                 bytes);
         return X86EMUL_UNHANDLEABLE;
     }
 
     offset &= 0xfff;
-    if ( pci_conf_write_intercept(mmio_ctxt->seg, mmio_ctxt->bdf,
-                                  offset, bytes, p_data) >= 0 )
-        pci_mmcfg_write(mmio_ctxt->seg, PCI_BUS(mmio_ctxt->bdf),
-                        PCI_DEVFN(mmio_ctxt->bdf), offset, bytes,
+    if ( pci_conf_write_intercept(mmio_ctxt->seg,
+                                  mmio_ctxt->bdf,
+                                  offset,
+                                  bytes,
+                                  p_data) >= 0 )
+        pci_mmcfg_write(mmio_ctxt->seg,
+                        PCI_BUS(mmio_ctxt->bdf),
+                        PCI_DEVFN(mmio_ctxt->bdf),
+                        offset,
+                        bytes,
                         *(uint32_t *)p_data);
 
     return X86EMUL_OKAY;
@@ -5457,7 +5600,7 @@ mfn_t xen_map_to_mfn(unsigned long va)
     ret = l1e_get_mfn(*pl1e);
 
 #undef CHECK_MAPPED
- out:
+out:
     L3T_UNLOCK(l3page);
     unmap_domain_page(pl1e);
     unmap_domain_page(pl2e);
@@ -5465,17 +5608,14 @@ mfn_t xen_map_to_mfn(unsigned long va)
     return ret;
 }
 
-int map_pages_to_xen(
-    unsigned long virt,
-    mfn_t mfn,
-    unsigned long nr_mfns,
-    unsigned int flags)
+int map_pages_to_xen(unsigned long virt, mfn_t mfn, unsigned long nr_mfns,
+                     unsigned int flags)
 {
     bool locking = system_state > SYS_STATE_boot;
     l3_pgentry_t *pl3e = NULL, ol3e;
     l2_pgentry_t *pl2e = NULL, ol2e;
     l1_pgentry_t *pl1e, ol1e;
-    unsigned int  i;
+    unsigned int i;
     int rc = -ENOMEM;
     struct page_info *current_l3page;
 
@@ -5534,8 +5674,8 @@ int map_pages_to_xen(
 
             if ( (l3e_get_flags(ol3e) & _PAGE_PRESENT) )
             {
-                unsigned int flush_flags =
-                    FLUSH_TLB | FLUSH_ORDER(2 * PAGETABLE_ORDER);
+                unsigned int flush_flags = FLUSH_TLB |
+                                           FLUSH_ORDER(2 * PAGETABLE_ORDER);
 
                 if ( l3e_get_flags(ol3e) & _PAGE_PSE )
                 {
@@ -5576,9 +5716,9 @@ int map_pages_to_xen(
                 }
             }
 
-            virt    += 1UL << L3_PAGETABLE_SHIFT;
+            virt += 1UL << L3_PAGETABLE_SHIFT;
             if ( !mfn_eq(mfn, INVALID_MFN) )
-                mfn  = mfn_add(mfn, 1UL << (L3_PAGETABLE_SHIFT - PAGE_SHIFT));
+                mfn = mfn_add(mfn, 1UL << (L3_PAGETABLE_SHIFT - PAGE_SHIFT));
             nr_mfns -= 1UL << (L3_PAGETABLE_SHIFT - PAGE_SHIFT);
             continue;
         }
@@ -5586,25 +5726,27 @@ int map_pages_to_xen(
         if ( (l3e_get_flags(ol3e) & _PAGE_PRESENT) &&
              (l3e_get_flags(ol3e) & _PAGE_PSE) )
         {
-            unsigned int flush_flags =
-                FLUSH_TLB | FLUSH_ORDER(2 * PAGETABLE_ORDER);
+            unsigned int flush_flags = FLUSH_TLB |
+                                       FLUSH_ORDER(2 * PAGETABLE_ORDER);
             l2_pgentry_t *l2t;
             mfn_t l2mfn;
 
             /* Skip this PTE if there is no change. */
-            if ( ((l3e_get_pfn(ol3e) & ~(L2_PAGETABLE_ENTRIES *
-                                         L1_PAGETABLE_ENTRIES - 1)) +
-                  (l2_table_offset(virt) << PAGETABLE_ORDER) +
-                  l1_table_offset(virt) == mfn_x(mfn)) &&
+            if ( ((l3e_get_pfn(ol3e) &
+                   ~(L2_PAGETABLE_ENTRIES * L1_PAGETABLE_ENTRIES - 1)) +
+                      (l2_table_offset(virt) << PAGETABLE_ORDER) +
+                      l1_table_offset(virt) ==
+                  mfn_x(mfn)) &&
                  ((lNf_to_l1f(l3e_get_flags(ol3e)) ^ flags) &
-                  ~(_PAGE_ACCESSED|_PAGE_DIRTY)) == 0 )
+                  ~(_PAGE_ACCESSED | _PAGE_DIRTY)) == 0 )
             {
                 /* We can skip to end of L3 superpage if we got a match. */
                 i = (1u << (L3_PAGETABLE_SHIFT - PAGE_SHIFT)) -
-                    (mfn_x(mfn) & ((1 << (L3_PAGETABLE_SHIFT - PAGE_SHIFT)) - 1));
+                    (mfn_x(mfn) &
+                     ((1 << (L3_PAGETABLE_SHIFT - PAGE_SHIFT)) - 1));
                 if ( i > nr_mfns )
                     i = nr_mfns;
-                virt    += i << PAGE_SHIFT;
+                virt += i << PAGE_SHIFT;
                 if ( !mfn_eq(mfn, INVALID_MFN) )
                     mfn = mfn_add(mfn, i);
                 nr_mfns -= i;
@@ -5619,7 +5761,7 @@ int map_pages_to_xen(
             for ( i = 0; i < L2_PAGETABLE_ENTRIES; i++ )
                 l2e_write(l2t + i,
                           l2e_from_pfn(l3e_get_pfn(ol3e) +
-                                       (i << PAGETABLE_ORDER),
+                                           (i << PAGETABLE_ORDER),
                                        l3e_get_flags(ol3e)));
             UNMAP_DOMAIN_PAGE(l2t);
 
@@ -5646,7 +5788,7 @@ int map_pages_to_xen(
 
         if ( IS_L2E_ALIGNED(virt, flags & _PAGE_PRESENT ? mfn : _mfn(0)) &&
              (nr_mfns >= (1u << PAGETABLE_ORDER)) &&
-             !(flags & (_PAGE_PAT|MAP_SMALL_PAGES)) )
+             !(flags & (_PAGE_PAT | MAP_SMALL_PAGES)) )
         {
             /* Super-page mapping. */
             ol2e = *pl2e;
@@ -5654,8 +5796,8 @@ int map_pages_to_xen(
 
             if ( (l2e_get_flags(ol2e) & _PAGE_PRESENT) )
             {
-                unsigned int flush_flags =
-                    FLUSH_TLB | FLUSH_ORDER(PAGETABLE_ORDER);
+                unsigned int flush_flags = FLUSH_TLB |
+                                           FLUSH_ORDER(PAGETABLE_ORDER);
 
                 if ( l2e_get_flags(ol2e) & _PAGE_PSE )
                 {
@@ -5674,7 +5816,7 @@ int map_pages_to_xen(
                 }
             }
 
-            virt    += 1UL << L2_PAGETABLE_SHIFT;
+            virt += 1UL << L2_PAGETABLE_SHIFT;
             if ( !mfn_eq(mfn, INVALID_MFN) )
                 mfn = mfn_add(mfn, 1UL << PAGETABLE_ORDER);
             nr_mfns -= 1UL << PAGETABLE_ORDER;
@@ -5691,8 +5833,8 @@ int map_pages_to_xen(
             }
             else if ( l2e_get_flags(*pl2e) & _PAGE_PSE )
             {
-                unsigned int flush_flags =
-                    FLUSH_TLB | FLUSH_ORDER(PAGETABLE_ORDER);
+                unsigned int flush_flags = FLUSH_TLB |
+                                           FLUSH_ORDER(PAGETABLE_ORDER);
                 l1_pgentry_t *l1t;
                 mfn_t l1mfn;
 
@@ -5700,14 +5842,15 @@ int map_pages_to_xen(
                 if ( (((l2e_get_pfn(*pl2e) & ~(L1_PAGETABLE_ENTRIES - 1)) +
                        l1_table_offset(virt)) == mfn_x(mfn)) &&
                      (((lNf_to_l1f(l2e_get_flags(*pl2e)) ^ flags) &
-                       ~(_PAGE_ACCESSED|_PAGE_DIRTY)) == 0) )
+                       ~(_PAGE_ACCESSED | _PAGE_DIRTY)) == 0) )
                 {
                     /* We can skip to end of L2 superpage if we got a match. */
                     i = (1u << (L2_PAGETABLE_SHIFT - PAGE_SHIFT)) -
-                        (mfn_x(mfn) & ((1u << (L2_PAGETABLE_SHIFT - PAGE_SHIFT)) - 1));
+                        (mfn_x(mfn) &
+                         ((1u << (L2_PAGETABLE_SHIFT - PAGE_SHIFT)) - 1));
                     if ( i > nr_mfns )
                         i = nr_mfns;
-                    virt    += i << L1_PAGETABLE_SHIFT;
+                    virt += i << L1_PAGETABLE_SHIFT;
                     if ( !mfn_eq(mfn, INVALID_MFN) )
                         mfn = mfn_add(mfn, i);
                     nr_mfns -= i;
@@ -5744,7 +5887,7 @@ int map_pages_to_xen(
 
             if ( !pl1e )
                 pl1e = map_l1t_from_l2e(*pl2e) + l1_table_offset(virt);
-            ol1e  = *pl1e;
+            ol1e = *pl1e;
             l1e_write(pl1e, l1e_from_mfn(mfn, flags));
             UNMAP_DOMAIN_PAGE(pl1e);
             if ( (l1e_get_flags(ol1e) & _PAGE_PRESENT) )
@@ -5755,7 +5898,7 @@ int map_pages_to_xen(
                 flush_area(virt, flush_flags);
             }
 
-            virt    += 1UL << L1_PAGETABLE_SHIFT;
+            virt += 1UL << L1_PAGETABLE_SHIFT;
             if ( !mfn_eq(mfn, INVALID_MFN) )
                 mfn = mfn_add(mfn, 1UL);
             nr_mfns -= 1UL;
@@ -5800,8 +5943,7 @@ int map_pages_to_xen(
                     if ( locking )
                         spin_unlock(&map_pgdir_lock);
                     flush_area(virt - PAGE_SIZE,
-                               FLUSH_TLB_GLOBAL |
-                               FLUSH_ORDER(PAGETABLE_ORDER));
+                               FLUSH_TLB_GLOBAL | FLUSH_ORDER(PAGETABLE_ORDER));
                     free_xen_pagetable(l2e_get_mfn(ol2e));
                 }
                 else if ( locking )
@@ -5809,9 +5951,8 @@ int map_pages_to_xen(
             }
         }
 
- check_l3:
-        if ( cpu_has_page1gb &&
-             (flags == PAGE_HYPERVISOR) &&
+    check_l3:
+        if ( cpu_has_page1gb && (flags == PAGE_HYPERVISOR) &&
              ((nr_mfns == 0) || IS_L3E_ALIGNED(virt, mfn)) )
         {
             unsigned long base_mfn;
@@ -5825,7 +5966,7 @@ int map_pages_to_xen(
              * concurrent paging structure modifications on other CPUs.
              */
             if ( !(l3e_get_flags(ol3e) & _PAGE_PRESENT) ||
-                (l3e_get_flags(ol3e) & _PAGE_PSE) )
+                 (l3e_get_flags(ol3e) & _PAGE_PSE) )
             {
                 if ( locking )
                     spin_unlock(&map_pgdir_lock);
@@ -5833,8 +5974,8 @@ int map_pages_to_xen(
             }
 
             l2t = map_l2t_from_l3e(ol3e);
-            base_mfn = l2e_get_pfn(l2t[0]) & ~(L2_PAGETABLE_ENTRIES *
-                                              L1_PAGETABLE_ENTRIES - 1);
+            base_mfn = l2e_get_pfn(l2t[0]) &
+                       ~(L2_PAGETABLE_ENTRIES * L1_PAGETABLE_ENTRIES - 1);
             for ( i = 0; i < L2_PAGETABLE_ENTRIES; i++ )
                 if ( (l2e_get_pfn(l2t[i]) !=
                       (base_mfn + (i << PAGETABLE_ORDER))) ||
@@ -5847,8 +5988,7 @@ int map_pages_to_xen(
                 if ( locking )
                     spin_unlock(&map_pgdir_lock);
                 flush_area(virt - PAGE_SIZE,
-                           FLUSH_TLB_GLOBAL |
-                           FLUSH_ORDER(2*PAGETABLE_ORDER));
+                           FLUSH_TLB_GLOBAL | FLUSH_ORDER(2 * PAGETABLE_ORDER));
                 free_xen_pagetable(l3e_get_mfn(ol3e));
             }
             else if ( locking )
@@ -5863,7 +6003,7 @@ int map_pages_to_xen(
 
     rc = 0;
 
- out:
+out:
     L3T_UNLOCK(current_l3page);
     unmap_domain_page(pl3e);
     unmap_domain_page(pl2e);
@@ -5893,7 +6033,7 @@ int modify_xen_mappings(unsigned long s, unsigned long e, unsigned int nf)
     l3_pgentry_t *pl3e = NULL;
     l2_pgentry_t *pl2e = NULL;
     l1_pgentry_t *pl1e;
-    unsigned int  i;
+    unsigned int i;
     unsigned long v = s;
     int rc = -ENOMEM;
     struct page_info *current_l3page;
@@ -5936,14 +6076,16 @@ int modify_xen_mappings(unsigned long s, unsigned long e, unsigned int nf)
             l2_pgentry_t *l2t;
             mfn_t l2mfn;
 
-            if ( l2_table_offset(v) == 0 &&
-                 l1_table_offset(v) == 0 &&
+            if ( l2_table_offset(v) == 0 && l1_table_offset(v) == 0 &&
                  ((e - v) >= (1UL << L3_PAGETABLE_SHIFT)) )
             {
                 /* PAGE1GB: whole superpage is modified. */
-                l3_pgentry_t nl3e = !(nf & _PAGE_PRESENT) ? l3e_empty()
-                    : l3e_from_pfn(l3e_get_pfn(*pl3e),
-                                   (l3e_get_flags(*pl3e) & ~FLAGS_MASK) | nf);
+                l3_pgentry_t nl3e =
+                    !(nf & _PAGE_PRESENT)
+                        ? l3e_empty()
+                        : l3e_from_pfn(l3e_get_pfn(*pl3e),
+                                       (l3e_get_flags(*pl3e) & ~FLAGS_MASK) |
+                                           nf);
 
                 l3e_write(pl3e, nl3e);
                 v += 1UL << L3_PAGETABLE_SHIFT;
@@ -5959,7 +6101,7 @@ int modify_xen_mappings(unsigned long s, unsigned long e, unsigned int nf)
             for ( i = 0; i < L2_PAGETABLE_ENTRIES; i++ )
                 l2e_write(l2t + i,
                           l2e_from_pfn(l3e_get_pfn(*pl3e) +
-                                       (i << PAGETABLE_ORDER),
+                                           (i << PAGETABLE_ORDER),
                                        l3e_get_flags(*pl3e)));
             UNMAP_DOMAIN_PAGE(l2t);
 
@@ -5995,12 +6137,15 @@ int modify_xen_mappings(unsigned long s, unsigned long e, unsigned int nf)
         if ( l2e_get_flags(*pl2e) & _PAGE_PSE )
         {
             if ( (l1_table_offset(v) == 0) &&
-                 ((e-v) >= (1UL << L2_PAGETABLE_SHIFT)) )
+                 ((e - v) >= (1UL << L2_PAGETABLE_SHIFT)) )
             {
                 /* PSE: whole superpage is modified. */
-                l2_pgentry_t nl2e = !(nf & _PAGE_PRESENT) ? l2e_empty()
-                    : l2e_from_pfn(l2e_get_pfn(*pl2e),
-                                   (l2e_get_flags(*pl2e) & ~FLAGS_MASK) | nf);
+                l2_pgentry_t nl2e =
+                    !(nf & _PAGE_PRESENT)
+                        ? l2e_empty()
+                        : l2e_from_pfn(l2e_get_pfn(*pl2e),
+                                       (l2e_get_flags(*pl2e) & ~FLAGS_MASK) |
+                                           nf);
 
                 l2e_write(pl2e, nl2e);
                 v += 1UL << L2_PAGETABLE_SHIFT;
@@ -6050,9 +6195,11 @@ int modify_xen_mappings(unsigned long s, unsigned long e, unsigned int nf)
             if ( !(l1e_get_flags(*pl1e) & _PAGE_PRESENT) )
                 ASSERT(!(nf & _PAGE_PRESENT));
 
-            nl1e = !(nf & _PAGE_PRESENT) ? l1e_empty()
-                : l1e_from_pfn(l1e_get_pfn(*pl1e),
-                               (l1e_get_flags(*pl1e) & ~FLAGS_MASK) | nf);
+            nl1e = !(nf & _PAGE_PRESENT)
+                       ? l1e_empty()
+                       : l1e_from_pfn(l1e_get_pfn(*pl1e),
+                                      (l1e_get_flags(*pl1e) & ~FLAGS_MASK) |
+                                          nf);
 
             l1e_write(pl1e, nl1e);
             UNMAP_DOMAIN_PAGE(pl1e);
@@ -6062,7 +6209,8 @@ int modify_xen_mappings(unsigned long s, unsigned long e, unsigned int nf)
              * If we are not destroying mappings, or not done with the L2E,
              * skip the empty&free check.
              */
-            if ( (nf & _PAGE_PRESENT) || ((v != e) && (l1_table_offset(v) != 0)) )
+            if ( (nf & _PAGE_PRESENT) ||
+                 ((v != e) && (l1_table_offset(v) != 0)) )
                 continue;
             spin_lock_if(locking, &map_pgdir_lock);
 
@@ -6103,7 +6251,7 @@ int modify_xen_mappings(unsigned long s, unsigned long e, unsigned int nf)
                 spin_unlock(&map_pgdir_lock);
         }
 
- check_l3:
+    check_l3:
         /*
          * If we are not destroying mappings, or not done with the L3E,
          * skip the empty&free check.
@@ -6118,7 +6266,7 @@ int modify_xen_mappings(unsigned long s, unsigned long e, unsigned int nf)
          * concurrent paging structure modifications on other CPUs.
          */
         if ( !(l3e_get_flags(*pl3e) & _PAGE_PRESENT) ||
-              (l3e_get_flags(*pl3e) & _PAGE_PSE) )
+             (l3e_get_flags(*pl3e) & _PAGE_PSE) )
         {
             if ( locking )
                 spin_unlock(&map_pgdir_lock);
@@ -6153,7 +6301,7 @@ int modify_xen_mappings(unsigned long s, unsigned long e, unsigned int nf)
 #undef FLAGS_MASK
     rc = 0;
 
- out:
+out:
     L3T_UNLOCK(current_l3page);
     unmap_domain_page(pl3e);
     unmap_domain_page(pl2e);
@@ -6182,8 +6330,9 @@ int destroy_xen_mappings(unsigned long s, unsigned long e)
  * 'e' has no alignment requirements, but the whole page/superpage containing
  * the non-inclusive boundary will be updated.
  */
-void init_or_livepatch modify_xen_mappings_lite(
-    unsigned long s, unsigned long e, unsigned int nf)
+void init_or_livepatch modify_xen_mappings_lite(unsigned long s,
+                                                unsigned long e,
+                                                unsigned int nf)
 {
     unsigned long v = s, fm, flags;
 
@@ -6240,15 +6389,15 @@ void init_or_livepatch modify_xen_mappings_lite(
     }
 }
 
-void __set_fixmap(
-    enum fixed_addresses idx, unsigned long mfn, unsigned long flags)
+void __set_fixmap(enum fixed_addresses idx, unsigned long mfn,
+                  unsigned long flags)
 {
     BUG_ON(idx >= __end_of_fixed_addresses || idx <= FIX_RESERVED);
     map_pages_to_xen(__fix_to_virt(idx), _mfn(mfn), 1, flags);
 }
 
-void __set_fixmap_x(
-    enum fixed_addresses_x idx, unsigned long mfn, unsigned long flags)
+void __set_fixmap_x(enum fixed_addresses_x idx, unsigned long mfn,
+                    unsigned long flags)
 {
     BUG_ON(idx >= __end_of_fixed_addresses_x || idx <= FIX_X_RESERVED);
     map_pages_to_xen(__fix_x_to_virt(idx), _mfn(mfn), 1, flags);
@@ -6274,7 +6423,8 @@ void __iomem *ioremap(paddr_t pa, size_t len)
         unsigned int offs = pa & (PAGE_SIZE - 1);
         unsigned int nr = PFN_UP(offs + len);
 
-        va = __vmap(&mfn, nr, 1, 1, PAGE_HYPERVISOR_UCMINUS, VMAP_DEFAULT) + offs;
+        va = __vmap(&mfn, nr, 1, 1, PAGE_HYPERVISOR_UCMINUS, VMAP_DEFAULT) +
+             offs;
     }
 
     return (void __force __iomem *)va;
@@ -6480,7 +6630,7 @@ void free_perdomain_mappings(struct domain *d)
 
     l3tab = __map_domain_page(d->arch.perdomain_l3_pg);
 
-    for ( i = 0; i < PERDOMAIN_SLOTS; ++i)
+    for ( i = 0; i < PERDOMAIN_SLOTS; ++i )
         if ( l3e_get_flags(l3tab[i]) & _PAGE_PRESENT )
         {
             struct page_info *l2pg = l3e_get_page(l3tab[i]);
@@ -6537,8 +6687,8 @@ void memguard_guard_stack(void *p)
     {
         write_sss_token(p + (IST_MCE * IST_SHSTK_SIZE) - 8);
         write_sss_token(p + (IST_NMI * IST_SHSTK_SIZE) - 8);
-        write_sss_token(p + (IST_DB  * IST_SHSTK_SIZE) - 8);
-        write_sss_token(p + (IST_DF  * IST_SHSTK_SIZE) - 8);
+        write_sss_token(p + (IST_DB * IST_SHSTK_SIZE) - 8);
+        write_sss_token(p + (IST_DF * IST_SHSTK_SIZE) - 8);
     }
     map_pages_to_xen((unsigned long)p, virt_to_mfn(p), 1, PAGE_HYPERVISOR_SHSTK);
 
@@ -6558,7 +6708,8 @@ void memguard_unguard_stack(void *p)
     map_pages_to_xen((unsigned long)p, virt_to_mfn(p), 1, PAGE_HYPERVISOR_RW);
 }
 
-const struct platform_bad_page *__init get_platform_badpages(unsigned int *array_size)
+const struct platform_bad_page *__init
+get_platform_badpages(unsigned int *array_size)
 {
     u32 igd_id;
     static const struct platform_bad_page __initconst snb_bad_pages[] = {
@@ -6568,9 +6719,9 @@ const struct platform_bad_page *__init get_platform_badpages(unsigned int *array
         { .mfn = 0x20138000 >> PAGE_SHIFT },
         { .mfn = 0x40004000 >> PAGE_SHIFT },
     };
-    static const struct platform_bad_page __initconst hle_bad_page = {
-        .mfn = 0x40000000 >> PAGE_SHIFT, .order = 10
-    };
+    static const struct platform_bad_page
+        __initconst hle_bad_page = { .mfn = 0x40000000 >> PAGE_SHIFT,
+                                     .order = 10 };
 
     switch ( cpuid_eax(1) & 0x000f3ff0 )
     {

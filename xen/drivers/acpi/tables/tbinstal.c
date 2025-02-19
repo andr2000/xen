@@ -61,36 +61,37 @@ ACPI_MODULE_NAME("tbinstal")
  *****************************************************************************/
 acpi_status __init acpi_tb_verify_table(struct acpi_table_desc *table_desc)
 {
-	acpi_status status = AE_OK;
+    acpi_status status = AE_OK;
 
-	ACPI_FUNCTION_TRACE(tb_verify_table);
+    ACPI_FUNCTION_TRACE(tb_verify_table);
 
-	/* Map the table if necessary */
+    /* Map the table if necessary */
 
-	if (!table_desc->pointer) {
-		if ((table_desc->flags & ACPI_TABLE_ORIGIN_MASK) ==
-		    ACPI_TABLE_ORIGIN_MAPPED) {
-			table_desc->pointer =
-			    acpi_os_map_memory(table_desc->address,
-					       table_desc->length);
-		}
-		if (!table_desc->pointer) {
-			return_ACPI_STATUS(AE_NO_MEMORY);
-		}
-	}
+    if ( !table_desc->pointer )
+    {
+        if ( (table_desc->flags & ACPI_TABLE_ORIGIN_MASK) ==
+             ACPI_TABLE_ORIGIN_MAPPED )
+        {
+            table_desc->pointer = acpi_os_map_memory(table_desc->address,
+                                                     table_desc->length);
+        }
+        if ( !table_desc->pointer )
+        {
+            return_ACPI_STATUS(AE_NO_MEMORY);
+        }
+    }
 
-	/* FACS is the odd table, has no standard ACPI header and no checksum */
+    /* FACS is the odd table, has no standard ACPI header and no checksum */
 
-	if (!ACPI_COMPARE_NAME(&table_desc->signature, ACPI_SIG_FACS)) {
+    if ( !ACPI_COMPARE_NAME(&table_desc->signature, ACPI_SIG_FACS) )
+    {
+        /* Always calculate checksum, ignore bad checksum if requested */
 
-		/* Always calculate checksum, ignore bad checksum if requested */
+        status = acpi_tb_verify_checksum(table_desc->pointer,
+                                         table_desc->length);
+    }
 
-		status =
-		    acpi_tb_verify_checksum(table_desc->pointer,
-					    table_desc->length);
-	}
-
-	return_ACPI_STATUS(status);
+    return_ACPI_STATUS(status);
 }
 
 /*******************************************************************************
@@ -107,44 +108,47 @@ acpi_status __init acpi_tb_verify_table(struct acpi_table_desc *table_desc)
 
 acpi_status __init acpi_tb_resize_root_table_list(void)
 {
-	struct acpi_table_desc *tables;
+    struct acpi_table_desc *tables;
 
-	ACPI_FUNCTION_TRACE(tb_resize_root_table_list);
+    ACPI_FUNCTION_TRACE(tb_resize_root_table_list);
 
-	/* allow_resize flag is a parameter to acpi_initialize_tables */
+    /* allow_resize flag is a parameter to acpi_initialize_tables */
 
-	if (!(acpi_gbl_root_table_list.flags & ACPI_ROOT_ALLOW_RESIZE)) {
-		ACPI_ERROR((AE_INFO,
-			    "Resize of Root Table Array is not allowed"));
-		return_ACPI_STATUS(AE_SUPPORT);
-	}
+    if ( !(acpi_gbl_root_table_list.flags & ACPI_ROOT_ALLOW_RESIZE) )
+    {
+        ACPI_ERROR((AE_INFO, "Resize of Root Table Array is not allowed"));
+        return_ACPI_STATUS(AE_SUPPORT);
+    }
 
-	/* Increase the Table Array size */
+    /* Increase the Table Array size */
 
-	tables = ACPI_ALLOCATE_ZEROED((acpi_gbl_root_table_list.size +
-				       ACPI_ROOT_TABLE_SIZE_INCREMENT)
-				      * sizeof(struct acpi_table_desc));
-	if (!tables) {
-		ACPI_ERROR((AE_INFO,
-			    "Could not allocate new root table array"));
-		return_ACPI_STATUS(AE_NO_MEMORY);
-	}
+    tables = ACPI_ALLOCATE_ZEROED((acpi_gbl_root_table_list.size +
+                                   ACPI_ROOT_TABLE_SIZE_INCREMENT) *
+                                  sizeof(struct acpi_table_desc));
+    if ( !tables )
+    {
+        ACPI_ERROR((AE_INFO, "Could not allocate new root table array"));
+        return_ACPI_STATUS(AE_NO_MEMORY);
+    }
 
-	/* Copy and free the previous table array */
+    /* Copy and free the previous table array */
 
-	if (acpi_gbl_root_table_list.tables) {
-		ACPI_MEMCPY(tables, acpi_gbl_root_table_list.tables,
-			    acpi_gbl_root_table_list.size *
-			    sizeof(struct acpi_table_desc));
+    if ( acpi_gbl_root_table_list.tables )
+    {
+        ACPI_MEMCPY(tables,
+                    acpi_gbl_root_table_list.tables,
+                    acpi_gbl_root_table_list.size *
+                        sizeof(struct acpi_table_desc));
 
-		if (acpi_gbl_root_table_list.flags & ACPI_ROOT_ORIGIN_ALLOCATED) {
-			ACPI_FREE(acpi_gbl_root_table_list.tables);
-		}
-	}
+        if ( acpi_gbl_root_table_list.flags & ACPI_ROOT_ORIGIN_ALLOCATED )
+        {
+            ACPI_FREE(acpi_gbl_root_table_list.tables);
+        }
+    }
 
-	acpi_gbl_root_table_list.tables = tables;
-	acpi_gbl_root_table_list.size += ACPI_ROOT_TABLE_SIZE_INCREMENT;
-	acpi_gbl_root_table_list.flags |= (u8) ACPI_ROOT_ORIGIN_ALLOCATED;
+    acpi_gbl_root_table_list.tables = tables;
+    acpi_gbl_root_table_list.size += ACPI_ROOT_TABLE_SIZE_INCREMENT;
+    acpi_gbl_root_table_list.flags |= (u8)ACPI_ROOT_ORIGIN_ALLOCATED;
 
-	return_ACPI_STATUS(AE_OK);
+    return_ACPI_STATUS(AE_OK);
 }

@@ -75,9 +75,9 @@ struct page_info;
 extern bool using_static_heap;
 
 void put_page(struct page_info *page);
-bool __must_check get_page(struct page_info *page,
-                           const struct domain *domain);
-struct domain *__must_check page_get_owner_and_reference(struct page_info *page);
+bool __must_check get_page(struct page_info *page, const struct domain *domain);
+struct domain *__must_check
+page_get_owner_and_reference(struct page_info *page);
 
 /* Boot-time allocator. Turns into generic allocator after bootstrap. */
 void init_boot_pages(paddr_t ps, paddr_t pe);
@@ -109,11 +109,8 @@ int acquire_domstatic_pages(struct domain *d, mfn_t smfn, unsigned int nr_mfns,
                             unsigned int memflags);
 
 /* Map machine page range in Xen virtual address space. */
-int map_pages_to_xen(
-    unsigned long virt,
-    mfn_t mfn,
-    unsigned long nr_mfns,
-    unsigned int flags);
+int map_pages_to_xen(unsigned long virt, mfn_t mfn, unsigned long nr_mfns,
+                     unsigned int flags);
 /* Alter the permissions of a range of Xen virtual address space. */
 int modify_xen_mappings(unsigned long s, unsigned long e, unsigned int nf);
 void modify_xen_mappings_lite(unsigned long s, unsigned long e,
@@ -129,20 +126,21 @@ mfn_t xen_map_to_mfn(unsigned long va);
 int populate_pt_range(unsigned long virt, unsigned long nr_mfns);
 /* Claim handling */
 unsigned long __must_check domain_adjust_tot_pages(struct domain *d,
-    long pages);
+                                                   long pages);
 int domain_set_outstanding_pages(struct domain *d, unsigned long pages);
 void get_outstanding_claims(uint64_t *free_pages, uint64_t *outstanding_pages);
 
 /* Domain suballocator. These functions are *not* interrupt-safe.*/
 void init_domheap_pages(paddr_t ps, paddr_t pe);
-struct page_info *alloc_domheap_pages(
-    struct domain *d, unsigned int order, unsigned int memflags);
+struct page_info *alloc_domheap_pages(struct domain *d, unsigned int order,
+                                      unsigned int memflags);
 void free_domheap_pages(struct page_info *pg, unsigned int order);
-unsigned long avail_domheap_pages_region(
-    unsigned int node, unsigned int min_width, unsigned int max_width);
+unsigned long avail_domheap_pages_region(unsigned int node,
+                                         unsigned int min_width,
+                                         unsigned int max_width);
 unsigned long avail_domheap_pages(void);
 unsigned long avail_node_heap_pages(unsigned int nodeid);
-#define alloc_domheap_page(d,f) (alloc_domheap_pages(d,0,f))
+#define alloc_domheap_page(d, f) (alloc_domheap_pages(d,0,f))
 #define free_domheap_page(p)  (free_domheap_pages(p,0))
 unsigned int online_page(mfn_t mfn, uint32_t *status);
 int offline_page(mfn_t mfn, int broken, uint32_t *status);
@@ -150,17 +148,11 @@ int query_page_offline(mfn_t mfn, uint32_t *status);
 
 void heap_init_late(void);
 
-int assign_pages(
-    struct page_info *pg,
-    unsigned int nr,
-    struct domain *d,
-    unsigned int memflags);
+int assign_pages(struct page_info *pg, unsigned int nr, struct domain *d,
+                 unsigned int memflags);
 
-int assign_page(
-    struct page_info *pg,
-    unsigned int order,
-    struct domain *d,
-    unsigned int memflags);
+int assign_page(struct page_info *pg, unsigned int order, struct domain *d,
+                unsigned int memflags);
 
 /* Dump info to serial console */
 void arch_dump_shared_mem_info(void);
@@ -175,7 +167,7 @@ extern paddr_t mem_hotplug;
  */
 typedef enum {
     npfec_kind_unknown, /* must be first */
-    npfec_kind_in_gpt,  /* violation in guest page table */
+    npfec_kind_in_gpt, /* violation in guest page table */
     npfec_kind_with_gla /* violation with guest linear address */
 } npfec_kind_t;
 
@@ -188,32 +180,32 @@ struct npfec {
     unsigned int insn_fetch:1;
     unsigned int present:1;
     unsigned int gla_valid:1;
-    unsigned int kind:2;  /* npfec_kind_t */
+    unsigned int kind:2; /* npfec_kind_t */
 };
 
 /* memflags: */
 #define _MEMF_no_refcount 0
-#define  MEMF_no_refcount (1U<<_MEMF_no_refcount)
+#define MEMF_no_refcount (1U<<_MEMF_no_refcount)
 #define _MEMF_populate_on_demand 1
-#define  MEMF_populate_on_demand (1U<<_MEMF_populate_on_demand)
+#define MEMF_populate_on_demand (1U<<_MEMF_populate_on_demand)
 #define _MEMF_no_dma      3
-#define  MEMF_no_dma      (1U<<_MEMF_no_dma)
+#define MEMF_no_dma      (1U<<_MEMF_no_dma)
 #define _MEMF_exact_node  4
-#define  MEMF_exact_node  (1U<<_MEMF_exact_node)
+#define MEMF_exact_node  (1U<<_MEMF_exact_node)
 #define _MEMF_no_owner    5
-#define  MEMF_no_owner    (1U<<_MEMF_no_owner)
+#define MEMF_no_owner    (1U<<_MEMF_no_owner)
 #define _MEMF_no_tlbflush 6
-#define  MEMF_no_tlbflush (1U<<_MEMF_no_tlbflush)
+#define MEMF_no_tlbflush (1U<<_MEMF_no_tlbflush)
 #define _MEMF_no_icache_flush 7
-#define  MEMF_no_icache_flush (1U<<_MEMF_no_icache_flush)
+#define MEMF_no_icache_flush (1U<<_MEMF_no_icache_flush)
 #define _MEMF_no_scrub    8
-#define  MEMF_no_scrub    (1U<<_MEMF_no_scrub)
+#define MEMF_no_scrub    (1U<<_MEMF_no_scrub)
 #define _MEMF_node        16
-#define  MEMF_node_mask   ((1U << (8 * sizeof(nodeid_t))) - 1)
-#define  MEMF_node(n)     ((((n) + 1) & MEMF_node_mask) << _MEMF_node)
-#define  MEMF_get_node(f) ((((f) >> _MEMF_node) - 1) & MEMF_node_mask)
+#define MEMF_node_mask   ((1U << (8 * sizeof(nodeid_t))) - 1)
+#define MEMF_node(n)     ((((n) + 1) & MEMF_node_mask) << _MEMF_node)
+#define MEMF_get_node(f) ((((f) >> _MEMF_node) - 1) & MEMF_node_mask)
 #define _MEMF_bits        24
-#define  MEMF_bits(n)     ((n)<<_MEMF_bits)
+#define MEMF_bits(n)     ((n)<<_MEMF_bits)
 
 #ifdef CONFIG_PAGEALLOC_MAX_ORDER
 #define MAX_ORDER CONFIG_PAGEALLOC_MAX_ORDER
@@ -227,7 +219,7 @@ extern struct domain *dom_xen, *dom_io;
 #ifdef CONFIG_MEM_SHARING
 extern struct domain *dom_cow;
 #else
-# define dom_cow NULL
+#define dom_cow NULL
 #endif
 
 #define page_list_entry list_head
@@ -240,55 +232,57 @@ static inline bool is_special_page(const struct page_info *page)
 }
 
 #ifndef page_list_entry
-struct page_list_head
-{
+struct page_list_head {
     struct page_info *next, *tail;
 };
+
 /* These must only have instances in struct page_info. */
-# define page_list_entry
+#define page_list_entry
 
-# define PAGE_LIST_NULL ((typeof(((struct page_info){}).list.next))~0)
+#define PAGE_LIST_NULL ((typeof(((struct page_info){}).list.next))~0)
 
-# if !defined(pdx_to_page) && !defined(page_to_pdx)
-#   define page_to_pdx page_to_mfn
-#   define pdx_to_page mfn_to_page
-# endif
+#if !defined(pdx_to_page) && !defined(page_to_pdx)
+#define page_to_pdx page_to_mfn
+#define pdx_to_page mfn_to_page
+#endif
 
-# define PAGE_LIST_HEAD_INIT(name) { NULL, NULL }
-# define PAGE_LIST_HEAD(name) \
+#define PAGE_LIST_HEAD_INIT(name) { NULL, NULL }
+#define PAGE_LIST_HEAD(name) \
     struct page_list_head name = PAGE_LIST_HEAD_INIT(name)
-# define INIT_PAGE_LIST_HEAD(head) ((head)->tail = (head)->next = NULL)
-# define INIT_PAGE_LIST_ENTRY(ent) ((ent)->prev = (ent)->next = PAGE_LIST_NULL)
+#define INIT_PAGE_LIST_HEAD(head) ((head)->tail = (head)->next = NULL)
+#define INIT_PAGE_LIST_ENTRY(ent) ((ent)->prev = (ent)->next = PAGE_LIST_NULL)
 
-static inline bool
-page_list_empty(const struct page_list_head *head)
+static inline bool page_list_empty(const struct page_list_head *head)
 {
     return !head->next;
 }
+
 static inline struct page_info *
 page_list_first(const struct page_list_head *head)
 {
     return head->next;
 }
+
 static inline struct page_info *
 page_list_last(const struct page_list_head *head)
 {
     return head->tail;
 }
+
 static inline struct page_info *
-page_list_next(const struct page_info *page,
-               const struct page_list_head *head)
+page_list_next(const struct page_info *page, const struct page_list_head *head)
 {
     return page != head->tail ? pdx_to_page(page->list.next) : NULL;
 }
+
 static inline struct page_info *
-page_list_prev(const struct page_info *page,
-               const struct page_list_head *head)
+page_list_prev(const struct page_info *page, const struct page_list_head *head)
 {
     return page != head->next ? pdx_to_page(page->list.prev) : NULL;
 }
-static inline void
-page_list_add(struct page_info *page, struct page_list_head *head)
+
+static inline void page_list_add(struct page_info *page,
+                                 struct page_list_head *head)
 {
     if ( head->next )
     {
@@ -303,8 +297,9 @@ page_list_add(struct page_info *page, struct page_list_head *head)
     page->list.prev = PAGE_LIST_NULL;
     head->next = page;
 }
-static inline void
-page_list_add_tail(struct page_info *page, struct page_list_head *head)
+
+static inline void page_list_add_tail(struct page_info *page,
+                                      struct page_list_head *head)
 {
     page->list.next = PAGE_LIST_NULL;
     if ( head->next )
@@ -319,9 +314,11 @@ page_list_add_tail(struct page_info *page, struct page_list_head *head)
     }
     head->tail = page;
 }
-static inline bool
-__page_list_del_head(struct page_info *page, struct page_list_head *head,
-                     struct page_info *next, struct page_info *prev)
+
+static inline bool __page_list_del_head(struct page_info *page,
+                                        struct page_list_head *head,
+                                        struct page_info *next,
+                                        struct page_info *prev)
 {
     if ( head->next == page )
     {
@@ -344,8 +341,9 @@ __page_list_del_head(struct page_info *page, struct page_list_head *head,
 
     return 0;
 }
-static inline void
-page_list_del(struct page_info *page, struct page_list_head *head)
+
+static inline void page_list_del(struct page_info *page,
+                                 struct page_list_head *head)
 {
     struct page_info *next = pdx_to_page(page->list.next);
     struct page_info *prev = pdx_to_page(page->list.prev);
@@ -356,9 +354,10 @@ page_list_del(struct page_info *page, struct page_list_head *head)
         prev->list.next = page->list.next;
     }
 }
-static inline void
-page_list_del2(struct page_info *page, struct page_list_head *head1,
-               struct page_list_head *head2)
+
+static inline void page_list_del2(struct page_info *page,
+                                  struct page_list_head *head1,
+                                  struct page_list_head *head2)
 {
     struct page_info *next = pdx_to_page(page->list.next);
     struct page_info *prev = pdx_to_page(page->list.prev);
@@ -370,6 +369,7 @@ page_list_del2(struct page_info *page, struct page_list_head *head1,
         prev->list.next = page->list.next;
     }
 }
+
 static inline struct page_info *
 page_list_remove_head(struct page_list_head *head)
 {
@@ -380,8 +380,9 @@ page_list_remove_head(struct page_list_head *head)
 
     return page;
 }
-static inline void
-page_list_move(struct page_list_head *dst, struct page_list_head *src)
+
+static inline void page_list_move(struct page_list_head *dst,
+                                  struct page_list_head *src)
 {
     if ( !page_list_empty(src) )
     {
@@ -389,8 +390,9 @@ page_list_move(struct page_list_head *dst, struct page_list_head *src)
         INIT_PAGE_LIST_HEAD(src);
     }
 }
-static inline void
-page_list_splice(struct page_list_head *list, struct page_list_head *head)
+
+static inline void page_list_splice(struct page_list_head *list,
+                                    struct page_list_head *head)
 {
     struct page_info *first, *last, *at;
 
@@ -427,60 +429,66 @@ page_list_splice(struct page_list_head *list, struct page_list_head *head)
           (pos) ? ((tmp) = page_list_prev(pos, head), 1) : 0; \
           (pos) = (tmp) )
 #else
-# define page_list_head                  list_head
-# define PAGE_LIST_HEAD_INIT             LIST_HEAD_INIT
-# define PAGE_LIST_HEAD                  LIST_HEAD
-# define INIT_PAGE_LIST_HEAD             INIT_LIST_HEAD
-# define INIT_PAGE_LIST_ENTRY            INIT_LIST_HEAD
+#define page_list_head                  list_head
+#define PAGE_LIST_HEAD_INIT             LIST_HEAD_INIT
+#define PAGE_LIST_HEAD                  LIST_HEAD
+#define INIT_PAGE_LIST_HEAD             INIT_LIST_HEAD
+#define INIT_PAGE_LIST_ENTRY            INIT_LIST_HEAD
 
-static inline bool
-page_list_empty(const struct page_list_head *head)
+static inline bool page_list_empty(const struct page_list_head *head)
 {
     return !!list_empty(head);
 }
+
 static inline struct page_info *
 page_list_first(const struct page_list_head *head)
 {
     return list_first_entry(head, struct page_info, list);
 }
+
 static inline struct page_info *
 page_list_last(const struct page_list_head *head)
 {
     return list_last_entry(head, struct page_info, list);
 }
+
 static inline struct page_info *
-page_list_next(const struct page_info *page,
-               const struct page_list_head *head)
+page_list_next(const struct page_info *page, const struct page_list_head *head)
 {
     return list_entry(page->list.next, struct page_info, list);
 }
+
 static inline struct page_info *
-page_list_prev(const struct page_info *page,
-               const struct page_list_head *head)
+page_list_prev(const struct page_info *page, const struct page_list_head *head)
 {
     return list_entry(page->list.prev, struct page_info, list);
 }
-static inline void
-page_list_add(struct page_info *page, struct page_list_head *head)
+
+static inline void page_list_add(struct page_info *page,
+                                 struct page_list_head *head)
 {
     list_add(&page->list, head);
 }
-static inline void
-page_list_add_tail(struct page_info *page, struct page_list_head *head)
+
+static inline void page_list_add_tail(struct page_info *page,
+                                      struct page_list_head *head)
 {
     list_add_tail(&page->list, head);
 }
-static inline void
-page_list_del(struct page_info *page, struct page_list_head *head)
+
+static inline void page_list_del(struct page_info *page,
+                                 struct page_list_head *head)
 {
     list_del(&page->list);
 }
-static inline void
-page_list_del2(struct page_info *page, struct page_list_head *head1,
-               struct page_list_head *head2)
+
+static inline void page_list_del2(struct page_info *page,
+                                  struct page_list_head *head1,
+                                  struct page_list_head *head2)
 {
     list_del(&page->list);
 }
+
 static inline struct page_info *
 page_list_remove_head(struct page_list_head *head)
 {
@@ -493,22 +501,24 @@ page_list_remove_head(struct page_list_head *head)
     list_del(&pg->list);
     return pg;
 }
-static inline void
-page_list_move(struct page_list_head *dst, struct page_list_head *src)
+
+static inline void page_list_move(struct page_list_head *dst,
+                                  struct page_list_head *src)
 {
     if ( !list_empty(src) )
         list_replace_init(src, dst);
 }
-static inline void
-page_list_splice(struct page_list_head *list, struct page_list_head *head)
+
+static inline void page_list_splice(struct page_list_head *list,
+                                    struct page_list_head *head)
 {
     list_splice(list, head);
 }
 
-# define page_list_for_each(pos, head)   list_for_each_entry(pos, head, list)
-# define page_list_for_each_safe(pos, tmp, head) \
+#define page_list_for_each(pos, head)   list_for_each_entry(pos, head, list)
+#define page_list_for_each_safe(pos, tmp, head) \
     list_for_each_entry_safe(pos, tmp, head, list)
-# define page_list_for_each_safe_reverse(pos, tmp, head) \
+#define page_list_for_each_safe_reverse(pos, tmp, head) \
     list_for_each_entry_safe_reverse(pos, tmp, head, list)
 #endif
 
@@ -594,8 +604,7 @@ static inline void accumulate_tlbflush(bool *need_tlbflush,
 {
     if ( page->u.free.need_tlbflush &&
          page->tlbflush_timestamp <= tlbflush_current_time() &&
-         (!*need_tlbflush ||
-          page->tlbflush_timestamp > *tlbflush_timestamp) )
+         (!*need_tlbflush || page->tlbflush_timestamp > *tlbflush_timestamp) )
     {
         *need_tlbflush = true;
         *tlbflush_timestamp = page->tlbflush_timestamp;
@@ -619,11 +628,13 @@ enum XENSHARE_flags {
     SHARE_rw,
     SHARE_ro,
 };
+
 void share_xen_page_with_guest(struct page_info *page, struct domain *d,
                                enum XENSHARE_flags flags);
 
-static inline void share_xen_page_with_privileged_guests(
-    struct page_info *page, enum XENSHARE_flags flags)
+static inline void
+share_xen_page_with_privileged_guests(struct page_info *page,
+                                      enum XENSHARE_flags flags)
 {
     share_xen_page_with_guest(page, dom_xen, flags);
 }

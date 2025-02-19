@@ -33,7 +33,7 @@ uint64_t __read_mostly boot_count;
 
 /* For fine-grained timekeeping, we use the ARM "Generic Timer", a
  * register-mapped time source in the SoC. */
-unsigned long __read_mostly cpu_khz;  /* CPU clock frequency in kHz. */
+unsigned long __read_mostly cpu_khz; /* CPU clock frequency in kHz. */
 
 uint32_t __read_mostly timer_dt_clock_frequency;
 
@@ -94,7 +94,7 @@ static void __init preinit_acpi_xen_time(void)
     acpi_table_parse(ACPI_SIG_GTDT, arch_timer_acpi_init);
 }
 #else
-static void __init preinit_acpi_xen_time(void) { }
+static void __init preinit_acpi_xen_time(void) {}
 #endif
 
 static void __init validate_timer_frequency(void)
@@ -111,8 +111,7 @@ static void __init validate_timer_frequency(void)
 /* Set up the timer on the boot CPU (early init function) */
 static void __init preinit_dt_xen_time(void)
 {
-    static const struct dt_device_match timer_ids[] __initconst =
-    {
+    static const struct dt_device_match timer_ids[] __initconst = {
         DT_MATCH_TIMER,
         { /* sentinel */ },
     };
@@ -162,7 +161,7 @@ static void __init init_dt_xen_time(void)
     int res;
     unsigned int i;
     bool has_names;
-    static const char * const timer_irq_names[MAX_TIMER_PPI] __initconst = {
+    static const char *const timer_irq_names[MAX_TIMER_PPI] __initconst = {
         [TIMER_PHYS_SECURE_PPI] = "sec-phys",
         [TIMER_PHYS_NONSECURE_PPI] = "phys",
         [TIMER_VIRT_PPI] = "virt",
@@ -274,7 +273,10 @@ static void vtimer_interrupt(int irq, void *dev_id)
 
     current->arch.virt_timer.ctl = READ_SYSREG(CNTV_CTL_EL0);
     WRITE_SYSREG(current->arch.virt_timer.ctl | CNTx_CTL_MASK, CNTV_CTL_EL0);
-    vgic_inject_irq(current->domain, current, current->arch.virt_timer.irq, true);
+    vgic_inject_irq(current->domain,
+                    current,
+                    current->arch.virt_timer.irq,
+                    true);
 }
 
 /*
@@ -299,25 +301,28 @@ static void check_timer_irq_cfg(unsigned int irq, const char *which)
     if ( desc->arch.type & IRQ_TYPE_LEVEL_MASK )
         return;
 
-    printk(XENLOG_WARNING
-           "WARNING: %s-timer IRQ%u is not level triggered.\n", which, irq);
+    printk(XENLOG_WARNING "WARNING: %s-timer IRQ%u is not level triggered.\n",
+           which,
+           irq);
 }
 
 /* Set up the timer interrupt on this CPU */
 void init_timer_interrupt(void)
 {
     /* Sensible defaults */
-    WRITE_SYSREG64(0, CNTVOFF_EL2);     /* No VM-specific offset */
+    WRITE_SYSREG64(0, CNTVOFF_EL2); /* No VM-specific offset */
     /* Do not let the VMs program the physical timer, only read the physical counter */
     WRITE_SYSREG(CNTHCTL_EL2_EL1PCTEN, CNTHCTL_EL2);
-    WRITE_SYSREG(0, CNTP_CTL_EL0);    /* Physical timer disabled */
-    WRITE_SYSREG(0, CNTHP_CTL_EL2);   /* Hypervisor's timer disabled */
+    WRITE_SYSREG(0, CNTP_CTL_EL0); /* Physical timer disabled */
+    WRITE_SYSREG(0, CNTHP_CTL_EL2); /* Hypervisor's timer disabled */
     isb();
 
-    request_irq(timer_irq[TIMER_HYP_PPI], 0, htimer_interrupt,
-                "hyptimer", NULL);
-    request_irq(timer_irq[TIMER_VIRT_PPI], 0, vtimer_interrupt,
-                   "virtimer", NULL);
+    request_irq(timer_irq[TIMER_HYP_PPI], 0, htimer_interrupt, "hyptimer", NULL);
+    request_irq(timer_irq[TIMER_VIRT_PPI],
+                0,
+                vtimer_interrupt,
+                "virtimer",
+                NULL);
 
     check_timer_irq_cfg(timer_irq[TIMER_HYP_PPI], "hypervisor");
     check_timer_irq_cfg(timer_irq[TIMER_VIRT_PPI], "virtual");
@@ -330,8 +335,8 @@ void init_timer_interrupt(void)
  */
 static void deinit_timer_interrupt(void)
 {
-    WRITE_SYSREG(0, CNTP_CTL_EL0);    /* Disable physical timer */
-    WRITE_SYSREG(0, CNTHP_CTL_EL2);   /* Disable hypervisor's timer */
+    WRITE_SYSREG(0, CNTP_CTL_EL0); /* Disable physical timer */
+    WRITE_SYSREG(0, CNTHP_CTL_EL2); /* Disable hypervisor's timer */
     isb();
 
     release_irq(timer_irq[TIMER_HYP_PPI], NULL);
@@ -341,7 +346,7 @@ static void deinit_timer_interrupt(void)
 /* Wait a set number of microseconds */
 void udelay(unsigned long usecs)
 {
-    s_time_t deadline = get_s_time() + 1000 * (s_time_t) usecs;
+    s_time_t deadline = get_s_time() + 1000 * (s_time_t)usecs;
     while ( get_s_time() - deadline < 0 )
         ;
     dsb(sy);
@@ -372,8 +377,7 @@ void domain_set_time_offset(struct domain *d, int64_t time_offset_seconds)
     /* XXX update guest visible wallclock time */
 }
 
-static int cpu_time_callback(struct notifier_block *nfb,
-                             unsigned long action,
+static int cpu_time_callback(struct notifier_block *nfb, unsigned long action,
                              void *hcpu)
 {
     switch ( action )
@@ -398,6 +402,7 @@ static int __init cpu_time_notifier_init(void)
 
     return 0;
 }
+
 __initcall(cpu_time_notifier_init);
 
 /*

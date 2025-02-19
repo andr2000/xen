@@ -26,8 +26,7 @@
 #include <xen/radix-tree.h>
 #include <xen/rbtree.h>
 
-struct pending_irq
-{
+struct pending_irq {
     /*
      * The following two states track the lifecycle of the guest irq.
      * However because we are not sure and we don't want to track
@@ -83,8 +82,8 @@ struct pending_irq
 #define GIC_INVALID_LR         (uint8_t)~0
     uint8_t lr;
     uint8_t priority;
-    uint8_t lpi_priority;       /* Caches the priority if this is an LPI. */
-    uint8_t lpi_vcpu_id;        /* The VCPU for an LPI. */
+    uint8_t lpi_priority; /* Caches the priority if this is an LPI. */
+    uint8_t lpi_vcpu_id; /* The VCPU for an LPI. */
     /* inflight is used to append instances of pending_irq to
      * vgic.inflight_irqs */
     struct list_head inflight;
@@ -160,24 +159,25 @@ struct vgic_dist {
     /* GIC V3 addressing */
     /* List of contiguous occupied by the redistributors */
     struct vgic_rdist_region {
-        paddr_t base;                   /* Base address */
-        paddr_t size;                   /* Size */
-        unsigned int first_cpu;         /* First CPU handled */
+        paddr_t base; /* Base address */
+        paddr_t size; /* Size */
+        unsigned int first_cpu; /* First CPU handled */
     } *rdist_regions;
-    int nr_regions;                     /* Number of rdist regions */
+
+    int nr_regions; /* Number of rdist regions */
     unsigned long int nr_lpis;
     uint64_t rdist_propbase;
-    struct rb_root its_devices;         /* Devices mapped to an ITS */
-    spinlock_t its_devices_lock;        /* Protects the its_devices tree */
+    struct rb_root its_devices; /* Devices mapped to an ITS */
+    spinlock_t its_devices_lock; /* Protects the its_devices tree */
     struct radix_tree_root pend_lpi_tree; /* Stores struct pending_irq's */
-    rwlock_t pend_lpi_tree_lock;        /* Protects the pend_lpi_tree */
-    struct list_head vits_list;         /* List of virtual ITSes */
+    rwlock_t pend_lpi_tree_lock; /* Protects the pend_lpi_tree */
+    struct list_head vits_list; /* List of virtual ITSes */
     unsigned int intid_bits;
     /*
      * TODO: if there are more bool's being added below, consider
      * a flags variable instead.
      */
-    bool rdists_enabled;                /* Is any redistributor enabled? */
+    bool rdists_enabled; /* Is any redistributor enabled? */
     bool has_its;
 #endif
 };
@@ -263,13 +263,20 @@ static inline unsigned int REG_RANK_NR(unsigned int b, unsigned int n)
      * by the caller
      */
     case 64:
-    case 32: return n >> 5;
-    case 16: return n >> 4;
-    case 8: return n >> 3;
-    case 4: return n >> 2;
-    case 2: return n >> 1;
-    case 1: return n;
-    default: BUG();
+    case 32:
+        return n >> 5;
+    case 16:
+        return n >> 4;
+    case 8:
+        return n >> 3;
+    case 4:
+        return n >> 2;
+    case 2:
+        return n >> 1;
+    case 1:
+        return n;
+    default:
+        BUG();
     }
 }
 
@@ -291,17 +298,14 @@ static inline paddr_t vgic_dist_base(const struct vgic_dist *vgic)
  */
 #define REG_RANK_INDEX(b, n, s) ((((n) >> (s)) & ((b) - 1)) % 32)
 
-
 extern struct vcpu *vgic_get_target_vcpu(struct vcpu *v, unsigned int virq);
 extern void vgic_remove_irq_from_queues(struct vcpu *v, struct pending_irq *p);
 extern void gic_remove_from_lr_pending(struct vcpu *v, struct pending_irq *p);
 extern void vgic_init_pending_irq(struct pending_irq *p, unsigned int virq);
 extern struct pending_irq *irq_to_pending(struct vcpu *v, unsigned int irq);
 extern struct pending_irq *spi_to_pending(struct domain *d, unsigned int irq);
-extern struct vgic_irq_rank *vgic_rank_offset(struct vcpu *v,
-                                              unsigned int b,
-                                              unsigned int n,
-                                              unsigned int s);
+extern struct vgic_irq_rank *vgic_rank_offset(struct vcpu *v, unsigned int b,
+                                              unsigned int n, unsigned int s);
 extern struct vgic_irq_rank *vgic_rank_irq(struct vcpu *v, unsigned int irq);
 extern void vgic_disable_irqs(struct vcpu *v, uint32_t r, unsigned int n);
 extern void vgic_enable_irqs(struct vcpu *v, uint32_t r, unsigned int n);
@@ -314,9 +318,10 @@ int vgic_v3_init(struct domain *d, unsigned int *mmio_count);
 extern bool vgic_to_sgi(struct vcpu *v, register_t sgir,
                         enum gic_sgi_mode irqmode, int virq,
                         const struct sgi_target *target);
-extern bool vgic_migrate_irq(struct vcpu *old, struct vcpu *new, unsigned int irq);
-extern void vgic_check_inflight_irqs_pending(struct vcpu *v,
-                                             unsigned int rank, uint32_t r);
+extern bool vgic_migrate_irq(struct vcpu *old, struct vcpu *new,
+                             unsigned int irq);
+extern void vgic_check_inflight_irqs_pending(struct vcpu *v, unsigned int rank,
+                                             uint32_t r);
 
 #endif /* !CONFIG_NEW_VGIC */
 
@@ -377,8 +382,7 @@ void vgic_v2_setup_hw(paddr_t dbase, paddr_t cbase, paddr_t csize,
 
 #ifdef CONFIG_GICV3
 struct rdist_region;
-void vgic_v3_setup_hw(paddr_t dbase,
-                      unsigned int nr_rdist_regions,
+void vgic_v3_setup_hw(paddr_t dbase, unsigned int nr_rdist_regions,
                       const struct rdist_region *regions,
                       unsigned int intid_bits);
 #endif

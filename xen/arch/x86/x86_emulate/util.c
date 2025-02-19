@@ -34,14 +34,13 @@ bool cf_check x86_insn_is_mem_access(const struct x86_emulate_state *s,
         {
         case 0x8d: /* LEA */
         case X86EMUL_OPC(0x0f, 0x0d): /* PREFETCH */
-        case X86EMUL_OPC(0x0f, 0x18)
-         ... X86EMUL_OPC(0x0f, 0x1f): /* NOP space */
-        case X86EMUL_OPC_66(0x0f, 0x18)
-         ... X86EMUL_OPC_66(0x0f, 0x1f): /* NOP space */
-        case X86EMUL_OPC_F3(0x0f, 0x18)
-         ... X86EMUL_OPC_F3(0x0f, 0x1f): /* NOP space */
-        case X86EMUL_OPC_F2(0x0f, 0x18)
-         ... X86EMUL_OPC_F2(0x0f, 0x1f): /* NOP space */
+        case X86EMUL_OPC(0x0f, 0x18)... X86EMUL_OPC(0x0f, 0x1f): /* NOP space */
+        case X86EMUL_OPC_66(0x0f, 0x18)... X86EMUL_OPC_66(0x0f,
+                                                          0x1f): /* NOP space */
+        case X86EMUL_OPC_F3(0x0f, 0x18)... X86EMUL_OPC_F3(0x0f,
+                                                          0x1f): /* NOP space */
+        case X86EMUL_OPC_F2(0x0f, 0x18)... X86EMUL_OPC_F2(0x0f,
+                                                          0x1f): /* NOP space */
         case X86EMUL_OPC(0x0f, 0xb9): /* UD1 */
         case X86EMUL_OPC(0x0f, 0xff): /* UD0 */
         case X86EMUL_OPC_EVEX_66(0x0f38, 0xc6): /* V{GATH,SCATT}ERPF*D* */
@@ -63,30 +62,31 @@ bool cf_check x86_insn_is_mem_access(const struct x86_emulate_state *s,
 
     switch ( ctxt->opcode )
     {
-    case 0x06 ... 0x07:                  /* PUSH / POP %es */
-    case 0x0e:                           /* PUSH %cs */
-    case 0x16 ... 0x17:                  /* PUSH / POP %ss */
-    case 0x1e ... 0x1f:                  /* PUSH / POP %ds */
-    case 0x50 ... 0x5f:                  /* PUSH / POP reg */
-    case 0x60 ... 0x61:                  /* PUSHA / POPA */
-    case 0x68: case 0x6a:                /* PUSH imm */
-    case 0x6c ... 0x6f:                  /* INS / OUTS */
-    case 0x8f:                           /* POP r/m */
-    case 0x9a:                           /* CALL (far, direct) */
-    case 0x9c ... 0x9d:                  /* PUSHF / POPF */
-    case 0xa4 ... 0xa7:                  /* MOVS / CMPS */
-    case 0xaa ... 0xaf:                  /* STOS / LODS / SCAS */
-    case 0xc2 ... 0xc3:                  /* RET (near) */
-    case 0xc8 ... 0xc9:                  /* ENTER / LEAVE */
-    case 0xca ... 0xcb:                  /* RET (far) */
-    case 0xd7:                           /* XLAT */
-    case 0xe8:                           /* CALL (near, direct) */
-    case X86EMUL_OPC(0x0f, 0xa0):        /* PUSH %fs */
-    case X86EMUL_OPC(0x0f, 0xa1):        /* POP %fs */
-    case X86EMUL_OPC(0x0f, 0xa8):        /* PUSH %gs */
-    case X86EMUL_OPC(0x0f, 0xa9):        /* POP %gs */
-    case X86EMUL_OPC(0x0f, 0xf7):        /* MASKMOVQ */
-    case X86EMUL_OPC_66(0x0f, 0xf7):     /* MASKMOVDQU */
+    case 0x06 ... 0x07: /* PUSH / POP %es */
+    case 0x0e: /* PUSH %cs */
+    case 0x16 ... 0x17: /* PUSH / POP %ss */
+    case 0x1e ... 0x1f: /* PUSH / POP %ds */
+    case 0x50 ... 0x5f: /* PUSH / POP reg */
+    case 0x60 ... 0x61: /* PUSHA / POPA */
+    case 0x68:
+    case 0x6a: /* PUSH imm */
+    case 0x6c ... 0x6f: /* INS / OUTS */
+    case 0x8f: /* POP r/m */
+    case 0x9a: /* CALL (far, direct) */
+    case 0x9c ... 0x9d: /* PUSHF / POPF */
+    case 0xa4 ... 0xa7: /* MOVS / CMPS */
+    case 0xaa ... 0xaf: /* STOS / LODS / SCAS */
+    case 0xc2 ... 0xc3: /* RET (near) */
+    case 0xc8 ... 0xc9: /* ENTER / LEAVE */
+    case 0xca ... 0xcb: /* RET (far) */
+    case 0xd7: /* XLAT */
+    case 0xe8: /* CALL (near, direct) */
+    case X86EMUL_OPC(0x0f, 0xa0): /* PUSH %fs */
+    case X86EMUL_OPC(0x0f, 0xa1): /* POP %fs */
+    case X86EMUL_OPC(0x0f, 0xa8): /* PUSH %gs */
+    case X86EMUL_OPC(0x0f, 0xa9): /* POP %gs */
+    case X86EMUL_OPC(0x0f, 0xf7): /* MASKMOVQ */
+    case X86EMUL_OPC_66(0x0f, 0xf7): /* MASKMOVDQU */
     case X86EMUL_OPC_VEX_66(0x0f, 0xf7): /* VMASKMOVDQU */
         return true;
 
@@ -133,7 +133,7 @@ bool cf_check x86_insn_is_mem_write(const struct x86_emulate_state *s,
     default:
         switch ( ctxt->opcode )
         {
-        case 0x63:                         /* ARPL */
+        case 0x63: /* ARPL */
             return !mode_64bit();
 
         case X86EMUL_OPC_66(0x0f38, 0xf8): /* MOVDIR64B */
@@ -141,12 +141,15 @@ bool cf_check x86_insn_is_mem_write(const struct x86_emulate_state *s,
         case X86EMUL_OPC_F3(0x0f38, 0xf8): /* ENQCMDS */
             return true;
 
-        case X86EMUL_OPC_EVEX_F3(0x0f38, 0x10) ...
-             X86EMUL_OPC_EVEX_F3(0x0f38, 0x15): /* VPMOVUS* */
-        case X86EMUL_OPC_EVEX_F3(0x0f38, 0x20) ...
-             X86EMUL_OPC_EVEX_F3(0x0f38, 0x25): /* VPMOVS* */
-        case X86EMUL_OPC_EVEX_F3(0x0f38, 0x30) ...
-             X86EMUL_OPC_EVEX_F3(0x0f38, 0x35): /* VPMOV{D,Q,W}* */
+        case X86EMUL_OPC_EVEX_F3(0x0f38, 0x10)... X86EMUL_OPC_EVEX_F3(
+            0x0f38,
+            0x15): /* VPMOVUS* */
+        case X86EMUL_OPC_EVEX_F3(0x0f38, 0x20)... X86EMUL_OPC_EVEX_F3(
+            0x0f38,
+            0x25): /* VPMOVS* */
+        case X86EMUL_OPC_EVEX_F3(0x0f38, 0x30)... X86EMUL_OPC_EVEX_F3(
+            0x0f38,
+            0x35): /* VPMOV{D,Q,W}* */
             return s->modrm_mod != 3;
         }
 
@@ -170,25 +173,29 @@ bool cf_check x86_insn_is_mem_write(const struct x86_emulate_state *s,
 
     switch ( ctxt->opcode )
     {
-    case 0x06:                           /* PUSH %es */
-    case 0x0e:                           /* PUSH %cs */
-    case 0x16:                           /* PUSH %ss */
-    case 0x1e:                           /* PUSH %ds */
-    case 0x50 ... 0x57:                  /* PUSH reg */
-    case 0x60:                           /* PUSHA */
-    case 0x68: case 0x6a:                /* PUSH imm */
-    case 0x6c: case 0x6d:                /* INS */
-    case 0x9a:                           /* CALL (far, direct) */
-    case 0x9c:                           /* PUSHF */
-    case 0xa4: case 0xa5:                /* MOVS */
-    case 0xaa: case 0xab:                /* STOS */
-    case 0xc8:                           /* ENTER */
-    case 0xe8:                           /* CALL (near, direct) */
-    case X86EMUL_OPC(0x0f, 0xa0):        /* PUSH %fs */
-    case X86EMUL_OPC(0x0f, 0xa8):        /* PUSH %gs */
-    case X86EMUL_OPC(0x0f, 0xab):        /* BTS */
-    case X86EMUL_OPC(0x0f, 0xb3):        /* BTR */
-    case X86EMUL_OPC(0x0f, 0xbb):        /* BTC */
+    case 0x06: /* PUSH %es */
+    case 0x0e: /* PUSH %cs */
+    case 0x16: /* PUSH %ss */
+    case 0x1e: /* PUSH %ds */
+    case 0x50 ... 0x57: /* PUSH reg */
+    case 0x60: /* PUSHA */
+    case 0x68:
+    case 0x6a: /* PUSH imm */
+    case 0x6c:
+    case 0x6d: /* INS */
+    case 0x9a: /* CALL (far, direct) */
+    case 0x9c: /* PUSHF */
+    case 0xa4:
+    case 0xa5: /* MOVS */
+    case 0xaa:
+    case 0xab: /* STOS */
+    case 0xc8: /* ENTER */
+    case 0xe8: /* CALL (near, direct) */
+    case X86EMUL_OPC(0x0f, 0xa0): /* PUSH %fs */
+    case X86EMUL_OPC(0x0f, 0xa8): /* PUSH %gs */
+    case X86EMUL_OPC(0x0f, 0xab): /* BTS */
+    case X86EMUL_OPC(0x0f, 0xb3): /* BTR */
+    case X86EMUL_OPC(0x0f, 0xbb): /* BTC */
         return true;
 
     case 0xd9:

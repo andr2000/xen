@@ -93,10 +93,10 @@ typedef struct {
 #endif
 } pte_t;
 
-static inline pte_t paddr_to_pte(paddr_t paddr,
-                                 unsigned int permissions)
+static inline pte_t paddr_to_pte(paddr_t paddr, unsigned int permissions)
 {
-    return (pte_t) { .pte = (paddr_to_pfn(paddr) << PTE_PPN_SHIFT) | permissions };
+    return (pte_t){ .pte = (paddr_to_pfn(paddr) << PTE_PPN_SHIFT) |
+                           permissions };
 }
 
 static inline paddr_t pte_to_paddr(pte_t pte)
@@ -154,7 +154,7 @@ static inline int clean_and_invalidate_dcache_va_range(const void *p,
                                                        unsigned long size)
 {
 #ifndef CONFIG_QEMU_PLATFORM
-# error "should clean_and_invalidate_dcache_va_range() be updated?"
+#error "should clean_and_invalidate_dcache_va_range() be updated?"
 #endif
 
     return 0;
@@ -163,7 +163,7 @@ static inline int clean_and_invalidate_dcache_va_range(const void *p,
 static inline int clean_dcache_va_range(const void *p, unsigned long size)
 {
 #ifndef CONFIG_QEMU_PLATFORM
-# error "should clean_dcache_va_range() be updated?"
+#error "should clean_dcache_va_range() be updated?"
 #endif
 
     return 0;
@@ -171,7 +171,7 @@ static inline int clean_dcache_va_range(const void *p, unsigned long size)
 
 static inline void invalidate_icache(void)
 {
-    asm volatile ( "fence.i" ::: "memory" );
+    asm volatile("fence.i" ::: "memory");
 }
 
 #define clear_page(page) memset((void *)(page), 0, PAGE_SIZE)

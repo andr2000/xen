@@ -85,8 +85,8 @@ struct multiboot_info {
 
     /* Valid if flags sets ... */
     union {
-        aout_symbol_table_t aout_sym;        /* ... MBI_AOUT_SYMS */
-        elf_section_header_table_t elf_sec;  /* ... MBI_ELF_SYMS */
+        aout_symbol_table_t aout_sym; /* ... MBI_AOUT_SYMS */
+        elf_section_header_table_t elf_sec; /* ... MBI_ELF_SYMS */
     } u;
 
     /* Valid if flags sets MBI_MEMMAP */
@@ -128,7 +128,6 @@ struct memory_map {
     uint32_t type;
 };
 typedef struct memory_map memory_map_t;
-
 
 #endif /* __ASSEMBLY__ */
 

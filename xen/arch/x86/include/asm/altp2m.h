@@ -10,8 +10,8 @@
 #ifdef CONFIG_ALTP2M
 
 #include <xen/types.h>
-#include <xen/sched.h>         /* for struct vcpu, struct domain */
-#include <asm/hvm/vcpu.h>      /* for vcpu_altp2m */
+#include <xen/sched.h> /* for struct vcpu, struct domain */
+#include <asm/hvm/vcpu.h> /* for vcpu_altp2m */
 
 /* Alternate p2m HVM on/off per domain */
 static inline bool altp2m_active(const struct domain *d)

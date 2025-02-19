@@ -182,4 +182,4 @@
 #define ACPI_NORMAL_DEFAULT         (ACPI_LV_INIT | ACPI_LV_WARN | ACPI_LV_ERROR)
 #define ACPI_DEBUG_ALL              (ACPI_LV_AML_DISASSEMBLE | ACPI_LV_ALL_EXCEPTIONS | ACPI_LV_ALL)
 
-#endif				/* __ACOUTPUT_H__ */
+#endif /* __ACOUTPUT_H__ */

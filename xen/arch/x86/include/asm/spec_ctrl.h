@@ -72,8 +72,7 @@ static always_inline void spec_ctrl_new_guest_context(void)
     wrmsrl(MSR_PRED_CMD, PRED_CMD_IBPB);
 
     /* (ab)use alternative_input() to specify clobbers. */
-    alternative_input("", "DO_OVERWRITE_RSB xu=%=", X86_BUG_IBPB_NO_RET,
-                      : "rax", "rcx");
+    alternative_input("", "DO_OVERWRITE_RSB xu=%=", X86_BUG_IBPB_NO_RET, : "rax", "rcx");
 }
 
 extern int8_t opt_ibpb_ctxt_switch;
@@ -131,8 +130,12 @@ static always_inline void spec_ctrl_enter_idle(struct cpu_info *info)
     barrier();
     info->scf |= SCF_use_shadow;
     barrier();
-    alternative_input("", "wrmsr", X86_FEATURE_SC_MSR_IDLE,
-                      "a" (val), "c" (MSR_SPEC_CTRL), "d" (0));
+    alternative_input("",
+                      "wrmsr",
+                      X86_FEATURE_SC_MSR_IDLE,
+                      "a"(val),
+                      "c"(MSR_SPEC_CTRL),
+                      "d"(0));
     barrier();
 
     /*
@@ -148,8 +151,10 @@ static always_inline void spec_ctrl_enter_idle(struct cpu_info *info)
      * Note: VERW must be encoded with a memory operand, as it is only that
      * form which causes a flush.
      */
-    alternative_input("", "verw %[sel]", X86_FEATURE_SC_VERW_IDLE,
-                      [sel] "m" (info->verw_sel));
+    alternative_input("",
+                      "verw %[sel]",
+                      X86_FEATURE_SC_VERW_IDLE,
+                      [sel] "m"(info->verw_sel));
 
     /*
      * Cross-Thread Return Address Predictions:
@@ -163,8 +168,7 @@ static always_inline void spec_ctrl_enter_idle(struct cpu_info *info)
      *
      * (ab)use alternative_input() to specify clobbers.
      */
-    alternative_input("", "DO_OVERWRITE_RSB xu=%=", X86_FEATURE_SC_RSB_IDLE,
-                      : "rax", "rcx");
+    alternative_input("", "DO_OVERWRITE_RSB xu=%=", X86_FEATURE_SC_RSB_IDLE, : "rax", "rcx");
 }
 
 /* WARNING! `ret`, `call *`, `jmp *` not safe before this call. */
@@ -180,8 +184,12 @@ static always_inline void spec_ctrl_exit_idle(struct cpu_info *info)
      */
     info->scf &= ~SCF_use_shadow;
     barrier();
-    alternative_input("", "wrmsr", X86_FEATURE_SC_MSR_IDLE,
-                      "a" (val), "c" (MSR_SPEC_CTRL), "d" (0));
+    alternative_input("",
+                      "wrmsr",
+                      X86_FEATURE_SC_MSR_IDLE,
+                      "a"(val),
+                      "c"(MSR_SPEC_CTRL),
+                      "d"(0));
     barrier();
 
     /*

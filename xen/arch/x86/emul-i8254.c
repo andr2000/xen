@@ -55,15 +55,15 @@
 static uint64_t get_count(PITState *pit, unsigned int channel)
 {
     const struct hvm_hw_pit_channel *c = &pit->hw.channels[channel];
-    uint64_t d = c->gate || (c->mode & 3) == 1
-                 ? get_guest_time(vpit_vcpu(pit))
-                 : pit->count_stop_time[channel];
+    uint64_t d = c->gate || (c->mode & 3) == 1 ? get_guest_time(vpit_vcpu(pit))
+                                               : pit->count_stop_time[channel];
 
     ASSERT(spin_is_locked(&pit->lock));
 
     return muldiv64((d - pit->count_load_time[channel] -
                      pit->stopped_time[channel]),
-                    PIT_FREQ, SYSTEM_TIME_HZ);
+                    PIT_FREQ,
+                    SYSTEM_TIME_HZ);
 }
 
 static unsigned int pit_get_count(PITState *pit, int channel)
@@ -129,15 +129,27 @@ static void pit_load_count(PITState *pit, int channel, int val)
     case 3:
         /* Periodic timer. */
         TRACE_TIME(TRC_HVM_EMUL_PIT_START_TIMER, period, period);
-        create_periodic_time(v, &pit->pt0, period, period, 0, pit_time_fired,
-                             &pit->count_load_time[channel], false);
+        create_periodic_time(v,
+                             &pit->pt0,
+                             period,
+                             period,
+                             0,
+                             pit_time_fired,
+                             &pit->count_load_time[channel],
+                             false);
         break;
     case 1:
     case 4:
         /* One-shot timer. */
         TRACE_TIME(TRC_HVM_EMUL_PIT_START_TIMER, period, 0);
-        create_periodic_time(v, &pit->pt0, period, 0, 0, pit_time_fired,
-                             &pit->count_load_time[channel], false);
+        create_periodic_time(v,
+                             &pit->pt0,
+                             period,
+                             0,
+                             0,
+                             pit_time_fired,
+                             &pit->count_load_time[channel],
+                             false);
         break;
     default:
         TRACE_TIME(TRC_HVM_EMUL_PIT_STOP_TIMER);
@@ -248,10 +260,8 @@ static void pit_latch_status(PITState *pit, int channel)
     if ( !c->status_latched )
     {
         /* TODO: Return NULL COUNT (bit 6). */
-        c->status = ((pit_get_out(pit, channel) << 7) |
-                     (c->rw_mode << 4) |
-                     (c->mode << 1) |
-                     c->bcd);
+        c->status = ((pit_get_out(pit, channel) << 7) | (c->rw_mode << 4) |
+                     (c->mode << 1) | c->bcd);
         c->status_latched = 1;
     }
 }
@@ -261,7 +271,7 @@ static void pit_ioport_write(struct PITState *pit, uint32_t addr, uint32_t val)
     int channel, access;
     struct hvm_hw_pit_channel *s;
 
-    val  &= 0xff;
+    val &= 0xff;
     addr &= 3;
 
     spin_lock(&pit->lock);
@@ -337,7 +347,7 @@ static uint32_t pit_ioport_read(struct PITState *pit, uint32_t addr)
 {
     int ret, count;
     struct hvm_hw_pit_channel *s;
-    
+
     addr &= 3;
     s = &pit->hw.channels[addr];
 
@@ -420,7 +430,7 @@ static int cf_check pit_save(struct vcpu *v, hvm_domain_context_t *h)
         return 0;
 
     spin_lock(&pit->lock);
-    
+
     rc = hvm_save_entry(PIT, 0, h, &pit->hw);
 
     spin_unlock(&pit->lock);
@@ -453,13 +463,10 @@ static int cf_check pit_check(const struct domain *d, hvm_domain_context_t *h)
     {
         const struct hvm_hw_pit_channel *ch = &hw->channels[i];
 
-        if ( ch->count > 0x10000 ||
-             ch->count_latched >= RW_STATE_NUM ||
+        if ( ch->count > 0x10000 || ch->count_latched >= RW_STATE_NUM ||
              ch->read_state >= RW_STATE_NUM ||
-             ch->write_state >= RW_STATE_NUM ||
-             ch->rw_mode > RW_STATE_WORD0 ||
-             ch->gate > 1 ||
-             ch->bcd > 1 )
+             ch->write_state >= RW_STATE_NUM || ch->rw_mode > RW_STATE_WORD0 ||
+             ch->gate > 1 || ch->bcd > 1 )
             return -EDOM;
 
         if ( i != 2 && !ch->gate )
@@ -484,7 +491,7 @@ static int cf_check pit_load(struct domain *d, hvm_domain_context_t *h)
         rc = -ENODATA;
         goto out;
     }
-    
+
     for ( i = 0; i < ARRAY_SIZE(pit->hw.channels); ++i )
     {
         struct hvm_hw_pit_channel *ch = &pit->hw.channels[i];
@@ -502,7 +509,7 @@ static int cf_check pit_load(struct domain *d, hvm_domain_context_t *h)
     for ( i = 0; i < 3; i++ )
         pit_load_count(pit, i, pit->hw.channels[i].count);
 
- out:
+out:
     spin_unlock(&pit->lock);
 
     return rc;
@@ -512,8 +519,8 @@ HVM_REGISTER_SAVE_RESTORE(PIT, pit_save, pit_check, pit_load, 1, HVMSR_PER_DOM);
 #endif
 
 /* The intercept action for PIT DM retval: 0--not handled; 1--handled. */
-static int cf_check handle_pit_io(
-    int dir, unsigned int port, unsigned int bytes, uint32_t *val)
+static int cf_check handle_pit_io(int dir, unsigned int port,
+                                  unsigned int bytes, uint32_t *val)
 {
     struct PITState *vpit = vcpu_vpit(current);
 
@@ -539,15 +546,14 @@ static int cf_check handle_pit_io(
     return X86EMUL_OKAY;
 }
 
-static void speaker_ioport_write(
-    struct PITState *pit, uint32_t addr, uint32_t val)
+static void speaker_ioport_write(struct PITState *pit, uint32_t addr,
+                                 uint32_t val)
 {
     pit->hw.speaker_data_on = (val >> 1) & 1;
     pit_set_gate(pit, 2, val & 1);
 }
 
-static uint32_t speaker_ioport_read(
-    struct PITState *pit, uint32_t addr)
+static uint32_t speaker_ioport_read(struct PITState *pit, uint32_t addr)
 {
     /* Refresh clock toggles at about 15us. We approximate as 2^14ns. */
     unsigned int refresh_clock = ((unsigned int)NOW() >> 14) & 1;
@@ -555,8 +561,8 @@ static uint32_t speaker_ioport_read(
             (pit_get_out(pit, 2) << 5) | (refresh_clock << 4));
 }
 
-static int cf_check handle_speaker_io(
-    int dir, unsigned int port, uint32_t bytes, uint32_t *val)
+static int cf_check handle_speaker_io(int dir, unsigned int port,
+                                      uint32_t bytes, uint32_t *val)
 {
     struct PITState *vpit = vcpu_vpit(current);
 
@@ -576,13 +582,11 @@ static int cf_check handle_speaker_io(
 
 int pv_pit_handler(int port, int data, int write)
 {
-    ioreq_t ioreq = {
-        .size = 1,
-        .type = IOREQ_TYPE_PIO,
-        .addr = port,
-        .dir  = write ? IOREQ_WRITE : IOREQ_READ,
-        .data = data
-    };
+    ioreq_t ioreq = { .size = 1,
+                      .type = IOREQ_TYPE_PIO,
+                      .addr = port,
+                      .dir = write ? IOREQ_WRITE : IOREQ_READ,
+                      .data = data };
 
     if ( !has_vpit(current->domain) )
         return ~0;

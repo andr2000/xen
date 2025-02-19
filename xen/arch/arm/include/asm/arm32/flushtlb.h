@@ -48,13 +48,13 @@ TLB_HELPER(flush_xen_tlb_local, TLBIALLH, nsh)
 /* Flush TLB of local processor for address va. */
 static inline void __flush_xen_tlb_one_local(vaddr_t va)
 {
-    asm volatile(STORE_CP32(0, TLBIMVAH) : : "r" (va) : "memory");
+    asm volatile(STORE_CP32(0, TLBIMVAH) : : "r"(va) : "memory");
 }
 
 /* Flush TLB of all processors in the inner-shareable domain for address va. */
 static inline void __flush_xen_tlb_one(vaddr_t va)
 {
-    asm volatile(STORE_CP32(0, TLBIMVAHIS) : : "r" (va) : "memory");
+    asm volatile(STORE_CP32(0, TLBIMVAHIS) : : "r"(va) : "memory");
 }
 
 #endif /* __ASM_ARM_ARM32_FLUSHTLB_H__ */

@@ -19,8 +19,8 @@
  * Implemented using atomics to be interrupt safe. Could alternatively
  * implement with local interrupt masking.
  */
-#define __set_bit(n,p)            set_bit(n,p)
-#define __clear_bit(n,p)          clear_bit(n,p)
+#define __set_bit(n, p)            set_bit(n,p)
+#define __clear_bit(n, p)          clear_bit(n,p)
 
 #define BITS_PER_BYTE           8
 
@@ -28,11 +28,11 @@
 #define CONST_ADDR (*(const volatile int *) addr)
 
 #if defined(CONFIG_ARM_32)
-# include <asm/arm32/bitops.h>
+#include <asm/arm32/bitops.h>
 #elif defined(CONFIG_ARM_64)
-# include <asm/arm64/bitops.h>
+#include <asm/arm64/bitops.h>
 #else
-# error "unknown ARM variant"
+#error "unknown ARM variant"
 #endif
 
 /*
@@ -64,12 +64,12 @@ void clear_mask16(uint16_t mask, volatile void *p);
 bool set_bit_timeout(int nr, volatile void *p, unsigned int max_try);
 bool clear_bit_timeout(int nr, volatile void *p, unsigned int max_try);
 bool change_bit_timeout(int nr, volatile void *p, unsigned int max_try);
-bool test_and_set_bit_timeout(int nr, volatile void *p,
-                              int *oldbit, unsigned int max_try);
-bool test_and_clear_bit_timeout(int nr, volatile void *p,
-                                int *oldbit, unsigned int max_try);
-bool test_and_change_bit_timeout(int nr, volatile void *p,
-                                 int *oldbit, unsigned int max_try);
+bool test_and_set_bit_timeout(int nr, volatile void *p, int *oldbit,
+                              unsigned int max_try);
+bool test_and_clear_bit_timeout(int nr, volatile void *p, int *oldbit,
+                                unsigned int max_try);
+bool test_and_change_bit_timeout(int nr, volatile void *p, int *oldbit,
+                                 unsigned int max_try);
 bool clear_mask16_timeout(uint16_t mask, volatile void *p,
                           unsigned int max_try);
 

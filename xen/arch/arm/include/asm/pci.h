@@ -29,12 +29,10 @@ struct arch_pci_dev {
 };
 
 /* Arch-specific MSI data for vPCI. */
-struct vpci_arch_msi {
-};
+struct vpci_arch_msi {};
 
 /* Arch-specific MSI-X entry data for vPCI. */
-struct vpci_arch_msix_entry {
-};
+struct vpci_arch_msix_entry {};
 
 /*
  * Because of the header cross-dependencies, e.g. we need both
@@ -49,11 +47,11 @@ struct pci_dev *dev_to_pci(struct device *dev);
  * use ECAM.
  */
 struct pci_config_window {
-    paddr_t         phys_addr;
-    paddr_t         size;
-    uint8_t         busn_start;
-    uint8_t         busn_end;
-    void __iomem    *win;
+    paddr_t phys_addr;
+    paddr_t size;
+    uint8_t busn_start;
+    uint8_t busn_end;
+    void __iomem *win;
 };
 
 /*
@@ -61,20 +59,20 @@ struct pci_config_window {
  * for a PCI controller.
  */
 struct pci_host_bridge {
-    struct dt_device_node *dt_node;  /* Pointer to the associated DT node */
-    struct list_head node;           /* Node in list of host bridges */
-    uint16_t segment;                /* Segment number */
-    struct pci_config_window* cfg;   /* Pointer to the bridge config window */
+    struct dt_device_node *dt_node; /* Pointer to the associated DT node */
+    struct list_head node; /* Node in list of host bridges */
+    uint16_t segment; /* Segment number */
+    struct pci_config_window *cfg; /* Pointer to the bridge config window */
     const struct pci_ops *ops;
 };
 
 struct pci_ops {
     void __iomem *(*map_bus)(struct pci_host_bridge *bridge, pci_sbdf_t sbdf,
                              uint32_t offset);
-    int (*read)(struct pci_host_bridge *bridge, pci_sbdf_t sbdf,
-                uint32_t reg, uint32_t len, uint32_t *value);
-    int (*write)(struct pci_host_bridge *bridge, pci_sbdf_t sbdf,
-                 uint32_t reg, uint32_t len, uint32_t value);
+    int (*read)(struct pci_host_bridge *bridge, pci_sbdf_t sbdf, uint32_t reg,
+                uint32_t len, uint32_t *value);
+    int (*write)(struct pci_host_bridge *bridge, pci_sbdf_t sbdf, uint32_t reg,
+                 uint32_t len, uint32_t value);
     bool (*need_p2m_hwdom_mapping)(struct domain *d,
                                    struct pci_host_bridge *bridge,
                                    uint64_t addr);
@@ -85,8 +83,8 @@ struct pci_ops {
  * for a PCI controller.
  */
 struct pci_ecam_ops {
-    unsigned int            bus_shift;
-    struct pci_ops          pci_ops;
+    unsigned int bus_shift;
+    struct pci_ops pci_ops;
     int (*cfg_reg_index)(struct dt_device_node *dev);
     int (*init)(struct pci_config_window *);
 };
@@ -100,8 +98,8 @@ int pci_generic_config_read(struct pci_host_bridge *bridge, pci_sbdf_t sbdf,
                             uint32_t reg, uint32_t len, uint32_t *value);
 int pci_generic_config_write(struct pci_host_bridge *bridge, pci_sbdf_t sbdf,
                              uint32_t reg, uint32_t len, uint32_t value);
-void __iomem *pci_ecam_map_bus(struct pci_host_bridge *bridge,
-                               pci_sbdf_t sbdf, uint32_t where);
+void __iomem *pci_ecam_map_bus(struct pci_host_bridge *bridge, pci_sbdf_t sbdf,
+                               uint32_t where);
 bool pci_ecam_need_p2m_hwdom_mapping(struct domain *d,
                                      struct pci_host_bridge *bridge,
                                      uint64_t addr);
@@ -120,15 +118,15 @@ void arch_pci_init_pdev(struct pci_dev *pdev);
 
 int pci_get_new_domain_nr(void);
 
-int pci_host_iterate_bridges_and_count(struct domain *d,
-                                       int (*cb)(struct domain *d,
-                                                 struct pci_host_bridge *bridge));
+int pci_host_iterate_bridges_and_count(
+    struct domain *d,
+    int (*cb)(struct domain *d, struct pci_host_bridge *bridge));
 
 int pci_host_bridge_mappings(struct domain *d);
 
 bool pci_check_bar(const struct pci_dev *pdev, mfn_t start, mfn_t end);
 
-#else   /*!CONFIG_HAS_PCI*/
+#else /*!CONFIG_HAS_PCI*/
 
 struct pci_dev;
 
@@ -147,5 +145,5 @@ static inline int pci_get_new_domain_nr(void)
     return -1;
 }
 
-#endif  /*!CONFIG_HAS_PCI*/
+#endif /*!CONFIG_HAS_PCI*/
 #endif /* __ARM_PCI_H__ */

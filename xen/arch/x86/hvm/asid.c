@@ -40,10 +40,10 @@ boolean_param("asid", opt_asid_enabled);
 
 /* Per-CPU ASID management. */
 struct hvm_asid_data {
-   uint64_t core_asid_generation;
-   uint32_t next_asid;
-   uint32_t max_asid;
-   bool disabled;
+    uint64_t core_asid_generation;
+    uint32_t next_asid;
+    uint32_t max_asid;
+    bool disabled;
 };
 
 static DEFINE_PER_CPU(struct hvm_asid_data, hvm_asid_data);
@@ -132,7 +132,7 @@ bool hvm_asid_handle_vmenter(struct hvm_vcpu_asid *asid)
      */
     return (asid->asid == 1);
 
- disabled:
+disabled:
     asid->asid = 0;
     return 0;
 }

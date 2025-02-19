@@ -26,50 +26,47 @@
 
 static inline void __raw_writeb(u8 val, volatile void __iomem *addr)
 {
-        asm volatile("strb %1, %0"
-                     : "+Qo" (*(volatile u8 __force *)addr)
-                     : "r" (val));
+    asm volatile("strb %1, %0"
+                 : "+Qo"(*(volatile u8 __force *)addr)
+                 : "r"(val));
 }
 
 static inline void __raw_writew(u16 val, volatile void __iomem *addr)
 {
-        asm volatile("strh %1, %0"
-                     : "+Q" (*(volatile u16 __force *)addr)
-                     : "r" (val));
+    asm volatile("strh %1, %0"
+                 : "+Q"(*(volatile u16 __force *)addr)
+                 : "r"(val));
 }
 
 static inline void __raw_writel(u32 val, volatile void __iomem *addr)
 {
-        asm volatile("str %1, %0"
-                     : "+Qo" (*(volatile u32 __force *)addr)
-                     : "r" (val));
+    asm volatile("str %1, %0"
+                 : "+Qo"(*(volatile u32 __force *)addr)
+                 : "r"(val));
 }
 
 static inline u8 __raw_readb(const volatile void __iomem *addr)
 {
-        u8 val;
-        asm volatile("ldrb %1, %0"
-                     : "+Qo" (*(volatile u8 __force *)addr),
-                       "=r" (val));
-        return val;
+    u8 val;
+    asm volatile("ldrb %1, %0"
+                 : "+Qo"(*(volatile u8 __force *)addr), "=r"(val));
+    return val;
 }
 
 static inline u16 __raw_readw(const volatile void __iomem *addr)
 {
-        u16 val;
-        asm volatile("ldrh %1, %0"
-                     : "+Q" (*(volatile u16 __force *)addr),
-                       "=r" (val));
-        return val;
+    u16 val;
+    asm volatile("ldrh %1, %0"
+                 : "+Q"(*(volatile u16 __force *)addr), "=r"(val));
+    return val;
 }
 
 static inline u32 __raw_readl(const volatile void __iomem *addr)
 {
-        u32 val;
-        asm volatile("ldr %1, %0"
-                     : "+Qo" (*(volatile u32 __force *)addr),
-                       "=r" (val));
-        return val;
+    u32 val;
+    asm volatile("ldr %1, %0"
+                 : "+Qo"(*(volatile u32 __force *)addr), "=r"(val));
+    return val;
 }
 
 #define __iormb()               rmb()
@@ -80,6 +77,7 @@ static inline u32 __raw_readl(const volatile void __iomem *addr)
                                         __raw_readw(c)); __r; })
 #define readl_relaxed(c) ({ u32 __r = le32_to_cpu((__force __le32) \
                                         __raw_readl(c)); __r; })
+
 /*
  * ldrd instructions are not decoded by Arm when running as a guest to access
  * emulated MMIO region. Thus, readq_relaxed_non_atomic() invokes readl_relaxed()
@@ -87,30 +85,32 @@ static inline u32 __raw_readl(const volatile void __iomem *addr)
  */
 static inline u64 readq_relaxed_non_atomic(const volatile void __iomem *addr)
 {
-        u64 val = (((u64)readl_relaxed(addr + 4)) << 32) | readl_relaxed(addr);
-        return val;
+    u64 val = (((u64)readl_relaxed(addr + 4)) << 32) | readl_relaxed(addr);
+    return val;
 }
 
-#define writeb_relaxed(v,c)     __raw_writeb(v,c)
-#define writew_relaxed(v,c)     __raw_writew((__force u16) cpu_to_le16(v),c)
-#define writel_relaxed(v,c)     __raw_writel((__force u32) cpu_to_le32(v),c)
+#define writeb_relaxed(v, c)     __raw_writeb(v,c)
+#define writew_relaxed(v, c)     __raw_writew((__force u16) cpu_to_le16(v),c)
+#define writel_relaxed(v, c)     __raw_writel((__force u32) cpu_to_le32(v),c)
+
 /*
  * strd instructions are not decoded by Arm when running as a guest to access
  * emulated MMIO region. Thus, writeq_relaxed_non_atomic() invokes writel_relaxed()
  * twice to write the lower and upper 32 bits.
  */
-static inline void writeq_relaxed_non_atomic(u64 val, volatile void __iomem *addr)
+static inline void writeq_relaxed_non_atomic(u64 val,
+                                             volatile void __iomem *addr)
 {
-        writel_relaxed((u32)val, addr);
-        writel_relaxed((u32)(val >> 32), addr + 4);
+    writel_relaxed((u32)val, addr);
+    writel_relaxed((u32)(val >> 32), addr + 4);
 }
 
 #define readb(c)                ({ u8  __v = readb_relaxed(c); __iormb(); __v; })
 #define readw(c)                ({ u16 __v = readw_relaxed(c); __iormb(); __v; })
 #define readl(c)                ({ u32 __v = readl_relaxed(c); __iormb(); __v; })
 
-#define writeb(v,c)             ({ __iowmb(); writeb_relaxed(v,c); })
-#define writew(v,c)             ({ __iowmb(); writew_relaxed(v,c); })
-#define writel(v,c)             ({ __iowmb(); writel_relaxed(v,c); })
+#define writeb(v, c)             ({ __iowmb(); writeb_relaxed(v,c); })
+#define writew(v, c)             ({ __iowmb(); writew_relaxed(v,c); })
+#define writel(v, c)             ({ __iowmb(); writel_relaxed(v,c); })
 
 #endif /* _ARM_ARM32_IO_H */

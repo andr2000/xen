@@ -117,11 +117,14 @@ static inline long xen_hypercall_hvm_op(unsigned int op, void *arg)
 /*
  * Higher level hypercall helpers
  */
-static inline void xen_hypercall_console_write(
-    const char *buf, unsigned int count)
+static inline void xen_hypercall_console_write(const char *buf,
+                                               unsigned int count)
 {
-    (void)_hypercall64_3(long, __HYPERVISOR_console_io,
-                         CONSOLEIO_write, count, buf);
+    (void)_hypercall64_3(long,
+                         __HYPERVISOR_console_io,
+                         CONSOLEIO_write,
+                         count,
+                         buf);
 }
 
 static inline long xen_hypercall_shutdown(unsigned int reason)
@@ -158,8 +161,8 @@ static inline long xen_hypercall_hvm_get_param(uint32_t index, uint64_t *value)
     return ret;
 }
 
-static inline long xen_hypercall_set_evtchn_upcall_vector(
-    unsigned int cpu, unsigned int vector)
+static inline long xen_hypercall_set_evtchn_upcall_vector(unsigned int cpu,
+                                                          unsigned int vector)
 {
     struct xen_hvm_evtchn_upcall_vector a = {
         .vcpu = cpu,
@@ -175,8 +178,8 @@ static inline long xen_hypercall_set_evtchn_upcall_vector(
 
 #include <public/sched.h>
 
-static inline void xen_hypercall_console_write(
-    const char *buf, unsigned int count)
+static inline void xen_hypercall_console_write(const char *buf,
+                                               unsigned int count)
 {
     ASSERT_UNREACHABLE();
 }

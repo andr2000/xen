@@ -28,11 +28,12 @@ void __init vm_init_type(enum vmap_region type, void *start, void *end)
 
     vm_base[type] = start;
     vm_end[type] = PFN_DOWN(end - start);
-    vm_low[type]= PFN_UP((vm_end[type] + 7) / 8);
+    vm_low[type] = PFN_UP((vm_end[type] + 7) / 8);
     nr = PFN_UP((vm_low[type] + 7) / 8);
     vm_top[type] = nr * PAGE_SIZE * 8;
 
-    for ( i = 0, va = (unsigned long)vm_bitmap(type); i < nr; ++i, va += PAGE_SIZE )
+    for ( i = 0, va = (unsigned long)vm_bitmap(type); i < nr;
+          ++i, va += PAGE_SIZE )
     {
         mfn_t mfn;
         int rc;
@@ -57,8 +58,7 @@ void __init vm_init_type(enum vmap_region type, void *start, void *end)
     populate_pt_range(va, vm_low[type] - nr);
 }
 
-static void *vm_alloc(unsigned int nr, unsigned int align,
-                      enum vmap_region t)
+static void *vm_alloc(unsigned int nr, unsigned int align, enum vmap_region t)
 {
     unsigned int start, bit;
 
@@ -72,7 +72,7 @@ static void *vm_alloc(unsigned int nr, unsigned int align,
         return NULL;
 
     spin_lock(&vm_lock);
-    for ( ; ; )
+    for ( ;; )
     {
         mfn_t mfn;
 
@@ -175,8 +175,9 @@ static unsigned int vm_index(const void *va, enum vmap_region type)
         return 0;
 
     idx = PFN_DOWN(va - vm_base[type]);
-    return !test_bit(idx - 1, vm_bitmap(type)) &&
-           test_bit(idx, vm_bitmap(type)) ? idx : 0;
+    return !test_bit(idx - 1, vm_bitmap(type)) && test_bit(idx, vm_bitmap(type))
+               ? idx
+               : 0;
 }
 
 static unsigned int vm_size(const void *va, enum vmap_region type)
@@ -221,9 +222,8 @@ static void vm_free(const void *va)
     spin_unlock(&vm_lock);
 }
 
-void *__vmap(const mfn_t *mfn, unsigned int granularity,
-             unsigned int nr, unsigned int align, unsigned int flags,
-             enum vmap_region type)
+void *__vmap(const mfn_t *mfn, unsigned int granularity, unsigned int nr,
+             unsigned int align, unsigned int flags, enum vmap_region type)
 {
     void *va = vm_alloc(nr * granularity, align, type);
     unsigned long cur = (unsigned long)va;
@@ -304,7 +304,7 @@ static void *vmalloc_type(size_t size, enum vmap_region type)
     xfree(mfn);
     return va;
 
- error:
+error:
     while ( i-- )
         free_domheap_page(mfn_to_page(mfn[i]));
     xfree(mfn);

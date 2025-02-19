@@ -79,8 +79,9 @@ static __used void init_done(void)
                              (unsigned long)&__ro_after_init_end,
                              PAGE_HYPERVISOR_RO);
     if ( rc )
-        panic("Unable to mark the .data.ro_after_init section read-only (rc = %d)\n",
-              rc);
+        panic(
+            "Unable to mark the .data.ro_after_init section read-only (rc = %d)\n",
+            rc);
 
     startup_cpu_idle_loop();
 }
@@ -92,7 +93,7 @@ static void __init init_idle_domain(void)
     /* TODO: setup_idle_pagetable(); */
 }
 
-static const char * __initdata processor_implementers[] = {
+static const char *__initdata processor_implementers[] = {
     ['A'] = "ARM Limited",
     ['B'] = "Broadcom Corporation",
     ['C'] = "Cavium Inc.",
@@ -120,19 +121,32 @@ static void __init processor_id(void)
         printk("Huh, cpu architecture %x, expected 0xf (defined by cpuid)\n",
                c->midr.architecture);
 
-    printk("Processor: %"PRIregister": \"%s\", variant: 0x%x, part 0x%03x,"
-           "rev 0x%x\n", c->midr.bits, implementer,
-           c->midr.variant, c->midr.part_number, c->midr.revision);
+    printk("Processor: %" PRIregister
+           ": \"%s\", variant: 0x%x, part 0x%03x," "rev 0x%x\n",
+           c->midr.bits,
+           implementer,
+           c->midr.variant,
+           c->midr.part_number,
+           c->midr.revision);
 
 #if defined(CONFIG_ARM_64)
     printk("64-bit Execution:\n");
-    printk("  Processor Features: %016"PRIx64" %016"PRIx64"\n",
-           system_cpuinfo.pfr64.bits[0], system_cpuinfo.pfr64.bits[1]);
+    printk("  Processor Features: %016" PRIx64 " %016" PRIx64 "\n",
+           system_cpuinfo.pfr64.bits[0],
+           system_cpuinfo.pfr64.bits[1]);
     printk("    Exception Levels: EL3:%s EL2:%s EL1:%s EL0:%s\n",
-           cpu_has_el3_32 ? "64+32" : cpu_has_el3_64 ? "64" : "No",
-           cpu_has_el2_32 ? "64+32" : cpu_has_el2_64 ? "64" : "No",
-           cpu_has_el1_32 ? "64+32" : cpu_has_el1_64 ? "64" : "No",
-           cpu_has_el0_32 ? "64+32" : cpu_has_el0_64 ? "64" : "No");
+           cpu_has_el3_32   ? "64+32"
+           : cpu_has_el3_64 ? "64"
+                            : "No",
+           cpu_has_el2_32   ? "64+32"
+           : cpu_has_el2_64 ? "64"
+                            : "No",
+           cpu_has_el1_32   ? "64+32"
+           : cpu_has_el1_64 ? "64"
+                            : "No",
+           cpu_has_el0_32   ? "64+32"
+           : cpu_has_el0_64 ? "64"
+                            : "No");
     printk("    Extensions:%s%s%s%s\n",
            cpu_has_fp ? " FloatingPoint" : "",
            cpu_has_simd ? " AdvancedSIMD" : "",
@@ -141,24 +155,30 @@ static void __init processor_id(void)
 
     /* Warn user if we find unknown floating-point features */
     if ( cpu_has_fp && (boot_cpu_feature64(fp) >= 2) )
-        printk(XENLOG_WARNING "WARNING: Unknown Floating-point ID:%d, "
-               "this may result in corruption on the platform\n",
-               boot_cpu_feature64(fp));
+        printk(
+            XENLOG_WARNING
+            "WARNING: Unknown Floating-point ID:%d, " "this may result in corruption on the platform\n",
+            boot_cpu_feature64(fp));
 
     /* Warn user if we find unknown AdvancedSIMD features */
     if ( cpu_has_simd && (boot_cpu_feature64(simd) >= 2) )
-        printk(XENLOG_WARNING "WARNING: Unknown AdvancedSIMD ID:%d, "
-               "this may result in corruption on the platform\n",
-               boot_cpu_feature64(simd));
+        printk(
+            XENLOG_WARNING
+            "WARNING: Unknown AdvancedSIMD ID:%d, " "this may result in corruption on the platform\n",
+            boot_cpu_feature64(simd));
 
-    printk("  Debug Features: %016"PRIx64" %016"PRIx64"\n",
-           system_cpuinfo.dbg64.bits[0], system_cpuinfo.dbg64.bits[1]);
-    printk("  Auxiliary Features: %016"PRIx64" %016"PRIx64"\n",
-           system_cpuinfo.aux64.bits[0], system_cpuinfo.aux64.bits[1]);
-    printk("  Memory Model Features: %016"PRIx64" %016"PRIx64"\n",
-           system_cpuinfo.mm64.bits[0], system_cpuinfo.mm64.bits[1]);
-    printk("  ISA Features:  %016"PRIx64" %016"PRIx64"\n",
-           system_cpuinfo.isa64.bits[0], system_cpuinfo.isa64.bits[1]);
+    printk("  Debug Features: %016" PRIx64 " %016" PRIx64 "\n",
+           system_cpuinfo.dbg64.bits[0],
+           system_cpuinfo.dbg64.bits[1]);
+    printk("  Auxiliary Features: %016" PRIx64 " %016" PRIx64 "\n",
+           system_cpuinfo.aux64.bits[0],
+           system_cpuinfo.aux64.bits[1]);
+    printk("  Memory Model Features: %016" PRIx64 " %016" PRIx64 "\n",
+           system_cpuinfo.mm64.bits[0],
+           system_cpuinfo.mm64.bits[1]);
+    printk("  ISA Features:  %016" PRIx64 " %016" PRIx64 "\n",
+           system_cpuinfo.isa64.bits[0],
+           system_cpuinfo.isa64.bits[1]);
 #endif
 
     /*
@@ -168,8 +188,9 @@ static void __init processor_id(void)
     if ( cpu_has_aarch32 )
     {
         printk("32-bit Execution:\n");
-        printk("  Processor Features: %"PRIregister":%"PRIregister"\n",
-               system_cpuinfo.pfr32.bits[0], system_cpuinfo.pfr32.bits[1]);
+        printk("  Processor Features: %" PRIregister ":%" PRIregister "\n",
+               system_cpuinfo.pfr32.bits[0],
+               system_cpuinfo.pfr32.bits[1]);
         printk("    Instruction Sets:%s%s%s%s%s%s\n",
                cpu_has_aarch32 ? " AArch32" : "",
                cpu_has_arm ? " A32" : "",
@@ -181,19 +202,26 @@ static void __init processor_id(void)
                cpu_has_gentimer ? " GenericTimer" : "",
                cpu_has_security ? " Security" : "");
 
-        printk("  Debug Features: %"PRIregister"\n",
+        printk("  Debug Features: %" PRIregister "\n",
                system_cpuinfo.dbg32.bits[0]);
-        printk("  Auxiliary Features: %"PRIregister"\n",
+        printk("  Auxiliary Features: %" PRIregister "\n",
                system_cpuinfo.aux32.bits[0]);
-        printk("  Memory Model Features: %"PRIregister" %"PRIregister"\n"
-               "                         %"PRIregister" %"PRIregister"\n",
-               system_cpuinfo.mm32.bits[0], system_cpuinfo.mm32.bits[1],
-               system_cpuinfo.mm32.bits[2], system_cpuinfo.mm32.bits[3]);
-        printk("  ISA Features: %"PRIregister" %"PRIregister" %"PRIregister"\n"
-               "                %"PRIregister" %"PRIregister" %"PRIregister"\n",
-               system_cpuinfo.isa32.bits[0], system_cpuinfo.isa32.bits[1],
-               system_cpuinfo.isa32.bits[2], system_cpuinfo.isa32.bits[3],
-               system_cpuinfo.isa32.bits[4], system_cpuinfo.isa32.bits[5]);
+        printk("  Memory Model Features: %" PRIregister " %" PRIregister
+               "\n" "                         %" PRIregister " %" PRIregister
+               "\n",
+               system_cpuinfo.mm32.bits[0],
+               system_cpuinfo.mm32.bits[1],
+               system_cpuinfo.mm32.bits[2],
+               system_cpuinfo.mm32.bits[3]);
+        printk("  ISA Features: %" PRIregister " %" PRIregister " %" PRIregister
+               "\n" "                %" PRIregister " %" PRIregister
+               " %" PRIregister "\n",
+               system_cpuinfo.isa32.bits[0],
+               system_cpuinfo.isa32.bits[1],
+               system_cpuinfo.isa32.bits[2],
+               system_cpuinfo.isa32.bits[3],
+               system_cpuinfo.isa32.bits[4],
+               system_cpuinfo.isa32.bits[5]);
     }
     else
     {
@@ -223,8 +251,7 @@ void __init discard_initial_modules(void)
         if ( mi->module[i].kind == BOOTMOD_XEN )
             continue;
 
-        if ( !mfn_valid(maddr_to_mfn(s)) ||
-             !mfn_valid(maddr_to_mfn(e)) )
+        if ( !mfn_valid(maddr_to_mfn(s)) || !mfn_valid(maddr_to_mfn(e)) )
             continue;
 
         fw_unreserved_regions(s, e, init_domheap_pages, 0);
@@ -232,12 +259,12 @@ void __init discard_initial_modules(void)
 
     mi->nr_mods = 0;
 
- out:
+out:
     remove_early_mappings();
 }
 
 /* Relocate the FDT in Xen heap */
-static void * __init relocate_fdt(paddr_t dtb_paddr, size_t dtb_size)
+static void *__init relocate_fdt(paddr_t dtb_paddr, size_t dtb_size)
 {
     void *fdt = xmalloc_bytes(dtb_size);
 
@@ -264,7 +291,7 @@ void __init init_pdx(void)
     uint64_t mask = pdx_init_mask(0x0);
     int bank;
 
-    for ( bank = 0 ; bank < mem->nr_banks; bank++ )
+    for ( bank = 0; bank < mem->nr_banks; bank++ )
     {
         bank_start = mem->bank[bank].start;
         bank_size = mem->bank[bank].size;
@@ -272,25 +299,24 @@ void __init init_pdx(void)
         mask |= bank_start | pdx_region_mask(bank_start, bank_size);
     }
 
-    for ( bank = 0 ; bank < mem->nr_banks; bank++ )
+    for ( bank = 0; bank < mem->nr_banks; bank++ )
     {
         bank_start = mem->bank[bank].start;
         bank_size = mem->bank[bank].size;
 
-        if (~mask & pdx_region_mask(bank_start, bank_size))
+        if ( ~mask & pdx_region_mask(bank_start, bank_size) )
             mask = 0;
     }
 
     pfn_pdx_hole_setup(mask >> PAGE_SHIFT);
 
-    for ( bank = 0 ; bank < mem->nr_banks; bank++ )
+    for ( bank = 0; bank < mem->nr_banks; bank++ )
     {
         bank_start = mem->bank[bank].start;
         bank_size = mem->bank[bank].size;
         bank_end = bank_start + bank_size;
 
-        set_pdx_range(paddr_to_pfn(bank_start),
-                      paddr_to_pfn(bank_end));
+        set_pdx_range(paddr_to_pfn(bank_start), paddr_to_pfn(bank_end));
     }
 }
 
@@ -317,15 +343,15 @@ void asmlinkage __init start_xen(unsigned long fdt_paddr)
 
     device_tree_flattened = early_fdt_map(fdt_paddr);
     if ( !device_tree_flattened )
-        panic("Invalid device tree blob at physical address %#lx.\n"
-              "The DTB must be 8-byte aligned and must not exceed 2 MB in size.\n\n"
-              "Please check your bootloader.\n",
-              fdt_paddr);
+        panic(
+            "Invalid device tree blob at physical address %#lx.\n" "The DTB must be 8-byte aligned and must not exceed 2 MB in size.\n\n" "Please check your bootloader.\n",
+            fdt_paddr);
 
     /* Register Xen's load address as a boot module. */
     xen_bootmodule = add_boot_module(BOOTMOD_XEN,
-                             virt_to_maddr(_start),
-                             (paddr_t)(uintptr_t)(_end - _start), false);
+                                     virt_to_maddr(_start),
+                                     (paddr_t)(uintptr_t)(_end - _start),
+                                     false);
     BUG_ON(!xen_bootmodule);
 
     fdt_size = boot_fdt_info(device_tree_flattened, fdt_paddr);
@@ -404,10 +430,8 @@ void asmlinkage __init start_xen(unsigned long fdt_paddr)
     tasklet_subsys_init();
 
     if ( xsm_dt_init() != 1 )
-        warning_add("WARNING: SILO mode is not enabled.\n"
-                    "It has implications on the security of the system,\n"
-                    "unless the communications have been forbidden between\n"
-                    "untrusted domains.\n");
+        warning_add(
+            "WARNING: SILO mode is not enabled.\n" "It has implications on the security of the system,\n" "unless the communications have been forbidden between\n" "untrusted domains.\n");
 
     init_maintenance_interrupt();
     init_timer_interrupt();
@@ -431,7 +455,7 @@ void asmlinkage __init start_xen(unsigned long fdt_paddr)
 
     do_presmp_initcalls();
 
-    for_each_present_cpu ( i )
+    for_each_present_cpu(i)
     {
         if ( (num_online_cpus() < nr_cpu_ids) && !cpu_online(i) )
         {
@@ -504,12 +528,13 @@ void asmlinkage __init start_xen(unsigned long fdt_paddr)
 
     system_state = SYS_STATE_active;
 
-    for_each_domain( d )
+    for_each_domain(d)
         domain_unpause_by_systemcontroller(d);
 
     /* Switch on to the dynamically allocated stack for the idle vcpu
      * since the static one we're running on is about to be freed. */
-    memcpy(idle_vcpu[0]->arch.cpu_info, get_cpu_info(),
+    memcpy(idle_vcpu[0]->arch.cpu_info,
+           get_cpu_info(),
            sizeof(struct cpu_info));
     switch_stack_and_jump(idle_vcpu[0]->arch.cpu_info, init_done);
 }
@@ -526,6 +551,7 @@ static int __init init_xen_cap_info(void)
 
     return 0;
 }
+
 __initcall(init_xen_cap_info);
 
 /*

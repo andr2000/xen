@@ -51,4 +51,3 @@ static inline int pci_ats_device(int seg, int bus, int devfn)
 }
 
 #endif /* DRIVERS__PASSTHROUGH__ATS_H */
-

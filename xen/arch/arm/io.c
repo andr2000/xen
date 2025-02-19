@@ -21,8 +21,7 @@
 #include "decode.h"
 
 static enum io_state handle_read(const struct mmio_handler *handler,
-                                 struct vcpu *v,
-                                 mmio_info_t *info)
+                                 struct vcpu *v, mmio_info_t *info)
 {
     const struct hsr_dabt dabt = info->dabt;
     struct cpu_user_regs *regs = guest_cpu_user_regs();
@@ -44,14 +43,15 @@ static enum io_state handle_read(const struct mmio_handler *handler,
 }
 
 static enum io_state handle_write(const struct mmio_handler *handler,
-                                  struct vcpu *v,
-                                  mmio_info_t *info)
+                                  struct vcpu *v, mmio_info_t *info)
 {
     const struct hsr_dabt dabt = info->dabt;
     struct cpu_user_regs *regs = guest_cpu_user_regs();
     int ret;
 
-    ret = handler->ops->write(v, info, get_user_reg(regs, dabt.reg),
+    ret = handler->ops->write(v,
+                              info,
+                              get_user_reg(regs, dabt.reg),
                               handler->priv);
     return ret ? IO_HANDLED : IO_ABORT;
 }
@@ -82,19 +82,21 @@ static const struct mmio_handler *find_mmio_handler(struct domain *d,
                                                     paddr_t gpa)
 {
     struct vmmio *vmmio = &d->arch.vmmio;
-    struct mmio_handler key = {.addr = gpa};
+    struct mmio_handler key = { .addr = gpa };
     const struct mmio_handler *handler;
 
     read_lock(&vmmio->lock);
-    handler = bsearch(&key, vmmio->handlers, vmmio->num_entries,
-                      sizeof(*handler), cmp_mmio_handler);
+    handler = bsearch(&key,
+                      vmmio->handlers,
+                      vmmio->num_entries,
+                      sizeof(*handler),
+                      cmp_mmio_handler);
     read_unlock(&vmmio->lock);
 
     return handler;
 }
 
-void try_decode_instruction(const struct cpu_user_regs *regs,
-                            mmio_info_t *info)
+void try_decode_instruction(const struct cpu_user_regs *regs, mmio_info_t *info)
 {
     int rc;
 
@@ -154,8 +156,7 @@ void try_decode_instruction(const struct cpu_user_regs *regs,
     }
 }
 
-enum io_state try_handle_mmio(struct cpu_user_regs *regs,
-                              mmio_info_t *info)
+enum io_state try_handle_mmio(struct cpu_user_regs *regs, mmio_info_t *info)
 {
     struct vcpu *v = current;
     const struct mmio_handler *handler = NULL;
@@ -197,8 +198,7 @@ enum io_state try_handle_mmio(struct cpu_user_regs *regs,
         return handle_read(handler, v, info);
 }
 
-void register_mmio_handler(struct domain *d,
-                           const struct mmio_handler_ops *ops,
+void register_mmio_handler(struct domain *d, const struct mmio_handler_ops *ops,
                            paddr_t addr, paddr_t size, void *priv)
 {
     struct vmmio *vmmio = &d->arch.vmmio;
@@ -218,8 +218,11 @@ void register_mmio_handler(struct domain *d,
     vmmio->num_entries++;
 
     /* Sort mmio handlers in ascending order based on base address */
-    sort(vmmio->handlers, vmmio->num_entries, sizeof(struct mmio_handler),
-         cmp_mmio_handler, swap_mmio_handler);
+    sort(vmmio->handlers,
+         vmmio->num_entries,
+         sizeof(struct mmio_handler),
+         cmp_mmio_handler,
+         swap_mmio_handler);
 
     write_unlock(&vmmio->lock);
 }

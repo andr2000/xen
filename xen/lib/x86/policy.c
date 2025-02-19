@@ -36,7 +36,7 @@ int x86_cpu_policies_are_compatible(const struct cpu_policy *host,
     /* Success. */
     ret = 0;
 
- out:
+out:
     if ( err )
         *err = e;
 

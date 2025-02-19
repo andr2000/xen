@@ -20,24 +20,25 @@
 #ifndef __ASSEMBLY__
 
 struct cpuinfo_x86 {
-    unsigned char x86;                 /* CPU family */
-    unsigned char x86_vendor;          /* CPU vendor */
+    unsigned char x86; /* CPU family */
+    unsigned char x86_vendor; /* CPU vendor */
     unsigned char x86_model;
     unsigned char x86_mask;
-    unsigned int cpuid_level;          /* Maximum supported CPUID level */
-    unsigned int extended_cpuid_level; /* Maximum supported CPUID extended level */
+    unsigned int cpuid_level; /* Maximum supported CPUID level */
+    unsigned int
+        extended_cpuid_level; /* Maximum supported CPUID extended level */
     unsigned int x86_capability[NCAPINTS];
     char x86_vendor_id[16];
     char x86_model_id[64];
-    unsigned int x86_cache_size;       /* in KB - valid only when supported */
-    unsigned int x86_cache_alignment;  /* In bytes */
-    unsigned int x86_max_cores;        /* cpuid returned max cores value */
-    unsigned int booted_cores;         /* number of cores as seen by OS */
-    unsigned int x86_num_siblings;     /* cpuid logical cpus per chip value */
+    unsigned int x86_cache_size; /* in KB - valid only when supported */
+    unsigned int x86_cache_alignment; /* In bytes */
+    unsigned int x86_max_cores; /* cpuid returned max cores value */
+    unsigned int booted_cores; /* number of cores as seen by OS */
+    unsigned int x86_num_siblings; /* cpuid logical cpus per chip value */
     unsigned int apicid;
-    unsigned int phys_proc_id;         /* package ID of each logical CPU */
-    unsigned int cpu_core_id;          /* core ID of each logical CPU */
-    unsigned int compute_unit_id;      /* AMD compute unit ID of each logical CPU */
+    unsigned int phys_proc_id; /* package ID of each logical CPU */
+    unsigned int cpu_core_id; /* core ID of each logical CPU */
+    unsigned int compute_unit_id; /* AMD compute unit ID of each logical CPU */
     unsigned short x86_clflush_size;
 } __cacheline_aligned;
 
@@ -252,6 +253,7 @@ union _cpuid4_leaf_eax {
         unsigned int num_threads_sharing:12;
         unsigned int num_cores_on_die:6;
     } split;
+
     u32 full;
 };
 
@@ -261,6 +263,7 @@ union _cpuid4_leaf_ebx {
         unsigned int physical_line_partition:10;
         unsigned int ways_of_associativity:10;
     } split;
+
     u32 full;
 };
 
@@ -268,6 +271,7 @@ union _cpuid4_leaf_ecx {
     struct {
         unsigned int number_of_sets:32;
     } split;
+
     u32 full;
 };
 

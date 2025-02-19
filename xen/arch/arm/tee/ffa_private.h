@@ -341,7 +341,7 @@ bool ffa_rxtx_init(void);
 void ffa_rxtx_destroy(void);
 void ffa_rxtx_domain_destroy(struct domain *d);
 uint32_t ffa_handle_rxtx_map(uint32_t fid, register_t tx_addr,
-			     register_t rx_addr, uint32_t page_count);
+                             register_t rx_addr, uint32_t page_count);
 uint32_t ffa_handle_rxtx_unmap(void);
 int32_t ffa_rx_acquire(struct domain *d);
 int32_t ffa_rx_release(struct domain *d);
@@ -379,14 +379,14 @@ static inline void ffa_set_regs(struct cpu_user_regs *regs, register_t v0,
                                 register_t v4, register_t v5, register_t v6,
                                 register_t v7)
 {
-        set_user_reg(regs, 0, v0);
-        set_user_reg(regs, 1, v1);
-        set_user_reg(regs, 2, v2);
-        set_user_reg(regs, 3, v3);
-        set_user_reg(regs, 4, v4);
-        set_user_reg(regs, 5, v5);
-        set_user_reg(regs, 6, v6);
-        set_user_reg(regs, 7, v7);
+    set_user_reg(regs, 0, v0);
+    set_user_reg(regs, 1, v1);
+    set_user_reg(regs, 2, v2);
+    set_user_reg(regs, 3, v3);
+    set_user_reg(regs, 4, v4);
+    set_user_reg(regs, 5, v5);
+    set_user_reg(regs, 6, v6);
+    set_user_reg(regs, 7, v7);
 }
 
 static inline void ffa_set_regs_error(struct cpu_user_regs *regs,
@@ -395,8 +395,8 @@ static inline void ffa_set_regs_error(struct cpu_user_regs *regs,
     ffa_set_regs(regs, FFA_ERROR, 0, error_code, 0, 0, 0, 0, 0);
 }
 
-static inline void ffa_set_regs_success(struct cpu_user_regs *regs,
-                                        uint32_t w2, uint32_t w3)
+static inline void ffa_set_regs_success(struct cpu_user_regs *regs, uint32_t w2,
+                                        uint32_t w3)
 {
     ffa_set_regs(regs, FFA_SUCCESS_32, 0, w2, w3, 0, 0, 0, 0);
 }
@@ -445,7 +445,7 @@ static inline bool ffa_fw_supports_fid(uint32_t fid)
 {
     BUILD_BUG_ON(FFA_ABI_MIN > FFA_ABI_MAX);
 
-    if ( FFA_ABI_BITNUM(fid) > FFA_ABI_BITMAP_SIZE)
+    if ( FFA_ABI_BITNUM(fid) > FFA_ABI_BITMAP_SIZE )
         return false;
     return test_bit(FFA_ABI_BITNUM(fid), ffa_fw_abi_supported);
 }

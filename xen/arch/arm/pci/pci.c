@@ -53,7 +53,7 @@ static int __init dt_pci_init(void)
          *   - ENODEV: The pci device is not present or cannot be used by
          *     Xen.
          */
-        if( !rc || rc == -EBADF || rc == -ENODEV )
+        if ( !rc || rc == -EBADF || rc == -ENODEV )
             continue;
 
         return rc;
@@ -95,6 +95,7 @@ static int __init pci_init(void)
     else
         return acpi_pci_init();
 }
+
 __initcall(pci_init);
 
 /*

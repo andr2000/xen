@@ -26,10 +26,10 @@
 
 static int skip_atoi(const char **s)
 {
-    int i=0;
+    int i = 0;
 
-    while (isdigit(**s))
-        i = i*10 + *((*s)++) - '0';
+    while ( isdigit(**s) )
+        i = i * 10 + *((*s)++) - '0';
     return i;
 }
 
@@ -41,11 +41,10 @@ static int skip_atoi(const char **s)
 #define SPECIAL 32              /* 0x */
 #define LARGE   64              /* use 'ABCDEF' instead of 'abcdef' */
 
-static char *number(
-    char *buf, const char *end, unsigned long long num,
-    int base, int size, int precision, int type)
+static char *number(char *buf, const char *end, unsigned long long num,
+                    int base, int size, int precision, int type)
 {
-    char c,sign,tmp[66];
+    char c, sign, tmp[66];
     const char *digits;
     static const char small_digits[] = "0123456789abcdefghijklmnopqrstuvwxyz";
     static const char large_digits[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -54,107 +53,130 @@ static char *number(
     ASSERT(base >= 2 && base <= 36);
 
     digits = (type & LARGE) ? large_digits : small_digits;
-    if (type & LEFT)
+    if ( type & LEFT )
         type &= ~ZEROPAD;
     c = (type & ZEROPAD) ? '0' : ' ';
     sign = 0;
-    if (type & SIGN) {
-        if ((signed long long) num < 0) {
+    if ( type & SIGN )
+    {
+        if ( (signed long long)num < 0 )
+        {
             sign = '-';
-            num = - (signed long long) num;
+            num = -(signed long long)num;
             size--;
-        } else if (type & PLUS) {
+        }
+        else if ( type & PLUS )
+        {
             sign = '+';
             size--;
-        } else if (type & SPACE) {
+        }
+        else if ( type & SPACE )
+        {
             sign = ' ';
             size--;
         }
     }
-    if (type & SPECIAL) {
-        if (num == 0)
+    if ( type & SPECIAL )
+    {
+        if ( num == 0 )
             type &= ~SPECIAL;
-        else if (base == 16)
+        else if ( base == 16 )
             size -= 2;
-        else if (base == 8)
+        else if ( base == 8 )
             size--;
         else
             type &= ~SPECIAL;
     }
     i = 0;
-    if (num == 0)
-        tmp[i++]='0';
-    else while (num != 0)
-        tmp[i++] = digits[do_div(num,base)];
-    if (i > precision)
+    if ( num == 0 )
+        tmp[i++] = '0';
+    else
+        while ( num != 0 )
+            tmp[i++] = digits[do_div(num, base)];
+    if ( i > precision )
         precision = i;
     size -= precision;
-    if (!(type&(ZEROPAD+LEFT))) {
-        while(size-->0) {
-            if (buf < end)
+    if ( !(type & (ZEROPAD + LEFT)) )
+    {
+        while ( size-- > 0 )
+        {
+            if ( buf < end )
                 *buf = ' ';
             ++buf;
         }
     }
-    if (sign) {
-        if (buf < end)
+    if ( sign )
+    {
+        if ( buf < end )
             *buf = sign;
         ++buf;
     }
-    if (type & SPECIAL) {
-        if (buf < end)
+    if ( type & SPECIAL )
+    {
+        if ( buf < end )
             *buf = '0';
         ++buf;
-        if (base == 16) {
-            if (buf < end)
+        if ( base == 16 )
+        {
+            if ( buf < end )
                 *buf = digits[33];
             ++buf;
         }
     }
-    if (!(type & LEFT)) {
-        while (size-- > 0) {
-            if (buf < end)
+    if ( !(type & LEFT) )
+    {
+        while ( size-- > 0 )
+        {
+            if ( buf < end )
                 *buf = c;
             ++buf;
         }
     }
-    while (i < precision--) {
-        if (buf < end)
+    while ( i < precision-- )
+    {
+        if ( buf < end )
             *buf = '0';
         ++buf;
     }
-    while (i-- > 0) {
-        if (buf < end)
+    while ( i-- > 0 )
+    {
+        if ( buf < end )
             *buf = tmp[i];
         ++buf;
     }
-    while (size-- > 0) {
-        if (buf < end)
+    while ( size-- > 0 )
+    {
+        if ( buf < end )
             *buf = ' ';
         ++buf;
     }
     return buf;
 }
 
-static char *string(char *str, const char *end, const char *s,
-                    int field_width, int precision, int flags)
+static char *string(char *str, const char *end, const char *s, int field_width,
+                    int precision, int flags)
 {
     int i, len = (precision < 0) ? strlen(s) : strnlen(s, precision);
 
-    if (!(flags & LEFT)) {
-        while (len < field_width--) {
-            if (str < end)
+    if ( !(flags & LEFT) )
+    {
+        while ( len < field_width-- )
+        {
+            if ( str < end )
                 *str = ' ';
             ++str;
         }
     }
-    for (i = 0; i < len; ++i) {
-        if (str < end)
+    for ( i = 0; i < len; ++i )
+    {
+        if ( str < end )
             *str = *s;
-        ++str; ++s;
+        ++str;
+        ++s;
     }
-    while (len < field_width--) {
-        if (str < end)
+    while ( len < field_width-- )
+    {
+        if ( str < end )
             *str = ' ';
         ++str;
     }
@@ -226,9 +248,9 @@ static char *print_bitmap_string(char *str, const char *end,
     for ( i = ROUNDUP(nr_bits, CHUNKSZ) - CHUNKSZ; i >= 0; i -= CHUNKSZ )
     {
         unsigned int chunkmask = (1ULL << chunksz) - 1;
-        unsigned int word      = i / BITS_PER_LONG;
-        unsigned int offset    = i % BITS_PER_LONG;
-        unsigned long val      = (bitmap[word] >> offset) & chunkmask;
+        unsigned int word = i / BITS_PER_LONG;
+        unsigned int offset = i % BITS_PER_LONG;
+        unsigned long val = (bitmap[word] >> offset) & chunkmask;
 
         if ( !first )
         {
@@ -257,10 +279,18 @@ static char *print_domain(char *str, const char *end, const struct domain *d)
 
     switch ( d->domain_id )
     {
-    case DOMID_IO:   name = "[IO]";   break;
-    case DOMID_XEN:  name = "[XEN]";  break;
-    case DOMID_COW:  name = "[COW]";  break;
-    case DOMID_IDLE: name = "[IDLE]"; break;
+    case DOMID_IO:
+        name = "[IO]";
+        break;
+    case DOMID_XEN:
+        name = "[XEN]";
+        break;
+    case DOMID_COW:
+        name = "[COW]";
+        break;
+    case DOMID_IDLE:
+        name = "[IDLE]";
+        break;
         /*
          * In principle, we could ASSERT_UNREACHABLE() in the default case.
          * However, this path is used to print out crash information, which
@@ -307,8 +337,7 @@ static char *print_pci_addr(char *str, const char *end, const pci_sbdf_t *sbdf)
 }
 
 static char *pointer(char *str, const char *end, const char **fmt_ptr,
-                     const void *arg, int field_width, int precision,
-                     int flags)
+                     const void *arg, int field_width, int precision, int flags)
 {
     const char *fmt = *fmt_ptr, *s;
 
@@ -371,7 +400,7 @@ static char *pointer(char *str, const char *end, const char **fmt_ptr,
             break;
         }
 
-        for ( i = 0; ; )
+        for ( i = 0;; )
         {
             /* Each byte: 2 chars, 0-padded, base 16, no hex prefix. */
             str = number(str, end, hex_buffer[i], 16, 2, -1, ZEROPAD);
@@ -398,7 +427,7 @@ static char *pointer(char *str, const char *end, const char **fmt_ptr,
     case 'S': /* Symbol name unconditionally with offset and size */
     {
         unsigned long sym_size, sym_offset;
-        char namebuf[KSYM_NAME_LEN+1];
+        char namebuf[KSYM_NAME_LEN + 1];
 
         /* Advance parents fmt string, as we have consumed 's' or 'S' */
         ++*fmt_ptr;
@@ -415,7 +444,8 @@ static char *pointer(char *str, const char *end, const char **fmt_ptr,
         if ( fmt[1] == 'S' || sym_offset != 0 )
         {
             /* Print '+<offset>/<len>' */
-            str = number(str, end, sym_offset, 16, -1, -1, SPECIAL|SIGN|PLUS);
+            str =
+                number(str, end, sym_offset, 16, -1, -1, SPECIAL | SIGN | PLUS);
             if ( str < end )
                 *str = '/';
             ++str;
@@ -447,8 +477,13 @@ static char *pointer(char *str, const char *end, const char **fmt_ptr,
         flags |= ZEROPAD;
     }
 
-    return number(str, end, (unsigned long)arg,
-                  16, field_width, precision, flags);
+    return number(str,
+                  end,
+                  (unsigned long)arg,
+                  16,
+                  field_width,
+                  precision,
+                  flags);
 }
 
 /**
@@ -476,14 +511,14 @@ int vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
     char *str, *end, c;
     const char *s;
 
-    int flags;          /* flags to number() */
+    int flags; /* flags to number() */
 
-    int field_width;    /* width of output field */
-    int precision;              /* min. # of digits for integers; max
+    int field_width; /* width of output field */
+    int precision; /* min. # of digits for integers; max
                                    number of chars for from string */
-    int qualifier;              /* 'h', 'l', or 'L' for integer fields */
-                                /* 'z' support added 23/7/1999 S.H.    */
-                                /* 'z' changed to 'Z' --davidm 1/25/99 */
+    int qualifier; /* 'h', 'l', or 'L' for integer fields */
+    /* 'z' support added 23/7/1999 S.H.    */
+    /* 'z' changed to 'Z' --davidm 1/25/99 */
 
     /* Reject out-of-range values early */
     BUG_ON(((int)size < 0) || ((unsigned int)size != size));
@@ -491,14 +526,17 @@ int vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
     str = buf;
     end = buf + size;
 
-    if (end < buf) {
-        end = ((void *) -1);
+    if ( end < buf )
+    {
+        end = ((void *)-1);
         size = end - buf;
     }
 
-    for (; *fmt ; ++fmt) {
-        if (*fmt != '%') {
-            if (str < end)
+    for ( ; *fmt; ++fmt )
+    {
+        if ( *fmt != '%' )
+        {
+            if ( str < end )
                 *str = *fmt;
             ++str;
             continue;
@@ -507,24 +545,37 @@ int vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
         /* process flags */
         flags = 0;
     repeat:
-        ++fmt;          /* this also skips first '%' */
-        switch (*fmt) {
-        case '-': flags |= LEFT; goto repeat;
-        case '+': flags |= PLUS; goto repeat;
-        case ' ': flags |= SPACE; goto repeat;
-        case '#': flags |= SPECIAL; goto repeat;
-        case '0': flags |= ZEROPAD; goto repeat;
+        ++fmt; /* this also skips first '%' */
+        switch ( *fmt )
+        {
+        case '-':
+            flags |= LEFT;
+            goto repeat;
+        case '+':
+            flags |= PLUS;
+            goto repeat;
+        case ' ':
+            flags |= SPACE;
+            goto repeat;
+        case '#':
+            flags |= SPECIAL;
+            goto repeat;
+        case '0':
+            flags |= ZEROPAD;
+            goto repeat;
         }
 
         /* get field width */
         field_width = -1;
-        if (isdigit(*fmt))
+        if ( isdigit(*fmt) )
             field_width = skip_atoi(&fmt);
-        else if (*fmt == '*') {
+        else if ( *fmt == '*' )
+        {
             ++fmt;
             /* it's the next argument */
             field_width = va_arg(args, int);
-            if (field_width < 0) {
+            if ( field_width < 0 )
+            {
                 field_width = -field_width;
                 flags |= LEFT;
             }
@@ -532,26 +583,30 @@ int vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
 
         /* get the precision */
         precision = -1;
-        if (*fmt == '.') {
+        if ( *fmt == '.' )
+        {
             ++fmt;
-            if (isdigit(*fmt))
+            if ( isdigit(*fmt) )
                 precision = skip_atoi(&fmt);
-            else if (*fmt == '*') {
+            else if ( *fmt == '*' )
+            {
                 ++fmt;
-                          /* it's the next argument */
+                /* it's the next argument */
                 precision = va_arg(args, int);
             }
-            if (precision < 0)
+            if ( precision < 0 )
                 precision = 0;
         }
 
         /* get the conversion qualifier */
         qualifier = -1;
-        if (*fmt == 'h' || *fmt == 'l' || *fmt == 'L' ||
-            *fmt =='Z' || *fmt == 'z') {
+        if ( *fmt == 'h' || *fmt == 'l' || *fmt == 'L' || *fmt == 'Z' ||
+             *fmt == 'z' )
+        {
             qualifier = *fmt;
             ++fmt;
-            if (qualifier == 'l' && *fmt == 'l') {
+            if ( qualifier == 'l' && *fmt == 'l' )
+            {
                 qualifier = 'L';
                 ++fmt;
             }
@@ -560,21 +615,25 @@ int vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
         /* default base */
         base = 10;
 
-        switch (*fmt) {
+        switch ( *fmt )
+        {
         case 'c':
-            if (!(flags & LEFT)) {
-                while (--field_width > 0) {
-                    if (str < end)
+            if ( !(flags & LEFT) )
+            {
+                while ( --field_width > 0 )
+                {
+                    if ( str < end )
                         *str = ' ';
                     ++str;
                 }
             }
-            c = (unsigned char) va_arg(args, int);
-            if (str < end)
+            c = (unsigned char)va_arg(args, int);
+            if ( str < end )
                 *str = c;
             ++str;
-            while (--field_width > 0) {
-                if (str < end)
+            while ( --field_width > 0 )
+            {
+                if ( str < end )
                     *str = ' ';
                 ++str;
             }
@@ -582,7 +641,7 @@ int vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
 
         case 's':
             s = va_arg(args, char *);
-            if ((unsigned long)s < PAGE_SIZE)
+            if ( (unsigned long)s < PAGE_SIZE )
                 s = "<NULL>";
 
             str = string(str, end, s, field_width, precision, flags);
@@ -590,26 +649,35 @@ int vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
 
         case 'p':
             /* pointer() might advance fmt (%pS for example) */
-            str = pointer(str, end, &fmt, va_arg(args, const void *),
-                          field_width, precision, flags);
+            str = pointer(str,
+                          end,
+                          &fmt,
+                          va_arg(args, const void *),
+                          field_width,
+                          precision,
+                          flags);
             continue;
 
-
         case 'n':
-            if (qualifier == 'l') {
-                long * ip = va_arg(args, long *);
+            if ( qualifier == 'l' )
+            {
+                long *ip = va_arg(args, long *);
                 *ip = (str - buf);
-            } else if (qualifier == 'Z' || qualifier == 'z') {
-                size_t * ip = va_arg(args, size_t *);
+            }
+            else if ( qualifier == 'Z' || qualifier == 'z' )
+            {
+                size_t *ip = va_arg(args, size_t *);
                 *ip = (str - buf);
-            } else {
-                int * ip = va_arg(args, int *);
+            }
+            else
+            {
+                int *ip = va_arg(args, int *);
                 *ip = (str - buf);
             }
             continue;
 
         case '%':
-            if (str < end)
+            if ( str < end )
                 *str = '%';
             ++str;
             continue;
@@ -634,43 +702,53 @@ int vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
             break;
 
         default:
-            if (str < end)
+            if ( str < end )
                 *str = '%';
             ++str;
-            if (*fmt) {
-                if (str < end)
+            if ( *fmt )
+            {
+                if ( str < end )
                     *str = *fmt;
                 ++str;
-            } else {
+            }
+            else
+            {
                 --fmt;
             }
             continue;
         }
-        if (qualifier == 'L')
+        if ( qualifier == 'L' )
             num = va_arg(args, long long);
-        else if (qualifier == 'l') {
+        else if ( qualifier == 'l' )
+        {
             num = va_arg(args, unsigned long);
-            if (flags & SIGN)
-                num = (signed long) num;
-        } else if (qualifier == 'Z' || qualifier == 'z') {
+            if ( flags & SIGN )
+                num = (signed long)num;
+        }
+        else if ( qualifier == 'Z' || qualifier == 'z' )
+        {
             num = va_arg(args, size_t);
-        } else if (qualifier == 'h') {
-            num = (unsigned short) va_arg(args, int);
-            if (flags & SIGN)
-                num = (signed short) num;
-        } else {
+        }
+        else if ( qualifier == 'h' )
+        {
+            num = (unsigned short)va_arg(args, int);
+            if ( flags & SIGN )
+                num = (signed short)num;
+        }
+        else
+        {
             num = va_arg(args, unsigned int);
-            if (flags & SIGN)
-                num = (signed int) num;
+            if ( flags & SIGN )
+                num = (signed int)num;
         }
 
-        str = number(str, end, num, base,
-                     field_width, precision, flags);
+        str = number(str, end, num, base, field_width, precision, flags);
     }
 
     /* don't write out a null byte if the buf size is zero */
-    if (size > 0) {
-        if (str < end)
+    if ( size > 0 )
+    {
+        if ( str < end )
             *str = '\0';
         else
             end[-1] = '\0';
@@ -678,7 +756,7 @@ int vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
     /* the trailing null byte doesn't count towards the total
      * ++str;
      */
-    return str-buf;
+    return str - buf;
 }
 
 EXPORT_SYMBOL(vsnprintf);
@@ -701,8 +779,8 @@ int vscnprintf(char *buf, size_t size, const char *fmt, va_list args)
 {
     int i;
 
-    i = vsnprintf(buf,size,fmt,args);
-    if (i >= size)
+    i = vsnprintf(buf, size, fmt, args);
+    if ( i >= size )
         i = size - 1;
     return (i > 0) ? i : 0;
 }
@@ -721,13 +799,13 @@ EXPORT_SYMBOL(vscnprintf);
  * as per ISO C99.  If the return is greater than or equal to
  * @size, the resulting string is truncated.
  */
-int snprintf(char * buf, size_t size, const char *fmt, ...)
+int snprintf(char *buf, size_t size, const char *fmt, ...)
 {
     va_list args;
     int i;
 
     va_start(args, fmt);
-    i=vsnprintf(buf,size,fmt,args);
+    i = vsnprintf(buf, size, fmt, args);
     va_end(args);
     return i;
 }
@@ -746,7 +824,7 @@ EXPORT_SYMBOL(snprintf);
  * greater than or equal to @size, the resulting string is truncated.
  */
 
-int scnprintf(char * buf, size_t size, const char *fmt, ...)
+int scnprintf(char *buf, size_t size, const char *fmt, ...)
 {
     va_list args;
     int i;
@@ -754,10 +832,11 @@ int scnprintf(char * buf, size_t size, const char *fmt, ...)
     va_start(args, fmt);
     i = vsnprintf(buf, size, fmt, args);
     va_end(args);
-    if (i >= size)
+    if ( i >= size )
         i = size - 1;
     return (i > 0) ? i : 0;
 }
+
 EXPORT_SYMBOL(scnprintf);
 
 /**
@@ -786,7 +865,7 @@ int xvasprintf(char **bufp, const char *fmt, va_list args)
     if ( !buf )
         return -ENOMEM;
 
-    (void) vsnprintf(buf, size, fmt, args);
+    (void)vsnprintf(buf, size, fmt, args);
 
     *bufp = buf;
     return 0;

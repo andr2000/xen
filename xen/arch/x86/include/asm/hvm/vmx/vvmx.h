@@ -24,21 +24,24 @@ struct nestedvmx {
      * cannot use 0 for this purpose, because it's a valid VMXON region
      * address.
      */
-    paddr_t    vmxon_region_pa;
-    void       *iobitmap[2];		/* map (va) of L1 guest I/O bitmap */
-    struct vmx_msr_bitmap *msrbitmap;	/* map (va) of L1 guest MSR bitmap */
-    struct vmx_msr_bitmap *msr_merged;	/* merged L1 and L2 MSR bitmap */
+    paddr_t vmxon_region_pa;
+    void *iobitmap[2]; /* map (va) of L1 guest I/O bitmap */
+    struct vmx_msr_bitmap *msrbitmap; /* map (va) of L1 guest MSR bitmap */
+    struct vmx_msr_bitmap *msr_merged; /* merged L1 and L2 MSR bitmap */
+
     /* deferred nested interrupt */
     struct {
         unsigned long intr_info;
-        u32           error_code;
-        u8            source;
+        u32 error_code;
+        u8 source;
     } intr;
+
     struct {
-        bool     enabled;
+        bool enabled;
         uint32_t exit_reason;
         uint32_t exit_qual;
     } ept;
+
     uint32_t guest_vpid;
     struct list_head launched_list;
 };
@@ -54,22 +57,22 @@ struct nestedvmx {
 /* bit 0-8, and 12 must be 1 */
 #define VMX_ENTRY_CTLS_DEFAULT1		0x11ff
 
-
 union vmx_inst_info {
     struct {
-        unsigned int scaling           :2; /* bit 0-1 */
-        unsigned int __rsvd0           :1; /* bit 2 */
-        unsigned int reg1              :4; /* bit 3-6 */
-        unsigned int addr_size         :3; /* bit 7-9 */
-        unsigned int memreg            :1; /* bit 10 */
-        unsigned int __rsvd1           :4; /* bit 11-14 */
-        unsigned int segment           :3; /* bit 15-17 */
-        unsigned int index_reg         :4; /* bit 18-21 */
-        unsigned int index_reg_invalid :1; /* bit 22 */
-        unsigned int base_reg          :4; /* bit 23-26 */
-        unsigned int base_reg_invalid  :1; /* bit 27 */
-        unsigned int reg2              :4; /* bit 28-31 */
+        unsigned int scaling:2; /* bit 0-1 */
+        unsigned int __rsvd0:1; /* bit 2 */
+        unsigned int reg1:4; /* bit 3-6 */
+        unsigned int addr_size:3; /* bit 7-9 */
+        unsigned int memreg:1; /* bit 10 */
+        unsigned int __rsvd1:4; /* bit 11-14 */
+        unsigned int segment:3; /* bit 15-17 */
+        unsigned int index_reg:4; /* bit 18-21 */
+        unsigned int index_reg_invalid:1; /* bit 22 */
+        unsigned int base_reg:4; /* bit 23-26 */
+        unsigned int base_reg_invalid:1; /* bit 27 */
+        unsigned int reg2:4; /* bit 28-31 */
     } fields;
+
     u32 word;
 };
 
@@ -78,8 +81,8 @@ void cf_check nvmx_vcpu_destroy(struct vcpu *v);
 int cf_check nvmx_vcpu_reset(struct vcpu *v);
 uint64_t cf_check nvmx_vcpu_eptp_base(struct vcpu *v);
 enum hvm_intblk cf_check nvmx_intr_blocked(struct vcpu *v);
-bool cf_check nvmx_intercepts_exception(
-    struct vcpu *v, unsigned int vector, int error_code);
+bool cf_check nvmx_intercepts_exception(struct vcpu *v, unsigned int vector,
+                                        int error_code);
 void cf_check nvmx_domain_relinquish_resources(struct domain *d);
 
 bool cf_check nvmx_ept_enabled(struct vcpu *v);
@@ -89,9 +92,9 @@ bool cf_check nvmx_ept_enabled(struct vcpu *v);
 #define EPT_TRANSLATE_MISCONFIG     2
 #define EPT_TRANSLATE_RETRY         3
 
-int cf_check nvmx_hap_walk_L1_p2m(
-    struct vcpu *v, paddr_t L2_gpa, paddr_t *L1_gpa, unsigned int *page_order,
-    uint8_t *p2m_acc, struct npfec npfec);
+int cf_check nvmx_hap_walk_L1_p2m(struct vcpu *v, paddr_t L2_gpa,
+                                  paddr_t *L1_gpa, unsigned int *page_order,
+                                  uint8_t *p2m_acc, struct npfec npfec);
 
 /*
  * Virtual VMCS layout
@@ -120,13 +123,14 @@ struct vvmcs_header {
 
 union vmcs_encoding {
     struct {
-        u32 access_type : 1;
-        u32 index : 9;
-        u32 type : 2;
-        u32 rsv1 : 1;
-        u32 width : 2;
-        u32 rsv2 : 17;
+        u32 access_type:1;
+        u32 index:9;
+        u32 type:2;
+        u32 rsv1:1;
+        u32 width:2;
+        u32 rsv2:17;
     };
+
     u32 word;
 };
 
@@ -177,27 +181,24 @@ enum vmx_insn_errno set_vvmcs_real_safe(const struct vcpu *, u32 encoding,
 
 void nvmx_destroy_vmcs(struct vcpu *v);
 int nvmx_handle_vmx_insn(struct cpu_user_regs *regs, unsigned int exit_reason);
-int nvmx_msr_read_intercept(unsigned int msr,
-                                u64 *msr_content);
+int nvmx_msr_read_intercept(unsigned int msr, u64 *msr_content);
 
 void nvmx_update_exec_control(struct vcpu *v, u32 value);
-void nvmx_update_secondary_exec_control(struct vcpu *v,
-                                        unsigned long value);
+void nvmx_update_secondary_exec_control(struct vcpu *v, unsigned long value);
 void nvmx_update_exception_bitmap(struct vcpu *v, unsigned long value);
 void nvmx_switch_guest(void);
 void nvmx_idtv_handling(void);
 u64 nvmx_get_tsc_offset(struct vcpu *v);
 int nvmx_n2_vmexit_handler(struct cpu_user_regs *regs,
-                          unsigned int exit_reason);
+                           unsigned int exit_reason);
 void nvmx_set_cr_read_shadow(struct vcpu *v, unsigned int cr);
 
 uint64_t nept_get_ept_vpid_cap(void);
 
-int nept_translate_l2ga(struct vcpu *v, paddr_t l2ga,
-                        unsigned int *page_order, uint32_t rwx_acc,
-                        unsigned long *l1gfn, uint8_t *p2m_acc,
-                        uint64_t *exit_qual, uint32_t *exit_reason);
+int nept_translate_l2ga(struct vcpu *v, paddr_t l2ga, unsigned int *page_order,
+                        uint32_t rwx_acc, unsigned long *l1gfn,
+                        uint8_t *p2m_acc, uint64_t *exit_qual,
+                        uint32_t *exit_reason);
 int nvmx_cpu_up_prepare(unsigned int cpu);
 void nvmx_cpu_dead(unsigned int cpu);
 #endif /* __ASM_X86_HVM_VVMX_H__ */
-

@@ -4,11 +4,11 @@
 struct vcpu;
 
 #if defined(CONFIG_ARM_32)
-# include <asm/arm32/vfp.h>
+#include <asm/arm32/vfp.h>
 #elif defined(CONFIG_ARM_64)
-# include <asm/arm64/vfp.h>
+#include <asm/arm64/vfp.h>
 #else
-# error "Unknown ARM variant"
+#error "Unknown ARM variant"
 #endif
 
 void vfp_save_state(struct vcpu *v);

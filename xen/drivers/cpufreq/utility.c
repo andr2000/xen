@@ -50,7 +50,7 @@ void cpufreq_residency_update(unsigned int cpu, uint8_t state)
     total_idle_ns = get_cpu_idle_time(cpu);
     now = NOW();
 
-    delta = (now - pxpt->prev_state_wall) - 
+    delta = (now - pxpt->prev_state_wall) -
             (total_idle_ns - pxpt->prev_idle_wall);
 
     if ( likely(delta >= 0) )
@@ -64,13 +64,13 @@ void cpufreq_statistic_update(unsigned int cpu, uint8_t from, uint8_t to)
 {
     struct pm_px *pxpt;
     struct processor_pminfo *pmpt = processor_pminfo[cpu];
-    spinlock_t *cpufreq_statistic_lock = 
-               &per_cpu(cpufreq_statistic_lock, cpu);
+    spinlock_t *cpufreq_statistic_lock = &per_cpu(cpufreq_statistic_lock, cpu);
 
     spin_lock(cpufreq_statistic_lock);
 
     pxpt = per_cpu(cpufreq_statistic_data, cpu);
-    if ( !pxpt || !pmpt ) {
+    if ( !pxpt || !pmpt )
+    {
         spin_unlock(cpufreq_statistic_lock);
         return;
     }
@@ -101,7 +101,8 @@ int cpufreq_statistic_init(unsigned int cpu)
     spin_lock(cpufreq_statistic_lock);
 
     pxpt = per_cpu(cpufreq_statistic_data, cpu);
-    if ( pxpt ) {
+    if ( pxpt )
+    {
         spin_unlock(cpufreq_statistic_lock);
         return 0;
     }
@@ -109,21 +110,24 @@ int cpufreq_statistic_init(unsigned int cpu)
     count = pmpt->perf.state_count;
 
     pxpt = xzalloc(struct pm_px);
-    if ( !pxpt ) {
+    if ( !pxpt )
+    {
         spin_unlock(cpufreq_statistic_lock);
         return -ENOMEM;
     }
     per_cpu(cpufreq_statistic_data, cpu) = pxpt;
 
-    pxpt->u.trans_pt = xzalloc_array(uint64_t, count * count);
-    if (!pxpt->u.trans_pt) {
+    pxpt->u.trans_pt = xzalloc_array(uint64_t, count *count);
+    if ( !pxpt->u.trans_pt )
+    {
         xfree(pxpt);
         spin_unlock(cpufreq_statistic_lock);
         return -ENOMEM;
     }
 
     pxpt->u.pt = xzalloc_array(struct pm_px_val, count);
-    if (!pxpt->u.pt) {
+    if ( !pxpt->u.pt )
+    {
         xfree(pxpt->u.trans_pt);
         xfree(pxpt);
         spin_unlock(cpufreq_statistic_lock);
@@ -133,7 +137,7 @@ int cpufreq_statistic_init(unsigned int cpu)
     pxpt->u.total = pmpt->perf.state_count;
     pxpt->u.usable = pmpt->perf.state_count - pmpt->perf.platform_limit;
 
-    for (i=0; i < pmpt->perf.state_count; i++)
+    for ( i = 0; i < pmpt->perf.state_count; i++ )
         pxpt->u.pt[i].freq = pmpt->perf.states[i].core_frequency;
 
     pxpt->prev_state_wall = NOW();
@@ -152,7 +156,8 @@ void cpufreq_statistic_exit(unsigned int cpu)
     spin_lock(cpufreq_statistic_lock);
 
     pxpt = per_cpu(cpufreq_statistic_data, cpu);
-    if (!pxpt) {
+    if ( !pxpt )
+    {
         spin_unlock(cpufreq_statistic_lock);
         return;
     }
@@ -175,19 +180,21 @@ void cpufreq_statistic_reset(unsigned int cpu)
     spin_lock(cpufreq_statistic_lock);
 
     pxpt = per_cpu(cpufreq_statistic_data, cpu);
-    if ( !pmpt || !pxpt || !pxpt->u.pt || !pxpt->u.trans_pt ) {
+    if ( !pmpt || !pxpt || !pxpt->u.pt || !pxpt->u.trans_pt )
+    {
         spin_unlock(cpufreq_statistic_lock);
         return;
     }
 
     count = pmpt->perf.state_count;
 
-    for (i=0; i < count; i++) {
+    for ( i = 0; i < count; i++ )
+    {
         pxpt->u.pt[i].residency = 0;
         pxpt->u.pt[i].count = 0;
 
-        for (j=0; j < count; j++)
-            *(pxpt->u.trans_pt + i*count + j) = 0;
+        for ( j = 0; j < count; j++ )
+            *(pxpt->u.trans_pt + i * count + j) = 0;
     }
 
     pxpt->prev_state_wall = NOW();
@@ -195,7 +202,6 @@ void cpufreq_statistic_reset(unsigned int cpu)
 
     spin_unlock(cpufreq_statistic_lock);
 }
-
 
 /*********************************************************************
  *                   FREQUENCY TABLE HELPERS                         *
@@ -209,34 +215,37 @@ int cpufreq_frequency_table_cpuinfo(struct cpufreq_policy *policy,
     unsigned int second_max_freq = 0;
     unsigned int i;
 
-    for (i=0; (table[i].frequency != CPUFREQ_TABLE_END); i++) {
+    for ( i = 0; (table[i].frequency != CPUFREQ_TABLE_END); i++ )
+    {
         unsigned int freq = table[i].frequency;
-        if (freq == CPUFREQ_ENTRY_INVALID)
+        if ( freq == CPUFREQ_ENTRY_INVALID )
             continue;
-        if (freq < min_freq)
+        if ( freq < min_freq )
             min_freq = freq;
-        if (freq > max_freq)
+        if ( freq > max_freq )
             max_freq = freq;
     }
-    for (i=0; (table[i].frequency != CPUFREQ_TABLE_END); i++) {
+    for ( i = 0; (table[i].frequency != CPUFREQ_TABLE_END); i++ )
+    {
         unsigned int freq = table[i].frequency;
-        if (freq == CPUFREQ_ENTRY_INVALID || freq == max_freq)
+        if ( freq == CPUFREQ_ENTRY_INVALID || freq == max_freq )
             continue;
-        if (freq > second_max_freq)
+        if ( freq > second_max_freq )
             second_max_freq = freq;
     }
-    if (second_max_freq == 0)
+    if ( second_max_freq == 0 )
         second_max_freq = max_freq;
-    if (cpufreq_verbose)
+    if ( cpufreq_verbose )
         printk("max_freq: %u    second_max_freq: %u\n",
-               max_freq, second_max_freq);
+               max_freq,
+               second_max_freq);
 
     policy->min = policy->cpuinfo.min_freq = min_freq;
     policy->max = policy->cpuinfo.max_freq = max_freq;
     policy->cpuinfo.perf_freq = max_freq;
     policy->cpuinfo.second_max_freq = second_max_freq;
 
-    if (policy->min == ~0)
+    if ( policy->min == ~0 )
         return -EINVAL;
     else
         return 0;
@@ -249,26 +258,29 @@ int cpufreq_frequency_table_verify(struct cpufreq_policy *policy,
     unsigned int i;
     unsigned int count = 0;
 
-    if (!cpu_online(policy->cpu))
+    if ( !cpu_online(policy->cpu) )
         return -EINVAL;
 
-    cpufreq_verify_within_limits(policy, policy->cpuinfo.min_freq,
+    cpufreq_verify_within_limits(policy,
+                                 policy->cpuinfo.min_freq,
                                  policy->cpuinfo.max_freq);
 
-    for (i=0; (table[i].frequency != CPUFREQ_TABLE_END); i++) {
+    for ( i = 0; (table[i].frequency != CPUFREQ_TABLE_END); i++ )
+    {
         unsigned int freq = table[i].frequency;
-        if (freq == CPUFREQ_ENTRY_INVALID)
+        if ( freq == CPUFREQ_ENTRY_INVALID )
             continue;
-        if ((freq >= policy->min) && (freq <= policy->max))
+        if ( (freq >= policy->min) && (freq <= policy->max) )
             count++;
-        else if ((next_larger > freq) && (freq > policy->max))
+        else if ( (next_larger > freq) && (freq > policy->max) )
             next_larger = freq;
     }
 
-    if (!count)
+    if ( !count )
         policy->max = next_larger;
 
-    cpufreq_verify_within_limits(policy, policy->cpuinfo.min_freq,
+    cpufreq_verify_within_limits(policy,
+                                 policy->cpuinfo.min_freq,
                                  policy->cpuinfo.max_freq);
 
     return 0;
@@ -277,8 +289,7 @@ int cpufreq_frequency_table_verify(struct cpufreq_policy *policy,
 int cpufreq_frequency_table_target(struct cpufreq_policy *policy,
                                    struct cpufreq_frequency_table *table,
                                    unsigned int target_freq,
-                                   unsigned int relation,
-                                   unsigned int *index)
+                                   unsigned int relation, unsigned int *index)
 {
     struct cpufreq_frequency_table optimal = {
         .index = ~0,
@@ -290,7 +301,8 @@ int cpufreq_frequency_table_target(struct cpufreq_policy *policy,
     };
     unsigned int i;
 
-    switch (relation) {
+    switch ( relation )
+    {
     case CPUFREQ_RELATION_H:
         suboptimal.frequency = ~0;
         break;
@@ -299,37 +311,49 @@ int cpufreq_frequency_table_target(struct cpufreq_policy *policy,
         break;
     }
 
-    if (!cpu_online(policy->cpu))
+    if ( !cpu_online(policy->cpu) )
         return -EINVAL;
 
-    for (i=0; (table[i].frequency != CPUFREQ_TABLE_END); i++) {
+    for ( i = 0; (table[i].frequency != CPUFREQ_TABLE_END); i++ )
+    {
         unsigned int freq = table[i].frequency;
-        if (freq == CPUFREQ_ENTRY_INVALID)
+        if ( freq == CPUFREQ_ENTRY_INVALID )
             continue;
-        if ((freq < policy->min) || (freq > policy->max))
+        if ( (freq < policy->min) || (freq > policy->max) )
             continue;
-        switch(relation) {
+        switch ( relation )
+        {
         case CPUFREQ_RELATION_H:
-            if (freq <= target_freq) {
-                if (freq >= optimal.frequency) {
+            if ( freq <= target_freq )
+            {
+                if ( freq >= optimal.frequency )
+                {
                     optimal.frequency = freq;
                     optimal.index = i;
                 }
-            } else {
-                if (freq <= suboptimal.frequency) {
+            }
+            else
+            {
+                if ( freq <= suboptimal.frequency )
+                {
                     suboptimal.frequency = freq;
                     suboptimal.index = i;
                 }
             }
             break;
         case CPUFREQ_RELATION_L:
-            if (freq >= target_freq) {
-                if (freq <= optimal.frequency) {
+            if ( freq >= target_freq )
+            {
+                if ( freq <= optimal.frequency )
+                {
                     optimal.frequency = freq;
                     optimal.index = i;
                 }
-            } else {
-                if (freq >= suboptimal.frequency) {
+            }
+            else
+            {
+                if ( freq >= suboptimal.frequency )
+                {
                     suboptimal.frequency = freq;
                     suboptimal.index = i;
                 }
@@ -337,35 +361,39 @@ int cpufreq_frequency_table_target(struct cpufreq_policy *policy,
             break;
         }
     }
-    if (optimal.index > i) {
-        if (suboptimal.index > i)
+    if ( optimal.index > i )
+    {
+        if ( suboptimal.index > i )
             return -EINVAL;
         *index = suboptimal.index;
-    } else
+    }
+    else
         *index = optimal.index;
 
     return 0;
 }
-
 
 /*********************************************************************
  *               GOVERNORS                                           *
  *********************************************************************/
 
 int __cpufreq_driver_target(struct cpufreq_policy *policy,
-                            unsigned int target_freq,
-                            unsigned int relation)
+                            unsigned int target_freq, unsigned int relation)
 {
     int retval = -EINVAL;
 
-    if (cpu_online(policy->cpu) && cpufreq_driver.target)
+    if ( cpu_online(policy->cpu) && cpufreq_driver.target )
     {
         unsigned int prev_freq = policy->cur;
 
         retval = alternative_call(cpufreq_driver.target,
-                                  policy, target_freq, relation);
+                                  policy,
+                                  target_freq,
+                                  relation);
         if ( retval == 0 )
-            TRACE_TIME(TRC_PM_FREQ_CHANGE, prev_freq / 1000, policy->cur / 1000);
+            TRACE_TIME(TRC_PM_FREQ_CHANGE,
+                       prev_freq / 1000,
+                       policy->cur / 1000);
     }
 
     return retval;
@@ -376,7 +404,7 @@ int cpufreq_driver_getavg(unsigned int cpu, unsigned int flag)
     struct cpufreq_policy *policy;
     int freq_avg;
 
-    if (!cpu_online(cpu) || !(policy = per_cpu(cpufreq_cpu_policy, cpu)))
+    if ( !cpu_online(cpu) || !(policy = per_cpu(cpufreq_cpu_policy, cpu)) )
         return 0;
 
     freq_avg = get_measured_perf(cpu, flag);
@@ -392,32 +420,31 @@ int cpufreq_update_turbo(unsigned int cpu, int new_state)
     int curr_state;
     int ret = 0;
 
-    if (new_state != CPUFREQ_TURBO_ENABLED &&
-        new_state != CPUFREQ_TURBO_DISABLED)
+    if ( new_state != CPUFREQ_TURBO_ENABLED &&
+         new_state != CPUFREQ_TURBO_DISABLED )
         return -EINVAL;
 
     policy = per_cpu(cpufreq_cpu_policy, cpu);
-    if (!policy)
+    if ( !policy )
         return -EACCES;
 
-    if (policy->turbo == CPUFREQ_TURBO_UNSUPPORTED)
+    if ( policy->turbo == CPUFREQ_TURBO_UNSUPPORTED )
         return -EOPNOTSUPP;
 
     curr_state = policy->turbo;
-    if (curr_state == new_state)
+    if ( curr_state == new_state )
         return 0;
 
     policy->turbo = new_state;
-    if (cpufreq_driver.update)
+    if ( cpufreq_driver.update )
     {
         ret = alternative_call(cpufreq_driver.update, cpu, policy);
-        if (ret)
+        if ( ret )
             policy->turbo = curr_state;
     }
 
     return ret;
 }
-
 
 int cpufreq_get_turbo_status(unsigned int cpu)
 {
@@ -436,46 +463,49 @@ int cpufreq_get_turbo_status(unsigned int cpu)
  * policy : policy to be set.
  */
 int __cpufreq_set_policy(struct cpufreq_policy *data,
-                                struct cpufreq_policy *policy)
+                         struct cpufreq_policy *policy)
 {
     int ret = 0;
 
     memcpy(&policy->cpuinfo, &data->cpuinfo, sizeof(struct cpufreq_cpuinfo));
 
-    if (policy->min > data->min && policy->min > policy->max)
+    if ( policy->min > data->min && policy->min > policy->max )
         return -EINVAL;
 
     /* verify the cpu speed can be set within this limit */
     ret = alternative_call(cpufreq_driver.verify, policy);
-    if (ret)
+    if ( ret )
         return ret;
 
     data->min = policy->min;
     data->max = policy->max;
     data->limits = policy->limits;
-    if (cpufreq_driver.setpolicy)
+    if ( cpufreq_driver.setpolicy )
         return alternative_call(cpufreq_driver.setpolicy, data);
 
-    if (policy->governor != data->governor) {
+    if ( policy->governor != data->governor )
+    {
         /* save old, working values */
         struct cpufreq_governor *old_gov = data->governor;
 
         /* end old governor */
-        if (data->governor)
+        if ( data->governor )
             __cpufreq_governor(data, CPUFREQ_GOV_STOP);
 
         /* start new governor */
         data->governor = policy->governor;
-        if (__cpufreq_governor(data, CPUFREQ_GOV_START)) {
+        if ( __cpufreq_governor(data, CPUFREQ_GOV_START) )
+        {
             printk(KERN_WARNING "Fail change to %s governor\n",
-                                 data->governor->name);
+                   data->governor->name);
 
             /* new governor failed, so re-start old one */
             data->governor = old_gov;
-            if (old_gov) {
+            if ( old_gov )
+            {
                 __cpufreq_governor(data, CPUFREQ_GOV_START);
                 printk(KERN_WARNING "Still stay at %s governor\n",
-                                     data->governor->name);
+                       data->governor->name);
             }
             return -EINVAL;
         }

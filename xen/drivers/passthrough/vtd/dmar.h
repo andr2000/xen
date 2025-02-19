@@ -28,42 +28,42 @@
 struct acpi_ioapic_unit {
     struct list_head list;
     int apic_id;
+
     union {
         u16 info;
+
         struct {
-            u16 func: 3,
-                dev:  5,
-                bus:  8;
-        }bdf;
-    }ioapic;
+            u16 func:3, dev:5, bus:8;
+        } bdf;
+    } ioapic;
 };
 
 struct acpi_hpet_unit {
     struct list_head list;
     unsigned int id;
+
     union {
         u16 bdf;
+
         struct {
-            u16 func: 3,
-                dev:  5,
-                bus:  8;
+            u16 func:3, dev:5, bus:8;
         };
     };
 };
 
 struct dmar_scope {
-    DECLARE_BITMAP(buses, 256);         /* buses owned by this unit */
-    u16    *devices;                    /* devices owned by this unit */
-    int    devices_cnt;
+    DECLARE_BITMAP(buses, 256); /* buses owned by this unit */
+    u16 *devices; /* devices owned by this unit */
+    int devices_cnt;
 };
 
 struct acpi_drhd_unit {
     struct dmar_scope scope;
     struct list_head list;
-    u64    address;                     /* register base address of the unit */
-    u16    segment;
-    bool   include_all:1;
-    bool   gfx_only:1;
+    u64 address; /* register base address of the unit */
+    u16 segment;
+    bool include_all:1;
+    bool gfx_only:1;
     struct vtd_iommu *iommu;
     struct list_head ioapic_list;
     struct list_head hpet_list;
@@ -72,23 +72,23 @@ struct acpi_drhd_unit {
 struct acpi_rmrr_unit {
     struct dmar_scope scope;
     struct list_head list;
-    u64    base_address;
-    u64    end_address;
-    u16    segment;
-    u8     allow_all:1;
+    u64 base_address;
+    u64 end_address;
+    u16 segment;
+    u8 allow_all:1;
 };
 
 struct acpi_atsr_unit {
     struct dmar_scope scope;
     struct list_head list;
-    u16    segment;
-    u8     all_ports:1;
+    u16 segment;
+    u8 all_ports:1;
 };
 
 struct acpi_rhsa_unit {
     struct list_head list;
-    u64    address;
-    u32    proximity_domain;
+    u64 address;
+    u32 proximity_domain;
 };
 
 struct acpi_satc_unit {

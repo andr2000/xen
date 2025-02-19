@@ -25,30 +25,26 @@
  * Structure and data for smp_call_function()/on_selected_cpus().
  */
 static DEFINE_SPINLOCK(call_lock);
+
 static struct call_data_struct {
-    void (*func) (void *info);
+    void (*func)(void *info);
     void *info;
     int wait;
     cpumask_t selected;
 } call_data;
 
-void smp_call_function(
-    void (*func) (void *info),
-    void *info,
-    int wait)
+void smp_call_function(void (*func)(void *info), void *info, int wait)
 {
     cpumask_t allbutself;
 
-    cpumask_andnot(&allbutself, &cpu_online_map,
+    cpumask_andnot(&allbutself,
+                   &cpu_online_map,
                    cpumask_of(smp_processor_id()));
     on_selected_cpus(&allbutself, func, info, wait);
 }
 
-void on_selected_cpus(
-    const cpumask_t *selected,
-    void (*func) (void *info),
-    void *info,
-    int wait)
+void on_selected_cpus(const cpumask_t *selected, void (*func)(void *info),
+                      void *info, int wait)
 {
     ASSERT(local_irq_is_enabled());
     ASSERT(cpumask_subset(selected, &cpu_online_map));

@@ -23,7 +23,9 @@ static void __init setup_directmap_mappings(unsigned long base_mfn,
 {
     int rc;
 
-    rc = map_pages_to_xen(XENHEAP_VIRT_START, _mfn(base_mfn), nr_mfns,
+    rc = map_pages_to_xen(XENHEAP_VIRT_START,
+                          _mfn(base_mfn),
+                          nr_mfns,
                           PAGE_HYPERVISOR_RW | _PAGE_BLOCK);
     if ( rc )
         panic("Unable to setup the directmap mappings.\n");
@@ -44,7 +46,7 @@ static paddr_t __init fit_xenheap_in_static_heap(uint32_t size, paddr_t align)
     paddr_t end = 0, aligned_start, aligned_end;
     paddr_t bank_start, bank_size, bank_end;
 
-    for ( i = 0 ; i < reserved_mem->nr_banks; i++ )
+    for ( i = 0; i < reserved_mem->nr_banks; i++ )
     {
         if ( reserved_mem->bank[i].type != MEMBANK_STATIC_HEAP )
             continue;
@@ -90,8 +92,8 @@ void __init setup_mm(void)
     init_pdx();
 
     ram_start = mem->bank[0].start;
-    ram_size  = mem->bank[0].size;
-    ram_end   = ram_start + ram_size;
+    ram_size = mem->bank[0].size;
+    ram_end = ram_start + ram_size;
 
     for ( i = 1; i < mem->nr_banks; i++ )
     {
@@ -99,9 +101,9 @@ void __init setup_mm(void)
         bank_size = mem->bank[i].size;
         bank_end = bank_start + bank_size;
 
-        ram_size  = ram_size + bank_size;
-        ram_start = min(ram_start,bank_start);
-        ram_end   = max(ram_end,bank_end);
+        ram_size = ram_size + bank_size;
+        ram_start = min(ram_start, bank_start);
+        ram_end = max(ram_end, bank_end);
     }
 
     total_pages = ram_size >> PAGE_SHIFT;
@@ -110,7 +112,7 @@ void __init setup_mm(void)
     {
         const struct membanks *reserved_mem = bootinfo_get_reserved_mem();
 
-        for ( i = 0 ; i < reserved_mem->nr_banks; i++ )
+        for ( i = 0; i < reserved_mem->nr_banks; i++ )
         {
             if ( reserved_mem->bank[i].type != MEMBANK_STATIC_HEAP )
                 continue;
@@ -143,34 +145,40 @@ void __init setup_mm(void)
      * constraints.
      */
     if ( opt_xenheap_megabytes )
-        xenheap_pages = opt_xenheap_megabytes << (20-PAGE_SHIFT);
+        xenheap_pages = opt_xenheap_megabytes << (20 - PAGE_SHIFT);
     else
     {
-        xenheap_pages = (heap_pages/32 + 0x1fffUL) & ~0x1fffUL;
-        xenheap_pages = max(xenheap_pages, 32UL<<(20-PAGE_SHIFT));
-        xenheap_pages = min(xenheap_pages, 1UL<<(30-PAGE_SHIFT));
+        xenheap_pages = (heap_pages / 32 + 0x1fffUL) & ~0x1fffUL;
+        xenheap_pages = max(xenheap_pages, 32UL << (20 - PAGE_SHIFT));
+        xenheap_pages = min(xenheap_pages, 1UL << (30 - PAGE_SHIFT));
     }
 
     do
     {
-        e = using_static_heap ?
-            fit_xenheap_in_static_heap(pfn_to_paddr(xenheap_pages), MB(32)) :
-            consider_modules(ram_start, ram_end,
-                             pfn_to_paddr(xenheap_pages),
-                             32<<20, 0);
+        e = using_static_heap
+                ? fit_xenheap_in_static_heap(pfn_to_paddr(xenheap_pages),
+                                             MB(32))
+                : consider_modules(ram_start,
+                                   ram_end,
+                                   pfn_to_paddr(xenheap_pages),
+                                   32 << 20,
+                                   0);
         if ( e )
             break;
 
         xenheap_pages >>= 1;
-    } while ( !opt_xenheap_megabytes && xenheap_pages > 32<<(20-PAGE_SHIFT) );
+    } while ( !opt_xenheap_megabytes &&
+              xenheap_pages > 32 << (20 - PAGE_SHIFT) );
 
-    if ( ! e )
+    if ( !e )
         panic("Not enough space for xenheap\n");
 
     domheap_pages = heap_pages - xenheap_pages;
 
-    printk("Xen heap: %"PRIpaddr"-%"PRIpaddr" (%lu pages%s)\n",
-           e - (pfn_to_paddr(xenheap_pages)), e, xenheap_pages,
+    printk("Xen heap: %" PRIpaddr "-%" PRIpaddr " (%lu pages%s)\n",
+           e - (pfn_to_paddr(xenheap_pages)),
+           e,
+           xenheap_pages,
            opt_xenheap_megabytes ? ", from command-line" : "");
     printk("Dom heap: %lu pages\n", domheap_pages);
 

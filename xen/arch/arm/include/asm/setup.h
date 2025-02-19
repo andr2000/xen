@@ -7,15 +7,14 @@
 #include <xen/device_tree.h>
 
 #if defined(CONFIG_MMU)
-# include <asm/mmu/setup.h>
+#include <asm/mmu/setup.h>
 #elif !defined(CONFIG_MPU)
-# error "Unknown memory management layout"
+#error "Unknown memory management layout"
 #endif
 
 #define MAX_FDT_SIZE SZ_2M
 
-struct map_range_data
-{
+struct map_range_data {
     struct domain *d;
     p2m_type_t p2mt;
     /* Set if mapping of the memory ranges must be skipped. */
@@ -31,11 +30,9 @@ void copy_from_paddr(void *dst, paddr_t paddr, unsigned long len);
 
 size_t estimate_efi_size(unsigned int mem_nr_banks);
 
-void acpi_create_efi_system_table(struct domain *d,
-                                  struct membank tbl_add[]);
+void acpi_create_efi_system_table(struct domain *d, struct membank tbl_add[]);
 
-void acpi_create_efi_mmap_table(struct domain *d,
-                                const struct membanks *mem,
+void acpi_create_efi_mmap_table(struct domain *d, const struct membanks *mem,
                                 struct membank tbl_add[]);
 
 int acpi_make_efi_nodes(void *fdt, struct membank tbl_add[]);
@@ -56,8 +53,8 @@ void init_traps(void);
 void device_tree_get_reg(const __be32 **cell, uint32_t address_cells,
                          uint32_t size_cells, paddr_t *start, paddr_t *size);
 
-u32 device_tree_get_u32(const void *fdt, int node,
-                        const char *prop_name, u32 dflt);
+u32 device_tree_get_u32(const void *fdt, int node, const char *prop_name,
+                        u32 dflt);
 
 int handle_device(struct domain *d, struct dt_device_node *dev, p2m_type_t p2mt,
                   struct rangeset *iomem_ranges, struct rangeset *irq_ranges);
@@ -65,16 +62,15 @@ int handle_device(struct domain *d, struct dt_device_node *dev, p2m_type_t p2mt,
 int map_device_irqs_to_domain(struct domain *d, struct dt_device_node *dev,
                               bool need_mapping, struct rangeset *irq_ranges);
 
-int map_irq_to_domain(struct domain *d, unsigned int irq,
-                      bool need_mapping, const char *devname);
+int map_irq_to_domain(struct domain *d, unsigned int irq, bool need_mapping,
+                      const char *devname);
 
-int map_range_to_domain(const struct dt_device_node *dev,
-                        uint64_t addr, uint64_t len, void *data);
+int map_range_to_domain(const struct dt_device_node *dev, uint64_t addr,
+                        uint64_t len, void *data);
 
 extern const char __ro_after_init_start[], __ro_after_init_end[];
 
-struct init_info
-{
+struct init_info {
     /* Pointer to the stack, used by head.S when entering in C */
     unsigned char *stack;
     /* Logical CPU ID, used by start_secondary */

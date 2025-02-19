@@ -14,7 +14,7 @@
 
 #if defined(__i386__) || defined(__x86_64__)
 #include "arch-x86/xen.h"
-#elif defined(__arm__) || defined (__aarch64__)
+#elif defined(__arm__) || defined(__aarch64__)
 #include "arch-arm.h"
 #elif defined(__powerpc64__)
 #include "arch-ppc.h"
@@ -29,7 +29,7 @@
 DEFINE_XEN_GUEST_HANDLE(char);
 __DEFINE_XEN_GUEST_HANDLE(uchar, unsigned char);
 DEFINE_XEN_GUEST_HANDLE(int);
-__DEFINE_XEN_GUEST_HANDLE(uint,  unsigned int);
+__DEFINE_XEN_GUEST_HANDLE(uint, unsigned int);
 #if __XEN_INTERFACE_VERSION__ < 0x00040300
 DEFINE_XEN_GUEST_HANDLE(long);
 __DEFINE_XEN_GUEST_HANDLE(ulong, unsigned long);
@@ -53,7 +53,7 @@ DEFINE_XEN_GUEST_HANDLE(xen_ulong_t);
 #define __xen_mk_uint(x)  x ## U
 #define __xen_mk_ulong(x) x ## UL
 #ifndef __xen_mk_ullong
-# define __xen_mk_ullong(x) x ## ULL
+#define __xen_mk_ullong(x) x ## ULL
 #endif
 #define xen_mk_uint(x)    __xen_mk_uint(x)
 #define xen_mk_ulong(x)   __xen_mk_ulong(x)
@@ -339,7 +339,7 @@ DEFINE_XEN_GUEST_HANDLE(xen_ulong_t);
 #define MMU_MACHPHYS_UPDATE        1 /* ptr = MA of frame to modify entry for */
 #define MMU_PT_UPDATE_PRESERVE_AD  2 /* atomically: *ptr = val | (*ptr&(A|D)) */
 #define MMU_PT_UPDATE_NO_TRANSLATE 3 /* checked '*ptr = val'. ptr is MA.      */
-                                     /* val never translated.                 */
+/* val never translated.                 */
 
 /*
  * MMU EXTENDED OPERATIONS
@@ -431,13 +431,15 @@ DEFINE_XEN_GUEST_HANDLE(xen_ulong_t);
 #ifndef __ASSEMBLY__
 struct mmuext_op {
     unsigned int cmd; /* => enum mmuext_cmd */
+
     union {
         /* [UN]PIN_TABLE, NEW_BASEPTR, NEW_USER_BASEPTR
          * CLEAR_PAGE, COPY_PAGE, [UN]MARK_SUPER */
-        xen_pfn_t     mfn;
+        xen_pfn_t mfn;
         /* INVLPG_LOCAL, INVLPG_ALL, SET_LDT */
         unsigned long linear_addr;
     } arg1;
+
     union {
         /* SET_LDT */
         unsigned int nr_ents;
@@ -614,8 +616,8 @@ typedef uint16_t domid_t;
  * NB. The fields are natural pointer/address size for this architecture.
  */
 struct mmu_update {
-    uint64_t ptr;       /* Machine address of PTE. */
-    uint64_t val;       /* New contents of PTE.    */
+    uint64_t ptr; /* Machine address of PTE. */
+    uint64_t val; /* New contents of PTE.    */
 };
 typedef struct mmu_update mmu_update_t;
 DEFINE_XEN_GUEST_HANDLE(mmu_update_t);
@@ -656,8 +658,8 @@ struct vcpu_time_info {
      */
     uint32_t version;
     uint32_t pad0;
-    uint64_t tsc_timestamp;   /* TSC at last update of time vals.  */
-    uint64_t system_time;     /* Time, in nanosecs, since boot.    */
+    uint64_t tsc_timestamp; /* TSC at last update of time vals.  */
+    uint64_t system_time; /* Time, in nanosecs, since boot.    */
     /*
      * Current system time:
      *   system_time +
@@ -666,12 +668,12 @@ struct vcpu_time_info {
      *   ((10^9 << 32) / tsc_to_system_mul) >> tsc_shift
      */
     uint32_t tsc_to_system_mul;
-    int8_t   tsc_shift;
+    int8_t tsc_shift;
 #if __XEN_INTERFACE_VERSION__ > 0x040600
-    uint8_t  flags;
-    uint8_t  pad1[2];
+    uint8_t flags;
+    uint8_t pad1[2];
 #else
-    int8_t   pad1[3];
+    int8_t pad1[3];
 #endif
 }; /* 32 bytes */
 typedef struct vcpu_time_info vcpu_time_info_t;
@@ -774,18 +776,17 @@ struct shared_info {
      * by XEN_DOMCTL_settimeoffset, or adjusted via a guest write to the
      * emulated RTC.
      */
-    uint32_t wc_version;      /* Version counter: see vcpu_time_info_t. */
+    uint32_t wc_version; /* Version counter: see vcpu_time_info_t. */
     uint32_t wc_sec;
     uint32_t wc_nsec;
 #if !defined(__i386__)
     uint32_t wc_sec_hi;
-# define xen_wc_sec_hi wc_sec_hi
+#define xen_wc_sec_hi wc_sec_hi
 #elif !defined(__XEN__) && !defined(__XEN_TOOLS__)
-# define xen_wc_sec_hi arch.wc_sec_hi
+#define xen_wc_sec_hi arch.wc_sec_hi
 #endif
 
     struct arch_shared_info arch;
-
 };
 #ifndef __XEN__
 typedef struct shared_info shared_info_t;
@@ -831,35 +832,38 @@ typedef struct shared_info shared_info_t;
 #ifdef XEN_HAVE_PV_GUEST_ENTRY
 struct start_info {
     /* THE FOLLOWING ARE FILLED IN BOTH ON INITIAL BOOT AND ON RESUME.    */
-    char magic[32];             /* "xen-<version>-<platform>".            */
-    unsigned long nr_pages;     /* Total pages allocated to this domain.  */
-    unsigned long shared_info;  /* MACHINE address of shared info struct. */
-    uint32_t flags;             /* SIF_xxx flags.                         */
-    xen_pfn_t store_mfn;        /* MACHINE page number of shared page.    */
-    uint32_t store_evtchn;      /* Event channel for store communication. */
+    char magic[32]; /* "xen-<version>-<platform>".            */
+    unsigned long nr_pages; /* Total pages allocated to this domain.  */
+    unsigned long shared_info; /* MACHINE address of shared info struct. */
+    uint32_t flags; /* SIF_xxx flags.                         */
+    xen_pfn_t store_mfn; /* MACHINE page number of shared page.    */
+    uint32_t store_evtchn; /* Event channel for store communication. */
+
     union {
         struct {
-            xen_pfn_t mfn;      /* MACHINE page number of console page.   */
-            uint32_t  evtchn;   /* Event channel for console page.        */
+            xen_pfn_t mfn; /* MACHINE page number of console page.   */
+            uint32_t evtchn; /* Event channel for console page.        */
         } domU;
+
         struct {
-            uint32_t info_off;  /* Offset of console_info struct.         */
+            uint32_t info_off; /* Offset of console_info struct.         */
             uint32_t info_size; /* Size of console_info struct from start.*/
         } dom0;
     } console;
+
     /* THE FOLLOWING ARE ONLY FILLED IN ON INITIAL BOOT (NOT RESUME).     */
-    unsigned long pt_base;      /* VIRTUAL address of page directory.     */
+    unsigned long pt_base; /* VIRTUAL address of page directory.     */
     unsigned long nr_pt_frames; /* Number of bootstrap p.t. frames.       */
-    unsigned long mfn_list;     /* VIRTUAL address of page-frame list.    */
-    unsigned long mod_start;    /* VIRTUAL address of pre-loaded module   */
-                                /* (PFN of pre-loaded module if           */
-                                /*  SIF_MOD_START_PFN set in flags).      */
-    unsigned long mod_len;      /* Size (bytes) of pre-loaded module.     */
+    unsigned long mfn_list; /* VIRTUAL address of page-frame list.    */
+    unsigned long mod_start; /* VIRTUAL address of pre-loaded module   */
+    /* (PFN of pre-loaded module if           */
+    /*  SIF_MOD_START_PFN set in flags).      */
+    unsigned long mod_len; /* Size (bytes) of pre-loaded module.     */
 #define MAX_GUEST_CMDLINE 1024
     int8_t cmd_line[MAX_GUEST_CMDLINE];
     /* The pfn range here covers both page table and p->m table frames.   */
-    unsigned long first_p2m_pfn;/* 1st pfn forming initial P->M table.    */
-    unsigned long nr_p2m_frames;/* # of pfns forming initial P->M table.  */
+    unsigned long first_p2m_pfn; /* 1st pfn forming initial P->M table.    */
+    unsigned long nr_p2m_frames; /* # of pfns forming initial P->M table.  */
 };
 typedef struct start_info start_info_t;
 
@@ -876,7 +880,7 @@ typedef struct start_info start_info_t;
 #define SIF_MULTIBOOT_MOD (1<<2)  /* Is mod_start a multiboot module? */
 #define SIF_MOD_START_PFN (1<<3)  /* Is mod_start a PFN? */
 #define SIF_VIRT_P2M_4TOOLS (1<<4) /* Do Xen tools understand a virt. mapped */
-                                   /* P->M making the 3 level tree obsolete? */
+/* P->M making the 3 level tree obsolete? */
 #define SIF_PM_MASK       (0xFF<<8) /* reserve 1 byte for xen-pm options */
 
 /*
@@ -893,8 +897,7 @@ typedef struct start_info start_info_t;
  * file, and let the PV guest easily rebase the addresses to virtual addresses
  * and at the same time count the number of modules.
  */
-struct xen_multiboot_mod_list
-{
+struct xen_multiboot_mod_list {
     /* Address of first byte of the module */
     uint32_t mod_start;
     /* Address of last byte of the module (inclusive) */
@@ -904,6 +907,7 @@ struct xen_multiboot_mod_list
     /* Unused, must be zero */
     uint32_t pad;
 };
+
 /*
  * `incontents 200 startofday_dom0_console Dom0_console
  *
@@ -939,10 +943,10 @@ typedef struct dom0_vga_console_info {
             uint32_t lfb_base;
             uint32_t lfb_size;
             /* RGB mask offsets and sizes, as defined by VBE 1.2+ */
-            uint8_t  red_pos, red_size;
-            uint8_t  green_pos, green_size;
-            uint8_t  blue_pos, blue_size;
-            uint8_t  rsvd_pos, rsvd_size;
+            uint8_t red_pos, red_size;
+            uint8_t green_pos, green_size;
+            uint8_t blue_pos, blue_size;
+            uint8_t rsvd_pos, rsvd_size;
 #if __XEN_INTERFACE_VERSION__ >= 0x00030206
             /* VESA capabilities (offset 0xa, VESA command 0x4f00). */
             uint32_t gbl_caps;
@@ -957,12 +961,13 @@ typedef struct dom0_vga_console_info {
         } vesa_lfb;
     } u;
 } dom0_vga_console_info_t;
+
 #define xen_vga_console_info dom0_vga_console_info
 #define xen_vga_console_info_t dom0_vga_console_info_t
 
 typedef uint8_t xen_domain_handle_t[16];
 
-__DEFINE_XEN_GUEST_HANDLE(uint8,  uint8_t);
+__DEFINE_XEN_GUEST_HANDLE(uint8, uint8_t);
 __DEFINE_XEN_GUEST_HANDLE(uint16, uint16_t);
 __DEFINE_XEN_GUEST_HANDLE(uint32, uint32_t);
 __DEFINE_XEN_GUEST_HANDLE(uint64, uint64_t);

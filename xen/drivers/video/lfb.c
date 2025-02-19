@@ -19,11 +19,9 @@ struct lfb_status {
 };
 static struct lfb_status lfb;
 
-static void lfb_show_line(
-    const unsigned char *text_line,
-    unsigned char *video_line,
-    unsigned int nr_chars,
-    unsigned int nr_cells)
+static void lfb_show_line(const unsigned char *text_line,
+                          unsigned char *video_line, unsigned int nr_chars,
+                          unsigned int nr_cells)
 {
     unsigned int i, j, b, bpp, pixel;
 
@@ -40,13 +38,15 @@ static void lfb_show_line(
                      ((lfb.lfbp.font->width + 7) >> 3));
             for ( b = lfb.lfbp.font->width; b--; )
             {
-                pixel = (*bits & (1u<<b)) ? lfb.lfbp.pixel_on : 0;
+                pixel = (*bits & (1u << b)) ? lfb.lfbp.pixel_on : 0;
                 memcpy(ptr, &pixel, bpp);
                 ptr += bpp;
             }
         }
 
-        memset(ptr, 0, (lfb.lfbp.width - nr_chars * lfb.lfbp.font->width) * bpp);
+        memset(ptr,
+               0,
+               (lfb.lfbp.width - nr_chars * lfb.lfbp.font->width) * bpp);
         memcpy(video_line, lfb.lbuf, nr_cells * lfb.lfbp.font->width * bpp);
         video_line += lfb.lfbp.bytes_per_line;
     }
@@ -68,9 +68,12 @@ void cf_check lfb_redraw_puts(const char *s, size_t nr)
             {
                 min_redraw_y = 0;
                 lfb.ypos = lfb.lfbp.text_rows - 1;
-                memmove(lfb.text_buf, lfb.text_buf + lfb.lfbp.text_columns,
+                memmove(lfb.text_buf,
+                        lfb.text_buf + lfb.lfbp.text_columns,
                         lfb.ypos * lfb.lfbp.text_columns);
-                memset(lfb.text_buf + lfb.ypos * lfb.lfbp.text_columns, 0, lfb.xpos);
+                memset(lfb.text_buf + lfb.ypos * lfb.lfbp.text_columns,
+                       0,
+                       lfb.xpos);
             }
             lfb.xpos = 0;
         }
@@ -87,10 +90,12 @@ void cf_check lfb_redraw_puts(const char *s, size_t nr)
 
         for ( width = lfb.lfbp.text_columns; width; --width )
             if ( line[width - 1] )
-                 break;
+                break;
         lfb_show_line(line,
-                       lfb.lfbp.lfb + i * lfb.lfbp.font->height * lfb.lfbp.bytes_per_line,
-                       width, max(lfb.line_len[i], width));
+                      lfb.lfbp.lfb +
+                          i * lfb.lfbp.font->height * lfb.lfbp.bytes_per_line,
+                      width,
+                      max(lfb.line_len[i], width));
         lfb.line_len[i] = width;
     }
 
@@ -108,9 +113,10 @@ void cf_check lfb_scroll_puts(const char *s, size_t nr)
 
         if ( (c == '\n') || (lfb.xpos >= lfb.lfbp.text_columns) )
         {
-            unsigned int bytes = (lfb.lfbp.width *
-                                  ((lfb.lfbp.bits_per_pixel + 7) >> 3));
-            unsigned char *src = lfb.lfbp.lfb + lfb.lfbp.font->height * lfb.lfbp.bytes_per_line;
+            unsigned int bytes =
+                (lfb.lfbp.width * ((lfb.lfbp.bits_per_pixel + 7) >> 3));
+            unsigned char *src = lfb.lfbp.lfb + lfb.lfbp.font->height *
+                                                    lfb.lfbp.bytes_per_line;
             unsigned char *dst = lfb.lfbp.lfb;
 
             /* New line: scroll all previous rows up one line. */
@@ -122,11 +128,12 @@ void cf_check lfb_scroll_puts(const char *s, size_t nr)
             }
 
             /* Render new line. */
-            lfb_show_line(
-                lfb.text_buf,
-                lfb.lfbp.lfb + (lfb.lfbp.text_rows-1) * lfb.lfbp.font->height *
-                lfb.lfbp.bytes_per_line,
-                lfb.xpos, lfb.lfbp.text_columns);
+            lfb_show_line(lfb.text_buf,
+                          lfb.lfbp.lfb + (lfb.lfbp.text_rows - 1) *
+                                             lfb.lfbp.font->height *
+                                             lfb.lfbp.bytes_per_line,
+                          lfb.xpos,
+                          lfb.lfbp.text_columns);
 
             lfb.xpos = 0;
         }
@@ -157,7 +164,8 @@ int __init lfb_init(struct lfb_prop *lfbp)
     return 0;
 
 fail:
-    printk(XENLOG_ERR "Couldn't allocate enough memory to drive the framebuffer\n");
+    printk(XENLOG_ERR
+           "Couldn't allocate enough memory to drive the framebuffer\n");
     lfb_free();
 
     return -ENOMEM;

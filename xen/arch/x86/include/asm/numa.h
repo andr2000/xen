@@ -1,4 +1,4 @@
-#ifndef _ASM_X8664_NUMA_H 
+#ifndef _ASM_X8664_NUMA_H
 #define _ASM_X8664_NUMA_H 1
 
 #include <xen/cpumask.h>

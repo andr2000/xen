@@ -19,9 +19,8 @@
 
 #include <xen/types.h>
 
-static inline
-bool p2m_mem_access_emulate_check(struct vcpu *v,
-                                  const struct vm_event_st *rsp)
+static inline bool p2m_mem_access_emulate_check(struct vcpu *v,
+                                                const struct vm_event_st *rsp)
 {
     /* Not supported on ARM. */
     return false;
@@ -40,18 +39,18 @@ static inline bool p2m_mem_access_sanity_check(struct domain *d)
 #ifdef CONFIG_MEM_ACCESS
 bool p2m_mem_access_check(paddr_t gpa, vaddr_t gla, const struct npfec npfec);
 
-struct page_info*
-p2m_mem_access_check_and_get_page(vaddr_t gva, unsigned long flag,
-                                  const struct vcpu *v);
+struct page_info *p2m_mem_access_check_and_get_page(vaddr_t gva,
+                                                    unsigned long flag,
+                                                    const struct vcpu *v);
 #else
 
-static inline bool
-p2m_mem_access_check(paddr_t gpa, vaddr_t gla, const struct npfec npfec)
+static inline bool p2m_mem_access_check(paddr_t gpa, vaddr_t gla,
+                                        const struct npfec npfec)
 {
     return false;
 }
 
-static inline struct page_info*
+static inline struct page_info *
 p2m_mem_access_check_and_get_page(vaddr_t gva, unsigned long flag,
                                   const struct vcpu *v)
 {

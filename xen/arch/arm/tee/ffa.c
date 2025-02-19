@@ -118,7 +118,6 @@ void *ffa_tx __read_mostly;
 DEFINE_SPINLOCK(ffa_rx_buffer_lock);
 DEFINE_SPINLOCK(ffa_tx_buffer_lock);
 
-
 /* Used to track domains that could not be torn down immediately. */
 static struct timer ffa_teardown_timer;
 static struct list_head ffa_teardown_head;
@@ -261,8 +260,10 @@ static bool ffa_handle_call(struct cpu_user_regs *regs)
         return true;
     case FFA_RXTX_MAP_32:
     case FFA_RXTX_MAP_64:
-        e = ffa_handle_rxtx_map(fid, get_user_reg(regs, 1),
-				get_user_reg(regs, 2), get_user_reg(regs, 3));
+        e = ffa_handle_rxtx_map(fid,
+                                get_user_reg(regs, 1),
+                                get_user_reg(regs, 2),
+                                get_user_reg(regs, 3));
         break;
     case FFA_RXTX_UNMAP:
         e = ffa_handle_rxtx_unmap();
@@ -369,15 +370,16 @@ static void ffa_domain_teardown_continue(struct ffa_ctx *ctx, bool first_time)
 
     if ( retry )
     {
-        printk(XENLOG_G_INFO "%pd: ffa: Remaining cleanup, retrying\n", ctx->teardown_d);
+        printk(XENLOG_G_INFO "%pd: ffa: Remaining cleanup, retrying\n",
+               ctx->teardown_d);
 
         ctx->teardown_expire = NOW() + FFA_CTX_TEARDOWN_DELAY;
 
         spin_lock(&ffa_teardown_lock);
         list_add_tail(&ctx->teardown_list, &ffa_teardown_head);
         /* Need to set a new timer for the next ctx in line */
-        next_ctx = list_first_entry(&ffa_teardown_head, struct ffa_ctx,
-                                    teardown_list);
+        next_ctx =
+            list_first_entry(&ffa_teardown_head, struct ffa_ctx, teardown_list);
         spin_unlock(&ffa_teardown_lock);
     }
     else
@@ -387,7 +389,8 @@ static void ffa_domain_teardown_continue(struct ffa_ctx *ctx, bool first_time)
         {
             spin_lock(&ffa_teardown_lock);
             next_ctx = list_first_entry_or_null(&ffa_teardown_head,
-                                                struct ffa_ctx, teardown_list);
+                                                struct ffa_ctx,
+                                                teardown_list);
             spin_unlock(&ffa_teardown_lock);
         }
     }
@@ -401,7 +404,8 @@ static void ffa_teardown_timer_callback(void *arg)
     struct ffa_ctx *ctx;
 
     spin_lock(&ffa_teardown_lock);
-    ctx = list_first_entry_or_null(&ffa_teardown_head, struct ffa_ctx,
+    ctx = list_first_entry_or_null(&ffa_teardown_head,
+                                   struct ffa_ctx,
                                    teardown_list);
     if ( ctx )
         list_del(&ctx->teardown_list);
@@ -462,7 +466,8 @@ static bool ffa_probe(void)
     BUILD_BUG_ON(PAGE_SIZE != FFA_PAGE_SIZE);
 
     printk(XENLOG_INFO "ARM FF-A Mediator version %u.%u\n",
-           FFA_MY_VERSION_MAJOR, FFA_MY_VERSION_MINOR);
+           FFA_MY_VERSION_MAJOR,
+           FFA_MY_VERSION_MINOR);
 
     /*
      * psci_init_smccc() updates this value with what's reported by EL-3
@@ -472,7 +477,8 @@ static bool ffa_probe(void)
     {
         printk(XENLOG_ERR
                "ffa: unsupported SMCCC version %#x (need at least %#x)\n",
-               smccc_ver, ARM_SMCCC_VERSION_1_2);
+               smccc_ver,
+               ARM_SMCCC_VERSION_1_2);
         goto err_no_fw;
     }
 
@@ -485,7 +491,7 @@ static bool ffa_probe(void)
     /* Some sanity check in case we update the version we support */
     BUILD_BUG_ON(FFA_MIN_SPMC_VERSION > FFA_MY_VERSION);
     BUILD_BUG_ON(FFA_VERSION_MAJOR(FFA_MIN_SPMC_VERSION) !=
-                                   FFA_MY_VERSION_MAJOR);
+                 FFA_MY_VERSION_MAJOR);
 
     major_vers = FFA_VERSION_MAJOR(vers);
     minor_vers = FFA_VERSION_MINOR(vers);
@@ -494,12 +500,14 @@ static bool ffa_probe(void)
          minor_vers < FFA_VERSION_MINOR(FFA_MIN_SPMC_VERSION) )
     {
         printk(XENLOG_ERR "ffa: Incompatible firmware version %u.%u\n",
-               major_vers, minor_vers);
+               major_vers,
+               minor_vers);
         goto err_no_fw;
     }
 
     printk(XENLOG_INFO "ARM FF-A Firmware version %u.%u\n",
-           major_vers, minor_vers);
+           major_vers,
+           minor_vers);
 
     /*
      * If the call succeed and the version returned is higher or equal to
@@ -552,8 +560,7 @@ err_no_fw:
     return false;
 }
 
-static const struct tee_mediator_ops ffa_ops =
-{
+static const struct tee_mediator_ops ffa_ops = {
     .probe = ffa_probe,
     .init_secondary = ffa_init_secondary,
     .domain_init = ffa_domain_init,

@@ -123,7 +123,8 @@ static int __init cf_check parse_ucode(const char *s)
     const char *ss;
     int val, rc = 0;
 
-    do {
+    do
+    {
         ss = strchr(s, ',');
         if ( !ss )
             ss = strchr(s, '\0');
@@ -157,6 +158,7 @@ static int __init cf_check parse_ucode(const char *s)
 
     return rc;
 }
+
 custom_param("ucode", parse_ucode);
 
 static struct microcode_ops __ro_after_init ucode_ops;
@@ -176,9 +178,8 @@ static DEFINE_PER_CPU(int, loading_err);
  */
 static cpumask_t cpu_callin_map;
 static atomic_t cpu_out, cpu_updated;
-static struct patch_with_flags nmi_patch =
-{
-    .patch  = ZERO_BLOCK_PTR,
+static struct patch_with_flags nmi_patch = {
+    .patch = ZERO_BLOCK_PTR,
 };
 
 /*
@@ -215,7 +216,8 @@ static int wait_for_condition(bool (*func)(unsigned int data),
         if ( !timeout-- )
         {
             printk("CPU%u: Timeout in %pS\n",
-                   smp_processor_id(), __builtin_return_address(0));
+                   smp_processor_id(),
+                   __builtin_return_address(0));
             return -EBUSY;
         }
         udelay(1);
@@ -278,8 +280,8 @@ static int primary_thread_work(const struct microcode_patch *patch,
     return ret;
 }
 
-static int cf_check microcode_nmi_callback(
-    const struct cpu_user_regs *regs, int cpu)
+static int cf_check microcode_nmi_callback(const struct cpu_user_regs *regs,
+                                           int cpu)
 {
     bool primary_cpu = is_cpu_primary(cpu);
     int ret;
@@ -298,8 +300,7 @@ static int cf_check microcode_nmi_callback(
         return 0;
 
     if ( primary_cpu )
-        ret = primary_thread_work(nmi_patch.patch,
-                                  nmi_patch.flags);
+        ret = primary_thread_work(nmi_patch.patch, nmi_patch.flags);
     else
         ret = secondary_nmi_work();
     this_cpu(loading_err) = ret;
@@ -378,7 +379,8 @@ static int control_thread_fn(const struct microcode_patch *patch,
     cpumask_set_cpu(cpu, &cpu_callin_map);
 
     /* Waiting for all threads calling in */
-    ret = wait_for_condition(wait_cpu_callin, num_online_cpus(),
+    ret = wait_for_condition(wait_cpu_callin,
+                             num_online_cpus(),
                              MICROCODE_CALLIN_TIMEOUT_US);
     if ( ret )
         goto out;
@@ -392,7 +394,8 @@ static int control_thread_fn(const struct microcode_patch *patch,
     if ( ret == -EIO )
     {
         printk(XENLOG_ERR
-               "Late loading aborted: CPU%u failed to update ucode\n", cpu);
+               "Late loading aborted: CPU%u failed to update ucode\n",
+               cpu);
         goto out;
     }
 
@@ -410,21 +413,24 @@ static int control_thread_fn(const struct microcode_patch *patch,
          * Note that RDTSC (in wait_for_condition()) is safe for threads to
          * execute while waiting for completion of loading an update.
          */
-        if ( wait_for_condition(wait_cpu_callout, (done + 1),
+        if ( wait_for_condition(wait_cpu_callout,
+                                (done + 1),
                                 MICROCODE_UPDATE_TIMEOUT_US) )
             panic("Timeout when finished updating microcode (finished %u/%u)\n",
-                  done, nr_cores);
+                  done,
+                  nr_cores);
 
         /* Print warning message once if long time is spent here */
         if ( tick && rdtsc_ordered() - tick >= cpu_khz * 1000 )
         {
-            printk(XENLOG_WARNING
-                   "WARNING: UPDATING MICROCODE HAS CONSUMED MORE THAN 1 SECOND!\n");
+            printk(
+                XENLOG_WARNING
+                "WARNING: UPDATING MICROCODE HAS CONSUMED MORE THAN 1 SECOND!\n");
             tick = 0;
         }
     }
 
- out:
+out:
     /* Mark loading is done to unblock other threads */
     set_state(LOADING_EXIT);
 
@@ -493,7 +499,8 @@ static long cf_check microcode_update_helper(void *data)
         xfree(buffer);
         printk(XENLOG_WARNING
                "CPU%u is expected to lead ucode loading (but got CPU%u)\n",
-               nmi_cpu, cpumask_first(&cpu_online_map));
+               nmi_cpu,
+               cpumask_first(&cpu_online_map));
         ret = -EPERM;
         goto put;
     }
@@ -513,8 +520,9 @@ static long cf_check microcode_update_helper(void *data)
 
     if ( !patch )
     {
-        printk(XENLOG_WARNING "microcode: couldn't find any matching ucode in "
-                              "the provided blob!\n");
+        printk(
+            XENLOG_WARNING
+            "microcode: couldn't find any matching ucode in " "the provided blob!\n");
         ret = -ENOENT;
         goto put;
     }
@@ -532,9 +540,10 @@ static long cf_check microcode_update_helper(void *data)
              !(ucode_force && (result == OLD_UCODE || result == SAME_UCODE)) )
         {
             spin_unlock(&microcode_mutex);
-            printk(XENLOG_WARNING
-                   "microcode: couldn't find any newer%s revision in the provided blob!\n",
-                   ucode_force ? " (or a valid)" : "");
+            printk(
+                XENLOG_WARNING
+                "microcode: couldn't find any newer%s revision in the provided blob!\n",
+                ucode_force ? " (or a valid)" : "");
             ret = -EEXIST;
 
             goto put;
@@ -596,13 +605,16 @@ static long cf_check microcode_update_helper(void *data)
     }
 
     if ( updated && updated != nr_cores )
-        printk(XENLOG_ERR "ERROR: Updating microcode succeeded on %u cores and failed\n"
-               XENLOG_ERR "on other %u cores. A system with differing microcode\n"
-               XENLOG_ERR "revisions is considered unstable. Please reboot and do not\n"
-               XENLOG_ERR "load the microcode that triggers this warning!\n",
-               updated, nr_cores - updated);
+        printk(
+            XENLOG_ERR
+            "ERROR: Updating microcode succeeded on %u cores and failed\n" XENLOG_ERR
+            "on other %u cores. A system with differing microcode\n" XENLOG_ERR
+            "revisions is considered unstable. Please reboot and do not\n" XENLOG_ERR
+            "load the microcode that triggers this warning!\n",
+            updated,
+            nr_cores - updated);
 
- put:
+put:
     put_cpu_maps();
 
     /* The parsed blob or old cached value, whichever we're not keeping. */
@@ -611,8 +623,8 @@ static long cf_check microcode_update_helper(void *data)
     return ret;
 }
 
-int microcode_update(XEN_GUEST_HANDLE(const_void) buf,
-                     unsigned long len, unsigned int flags)
+int microcode_update(XEN_GUEST_HANDLE(const_void) buf, unsigned long len,
+                     unsigned int flags)
 {
     int ret;
     struct ucode_buf *buffer;
@@ -731,6 +743,7 @@ static int __init cf_check microcode_init_cache(void)
 
     return rc;
 }
+
 presmp_initcall(microcode_init_cache);
 
 /*
@@ -761,16 +774,17 @@ static int __init early_microcode_load(struct boot_info *bi)
             struct cpio_data cd;
 
             /* Search anything unclaimed or likely to be a CPIO archive. */
-            if ( bm->type != BOOTMOD_UNKNOWN &&
-                 bm->type != BOOTMOD_RAMDISK )
+            if ( bm->type != BOOTMOD_UNKNOWN && bm->type != BOOTMOD_RAMDISK )
                 continue;
 
             size = bm->size;
             data = bootstrap_map_bm(bm);
             if ( !data )
             {
-                printk(XENLOG_WARNING "Microcode: Could not map module %d, size %zu\n",
-                       idx, size);
+                printk(XENLOG_WARNING
+                       "Microcode: Could not map module %d, size %zu\n",
+                       idx,
+                       size);
                 continue;
             }
 
@@ -807,14 +821,17 @@ static int __init early_microcode_load(struct boot_info *bi)
 
         if ( idx <= 0 || idx >= bi->nr_modules )
         {
-            printk(XENLOG_WARNING "Microcode: Chosen module %d out of range [1, %u)\n",
-                   idx, bi->nr_modules);
+            printk(XENLOG_WARNING
+                   "Microcode: Chosen module %d out of range [1, %u)\n",
+                   idx,
+                   bi->nr_modules);
             return -ENODEV;
         }
 
         if ( bi->mods[idx].type != BOOTMOD_UNKNOWN )
         {
-            printk(XENLOG_WARNING "Microcode: Chosen module %d already used\n", idx);
+            printk(XENLOG_WARNING "Microcode: Chosen module %d already used\n",
+                   idx);
             return -ENODEV;
         }
         bi->mods[idx].type = BOOTMOD_MICROCODE;
@@ -823,8 +840,10 @@ static int __init early_microcode_load(struct boot_info *bi)
         data = bootstrap_map_bm(&bi->mods[idx]);
         if ( !data )
         {
-            printk(XENLOG_WARNING "Microcode: Could not map module %d, size %zu\n",
-                   idx, size);
+            printk(XENLOG_WARNING
+                   "Microcode: Could not map module %d, size %zu\n",
+                   idx,
+                   size);
             return -ENODEV;
         }
         goto found;
@@ -833,7 +852,7 @@ static int __init early_microcode_load(struct boot_info *bi)
     /* No method of finding microcode specified.  Nothing to do. */
     return 0;
 
- found:
+found:
     patch = ucode_ops.cpu_request_microcode(data, size, false);
     if ( IS_ERR(patch) )
     {
@@ -864,7 +883,7 @@ static int __init early_microcode_load(struct boot_info *bi)
         /* Rescan CPUID/MSR features, which may have changed after a load. */
         early_cpu_init(false);
 
- unmap:
+unmap:
     bootstrap_unmap();
 
     return rc;
@@ -893,7 +912,8 @@ int __init early_microcode_init(struct boot_info *bi)
 
     ucode_ops.collect_cpu_info();
 
-    printk(XENLOG_INFO "BSP microcode revision: 0x%08x\n", this_cpu(cpu_sig).rev);
+    printk(XENLOG_INFO "BSP microcode revision: 0x%08x\n",
+           this_cpu(cpu_sig).rev);
 
     /*
      * Some hypervisors deliberately report a microcode revision of -1 to

@@ -7,17 +7,17 @@
 #include <xen/pdx.h>
 
 #if defined(CONFIG_ARM_32)
-# include <asm/arm32/mm.h>
+#include <asm/arm32/mm.h>
 #elif defined(CONFIG_ARM_64)
-# include <asm/arm64/mm.h>
+#include <asm/arm64/mm.h>
 #else
-# error "unknown ARM variant"
+#error "unknown ARM variant"
 #endif
 
 #if defined(CONFIG_MMU)
-# include <asm/mmu/mm.h>
+#include <asm/mmu/mm.h>
 #elif !defined(CONFIG_MPU)
-# error "Unknown memory management layout"
+#error "Unknown memory management layout"
 #endif
 
 /* Align Xen to a 2 MiB boundary. */
@@ -43,8 +43,7 @@
 #define PAGE_INFO_SIZE 32
 #endif
 
-struct page_info
-{
+struct page_info {
     /* Each frame can be threaded onto a doubly-linked list. */
     struct page_list_entry list;
 
@@ -58,6 +57,7 @@ struct page_info
             /* Type reference count and various PGT_xxx flags and fields. */
             unsigned long type_info;
         } inuse;
+
         /* Page is on a free list: ((count_info & PGC_count_mask) == 0). */
         union {
             struct {
@@ -67,7 +67,7 @@ struct page_info
                  * INVALID_DIRTY_IDX.
                  */
 #define INVALID_DIRTY_IDX ((1UL << (MAX_ORDER + 1)) - 1)
-                unsigned long first_dirty:MAX_ORDER + 1;
+                unsigned long first_dirty : MAX_ORDER + 1;
 
                 /* Do TLBs need flushing for safety before next page use? */
                 bool need_tlbflush:1;
@@ -79,7 +79,7 @@ struct page_info
             };
 
             unsigned long val;
-            } free;
+        } free;
 
     } u;
 
@@ -105,6 +105,7 @@ struct page_info
          */
         u32 tlbflush_timestamp;
     };
+
     u64 pad;
 };
 
@@ -115,7 +116,7 @@ struct page_info
 #define PGT_writable_page PG_mask(1, 1)  /* has writable mappings?         */
 #define PGT_type_mask     PG_mask(1, 1)  /* Bits 31 or 63.                 */
 
- /* 2-bit count of uses of this frame as its current type. */
+/* 2-bit count of uses of this frame as its current type. */
 #define PGT_count_mask    PG_mask(3, 3)
 
 /*
@@ -132,10 +133,10 @@ struct page_info
  */
 #define PGT_TYPE_INFO_INITIALIZER   gfn_x(PGT_INVALID_XENHEAP_GFN)
 
- /* Cleared when the owning guest 'frees' this page. */
+/* Cleared when the owning guest 'frees' this page. */
 #define _PGC_allocated    PG_shift(1)
 #define PGC_allocated     PG_mask(1, 1)
-  /* Page is Xen heap? */
+/* Page is Xen heap? */
 #define _PGC_xen_heap     PG_shift(2)
 #define PGC_xen_heap      PG_mask(1, 2)
 #ifdef CONFIG_STATIC_MEMORY
@@ -154,7 +155,7 @@ struct page_info
 /* Page is broken? */
 #define _PGC_broken       PG_shift(7)
 #define PGC_broken        PG_mask(1, 7)
- /* Mutually-exclusive page states: { inuse, offlining, offlined, free }. */
+/* Mutually-exclusive page states: { inuse, offlining, offlined, free }. */
 #define PGC_state         PG_mask(3, 9)
 #define PGC_state_inuse   PG_mask(0, 9)
 #define PGC_state_offlining PG_mask(1, 9)
@@ -194,7 +195,7 @@ struct page_info
      (mfn_to_maddr(mfn) <= virt_to_maddr((vaddr_t)_end - 1)))
 
 #define page_get_owner(_p)    (_p)->v.inuse.domain
-#define page_set_owner(_p,_d) ((_p)->v.inuse.domain = (_d))
+#define page_set_owner(_p, _d) ((_p)->v.inuse.domain = (_d))
 
 #define maddr_get_owner(ma)   (page_get_owner(maddr_to_page((ma))))
 
@@ -284,7 +285,7 @@ static inline void *maddr_to_virt(paddr_t ma)
 {
     ASSERT(is_xen_heap_mfn(maddr_to_mfn(ma)));
     ma -= mfn_to_maddr(directmap_mfn_start);
-    return (void *)(unsigned long) ma + XENHEAP_VIRT_START;
+    return (void *)(unsigned long)ma + XENHEAP_VIRT_START;
 }
 #else
 /**
@@ -304,8 +305,7 @@ static inline void *maddr_to_virt(paddr_t ma)
 {
     ASSERT((mfn_to_pdx(maddr_to_mfn(ma)) - directmap_base_pdx) <
            (DIRECTMAP_SIZE >> PAGE_SHIFT));
-    return (void *)(XENHEAP_VIRT_START -
-                    (directmap_base_pdx << PAGE_SHIFT) +
+    return (void *)(XENHEAP_VIRT_START - (directmap_base_pdx << PAGE_SHIFT) +
                     maddr_to_directmapoff(ma));
 }
 #endif
@@ -320,7 +320,7 @@ static inline uint64_t gvirt_to_maddr(vaddr_t va, paddr_t *pa,
     uint64_t par = gva_to_ma_par(va, flags);
     if ( par & PAR_F )
         return par;
-    *pa = (par & PADDR_MASK & PAGE_MASK) | ((unsigned long) va & ~PAGE_MASK);
+    *pa = (par & PADDR_MASK & PAGE_MASK) | ((unsigned long)va & ~PAGE_MASK);
     return 0;
 }
 
@@ -393,6 +393,7 @@ extern bool get_page_nr(struct page_info *page, const struct domain *domain,
 extern void put_page_nr(struct page_info *page, unsigned long nr);
 
 extern void put_page_type(struct page_info *page);
+
 static inline void put_page_and_type(struct page_info *page)
 {
     put_page_type(page);
@@ -425,7 +426,8 @@ static inline void page_set_xenheap_gfn(struct page_info *p, gfn_t gfn)
 
     ASSERT(is_xen_heap_page(p));
 
-    do {
+    do
+    {
         x = y;
         nx = (x & ~PGT_gfn_mask) | gfn_x(gfn_);
     } while ( (y = cmpxchg(&p->u.inuse.type_info, x, nx)) != x );

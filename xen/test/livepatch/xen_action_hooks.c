@@ -24,7 +24,7 @@ static int apply_hook(livepatch_payload_t *payload)
 
     printk(KERN_DEBUG "%s: Hook starting.\n", __func__);
 
-    for (i = 0; i < payload->nfuncs; i++)
+    for ( i = 0; i < payload->nfuncs; i++ )
     {
         const struct livepatch_func *func = &payload->funcs[i];
         struct livepatch_fstate *fstate = &payload->fstate[i];
@@ -46,7 +46,7 @@ static int revert_hook(livepatch_payload_t *payload)
 
     printk(KERN_DEBUG "%s: Hook starting.\n", __func__);
 
-    for (i = 0; i < payload->nfuncs; i++)
+    for ( i = 0; i < payload->nfuncs; i++ )
     {
         const struct livepatch_func *func = &payload->funcs[i];
         struct livepatch_fstate *fstate = &payload->fstate[i];
@@ -68,7 +68,7 @@ static void post_revert_hook(livepatch_payload_t *payload)
 
     printk(KERN_DEBUG "%s: Hook starting.\n", __func__);
 
-    for (i = 0; i < payload->nfuncs; i++)
+    for ( i = 0; i < payload->nfuncs; i++ )
     {
         const struct livepatch_func *func = &payload->funcs[i];
 
@@ -84,15 +84,15 @@ LIVEPATCH_REVERT_HOOK(revert_hook);
 
 LIVEPATCH_POSTREVERT_HOOK(post_revert_hook);
 
-const struct livepatch_func __section(".livepatch.funcs")
-livepatch_xen_hello_world = {
-    .version = LIVEPATCH_PAYLOAD_VERSION,
-    .name = hello_world_patch_this_fnc,
-    .new_addr = xen_hello_world,
-    .old_addr = xen_extra_version,
-    .new_size = NEW_CODE_SZ,
-    .old_size = OLD_CODE_SZ,
-};
+const struct livepatch_func
+    __section(".livepatch.funcs") livepatch_xen_hello_world = {
+        .version = LIVEPATCH_PAYLOAD_VERSION,
+        .name = hello_world_patch_this_fnc,
+        .new_addr = xen_hello_world,
+        .old_addr = xen_extra_version,
+        .new_size = NEW_CODE_SZ,
+        .old_size = OLD_CODE_SZ,
+    };
 
 /*
  * Local variables:

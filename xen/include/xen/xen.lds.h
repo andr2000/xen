@@ -12,9 +12,9 @@
  * Xen's virtual base address.
  */
 #ifdef CONFIG_LD_IS_GNU
-# define DECL_SECTION(x) x : AT(ADDR(#x) - __XEN_VIRT_START)
+#define DECL_SECTION(x) x : AT(ADDR(#x) - __XEN_VIRT_START)
 #else
-# define DECL_SECTION(x) x : AT(ADDR(x) - __XEN_VIRT_START)
+#define DECL_SECTION(x) x : AT(ADDR(x) - __XEN_VIRT_START)
 #endif
 
 #else /* !DECL_SECTION_WITH_LADDR */
@@ -181,7 +181,7 @@
        . = ALIGN(SMP_CACHE_BYTES); \
        *(.bss.percpu.read_mostly)  \
        . = ALIGN(SMP_CACHE_BYTES); \
-       __per_cpu_data_end = .;     \
+       __per_cpu_data_end = .;
 
 #ifdef CONFIG_HAS_VPCI
 #define VPCI_ARRAY               \

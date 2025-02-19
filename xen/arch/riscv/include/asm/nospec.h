@@ -9,9 +9,7 @@ static inline bool evaluate_nospec(bool condition)
     return condition;
 }
 
-static inline void block_speculation(void)
-{
-}
+static inline void block_speculation(void) {}
 
 #endif /* ASM__RISCV__NOSPEC_H */
 

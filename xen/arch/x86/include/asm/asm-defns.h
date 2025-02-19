@@ -59,9 +59,9 @@
 .endm
 
 #ifdef CONFIG_XEN_IBT
-# define ENDBR64 endbr64
+#define ENDBR64 endbr64
 #else
-# define ENDBR64
+#define ENDBR64
 #endif
 
 .macro guest_access_mask_ptr ptr:req, scratch1:req, scratch2:req

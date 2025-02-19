@@ -28,8 +28,8 @@ unsigned int x86_insn_opsize(const struct x86_emulate_state *s)
     return s->op_bytes << 3;
 }
 
-int x86_insn_modrm(const struct x86_emulate_state *s,
-                   unsigned int *rm, unsigned int *reg)
+int x86_insn_modrm(const struct x86_emulate_state *s, unsigned int *rm,
+                   unsigned int *reg)
 {
     check_state(s);
 
@@ -82,8 +82,8 @@ bool cf_check x86_insn_is_cr_access(const struct x86_emulate_state *s,
         unsigned int ext;
 
     case X86EMUL_OPC(0x0f, 0x01):
-        if ( x86_insn_modrm(s, NULL, &ext) >= 0
-             && (ext & 5) == 4 ) /* SMSW / LMSW */
+        if ( x86_insn_modrm(s, NULL, &ext) >= 0 &&
+             (ext & 5) == 4 ) /* SMSW / LMSW */
             return true;
         break;
 

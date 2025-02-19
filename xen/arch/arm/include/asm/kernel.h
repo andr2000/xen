@@ -51,8 +51,9 @@ struct kernel_info {
     paddr_t gnttab_size;
 
     /* boot blob load addresses */
-    const struct bootmodule *kernel_bootmodule, *initrd_bootmodule, *dtb_bootmodule;
-    const char* cmdline;
+    const struct bootmodule *kernel_bootmodule, *initrd_bootmodule,
+        *dtb_bootmodule;
+    const char *cmdline;
     paddr_t dtb_paddr;
     paddr_t initrd_paddr;
 
@@ -67,6 +68,7 @@ struct kernel_info {
 
     /* loader to use for this kernel */
     void (*load)(struct kernel_info *info);
+
     /* loader specific state */
     union {
         struct {

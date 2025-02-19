@@ -17,11 +17,11 @@
 #include <asm/spec_ctrl.h>
 #include <asm/xstate.h>
 
-struct cpu_policy __read_mostly       raw_cpu_policy;
-struct cpu_policy __ro_after_init    host_cpu_policy;
+struct cpu_policy __read_mostly raw_cpu_policy;
+struct cpu_policy __ro_after_init host_cpu_policy;
 #ifdef CONFIG_PV
-struct cpu_policy __ro_after_init  pv_max_cpu_policy;
-struct cpu_policy __ro_after_init  pv_def_cpu_policy;
+struct cpu_policy __ro_after_init pv_max_cpu_policy;
+struct cpu_policy __ro_after_init pv_def_cpu_policy;
 #endif
 #ifdef CONFIG_HVM
 struct cpu_policy __ro_after_init hvm_max_cpu_policy;
@@ -31,14 +31,15 @@ struct cpu_policy __ro_after_init hvm_def_cpu_policy;
 const uint32_t known_features[] = INIT_KNOWN_FEATURES;
 
 static const uint32_t __initconst pv_max_featuremask[] = INIT_PV_MAX_FEATURES;
-static const uint32_t hvm_shadow_max_featuremask[] = INIT_HVM_SHADOW_MAX_FEATURES;
-static const uint32_t __initconst hvm_hap_max_featuremask[] =
-    INIT_HVM_HAP_MAX_FEATURES;
+static const uint32_t hvm_shadow_max_featuremask[] =
+    INIT_HVM_SHADOW_MAX_FEATURES;
+static const uint32_t
+    __initconst hvm_hap_max_featuremask[] = INIT_HVM_HAP_MAX_FEATURES;
 static const uint32_t __initconst pv_def_featuremask[] = INIT_PV_DEF_FEATURES;
-static const uint32_t __initconst hvm_shadow_def_featuremask[] =
-    INIT_HVM_SHADOW_DEF_FEATURES;
-static const uint32_t __initconst hvm_hap_def_featuremask[] =
-    INIT_HVM_HAP_DEF_FEATURES;
+static const uint32_t
+    __initconst hvm_shadow_def_featuremask[] = INIT_HVM_SHADOW_DEF_FEATURES;
+static const uint32_t
+    __initconst hvm_hap_def_featuremask[] = INIT_HVM_HAP_DEF_FEATURES;
 static const uint32_t deep_features[] = INIT_DEEP_FEATURES;
 
 static const struct feature_name {
@@ -53,13 +54,14 @@ static const struct feature_name {
  * always_inline, because this is init code only and we really don't want a
  * function pointer call in the middle of the loop.
  */
-static int __init always_inline parse_cpuid(
-    const char *s, void (*callback)(unsigned int feat, bool val))
+static int __init always_inline
+parse_cpuid(const char *s, void (*callback)(unsigned int feat, bool val))
 {
     const char *ss;
     int val, rc = 0;
 
-    do {
+    do
+    {
         const struct feature_name *lhs, *rhs, *mid = NULL /* GCC... */;
         const char *feat;
 
@@ -129,6 +131,7 @@ static int __init cf_check parse_xen_cpuid(const char *s)
 {
     return parse_cpuid(s, _parse_xen_cpuid);
 }
+
 custom_param("cpuid", parse_xen_cpuid);
 
 static bool __initdata dom0_cpuid_cmdline;
@@ -137,8 +140,8 @@ static uint32_t __initdata dom0_disable_feat[FSCAPINTS];
 
 static void __init cf_check _parse_dom0_cpuid(unsigned int feat, bool val)
 {
-    __set_bit  (feat, val ? dom0_enable_feat  : dom0_disable_feat);
-    __clear_bit(feat, val ? dom0_disable_feat : dom0_enable_feat );
+    __set_bit(feat, val ? dom0_enable_feat : dom0_disable_feat);
+    __clear_bit(feat, val ? dom0_disable_feat : dom0_enable_feat);
 }
 
 static int __init cf_check parse_dom0_cpuid(const char *s)
@@ -147,11 +150,13 @@ static int __init cf_check parse_dom0_cpuid(const char *s)
 
     return parse_cpuid(s, _parse_dom0_cpuid);
 }
+
 custom_param("dom0-cpuid", parse_dom0_cpuid);
 
 #define EMPTY_LEAF ((struct cpuid_leaf){})
-static void zero_leaves(struct cpuid_leaf *l,
-                        unsigned int first, unsigned int last)
+
+static void zero_leaves(struct cpuid_leaf *l, unsigned int first,
+                        unsigned int last)
 {
     memset(&l[first], 0, sizeof(*l) * (last - first + 1));
 }
@@ -159,8 +164,9 @@ static void zero_leaves(struct cpuid_leaf *l,
 static void sanitise_featureset(uint32_t *fs)
 {
     /* bitmap_for_each() uses unsigned longs.  Extend with zeroes. */
-    uint32_t disabled_features[
-        ROUNDUP(FSCAPINTS, sizeof(unsigned long)/sizeof(uint32_t))] = {};
+    uint32_t disabled_features[ROUNDUP(FSCAPINTS,
+                                       sizeof(unsigned long) /
+                                           sizeof(uint32_t))] = {};
     unsigned int i;
 
     for ( i = 0; i < FSCAPINTS; ++i )
@@ -175,8 +181,7 @@ static void sanitise_featureset(uint32_t *fs)
         disabled_features[i] = ~fs[i] & deep_features[i];
     }
 
-    bitmap_for_each ( i, (void *)disabled_features,
-                      sizeof(disabled_features) * 8 )
+    bitmap_for_each(i, (void *)disabled_features, sizeof(disabled_features) * 8)
     {
         const uint32_t *dfs = x86_cpu_policy_lookup_deep_deps(i);
         unsigned int j;
@@ -221,9 +226,9 @@ static void recalculate_xstate(struct cpu_policy *p)
         xstates |= X86_XCR0_TILE_CFG | X86_XCR0_TILE_DATA;
 
     /* Subleaf 0 */
-    p->xstate.max_size =
-        xstate_uncompressed_size(xstates & ~XSTATE_XSAVES_ONLY);
-    p->xstate.xcr0_low  =  xstates & ~XSTATE_XSAVES_ONLY;
+    p->xstate.max_size = xstate_uncompressed_size(xstates &
+                                                  ~XSTATE_XSAVES_ONLY);
+    p->xstate.xcr0_low = xstates & ~XSTATE_XSAVES_ONLY;
     p->xstate.xcr0_high = (xstates & ~XSTATE_XSAVES_ONLY) >> 32;
 
     /* Subleaf 1 */
@@ -234,14 +239,14 @@ static void recalculate_xstate(struct cpu_policy *p)
     if ( p->xstate.xsaves )
     {
         ecx_mask |= XSTATE_XSS;
-        p->xstate.xss_low   =  xstates & XSTATE_XSAVES_ONLY;
-        p->xstate.xss_high  = (xstates & XSTATE_XSAVES_ONLY) >> 32;
+        p->xstate.xss_low = xstates & XSTATE_XSAVES_ONLY;
+        p->xstate.xss_high = (xstates & XSTATE_XSAVES_ONLY) >> 32;
     }
 
     /* Subleafs 2+ */
     xstates &= ~XSTATE_FP_SSE;
     BUILD_BUG_ON(ARRAY_SIZE(p->xstate.comp) < 63);
-    for_each_set_bit ( i, xstates )
+    for_each_set_bit(i, xstates)
     {
         /*
          * Pass through size (eax) and offset (ebx) directly.  Visbility of
@@ -361,7 +366,7 @@ static void __init calculate_host_policy(void)
     *p = raw_cpu_policy;
 
     p->basic.max_leaf =
-        min_t(uint32_t, p->basic.max_leaf,   ARRAY_SIZE(p->basic.raw) - 1);
+        min_t(uint32_t, p->basic.max_leaf, ARRAY_SIZE(p->basic.raw) - 1);
     p->feat.max_subleaf =
         min_t(uint32_t, p->feat.max_subleaf, ARRAY_SIZE(p->feat.raw) - 1);
 
@@ -376,7 +381,8 @@ static void __init calculate_host_policy(void)
     if ( cpu_has_lfence_dispatch )
         max_extd_leaf = max(max_extd_leaf, 0x80000021U);
 
-    p->extd.max_leaf = 0x80000000U | min_t(uint32_t, max_extd_leaf & 0xffff,
+    p->extd.max_leaf = 0x80000000U | min_t(uint32_t,
+                                           max_extd_leaf & 0xffff,
                                            ARRAY_SIZE(p->extd.raw) - 1);
 
     x86_cpu_featureset_to_policy(boot_cpu_data.x86_capability, p);
@@ -400,17 +406,17 @@ static void __init calculate_host_policy(void)
  */
 static void __init guest_common_max_leaves(struct cpu_policy *p)
 {
-    p->basic.max_leaf       = ARRAY_SIZE(p->basic.raw) - 1;
-    p->feat.max_subleaf     = ARRAY_SIZE(p->feat.raw) - 1;
-    p->extd.max_leaf        = 0x80000000U + ARRAY_SIZE(p->extd.raw) - 1;
+    p->basic.max_leaf = ARRAY_SIZE(p->basic.raw) - 1;
+    p->feat.max_subleaf = ARRAY_SIZE(p->feat.raw) - 1;
+    p->extd.max_leaf = 0x80000000U + ARRAY_SIZE(p->extd.raw) - 1;
 }
 
 /* Guest default policies inherit the host max leaf/subleaf settings. */
 static void __init guest_common_default_leaves(struct cpu_policy *p)
 {
-    p->basic.max_leaf       = host_cpu_policy.basic.max_leaf;
-    p->feat.max_subleaf     = host_cpu_policy.feat.max_subleaf;
-    p->extd.max_leaf        = host_cpu_policy.extd.max_leaf;
+    p->basic.max_leaf = host_cpu_policy.basic.max_leaf;
+    p->feat.max_subleaf = host_cpu_policy.feat.max_subleaf;
+    p->extd.max_leaf = host_cpu_policy.extd.max_leaf;
 }
 
 static void __init guest_common_max_feature_adjustments(uint32_t *fs)
@@ -686,8 +692,7 @@ static void __init calculate_pv_def_policy(void)
     {
         bool eibrs = test_bit(X86_FEATURE_EIBRS, fs);
 
-        __set_bit(eibrs ? X86_FEATURE_RRSBA
-                        : X86_FEATURE_RSBA, fs);
+        __set_bit(eibrs ? X86_FEATURE_RRSBA : X86_FEATURE_RSBA, fs);
     }
 
     x86_cpu_featureset_to_policy(fs, p);
@@ -707,8 +712,8 @@ static void __init calculate_hvm_max_policy(void)
 
     x86_cpu_policy_to_featureset(p, fs);
 
-    mask = hvm_hap_supported() ?
-        hvm_hap_max_featuremask : hvm_shadow_max_featuremask;
+    mask = hvm_hap_supported() ? hvm_hap_max_featuremask
+                               : hvm_shadow_max_featuremask;
 
     for ( i = 0; i < ARRAY_SIZE(fs); ++i )
         fs[i] &= mask[i];
@@ -794,15 +799,14 @@ static void __init calculate_hvm_max_policy(void)
     if ( p->extd.svm )
     {
         /* Clamp to implemented features which require hardware support. */
-        p->extd.raw[0xa].d &= ((1u << SVM_FEATURE_NPT) |
-                               (1u << SVM_FEATURE_LBRV) |
-                               (1u << SVM_FEATURE_NRIPS) |
-                               (1u << SVM_FEATURE_PAUSEFILTER) |
-                               (1u << SVM_FEATURE_DECODEASSISTS));
+        p->extd.raw[0xa].d &=
+            ((1u << SVM_FEATURE_NPT) | (1u << SVM_FEATURE_LBRV) |
+             (1u << SVM_FEATURE_NRIPS) | (1u << SVM_FEATURE_PAUSEFILTER) |
+             (1u << SVM_FEATURE_DECODEASSISTS));
         /* Enable features which are always emulated. */
         p->extd.raw[0xa].d |= (1u << SVM_FEATURE_VMCBCLEAN);
     }
-    
+
     guest_common_max_feature_adjustments(fs);
     guest_common_feature_adjustments(fs);
 
@@ -827,8 +831,8 @@ static void __init calculate_hvm_def_policy(void)
 
     x86_cpu_policy_to_featureset(p, fs);
 
-    mask = hvm_hap_supported() ?
-        hvm_hap_def_featuremask : hvm_shadow_def_featuremask;
+    mask = hvm_hap_supported() ? hvm_hap_def_featuremask
+                               : hvm_shadow_def_featuremask;
 
     for ( i = 0; i < ARRAY_SIZE(fs); ++i )
         fs[i] &= mask[i];
@@ -855,8 +859,7 @@ static void __init calculate_hvm_def_policy(void)
     {
         bool eibrs = test_bit(X86_FEATURE_EIBRS, fs);
 
-        __set_bit(eibrs ? X86_FEATURE_RRSBA
-                        : X86_FEATURE_RSBA, fs);
+        __set_bit(eibrs ? X86_FEATURE_RRSBA : X86_FEATURE_RSBA, fs);
     }
 
     x86_cpu_featureset_to_policy(fs, p);
@@ -882,9 +885,9 @@ void __init init_guest_cpu_policies(void)
 
 int init_domain_cpu_policy(struct domain *d)
 {
-    struct cpu_policy *p = is_pv_domain(d)
-        ? (IS_ENABLED(CONFIG_PV)  ?  &pv_def_cpu_policy : NULL)
-        : (IS_ENABLED(CONFIG_HVM) ? &hvm_def_cpu_policy : NULL);
+    struct cpu_policy *p =
+        is_pv_domain(d) ? (IS_ENABLED(CONFIG_PV) ? &pv_def_cpu_policy : NULL)
+                        : (IS_ENABLED(CONFIG_HVM) ? &hvm_def_cpu_policy : NULL);
 
     if ( !p )
     {
@@ -906,9 +909,9 @@ int init_domain_cpu_policy(struct domain *d)
 void recalculate_cpuid_policy(struct domain *d)
 {
     struct cpu_policy *p = d->arch.cpuid;
-    const struct cpu_policy *max = is_pv_domain(d)
-        ? (IS_ENABLED(CONFIG_PV)  ?  &pv_max_cpu_policy : NULL)
-        : (IS_ENABLED(CONFIG_HVM) ? &hvm_max_cpu_policy : NULL);
+    const struct cpu_policy *max =
+        is_pv_domain(d) ? (IS_ENABLED(CONFIG_PV) ? &pv_max_cpu_policy : NULL)
+                        : (IS_ENABLED(CONFIG_HVM) ? &hvm_max_cpu_policy : NULL);
     uint32_t fs[FSCAPINTS], max_fs[FSCAPINTS];
     unsigned int i;
 
@@ -918,16 +921,18 @@ void recalculate_cpuid_policy(struct domain *d)
         return;
     }
 
-    p->x86_vendor = x86_cpuid_lookup_vendor(
-        p->basic.vendor_ebx, p->basic.vendor_ecx, p->basic.vendor_edx);
+    p->x86_vendor = x86_cpuid_lookup_vendor(p->basic.vendor_ebx,
+                                            p->basic.vendor_ecx,
+                                            p->basic.vendor_edx);
 
-    p->basic.max_leaf   = min(p->basic.max_leaf,   max->basic.max_leaf);
+    p->basic.max_leaf = min(p->basic.max_leaf, max->basic.max_leaf);
     p->feat.max_subleaf = min(p->feat.max_subleaf, max->feat.max_subleaf);
-    p->extd.max_leaf    = 0x80000000U | min(p->extd.max_leaf & 0xffff,
-                                            ((p->x86_vendor & (X86_VENDOR_AMD |
-                                                               X86_VENDOR_HYGON))
-                                             ? CPUID_GUEST_NR_EXTD_AMD
-                                             : CPUID_GUEST_NR_EXTD_INTEL) - 1);
+    p->extd.max_leaf =
+        0x80000000U | min(p->extd.max_leaf & 0xffff,
+                          ((p->x86_vendor & (X86_VENDOR_AMD | X86_VENDOR_HYGON))
+                               ? CPUID_GUEST_NR_EXTD_AMD
+                               : CPUID_GUEST_NR_EXTD_INTEL) -
+                              1);
 
     x86_cpu_policy_to_featureset(p, fs);
     x86_cpu_policy_to_featureset(max, max_fs);
@@ -985,9 +990,10 @@ void recalculate_cpuid_policy(struct domain *d)
     p->basic.clflush_size = max->basic.clflush_size;
 
     p->extd.maxphysaddr = min(p->extd.maxphysaddr, max->extd.maxphysaddr);
-    p->extd.maxphysaddr = min_t(uint8_t, p->extd.maxphysaddr,
-                                domain_max_paddr_bits(d));
-    p->extd.maxphysaddr = max_t(uint8_t, p->extd.maxphysaddr,
+    p->extd.maxphysaddr =
+        min_t(uint8_t, p->extd.maxphysaddr, domain_max_paddr_bits(d));
+    p->extd.maxphysaddr = max_t(uint8_t,
+                                p->extd.maxphysaddr,
                                 (p->basic.pae || p->basic.pse36) ? 36 : 32);
 
     p->extd.maxlinaddr = p->extd.lm ? 48 : 32;
@@ -997,8 +1003,7 @@ void recalculate_cpuid_policy(struct domain *d)
 
     for ( i = 0; i < ARRAY_SIZE(p->cache.raw); ++i )
     {
-        if ( p->cache.subleaf[i].type >= 1 &&
-             p->cache.subleaf[i].type <= 3 )
+        if ( p->cache.subleaf[i].type >= 1 && p->cache.subleaf[i].type <= 3 )
         {
             /* Subleaf has a valid cache type. Zero reserved fields. */
             p->cache.raw[i].a &= 0xffffc3ffu;
@@ -1045,7 +1050,7 @@ void __init init_dom0_cpuid_policy(struct domain *d)
 
         for ( i = 0; i < ARRAY_SIZE(fs); ++i )
         {
-            fs[i] |=  dom0_enable_feat [i];
+            fs[i] |= dom0_enable_feat[i];
             fs[i] &= ~dom0_disable_feat[i];
         }
 

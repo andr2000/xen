@@ -14,7 +14,8 @@ ret_t pci_physdev_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
 
     switch ( cmd )
     {
-    case PHYSDEVOP_pci_device_add: {
+    case PHYSDEVOP_pci_device_add:
+    {
         struct physdev_pci_device_add add;
         struct pci_dev_info pdev_info;
         nodeid_t node = NUMA_NO_NODE;
@@ -40,7 +41,8 @@ ret_t pci_physdev_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
         if ( add.flags & XEN_PCI_DEV_PXM )
         {
             uint32_t pxm;
-            size_t optarr_off = offsetof(struct physdev_pci_device_add, optarr) /
+            size_t optarr_off = offsetof(struct physdev_pci_device_add,
+                                         optarr) /
                                 sizeof(add.optarr[0]);
 
             if ( copy_from_guest_offset(&pxm, arg, optarr_off, 1) )
@@ -54,7 +56,8 @@ ret_t pci_physdev_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
         break;
     }
 
-    case PHYSDEVOP_pci_device_remove: {
+    case PHYSDEVOP_pci_device_remove:
+    {
         struct physdev_pci_device dev;
 
         if ( !is_pci_passthrough_enabled() )
@@ -82,9 +85,8 @@ ret_t pci_physdev_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
         if ( dev_reset.flags & ~PCI_DEVICE_RESET_MASK )
             break;
 
-        sbdf = PCI_SBDF(dev_reset.dev.seg,
-                        dev_reset.dev.bus,
-                        dev_reset.dev.devfn);
+        sbdf =
+            PCI_SBDF(dev_reset.dev.seg, dev_reset.dev.bus, dev_reset.dev.devfn);
 
         ret = xsm_resource_setup_pci(XSM_PRIV, sbdf.sbdf);
         if ( ret )

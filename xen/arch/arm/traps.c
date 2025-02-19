@@ -60,14 +60,14 @@ boolean_param("partial-emulation", partial_emulation);
 static void __init __maybe_unused build_assertions(void)
 {
 #ifdef CONFIG_ARM_64
-    BUILD_BUG_ON((sizeof (struct cpu_user_regs)) & 0xf);
+    BUILD_BUG_ON((sizeof(struct cpu_user_regs)) & 0xf);
     BUILD_BUG_ON((offsetof(struct cpu_user_regs, spsr_el1)) & 0xf);
     BUILD_BUG_ON((offsetof(struct cpu_user_regs, lr)) & 0xf);
-    BUILD_BUG_ON((sizeof (struct cpu_info)) & 0xf);
+    BUILD_BUG_ON((sizeof(struct cpu_info)) & 0xf);
 #else
-    BUILD_BUG_ON((sizeof (struct cpu_user_regs)) & 0x7);
+    BUILD_BUG_ON((sizeof(struct cpu_user_regs)) & 0x7);
     BUILD_BUG_ON((offsetof(struct cpu_user_regs, sp_usr)) & 0x7);
-    BUILD_BUG_ON((sizeof (struct cpu_info)) & 0x7);
+    BUILD_BUG_ON((sizeof(struct cpu_info)) & 0x7);
 #endif
 }
 
@@ -82,26 +82,27 @@ static int debug_stack_lines = 40;
 integer_param("debug_stack_lines", debug_stack_lines);
 
 static enum {
-	TRAP,
-	NATIVE,
+    TRAP,
+    NATIVE,
 } vwfi;
 
 static int __init parse_vwfi(const char *s)
 {
-	if ( !strcmp(s, "native") )
-		vwfi = NATIVE;
-	else
-		vwfi = TRAP;
+    if ( !strcmp(s, "native") )
+        vwfi = NATIVE;
+    else
+        vwfi = TRAP;
 
-	return 0;
+    return 0;
 }
+
 custom_param("vwfi", parse_vwfi);
 
 register_t get_default_hcr_flags(void)
 {
-    return  (HCR_PTW|HCR_BSU_INNER|HCR_AMO|HCR_IMO|HCR_FMO|HCR_VM|
-             (vwfi != NATIVE ? (HCR_TWI|HCR_TWE) : 0) |
-             HCR_TID3|HCR_TSC|HCR_TAC|HCR_SWIO|HCR_TIDCP|HCR_FB|HCR_TSW);
+    return (HCR_PTW | HCR_BSU_INNER | HCR_AMO | HCR_IMO | HCR_FMO | HCR_VM |
+            (vwfi != NATIVE ? (HCR_TWI | HCR_TWE) : 0) | HCR_TID3 | HCR_TSC |
+            HCR_TAC | HCR_SWIO | HCR_TIDCP | HCR_FB | HCR_TSW);
 }
 
 register_t get_default_cptr_flags(void)
@@ -115,8 +116,8 @@ register_t get_default_cptr_flags(void)
      * On ARM64 the TCPx bits which we set here (0..9,12,13) are all
      * RES1, i.e. they would trap whether we did this write or not.
      */
-    return  ((HCPTR_CP_MASK & ~(HCPTR_CP(10) | HCPTR_CP(11))) |
-             HCPTR_TTA | HCPTR_TAM);
+    return ((HCPTR_CP_MASK & ~(HCPTR_CP(10) | HCPTR_CP(11))) | HCPTR_TTA |
+            HCPTR_TAM);
 }
 
 static enum {
@@ -135,6 +136,7 @@ static int __init parse_serrors_behavior(const char *str)
 
     return 0;
 }
+
 custom_param("serrors", parse_serrors_behavior);
 
 static int __init update_serrors_cpu_caps(void)
@@ -144,6 +146,7 @@ static int __init update_serrors_cpu_caps(void)
 
     return 0;
 }
+
 __initcall(update_serrors_cpu_caps);
 
 void init_traps(void)
@@ -155,7 +158,7 @@ void init_traps(void)
     WRITE_SYSREG((vaddr_t)hyp_traps_vector, VBAR_EL2);
 
     /* Trap Debug and Performance Monitor accesses */
-    WRITE_SYSREG(HDCR_TDRA|HDCR_TDOSA|HDCR_TDA|HDCR_TPM|HDCR_TPMCR,
+    WRITE_SYSREG(HDCR_TDRA | HDCR_TDOSA | HDCR_TDA | HDCR_TPM | HDCR_TPMCR,
                  MDCR_EL2);
 
     /* Trap CP15 c15 used for implementation defined registers */
@@ -184,13 +187,16 @@ static void print_xen_info(void)
     char taint_str[TAINT_STRING_MAX_LEN];
 
     printk("----[ Xen-%d.%d%s  %s  %s  %s ]----\n",
-           xen_major_version(), xen_minor_version(), xen_extra_version(),
+           xen_major_version(),
+           xen_minor_version(),
+           xen_extra_version(),
 #ifdef CONFIG_ARM_32
            "arm32",
 #else
            "arm64",
 #endif
-           xen_build_info(), print_tainted(taint_str));
+           xen_build_info(),
+           print_tainted(taint_str));
 }
 
 #ifdef CONFIG_ARM_32
@@ -219,7 +225,7 @@ static inline bool is_zero_register(int reg)
  */
 static register_t *select_user_reg(struct cpu_user_regs *regs, int reg)
 {
-    BUG_ON( !guest_mode(regs) );
+    BUG_ON(!guest_mode(regs));
 
 #ifdef CONFIG_ARM_32
     /*
@@ -232,20 +238,26 @@ static register_t *select_user_reg(struct cpu_user_regs *regs, int reg)
     switch ( reg )
     {
     case 0 ... 7: /* Unbanked registers */
-        BUILD_BUG_ON(REGOFFS(r0) + 7*sizeof(register_t) != REGOFFS(r7));
+        BUILD_BUG_ON(REGOFFS(r0) + 7 * sizeof(register_t) != REGOFFS(r7));
         return &regs->r0 + reg;
     case 8 ... 12: /* Register banked in FIQ mode */
-        BUILD_BUG_ON(REGOFFS(r8_fiq) + 4*sizeof(register_t) != REGOFFS(r12_fiq));
+        BUILD_BUG_ON(REGOFFS(r8_fiq) + 4 * sizeof(register_t) !=
+                     REGOFFS(r12_fiq));
         if ( fiq_mode(regs) )
             return &regs->r8_fiq + reg - 8;
         else
             return &regs->r8 + reg - 8;
     case 13 ... 14: /* Banked SP + LR registers */
-        BUILD_BUG_ON(REGOFFS(sp_fiq) + 1*sizeof(register_t) != REGOFFS(lr_fiq));
-        BUILD_BUG_ON(REGOFFS(sp_irq) + 1*sizeof(register_t) != REGOFFS(lr_irq));
-        BUILD_BUG_ON(REGOFFS(sp_svc) + 1*sizeof(register_t) != REGOFFS(lr_svc));
-        BUILD_BUG_ON(REGOFFS(sp_abt) + 1*sizeof(register_t) != REGOFFS(lr_abt));
-        BUILD_BUG_ON(REGOFFS(sp_und) + 1*sizeof(register_t) != REGOFFS(lr_und));
+        BUILD_BUG_ON(REGOFFS(sp_fiq) + 1 * sizeof(register_t) !=
+                     REGOFFS(lr_fiq));
+        BUILD_BUG_ON(REGOFFS(sp_irq) + 1 * sizeof(register_t) !=
+                     REGOFFS(lr_irq));
+        BUILD_BUG_ON(REGOFFS(sp_svc) + 1 * sizeof(register_t) !=
+                     REGOFFS(lr_svc));
+        BUILD_BUG_ON(REGOFFS(sp_abt) + 1 * sizeof(register_t) !=
+                     REGOFFS(lr_abt));
+        BUILD_BUG_ON(REGOFFS(sp_und) + 1 * sizeof(register_t) !=
+                     REGOFFS(lr_und));
         switch ( regs->cpsr & PSR_MODE_MASK )
         {
         case PSR_MODE_USR:
@@ -362,11 +374,16 @@ static const char *fsc_level_str(int level)
 {
     switch ( level )
     {
-    case -1: return "";
-    case 1:  return " at level 1";
-    case 2:  return " at level 2";
-    case 3:  return " at level 3";
-    default: return " (level invalid)";
+    case -1:
+        return "";
+    case 1:
+        return " at level 1";
+    case 2:
+        return " at level 2";
+    case 3:
+        return " at level 3";
+    default:
+        return " (level invalid)";
     }
 }
 
@@ -377,10 +394,11 @@ void panic_PAR(uint64_t par)
     int stage = par & PAR_STAGE2 ? 2 : 1;
     int second_in_first = !!(par & PAR_STAGE21);
 
-    msg = decode_fsc( (par&PAR_FSC_MASK) >> PAR_FSC_SHIFT, &level);
+    msg = decode_fsc((par & PAR_FSC_MASK) >> PAR_FSC_SHIFT, &level);
 
-    printk("PAR: %016"PRIx64": %s stage %d%s%s\n",
-           par, msg,
+    printk("PAR: %016" PRIx64 ": %s stage %d%s%s\n",
+           par,
+           msg,
            stage,
            second_in_first ? " during second stage lookup" : "",
            fsc_level_str(level));
@@ -392,7 +410,8 @@ static void cpsr_switch_mode(struct cpu_user_regs *regs, int mode)
 {
     register_t sctlr = READ_SYSREG(SCTLR_EL1);
 
-    regs->cpsr &= ~(PSR_MODE_MASK|PSR_IT_MASK|PSR_JAZELLE|PSR_BIG_ENDIAN|PSR_THUMB);
+    regs->cpsr &= ~(PSR_MODE_MASK | PSR_IT_MASK | PSR_JAZELLE | PSR_BIG_ENDIAN |
+                    PSR_THUMB);
 
     regs->cpsr |= mode;
     regs->cpsr |= PSR_IRQ_MASK;
@@ -426,7 +445,7 @@ static void inject_undef32_exception(struct cpu_user_regs *regs)
     /* Saved PC points to the instruction past the faulting instruction. */
     uint32_t return_offset = is_thumb ? 2 : 4;
 
-    BUG_ON( !is_32bit_domain(current->domain) );
+    BUG_ON(!is_32bit_domain(current->domain));
 
     /* Update processor mode */
     cpsr_switch_mode(regs, PSR_MODE_UND);
@@ -444,8 +463,7 @@ static void inject_undef32_exception(struct cpu_user_regs *regs)
  * adjustments). See TakePrefetchAbortException and
  * TakeDataAbortException pseudocode in ARM ARM.
  */
-static void inject_abt32_exception(struct cpu_user_regs *regs,
-                                   int prefetch,
+static void inject_abt32_exception(struct cpu_user_regs *regs, int prefetch,
                                    register_t addr)
 {
     uint32_t spsr = regs->cpsr;
@@ -454,7 +472,7 @@ static void inject_abt32_exception(struct cpu_user_regs *regs,
     uint32_t return_offset = is_thumb ? 4 : 0;
     register_t fsr;
 
-    BUG_ON( !is_32bit_domain(current->domain) );
+    BUG_ON(!is_32bit_domain(current->domain));
 
     cpsr_switch_mode(regs, PSR_MODE_ABT);
 
@@ -501,14 +519,12 @@ static void inject_abt32_exception(struct cpu_user_regs *regs,
     }
 }
 
-static void inject_dabt32_exception(struct cpu_user_regs *regs,
-                                    register_t addr)
+static void inject_dabt32_exception(struct cpu_user_regs *regs, register_t addr)
 {
     inject_abt32_exception(regs, 0, addr);
 }
 
-static void inject_pabt32_exception(struct cpu_user_regs *regs,
-                                    register_t addr)
+static void inject_pabt32_exception(struct cpu_user_regs *regs, register_t addr)
 {
     inject_abt32_exception(regs, 1, addr);
 }
@@ -524,7 +540,7 @@ static vaddr_t exception_handler64(struct cpu_user_regs *regs, vaddr_t offset)
 
     if ( usr_mode(regs) )
         base += VECTOR64_LOWER32_BASE;
-    else if ( psr_mode(regs->cpsr,PSR_MODE_EL0t) )
+    else if ( psr_mode(regs->cpsr, PSR_MODE_EL0t) )
         base += VECTOR64_LOWER64_BASE;
     else /* Otherwise must be from kernel mode */
         base += VECTOR64_CURRENT_SPx_BASE;
@@ -542,25 +558,23 @@ void inject_undef64_exception(struct cpu_user_regs *regs, int instr_len)
         .ec = HSR_EC_UNKNOWN,
     };
 
-    BUG_ON( is_32bit_domain(current->domain) );
+    BUG_ON(is_32bit_domain(current->domain));
 
     handler = exception_handler64(regs, VECTOR64_SYNC_OFFSET);
 
     regs->spsr_el1 = regs->cpsr;
     regs->elr_el1 = regs->pc;
 
-    regs->cpsr = PSR_MODE_EL1h | PSR_ABT_MASK | PSR_FIQ_MASK | \
-        PSR_IRQ_MASK | PSR_DBG_MASK;
+    regs->cpsr = PSR_MODE_EL1h | PSR_ABT_MASK | PSR_FIQ_MASK | PSR_IRQ_MASK |
+                 PSR_DBG_MASK;
     regs->pc = handler;
 
     WRITE_SYSREG(esr.bits, ESR_EL1);
 }
 
 /* Inject an abort exception into a 64 bit guest */
-static void inject_abt64_exception(struct cpu_user_regs *regs,
-                                   int prefetch,
-                                   register_t addr,
-                                   int instr_len)
+static void inject_abt64_exception(struct cpu_user_regs *regs, int prefetch,
+                                   register_t addr, int instr_len)
 {
     vaddr_t handler;
     union hsr esr = {
@@ -569,37 +583,35 @@ static void inject_abt64_exception(struct cpu_user_regs *regs,
     };
 
     if ( regs_mode_is_user(regs) )
-        esr.ec = prefetch
-            ? HSR_EC_INSTR_ABORT_LOWER_EL : HSR_EC_DATA_ABORT_LOWER_EL;
+        esr.ec = prefetch ? HSR_EC_INSTR_ABORT_LOWER_EL
+                          : HSR_EC_DATA_ABORT_LOWER_EL;
     else
-        esr.ec = prefetch
-            ? HSR_EC_INSTR_ABORT_CURR_EL : HSR_EC_DATA_ABORT_CURR_EL;
+        esr.ec = prefetch ? HSR_EC_INSTR_ABORT_CURR_EL
+                          : HSR_EC_DATA_ABORT_CURR_EL;
 
-    BUG_ON( is_32bit_domain(current->domain) );
+    BUG_ON(is_32bit_domain(current->domain));
 
     handler = exception_handler64(regs, VECTOR64_SYNC_OFFSET);
 
     regs->spsr_el1 = regs->cpsr;
     regs->elr_el1 = regs->pc;
 
-    regs->cpsr = PSR_MODE_EL1h | PSR_ABT_MASK | PSR_FIQ_MASK | \
-        PSR_IRQ_MASK | PSR_DBG_MASK;
+    regs->cpsr = PSR_MODE_EL1h | PSR_ABT_MASK | PSR_FIQ_MASK | PSR_IRQ_MASK |
+                 PSR_DBG_MASK;
     regs->pc = handler;
 
     WRITE_SYSREG(addr, FAR_EL1);
     WRITE_SYSREG(esr.bits, ESR_EL1);
 }
 
-static void inject_dabt64_exception(struct cpu_user_regs *regs,
-                                   register_t addr,
-                                   int instr_len)
+static void inject_dabt64_exception(struct cpu_user_regs *regs, register_t addr,
+                                    int instr_len)
 {
     inject_abt64_exception(regs, 0, addr, instr_len);
 }
 
-static void inject_iabt64_exception(struct cpu_user_regs *regs,
-                                   register_t addr,
-                                   int instr_len)
+static void inject_iabt64_exception(struct cpu_user_regs *regs, register_t addr,
+                                    int instr_len)
 {
     inject_abt64_exception(regs, 1, addr, instr_len);
 }
@@ -608,35 +620,33 @@ static void inject_iabt64_exception(struct cpu_user_regs *regs,
 
 void inject_undef_exception(struct cpu_user_regs *regs, const union hsr hsr)
 {
-        if ( is_32bit_domain(current->domain) )
-            inject_undef32_exception(regs);
+    if ( is_32bit_domain(current->domain) )
+        inject_undef32_exception(regs);
 #ifdef CONFIG_ARM_64
-        else
-            inject_undef64_exception(regs, hsr.len);
+    else
+        inject_undef64_exception(regs, hsr.len);
 #endif
 }
 
-static void inject_iabt_exception(struct cpu_user_regs *regs,
-                                  register_t addr,
+static void inject_iabt_exception(struct cpu_user_regs *regs, register_t addr,
                                   int instr_len)
 {
-        if ( is_32bit_domain(current->domain) )
-            inject_pabt32_exception(regs, addr);
+    if ( is_32bit_domain(current->domain) )
+        inject_pabt32_exception(regs, addr);
 #ifdef CONFIG_ARM_64
-        else
-            inject_iabt64_exception(regs, addr, instr_len);
+    else
+        inject_iabt64_exception(regs, addr, instr_len);
 #endif
 }
 
-static void inject_dabt_exception(struct cpu_user_regs *regs,
-                                  register_t addr,
+static void inject_dabt_exception(struct cpu_user_regs *regs, register_t addr,
                                   int instr_len)
 {
-        if ( is_32bit_domain(current->domain) )
-            inject_dabt32_exception(regs, addr);
+    if ( is_32bit_domain(current->domain) )
+        inject_dabt32_exception(regs, addr);
 #ifdef CONFIG_ARM_64
-        else
-            inject_dabt64_exception(regs, addr, instr_len);
+    else
+        inject_dabt64_exception(regs, addr, instr_len);
 #endif
 }
 
@@ -701,7 +711,7 @@ static void __do_trap_serror(struct cpu_user_regs *regs, bool guest)
      * forwarded to the currently running vCPU.
      */
     if ( serrors_op == SERRORS_DIVERSE && guest )
-            return inject_vabt_exception(current);
+        return inject_vabt_exception(current);
 
     do_unexpected_trap("SError", regs);
 }
@@ -730,55 +740,65 @@ static const char *mode_string(register_t cpsr)
 {
     uint32_t mode;
     static const char *mode_strings[] = {
-       [PSR_MODE_USR] = "32-bit Guest USR",
-       [PSR_MODE_FIQ] = "32-bit Guest FIQ",
-       [PSR_MODE_IRQ] = "32-bit Guest IRQ",
-       [PSR_MODE_SVC] = "32-bit Guest SVC",
-       [PSR_MODE_MON] = "32-bit Monitor",
-       [PSR_MODE_ABT] = "32-bit Guest ABT",
-       [PSR_MODE_HYP] = "Hypervisor",
-       [PSR_MODE_UND] = "32-bit Guest UND",
-       [PSR_MODE_SYS] = "32-bit Guest SYS",
+        [PSR_MODE_USR] = "32-bit Guest USR",
+        [PSR_MODE_FIQ] = "32-bit Guest FIQ",
+        [PSR_MODE_IRQ] = "32-bit Guest IRQ",
+        [PSR_MODE_SVC] = "32-bit Guest SVC",
+        [PSR_MODE_MON] = "32-bit Monitor",
+        [PSR_MODE_ABT] = "32-bit Guest ABT",
+        [PSR_MODE_HYP] = "Hypervisor",
+        [PSR_MODE_UND] = "32-bit Guest UND",
+        [PSR_MODE_SYS] = "32-bit Guest SYS",
 #ifdef CONFIG_ARM_64
-       [PSR_MODE_EL3h] = "64-bit EL3h (Monitor, handler)",
-       [PSR_MODE_EL3t] = "64-bit EL3t (Monitor, thread)",
-       [PSR_MODE_EL2h] = "64-bit EL2h (Hypervisor, handler)",
-       [PSR_MODE_EL2t] = "64-bit EL2t (Hypervisor, thread)",
-       [PSR_MODE_EL1h] = "64-bit EL1h (Guest Kernel, handler)",
-       [PSR_MODE_EL1t] = "64-bit EL1t (Guest Kernel, thread)",
-       [PSR_MODE_EL0t] = "64-bit EL0t (Guest User)",
+        [PSR_MODE_EL3h] = "64-bit EL3h (Monitor, handler)",
+        [PSR_MODE_EL3t] = "64-bit EL3t (Monitor, thread)",
+        [PSR_MODE_EL2h] = "64-bit EL2h (Hypervisor, handler)",
+        [PSR_MODE_EL2t] = "64-bit EL2t (Hypervisor, thread)",
+        [PSR_MODE_EL1h] = "64-bit EL1h (Guest Kernel, handler)",
+        [PSR_MODE_EL1t] = "64-bit EL1t (Guest Kernel, thread)",
+        [PSR_MODE_EL0t] = "64-bit EL0t (Guest User)",
 #endif
     };
     mode = cpsr & PSR_MODE_MASK;
 
     if ( mode >= ARRAY_SIZE(mode_strings) )
         return "Unknown";
-    return mode_strings[mode] ? : "Unknown";
+    return mode_strings[mode] ?: "Unknown";
 }
 
 static void show_registers_32(const struct cpu_user_regs *regs,
-                              const struct reg_ctxt *ctxt,
-                              bool guest_mode_on,
+                              const struct reg_ctxt *ctxt, bool guest_mode_on,
                               const struct vcpu *v)
 {
-
 #ifdef CONFIG_ARM_64
-    BUG_ON( ! (regs->cpsr & PSR_MODE_BIT) );
-    printk("PC:     %08"PRIx32"\n", regs->pc32);
+    BUG_ON(!(regs->cpsr & PSR_MODE_BIT));
+    printk("PC:     %08" PRIx32 "\n", regs->pc32);
 #else
-    printk("PC:     %08"PRIx32, regs->pc);
+    printk("PC:     %08" PRIx32, regs->pc);
     if ( !guest_mode_on )
         printk(" %pS", _p(regs->pc));
     printk("\n");
 #endif
-    printk("CPSR:   %"PRIregister" MODE:%s\n", regs->cpsr,
+    printk("CPSR:   %" PRIregister " MODE:%s\n",
+           regs->cpsr,
            mode_string(regs->cpsr));
-    printk("     R0: %08"PRIx32" R1: %08"PRIx32" R2: %08"PRIx32" R3: %08"PRIx32"\n",
-           regs->r0, regs->r1, regs->r2, regs->r3);
-    printk("     R4: %08"PRIx32" R5: %08"PRIx32" R6: %08"PRIx32" R7: %08"PRIx32"\n",
-           regs->r4, regs->r5, regs->r6, regs->r7);
-    printk("     R8: %08"PRIx32" R9: %08"PRIx32" R10:%08"PRIx32" R11:%08"PRIx32" R12:%08"PRIx32"\n",
-           regs->r8, regs->r9, regs->r10,
+    printk("     R0: %08" PRIx32 " R1: %08" PRIx32 " R2: %08" PRIx32
+           " R3: %08" PRIx32 "\n",
+           regs->r0,
+           regs->r1,
+           regs->r2,
+           regs->r3);
+    printk("     R4: %08" PRIx32 " R5: %08" PRIx32 " R6: %08" PRIx32
+           " R7: %08" PRIx32 "\n",
+           regs->r4,
+           regs->r5,
+           regs->r6,
+           regs->r7);
+    printk("     R8: %08" PRIx32 " R9: %08" PRIx32 " R10:%08" PRIx32
+           " R11:%08" PRIx32 " R12:%08" PRIx32 "\n",
+           regs->r8,
+           regs->r9,
+           regs->r10,
 #ifdef CONFIG_ARM_64
            regs->r11,
 #else
@@ -788,115 +808,154 @@ static void show_registers_32(const struct cpu_user_regs *regs,
 
     if ( guest_mode_on )
     {
-        printk("USR: SP: %08"PRIx32" LR: %"PRIregister"\n",
-               regs->sp_usr, regs->lr);
-        printk("SVC: SP: %08"PRIx32" LR: %08"PRIx32" SPSR:%08"PRIx32"\n",
-               regs->sp_svc, regs->lr_svc, regs->spsr_svc);
-        printk("ABT: SP: %08"PRIx32" LR: %08"PRIx32" SPSR:%08"PRIx32"\n",
-               regs->sp_abt, regs->lr_abt, regs->spsr_abt);
-        printk("UND: SP: %08"PRIx32" LR: %08"PRIx32" SPSR:%08"PRIx32"\n",
-               regs->sp_und, regs->lr_und, regs->spsr_und);
-        printk("IRQ: SP: %08"PRIx32" LR: %08"PRIx32" SPSR:%08"PRIx32"\n",
-               regs->sp_irq, regs->lr_irq, regs->spsr_irq);
-        printk("FIQ: SP: %08"PRIx32" LR: %08"PRIx32" SPSR:%08"PRIx32"\n",
-               regs->sp_fiq, regs->lr_fiq, regs->spsr_fiq);
-        printk("FIQ: R8: %08"PRIx32" R9: %08"PRIx32" R10:%08"PRIx32" R11:%08"PRIx32" R12:%08"PRIx32"\n",
-               regs->r8_fiq, regs->r9_fiq, regs->r10_fiq, regs->r11_fiq, regs->r11_fiq);
+        printk("USR: SP: %08" PRIx32 " LR: %" PRIregister "\n",
+               regs->sp_usr,
+               regs->lr);
+        printk("SVC: SP: %08" PRIx32 " LR: %08" PRIx32 " SPSR:%08" PRIx32 "\n",
+               regs->sp_svc,
+               regs->lr_svc,
+               regs->spsr_svc);
+        printk("ABT: SP: %08" PRIx32 " LR: %08" PRIx32 " SPSR:%08" PRIx32 "\n",
+               regs->sp_abt,
+               regs->lr_abt,
+               regs->spsr_abt);
+        printk("UND: SP: %08" PRIx32 " LR: %08" PRIx32 " SPSR:%08" PRIx32 "\n",
+               regs->sp_und,
+               regs->lr_und,
+               regs->spsr_und);
+        printk("IRQ: SP: %08" PRIx32 " LR: %08" PRIx32 " SPSR:%08" PRIx32 "\n",
+               regs->sp_irq,
+               regs->lr_irq,
+               regs->spsr_irq);
+        printk("FIQ: SP: %08" PRIx32 " LR: %08" PRIx32 " SPSR:%08" PRIx32 "\n",
+               regs->sp_fiq,
+               regs->lr_fiq,
+               regs->spsr_fiq);
+        printk("FIQ: R8: %08" PRIx32 " R9: %08" PRIx32 " R10:%08" PRIx32
+               " R11:%08" PRIx32 " R12:%08" PRIx32 "\n",
+               regs->r8_fiq,
+               regs->r9_fiq,
+               regs->r10_fiq,
+               regs->r11_fiq,
+               regs->r11_fiq);
     }
 #ifndef CONFIG_ARM_64
     else
     {
-        printk("HYP: SP: %08"PRIx32" LR: %"PRIregister"\n", regs->sp, regs->lr);
+        printk("HYP: SP: %08" PRIx32 " LR: %" PRIregister "\n",
+               regs->sp,
+               regs->lr);
     }
 #endif
     printk("\n");
 
     if ( guest_mode_on )
     {
-        printk("     SCTLR: %"PRIregister"\n", ctxt->sctlr_el1);
-        printk("       TCR: %"PRIregister"\n", ctxt->tcr_el1);
-        printk("     TTBR0: %016"PRIx64"\n", ctxt->ttbr0_el1);
-        printk("     TTBR1: %016"PRIx64"\n", ctxt->ttbr1_el1);
-        printk("      IFAR: %08"PRIx32", IFSR: %08"PRIx32"\n"
-               "      DFAR: %08"PRIx32", DFSR: %08"PRIx32"\n",
+        printk("     SCTLR: %" PRIregister "\n", ctxt->sctlr_el1);
+        printk("       TCR: %" PRIregister "\n", ctxt->tcr_el1);
+        printk("     TTBR0: %016" PRIx64 "\n", ctxt->ttbr0_el1);
+        printk("     TTBR1: %016" PRIx64 "\n", ctxt->ttbr1_el1);
+        printk("      IFAR: %08" PRIx32 ", IFSR: %08" PRIx32
+               "\n" "      DFAR: %08" PRIx32 ", DFSR: %08" PRIx32 "\n",
 #ifdef CONFIG_ARM_64
                (uint32_t)(ctxt->far >> 32),
                ctxt->ifsr32_el2,
                (uint32_t)(ctxt->far & 0xffffffffU),
                ctxt->esr_el1
 #else
-               ctxt->ifar, ctxt->ifsr, ctxt->dfar, ctxt->dfsr
+               ctxt->ifar,
+               ctxt->ifsr,
+               ctxt->dfar,
+               ctxt->dfsr
 #endif
-            );
+        );
         printk("\n");
     }
 }
 
 #ifdef CONFIG_ARM_64
 static void show_registers_64(const struct cpu_user_regs *regs,
-                              const struct reg_ctxt *ctxt,
-                              bool guest_mode_on,
+                              const struct reg_ctxt *ctxt, bool guest_mode_on,
                               const struct vcpu *v)
 {
+    BUG_ON((regs->cpsr & PSR_MODE_BIT));
 
-    BUG_ON( (regs->cpsr & PSR_MODE_BIT) );
-
-    printk("PC:     %016"PRIx64, regs->pc);
+    printk("PC:     %016" PRIx64, regs->pc);
     if ( !guest_mode_on )
         printk(" %pS", _p(regs->pc));
     printk("\n");
-    printk("LR:     %016"PRIx64"\n", regs->lr);
+    printk("LR:     %016" PRIx64 "\n", regs->lr);
     if ( guest_mode_on )
     {
-        printk("SP_EL0: %016"PRIx64"\n", regs->sp_el0);
-        printk("SP_EL1: %016"PRIx64"\n", regs->sp_el1);
+        printk("SP_EL0: %016" PRIx64 "\n", regs->sp_el0);
+        printk("SP_EL1: %016" PRIx64 "\n", regs->sp_el1);
     }
     else
     {
-        printk("SP:     %016"PRIx64"\n", regs->sp);
+        printk("SP:     %016" PRIx64 "\n", regs->sp);
     }
-    printk("CPSR:   %016"PRIx64" MODE:%s\n", regs->cpsr,
+    printk("CPSR:   %016" PRIx64 " MODE:%s\n",
+           regs->cpsr,
            mode_string(regs->cpsr));
-    printk("     X0: %016"PRIx64"  X1: %016"PRIx64"  X2: %016"PRIx64"\n",
-           regs->x0, regs->x1, regs->x2);
-    printk("     X3: %016"PRIx64"  X4: %016"PRIx64"  X5: %016"PRIx64"\n",
-           regs->x3, regs->x4, regs->x5);
-    printk("     X6: %016"PRIx64"  X7: %016"PRIx64"  X8: %016"PRIx64"\n",
-           regs->x6, regs->x7, regs->x8);
-    printk("     X9: %016"PRIx64" X10: %016"PRIx64" X11: %016"PRIx64"\n",
-           regs->x9, regs->x10, regs->x11);
-    printk("    X12: %016"PRIx64" X13: %016"PRIx64" X14: %016"PRIx64"\n",
-           regs->x12, regs->x13, regs->x14);
-    printk("    X15: %016"PRIx64" X16: %016"PRIx64" X17: %016"PRIx64"\n",
-           regs->x15, regs->x16, regs->x17);
-    printk("    X18: %016"PRIx64" X19: %016"PRIx64" X20: %016"PRIx64"\n",
-           regs->x18, regs->x19, regs->x20);
-    printk("    X21: %016"PRIx64" X22: %016"PRIx64" X23: %016"PRIx64"\n",
-           regs->x21, regs->x22, regs->x23);
-    printk("    X24: %016"PRIx64" X25: %016"PRIx64" X26: %016"PRIx64"\n",
-           regs->x24, regs->x25, regs->x26);
-    printk("    X27: %016"PRIx64" X28: %016"PRIx64"  FP: %016"PRIx64"\n",
-           regs->x27, regs->x28, regs->fp);
+    printk("     X0: %016" PRIx64 "  X1: %016" PRIx64 "  X2: %016" PRIx64 "\n",
+           regs->x0,
+           regs->x1,
+           regs->x2);
+    printk("     X3: %016" PRIx64 "  X4: %016" PRIx64 "  X5: %016" PRIx64 "\n",
+           regs->x3,
+           regs->x4,
+           regs->x5);
+    printk("     X6: %016" PRIx64 "  X7: %016" PRIx64 "  X8: %016" PRIx64 "\n",
+           regs->x6,
+           regs->x7,
+           regs->x8);
+    printk("     X9: %016" PRIx64 " X10: %016" PRIx64 " X11: %016" PRIx64 "\n",
+           regs->x9,
+           regs->x10,
+           regs->x11);
+    printk("    X12: %016" PRIx64 " X13: %016" PRIx64 " X14: %016" PRIx64 "\n",
+           regs->x12,
+           regs->x13,
+           regs->x14);
+    printk("    X15: %016" PRIx64 " X16: %016" PRIx64 " X17: %016" PRIx64 "\n",
+           regs->x15,
+           regs->x16,
+           regs->x17);
+    printk("    X18: %016" PRIx64 " X19: %016" PRIx64 " X20: %016" PRIx64 "\n",
+           regs->x18,
+           regs->x19,
+           regs->x20);
+    printk("    X21: %016" PRIx64 " X22: %016" PRIx64 " X23: %016" PRIx64 "\n",
+           regs->x21,
+           regs->x22,
+           regs->x23);
+    printk("    X24: %016" PRIx64 " X25: %016" PRIx64 " X26: %016" PRIx64 "\n",
+           regs->x24,
+           regs->x25,
+           regs->x26);
+    printk("    X27: %016" PRIx64 " X28: %016" PRIx64 "  FP: %016" PRIx64 "\n",
+           regs->x27,
+           regs->x28,
+           regs->fp);
     printk("\n");
 
     if ( guest_mode_on )
     {
-        printk("   ELR_EL1: %016"PRIx64"\n", regs->elr_el1);
-        printk("   ESR_EL1: %08"PRIx32"\n", ctxt->esr_el1);
-        printk("   FAR_EL1: %016"PRIx64"\n", ctxt->far);
+        printk("   ELR_EL1: %016" PRIx64 "\n", regs->elr_el1);
+        printk("   ESR_EL1: %08" PRIx32 "\n", ctxt->esr_el1);
+        printk("   FAR_EL1: %016" PRIx64 "\n", ctxt->far);
         printk("\n");
-        printk(" SCTLR_EL1: %"PRIregister"\n", ctxt->sctlr_el1);
-        printk("   TCR_EL1: %"PRIregister"\n", ctxt->tcr_el1);
-        printk(" TTBR0_EL1: %016"PRIx64"\n", ctxt->ttbr0_el1);
-        printk(" TTBR1_EL1: %016"PRIx64"\n", ctxt->ttbr1_el1);
+        printk(" SCTLR_EL1: %" PRIregister "\n", ctxt->sctlr_el1);
+        printk("   TCR_EL1: %" PRIregister "\n", ctxt->tcr_el1);
+        printk(" TTBR0_EL1: %016" PRIx64 "\n", ctxt->ttbr0_el1);
+        printk(" TTBR1_EL1: %016" PRIx64 "\n", ctxt->ttbr1_el1);
         printk("\n");
     }
 }
 #endif
 
 static void _show_registers(const struct cpu_user_regs *regs,
-                            const struct reg_ctxt *ctxt,
-                            bool guest_mode_on,
+                            const struct reg_ctxt *ctxt, bool guest_mode_on,
                             const struct vcpu *v)
 {
     print_xen_info();
@@ -920,26 +979,26 @@ static void _show_registers(const struct cpu_user_regs *regs,
         show_registers_32(regs, ctxt, guest_mode_on, v);
 #endif
     }
-    printk("  VTCR_EL2: %"PRIregister"\n", READ_SYSREG(VTCR_EL2));
+    printk("  VTCR_EL2: %" PRIregister "\n", READ_SYSREG(VTCR_EL2));
 #ifdef CONFIG_MMU
-    printk(" VTTBR_EL2: %016"PRIx64"\n", ctxt->vttbr_el2);
+    printk(" VTTBR_EL2: %016" PRIx64 "\n", ctxt->vttbr_el2);
 #endif
     printk("\n");
 
-    printk(" SCTLR_EL2: %"PRIregister"\n", READ_SYSREG(SCTLR_EL2));
-    printk("   HCR_EL2: %"PRIregister"\n", READ_SYSREG(HCR_EL2));
+    printk(" SCTLR_EL2: %" PRIregister "\n", READ_SYSREG(SCTLR_EL2));
+    printk("   HCR_EL2: %" PRIregister "\n", READ_SYSREG(HCR_EL2));
 #ifdef CONFIG_MMU
-    printk(" TTBR0_EL2: %016"PRIx64"\n", READ_SYSREG64(TTBR0_EL2));
+    printk(" TTBR0_EL2: %016" PRIx64 "\n", READ_SYSREG64(TTBR0_EL2));
 #endif
     printk("\n");
-    printk("   ESR_EL2: %"PRIregister"\n", regs->hsr);
-    printk(" HPFAR_EL2: %"PRIregister"\n", READ_SYSREG(HPFAR_EL2));
+    printk("   ESR_EL2: %" PRIregister "\n", regs->hsr);
+    printk(" HPFAR_EL2: %" PRIregister "\n", READ_SYSREG(HPFAR_EL2));
 
 #ifdef CONFIG_ARM_32
-    printk("     HDFAR: %08"PRIx32"\n", READ_CP32(HDFAR));
-    printk("     HIFAR: %08"PRIx32"\n", READ_CP32(HIFAR));
+    printk("     HDFAR: %08" PRIx32 "\n", READ_CP32(HDFAR));
+    printk("     HIFAR: %08" PRIx32 "\n", READ_CP32(HIFAR));
 #else
-    printk("   FAR_EL2: %016"PRIx64"\n", READ_SYSREG64(FAR_EL2));
+    printk("   FAR_EL2: %016" PRIx64 "\n", READ_SYSREG64(FAR_EL2));
 #endif
     printk("\n");
 }
@@ -1056,9 +1115,9 @@ static void show_guest_stack(struct vcpu *v, const struct cpu_user_regs *regs)
         return;
     }
 
-    printk("Guest stack trace from sp=%"PRIvaddr":\n  ", sp);
+    printk("Guest stack trace from sp=%" PRIvaddr ":\n  ", sp);
 
-    if ( sp & ( sizeof(long) - 1 ) )
+    if ( sp & (sizeof(long) - 1) )
     {
         printk("Stack is misaligned\n");
         return;
@@ -1075,7 +1134,7 @@ static void show_guest_stack(struct vcpu *v, const struct cpu_user_regs *regs)
 
     stack = mapped + (sp & ~PAGE_MASK);
 
-    for ( i = 0; i < (debug_stack_lines*stack_words_per_line); i++ )
+    for ( i = 0; i < (debug_stack_lines * stack_words_per_line); i++ )
     {
         if ( (((long)stack - 1) ^ ((long)(stack + 1) - 1)) & PAGE_SIZE )
             break;
@@ -1138,22 +1197,21 @@ static void show_trace(const struct cpu_user_regs *regs)
     printk("   [<%p>] %pS (LR)\n", _p(regs->lr), _p(regs->lr));
 
     /* Bounds for range of valid frame pointer. */
-    low  = (register_t)(STACK_BEFORE_EXCEPTION(regs));
-    high = (low & ~(STACK_SIZE - 1)) +
-        (STACK_SIZE - sizeof(struct cpu_info));
+    low = (register_t)(STACK_BEFORE_EXCEPTION(regs));
+    high = (low & ~(STACK_SIZE - 1)) + (STACK_SIZE - sizeof(struct cpu_info));
 
     /* The initial frame pointer. */
     next = regs->fp;
 
-    for ( ; ; )
+    for ( ;; )
     {
         if ( (next < low) || (next >= high) )
             break;
 
         /* Ordinary stack frame. */
         frame = STACK_FRAME_BASE(next);
-        next  = frame[0];
-        addr  = frame[1];
+        next = frame[0];
+        addr = frame[1];
 
         printk("   [<%p>] %pS\n", _p(addr), _p(addr));
 
@@ -1173,9 +1231,9 @@ void show_stack(const struct cpu_user_regs *regs)
 
     printk("Xen stack trace from sp=%p:\n  ", stack);
 
-    for ( i = 0; i < (debug_stack_lines*stack_words_per_line); i++ )
+    for ( i = 0; i < (debug_stack_lines * stack_words_per_line); i++ )
     {
-        if ( ((long)stack & (STACK_SIZE-BYTES_PER_LONG)) == 0 )
+        if ( ((long)stack & (STACK_SIZE - BYTES_PER_LONG)) == 0 )
             break;
         if ( (i != 0) && ((i % stack_words_per_line) == 0) )
             printk("\n  ");
@@ -1199,7 +1257,8 @@ void show_execution_state(const struct cpu_user_regs *regs)
 void vcpu_show_execution_state(struct vcpu *v)
 {
     printk("*** Dumping Dom%d vcpu#%d state: ***\n",
-           v->domain->domain_id, v->vcpu_id);
+           v->domain->domain_id,
+           v->vcpu_id);
 
     if ( v == current )
     {
@@ -1238,8 +1297,7 @@ int do_bug_frame(const struct cpu_user_regs *regs, vaddr_t pc)
         {
             const struct bug_frame *b;
 
-            for ( b = region->frame[id].start;
-                  b < region->frame[id].stop; b++ )
+            for ( b = region->frame[id].start; b < region->frame[id].stop; b++ )
             {
                 if ( ((vaddr_t)bug_loc(b)) == pc )
                 {
@@ -1249,7 +1307,7 @@ int do_bug_frame(const struct cpu_user_regs *regs, vaddr_t pc)
             }
         }
     }
- found:
+found:
     if ( !bug )
         return -ENOENT;
 
@@ -1292,10 +1350,16 @@ int do_bug_frame(const struct cpu_user_regs *regs, vaddr_t pc)
             predicate = "<unknown>";
 
         printk("Assertion '%s' failed at %s%s:%d\n",
-               predicate, prefix, filename, lineno);
+               predicate,
+               prefix,
+               filename,
+               lineno);
         show_execution_state(regs);
         panic("Assertion '%s' failed at %s%s:%d\n",
-              predicate, prefix, filename, lineno);
+              predicate,
+              prefix,
+              filename,
+              lineno);
     }
 
     return -EINVAL;
@@ -1325,7 +1389,7 @@ static void do_trap_brk(struct cpu_user_regs *regs, const union hsr hsr)
         break;
 
     default:
-die:
+    die:
         do_unexpected_trap("Undefined Breakpoint Value", regs);
     }
 }
@@ -1336,14 +1400,14 @@ static register_t do_deprecated_hypercall(void)
     struct cpu_user_regs *regs = guest_cpu_user_regs();
     const register_t op =
 #ifdef CONFIG_ARM_64
-        !is_32bit_domain(current->domain) ?
-            regs->x16
-        :
+        !is_32bit_domain(current->domain) ? regs->x16 :
 #endif
-            regs->r12;
+                                          regs->r12;
 
-    gdprintk(XENLOG_DEBUG, "%pv: deprecated hypercall %lu\n",
-             current, (unsigned long)op);
+    gdprintk(XENLOG_DEBUG,
+             "%pv: deprecated hypercall %lu\n",
+             current,
+             (unsigned long)op);
     return -ENOSYS;
 }
 
@@ -1372,11 +1436,14 @@ static void do_debug_trap(struct cpu_user_regs *regs, unsigned int code)
     {
     case 0xe0 ... 0xef:
         reg = code - 0xe0;
-        printk("DOM%d: R%d = 0x%"PRIregister" at 0x%"PRIvaddr"\n",
-               domid, reg, get_user_reg(regs, reg), regs->pc);
+        printk("DOM%d: R%d = 0x%" PRIregister " at 0x%" PRIvaddr "\n",
+               domid,
+               reg,
+               get_user_reg(regs, reg),
+               regs->pc);
         break;
     case 0xfd:
-        printk("DOM%d: Reached %"PRIvaddr"\n", domid, regs->pc);
+        printk("DOM%d: Reached %" PRIvaddr "\n", domid, regs->pc);
         break;
     case 0xfe:
         printk("%c", (char)(get_user_reg(regs, 0) & 0xff));
@@ -1425,15 +1492,20 @@ static void do_trap_hypercall(struct cpu_user_regs *regs, register_t *nr,
 
     perfc_incra(hypercalls, *nr);
 
-    call_handlers_arm(*nr, HYPERCALL_RESULT_REG(regs), HYPERCALL_ARG1(regs),
-                      HYPERCALL_ARG2(regs), HYPERCALL_ARG3(regs),
-                      HYPERCALL_ARG4(regs), HYPERCALL_ARG5(regs));
+    call_handlers_arm(*nr,
+                      HYPERCALL_RESULT_REG(regs),
+                      HYPERCALL_ARG1(regs),
+                      HYPERCALL_ARG2(regs),
+                      HYPERCALL_ARG3(regs),
+                      HYPERCALL_ARG4(regs),
+                      HYPERCALL_ARG5(regs));
 
 #ifndef NDEBUG
     if ( !curr->hcall_preempted && HYPERCALL_RESULT_REG(regs) != -ENOSYS )
     {
         /* Deliberately corrupt parameter regs used by this hypercall. */
-        switch ( hypercall_args[*nr] ) {
+        switch ( hypercall_args[*nr] )
+        {
         case 5:
             HYPERCALL_ARG5(regs) = 0xDEADBEEFU;
             fallthrough;
@@ -1449,7 +1521,8 @@ static void do_trap_hypercall(struct cpu_user_regs *regs, register_t *nr,
         case 1: /* Don't clobber x0/r0 -- it's the return value */
         case 0: /* -ENOSYS case */
             break;
-        default: BUG();
+        default:
+            BUG();
         }
         *nr = 0xDEADBEEFU;
     }
@@ -1457,7 +1530,7 @@ static void do_trap_hypercall(struct cpu_user_regs *regs, register_t *nr,
 
     /* Ensure the hypercall trap instruction is re-executed. */
     if ( curr->hcall_preempted )
-        regs->pc -= 4;  /* re-execute 'hvc #XEN_HYPERCALL_TAG' */
+        regs->pc -= 4; /* re-execute 'hvc #XEN_HYPERCALL_TAG' */
 
 #ifdef CONFIG_IOREQ_SERVER
     /*
@@ -1488,8 +1561,11 @@ static bool check_multicall_32bit_clean(struct multicall_entry *multi)
     {
         if ( unlikely(multi->args[i] & 0xffffffff00000000ULL) )
         {
-            printk("%pv: multicall argument %d is not 32-bit clean %"PRIx64"\n",
-                   current, i, multi->args[i]);
+            printk("%pv: multicall argument %d is not 32-bit clean %" PRIx64
+                   "\n",
+                   current,
+                   i,
+                   multi->args[i]);
             domain_crash(current->domain);
             return false;
         }
@@ -1512,11 +1588,16 @@ enum mc_disposition arch_do_multicall_call(struct mc_state *mcs)
          !check_multicall_32bit_clean(multi) )
         return mc_continue;
 
-    call_handlers_arm(multi->op, multi->result, multi->args[0], multi->args[1],
-                      multi->args[2], multi->args[3], multi->args[4]);
+    call_handlers_arm(multi->op,
+                      multi->result,
+                      multi->args[0],
+                      multi->args[1],
+                      multi->args[2],
+                      multi->args[3],
+                      multi->args[4]);
 
-    return likely(!regs_mode_is_user(guest_cpu_user_regs()))
-           ? mc_continue : mc_preempt;
+    return likely(!regs_mode_is_user(guest_cpu_user_regs())) ? mc_continue
+                                                             : mc_preempt;
 }
 
 /*
@@ -1528,22 +1609,22 @@ enum mc_disposition arch_do_multicall_call(struct mc_state *mcs)
  * bit position in short is condition code: NZCV
  */
 static const unsigned short cc_map[16] = {
-        0xF0F0,                 /* EQ == Z set            */
-        0x0F0F,                 /* NE                     */
-        0xCCCC,                 /* CS == C set            */
-        0x3333,                 /* CC                     */
-        0xFF00,                 /* MI == N set            */
-        0x00FF,                 /* PL                     */
-        0xAAAA,                 /* VS == V set            */
-        0x5555,                 /* VC                     */
-        0x0C0C,                 /* HI == C set && Z clear */
-        0xF3F3,                 /* LS == C clear || Z set */
-        0xAA55,                 /* GE == (N==V)           */
-        0x55AA,                 /* LT == (N!=V)           */
-        0x0A05,                 /* GT == (!Z && (N==V))   */
-        0xF5FA,                 /* LE == (Z || (N!=V))    */
-        0xFFFF,                 /* AL always              */
-        0                       /* NV                     */
+    0xF0F0, /* EQ == Z set            */
+    0x0F0F, /* NE                     */
+    0xCCCC, /* CS == C set            */
+    0x3333, /* CC                     */
+    0xFF00, /* MI == N set            */
+    0x00FF, /* PL                     */
+    0xAAAA, /* VS == V set            */
+    0x5555, /* VC                     */
+    0x0C0C, /* HI == C set && Z clear */
+    0xF3F3, /* LS == C clear || Z set */
+    0xAA55, /* GE == (N==V)           */
+    0x55AA, /* LT == (N!=V)           */
+    0x0A05, /* GT == (!Z && (N==V))   */
+    0xF5FA, /* LE == (Z || (N!=V))    */
+    0xFFFF, /* AL always              */
+    0 /* NV                     */
 };
 
 int check_conditional_instr(struct cpu_user_regs *regs, const union hsr hsr)
@@ -1586,16 +1667,16 @@ int check_conditional_instr(struct cpu_user_regs *regs, const union hsr hsr)
     {
         unsigned long it;
 
-        BUG_ON( !regs_mode_is_32bit(regs) || !(cpsr & PSR_THUMB) );
+        BUG_ON(!regs_mode_is_32bit(regs) || !(cpsr & PSR_THUMB));
 
-        it = ( (cpsr >> (10-2)) & 0xfc) | ((cpsr >> 25) & 0x3 );
+        it = ((cpsr >> (10 - 2)) & 0xfc) | ((cpsr >> 25) & 0x3);
 
         /* it == 0 => unconditional. */
         if ( it == 0 )
             return 1;
 
         /* The cond for this instruction works out as the top 4 bits. */
-        cond = ( it >> 4 );
+        cond = (it >> 4);
     }
 
     cpsr_cond = cpsr >> 28;
@@ -1646,11 +1727,8 @@ void advance_pc(struct cpu_user_regs *regs, const union hsr hsr)
 }
 
 /* Read as zero and write ignore */
-void handle_raz_wi(struct cpu_user_regs *regs,
-                   int regidx,
-                   bool read,
-                   const union hsr hsr,
-                   int min_el)
+void handle_raz_wi(struct cpu_user_regs *regs, int regidx, bool read,
+                   const union hsr hsr, int min_el)
 {
     ASSERT((min_el == 0) || (min_el == 1));
 
@@ -1665,11 +1743,8 @@ void handle_raz_wi(struct cpu_user_regs *regs,
 }
 
 /* write only as write ignore */
-void handle_wo_wi(struct cpu_user_regs *regs,
-                  int regidx,
-                  bool read,
-                  const union hsr hsr,
-                  int min_el)
+void handle_wo_wi(struct cpu_user_regs *regs, int regidx, bool read,
+                  const union hsr hsr, int min_el)
 {
     ASSERT((min_el == 0) || (min_el == 1));
 
@@ -1684,12 +1759,8 @@ void handle_wo_wi(struct cpu_user_regs *regs,
 }
 
 /* Read only as value provided with 'val' argument of this function */
-void handle_ro_read_val(struct cpu_user_regs *regs,
-                        int regidx,
-                        bool read,
-                        const union hsr hsr,
-                        int min_el,
-                        register_t val)
+void handle_ro_read_val(struct cpu_user_regs *regs, int regidx, bool read,
+                        const union hsr hsr, int min_el, register_t val)
 {
     ASSERT((min_el == 0) || (min_el == 1));
 
@@ -1705,11 +1776,8 @@ void handle_ro_read_val(struct cpu_user_regs *regs,
 }
 
 /* Read only as read as zero */
-void handle_ro_raz(struct cpu_user_regs *regs,
-                   int regidx,
-                   bool read,
-                   const union hsr hsr,
-                   int min_el)
+void handle_ro_raz(struct cpu_user_regs *regs, int regidx, bool read,
+                   const union hsr hsr, int min_el)
 {
     handle_ro_read_val(regs, regidx, read, hsr, min_el, 0);
 }
@@ -1730,7 +1798,7 @@ static inline vaddr_t get_hfar(bool is_data)
     else
         gva = READ_CP32(HIFAR);
 #else
-    gva =  READ_SYSREG(FAR_EL2);
+    gva = READ_SYSREG(FAR_EL2);
 #endif
 
     return gva;
@@ -1784,7 +1852,9 @@ static bool try_map_mmio(gfn_t gfn)
     if ( d->arch.vgic.version == GIC_V2 &&
          gfn_to_gaddr(gfn) >= d->arch.vgic.cbase &&
          (gfn_to_gaddr(gfn) - d->arch.vgic.cbase) < d->arch.vgic.csize )
-        return !map_mmio_regions(d, gfn, d->arch.vgic.csize / PAGE_SIZE,
+        return !map_mmio_regions(d,
+                                 gfn,
+                                 d->arch.vgic.csize / PAGE_SIZE,
                                  maddr_to_mfn(d->arch.vgic.vbase));
 
     /*
@@ -1810,7 +1880,7 @@ static inline bool check_p2m(bool is_data, paddr_t gpa)
      * First check if the translation fault can be resolved by the P2M subsystem.
      * If that's the case nothing else to do.
      */
-    if ( p2m_resolve_translation_fault(current->domain , gaddr_to_gfn(gpa)) )
+    if ( p2m_resolve_translation_fault(current->domain, gaddr_to_gfn(gpa)) )
         return true;
 
     if ( is_data && try_map_mmio(gaddr_to_gfn(gpa)) )
@@ -1871,13 +1941,12 @@ static void do_trap_stage2_abort_guest(struct cpu_user_regs *regs,
     {
     case FSC_FLT_PERM:
     {
-        const struct npfec npfec = {
-            .insn_fetch = !is_data,
-            .read_access = is_data && !hsr.dabt.write,
-            .write_access = is_data && hsr.dabt.write,
-            .gla_valid = 1,
-            .kind = xabt.s1ptw ? npfec_kind_in_gpt : npfec_kind_with_gla
-        };
+        const struct npfec npfec = { .insn_fetch = !is_data,
+                                     .read_access = is_data && !hsr.dabt.write,
+                                     .write_access = is_data && hsr.dabt.write,
+                                     .gla_valid = 1,
+                                     .kind = xabt.s1ptw ? npfec_kind_in_gpt
+                                                        : npfec_kind_with_gla };
 
         p2m_mem_access_check(gpa, gva, npfec);
         /*
@@ -1923,24 +1992,24 @@ static void do_trap_stage2_abort_guest(struct cpu_user_regs *regs,
 
         switch ( state )
         {
-            case IO_ABORT:
-                goto inject_abt;
-            case IO_HANDLED:
-                /*
+        case IO_ABORT:
+            goto inject_abt;
+        case IO_HANDLED:
+            /*
                  * If the instruction was decoded and has executed successfully
                  * on the MMIO region, then Xen should execute the next part of
                  * the instruction. (for eg increment the rn if it is a
                  * post-indexing instruction.
                  */
-                finalize_instr_emulation(&info.dabt_instr);
-                advance_pc(regs, hsr);
-                return;
-            case IO_RETRY:
-                /* finish later */
-                return;
-            case IO_UNHANDLED:
-                /* IO unhandled, try another way to handle it. */
-                break;
+            finalize_instr_emulation(&info.dabt_instr);
+            advance_pc(regs, hsr);
+            return;
+        case IO_RETRY:
+            /* finish later */
+            return;
+        case IO_UNHANDLED:
+            /* IO unhandled, try another way to handle it. */
+            break;
         }
 
         /*
@@ -1955,15 +2024,20 @@ static void do_trap_stage2_abort_guest(struct cpu_user_regs *regs,
     }
     default:
         gprintk(XENLOG_WARNING,
-                "Unsupported FSC: HSR=%#"PRIregister" DFSC=%#x\n",
-                hsr.bits, xabt.fsc);
+                "Unsupported FSC: HSR=%#" PRIregister " DFSC=%#x\n",
+                hsr.bits,
+                xabt.fsc);
         break;
     }
 
 inject_abt:
     gdprintk(XENLOG_DEBUG,
-             "HSR=%#"PRIregister" pc=%#"PRIregister" gva=%#"PRIvaddr" gpa=%#"PRIpaddr"\n",
-             hsr.bits, regs->pc, gva, gpa);
+             "HSR=%#" PRIregister " pc=%#" PRIregister " gva=%#" PRIvaddr
+             " gpa=%#" PRIpaddr "\n",
+             hsr.bits,
+             regs->pc,
+             gva,
+             gpa);
     if ( is_data )
         inject_dabt_exception(regs, gva, hsr.len);
     else
@@ -1976,7 +2050,7 @@ static inline bool needs_ssbd_flip(struct vcpu *v)
         return false;
 
     return !(v->arch.cpu_info->flags & CPUINFO_WORKAROUND_2_FLAG) &&
-             cpu_require_ssbd_mitigation();
+           cpu_require_ssbd_mitigation();
 }
 
 /*
@@ -2043,11 +2117,14 @@ void asmlinkage do_trap_guest_sync(struct cpu_user_regs *regs)
             advance_pc(regs, hsr);
             return;
         }
-        if ( hsr.wfi_wfe.ti ) {
+        if ( hsr.wfi_wfe.ti )
+        {
             /* Yield the VCPU for WFE */
             perfc_incr(trap_wfe);
             vcpu_yield();
-        } else {
+        }
+        else
+        {
             /* Block the VCPU for WFI */
             perfc_incr(trap_wfi);
             vcpu_block_unless_event_pending(current);
@@ -2162,8 +2239,12 @@ void asmlinkage do_trap_guest_sync(struct cpu_user_regs *regs)
 
     default:
         gprintk(XENLOG_WARNING,
-                "Unknown Guest Trap. HSR=%#"PRIregister" EC=0x%x IL=%x Syndrome=0x%"PRIx32"\n",
-                hsr.bits, hsr.ec, hsr.len, hsr.iss);
+                "Unknown Guest Trap. HSR=%#" PRIregister
+                " EC=0x%x IL=%x Syndrome=0x%" PRIx32 "\n",
+                hsr.bits,
+                hsr.ec,
+                hsr.len,
+                hsr.iss);
         inject_undef_exception(regs, hsr);
         break;
     }
@@ -2206,8 +2287,12 @@ void do_trap_hyp_sync(struct cpu_user_regs *regs)
         break;
     }
     default:
-        printk("Hypervisor Trap. HSR=%#"PRIregister" EC=0x%x IL=%x Syndrome=0x%"PRIx32"\n",
-               hsr.bits, hsr.ec, hsr.len, hsr.iss);
+        printk("Hypervisor Trap. HSR=%#" PRIregister
+               " EC=0x%x IL=%x Syndrome=0x%" PRIx32 "\n",
+               hsr.bits,
+               hsr.ec,
+               hsr.len,
+               hsr.iss);
         do_unexpected_trap("Hypervisor", regs);
     }
 }

@@ -50,6 +50,7 @@ void __trace_hypercall(uint32_t event, unsigned long op,
 #define tb_init_done false
 
 static inline void init_trace_bufs(void) {}
+
 static inline int tb_control(struct xen_sysctl_tbuf_op *tbc)
 {
     return -ENOSYS;
@@ -60,16 +61,18 @@ static inline int trace_will_trace_event(uint32_t event)
     return 0;
 }
 
-static inline void trace(
-    uint32_t event, unsigned int extra, const void *extra_data) {}
+static inline void trace(uint32_t event, unsigned int extra,
+                         const void *extra_data)
+{}
 
 static inline void __trace_hypercall(uint32_t event, unsigned long op,
-                                     const xen_ulong_t *args) {}
+                                     const xen_ulong_t *args)
+{}
 #endif /* CONFIG_TRACEBUFFER */
 
 /* Create a trace record with time included. */
-static inline void trace_time(
-    uint32_t event, unsigned int extra, const void *extra_data)
+static inline void trace_time(uint32_t event, unsigned int extra,
+                              const void *extra_data)
 {
     trace(event | TRC_HD_CYCLE_FLAG, extra, extra_data);
 }

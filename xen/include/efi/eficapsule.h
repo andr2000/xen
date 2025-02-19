@@ -22,15 +22,14 @@ Abstract:
 #ifndef _EFI_CAPSULE_H
 #define _EFI_CAPSULE_H
 
-
 #define CAPSULE_BLOCK_DESCRIPTOR_SIGNATURE  EFI_SIGNATURE_32 ('C', 'B', 'D', 'S')
 
 typedef struct {
-  EFI_GUID  OemGuid;
-  UINT32    HeaderSize;
-  //
-  // UINT8                       OemHdrData[];
-  //
+    EFI_GUID OemGuid;
+    UINT32 HeaderSize;
+    //
+    // UINT8                       OemHdrData[];
+    //
 } EFI_CAPSULE_OEM_HEADER;
 
 #define MAX_SUPPORT_CAPSULE_NUM               50
@@ -38,23 +37,24 @@ typedef struct {
 #define CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE   0x00020000
 
 typedef struct {
-  UINT64                   Length;
-  union {
-    EFI_PHYSICAL_ADDRESS   DataBlock;
-    EFI_PHYSICAL_ADDRESS   ContinuationPointer;
-  } Union;
+    UINT64 Length;
+
+    union {
+        EFI_PHYSICAL_ADDRESS DataBlock;
+        EFI_PHYSICAL_ADDRESS ContinuationPointer;
+    } Union;
 } EFI_CAPSULE_BLOCK_DESCRIPTOR;
 
 typedef struct {
-  EFI_GUID  CapsuleGuid;
-  UINT32    HeaderSize;
-  UINT32    Flags;
-  UINT32    CapsuleImageSize;
+    EFI_GUID CapsuleGuid;
+    UINT32 HeaderSize;
+    UINT32 Flags;
+    UINT32 CapsuleImageSize;
 } EFI_CAPSULE_HEADER;
 
 typedef struct {
-  UINT32   CapsuleArrayNumber;
-  VOID*    CapsulePtr[1];
+    UINT32 CapsuleArrayNumber;
+    VOID *CapsulePtr[1];
 } EFI_CAPSULE_TABLE;
 
 //

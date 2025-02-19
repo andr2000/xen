@@ -45,15 +45,12 @@ static inline bool xsetbv(u32 index, u64 xfeatures)
     u32 hi = xfeatures >> 32;
     u32 lo = (u32)xfeatures;
 
-    asm volatile ( "1: .byte 0x0f,0x01,0xd1\n"
-                   "3:                     \n"
-                   ".section .fixup,\"ax\" \n"
-                   "2: xor %0,%0           \n"
-                   "   jmp 3b              \n"
-                   ".previous              \n"
-                   _ASM_EXTABLE(1b, 2b)
-                   : "+a" (lo)
-                   : "c" (index), "d" (hi));
+    asm volatile(
+        "1: .byte 0x0f,0x01,0xd1\n" "3:                     \n" ".section .fixup,\"ax\" \n" "2: xor %0,%0           \n" "   jmp 3b              \n" ".previous              \n" _ASM_EXTABLE(
+            1b,
+            2b)
+        : "+a"(lo)
+        : "c"(index), "d"(hi));
     return lo != 0;
 }
 
@@ -116,15 +113,18 @@ static int setup_xstate_features(bool bsp)
     {
         if ( bsp )
         {
-            cpuid_count(XSTATE_CPUID, leaf, &xstate_sizes[leaf],
-                        &xstate_offsets[leaf], &ecx, &edx);
+            cpuid_count(XSTATE_CPUID,
+                        leaf,
+                        &xstate_sizes[leaf],
+                        &xstate_offsets[leaf],
+                        &ecx,
+                        &edx);
             if ( ecx & XSTATE_ALIGN64 )
                 __set_bit(leaf, &xstate_align);
         }
         else
         {
-            cpuid_count(XSTATE_CPUID, leaf, &eax,
-                        &ebx, &ecx, &edx);
+            cpuid_count(XSTATE_CPUID, leaf, &eax, &ebx, &ecx, &edx);
             BUG_ON(eax != xstate_sizes[leaf]);
             BUG_ON(ebx != xstate_offsets[leaf]);
             BUG_ON(!(ecx & XSTATE_ALIGN64) != !test_bit(leaf, &xstate_align));
@@ -134,8 +134,7 @@ static int setup_xstate_features(bool bsp)
     return 0;
 }
 
-static void setup_xstate_comp(uint16_t *comp_offsets,
-                              const uint64_t xcomp_bv)
+static void setup_xstate_comp(uint16_t *comp_offsets, const uint64_t xcomp_bv)
 {
     unsigned int i;
     unsigned int offset;
@@ -179,7 +178,7 @@ void expand_xsave_states(const struct vcpu *v, void *dest, unsigned int size)
 {
     const struct xsave_struct *xstate = v->arch.xsave_area;
     const void *src;
-    uint16_t comp_offsets[sizeof(xfeature_mask)*8];
+    uint16_t comp_offsets[sizeof(xfeature_mask) * 8];
     u64 xstate_bv = xstate->xsave_hdr.xstate_bv;
     u64 valid;
 
@@ -203,7 +202,7 @@ void expand_xsave_states(const struct vcpu *v, void *dest, unsigned int size)
     memcpy(dest, xstate, XSTATE_AREA_MIN_SIZE);
     memset(dest + XSTATE_AREA_MIN_SIZE, 0, size - XSTATE_AREA_MIN_SIZE);
 
-    ((struct xsave_struct *)dest)->xsave_hdr.xcomp_bv =  0;
+    ((struct xsave_struct *)dest)->xsave_hdr.xcomp_bv = 0;
 
     /*
      * Copy each region from the possibly compacted offset to the
@@ -223,7 +222,8 @@ void expand_xsave_states(const struct vcpu *v, void *dest, unsigned int size)
         BUG_ON(!comp_offsets[index]);
         BUG_ON((xstate_offsets[index] + xstate_sizes[index]) > size);
 
-        memcpy(dest + xstate_offsets[index], src + comp_offsets[index],
+        memcpy(dest + xstate_offsets[index],
+               src + comp_offsets[index],
                xstate_sizes[index]);
 
         valid &= ~feature;
@@ -244,7 +244,7 @@ void compress_xsave_states(struct vcpu *v, const void *src, unsigned int size)
 {
     struct xsave_struct *xstate = v->arch.xsave_area;
     void *dest;
-    uint16_t comp_offsets[sizeof(xfeature_mask)*8];
+    uint16_t comp_offsets[sizeof(xfeature_mask) * 8];
     u64 xstate_bv, valid;
 
     BUG_ON(!v->arch.xcr0_accum);
@@ -289,7 +289,8 @@ void compress_xsave_states(struct vcpu *v, const void *src, unsigned int size)
         BUG_ON(!comp_offsets[index]);
         BUG_ON((xstate_offsets[index] + xstate_sizes[index]) > size);
 
-        memcpy(dest + comp_offsets[index], src + xstate_offsets[index],
+        memcpy(dest + comp_offsets[index],
+               src + xstate_offsets[index],
                xstate_sizes[index]);
 
         valid &= ~feature;
@@ -358,7 +359,7 @@ void xsave(struct vcpu *v, uint64_t mask)
         {
             struct ix87_env fpu_env;
 
-            asm volatile ( "fnstenv %0" : "=m" (fpu_env) );
+            asm volatile("fnstenv %0" : "=m"(fpu_env));
             ptr->fpu_sse.fip.sel = fpu_env.fcs;
             ptr->fpu_sse.fdp.sel = fpu_env.fds;
             fip_width = 4;
@@ -385,23 +386,24 @@ void xrstor(struct vcpu *v, uint64_t mask)
      * sometimes new user value. Both should be ok. Use the FPU saved
      * data block as a safe address because it should be in L1.
      */
-    if ( cpu_bug_fpu_ptrs &&
-         !(ptr->fpu_sse.fsw & ~ptr->fpu_sse.fcw & 0x003f) )
-        asm volatile ( "fnclex\n\t"        /* clear exceptions */
-                       "ffree %%st(7)\n\t" /* clear stack tag */
-                       "fildl %0"          /* load to clear state */
-                       : : "m" (ptr->fpu_sse) );
+    if ( cpu_bug_fpu_ptrs && !(ptr->fpu_sse.fsw & ~ptr->fpu_sse.fcw & 0x003f) )
+        asm volatile("fnclex\n\t" /* clear exceptions */
+                     "ffree %%st(7)\n\t" /* clear stack tag */
+                     "fildl %0" /* load to clear state */
+                     :
+                     : "m"(ptr->fpu_sse));
 
     /*
      * XRSTOR can fault if passed a corrupted data block. We handle this
      * possibility, which may occur if the block was passed to us by control
      * tools or through VCPUOP_initialise, by silently adjusting state.
      */
-    for ( prev_faults = faults = 0; ; prev_faults = faults )
+    for ( prev_faults = faults = 0;; prev_faults = faults )
     {
         switch ( __builtin_expect(ptr->fpu_sse.x[FPU_WORD_SIZE_OFFSET], 8) )
         {
-            BUILD_BUG_ON(sizeof(faults) != 4); /* Clang doesn't support %z in asm. */
+            BUILD_BUG_ON(sizeof(faults) !=
+                         4); /* Clang doesn't support %z in asm. */
 #define _xrstor(insn) \
         asm volatile ( "1: .byte " insn "\n" \
                        "3:\n" \
@@ -432,7 +434,8 @@ void xrstor(struct vcpu *v, uint64_t mask)
         default:
             XRSTOR("0x48,");
             break;
-        case 4: case 2:
+        case 4:
+        case 2:
             XRSTOR("");
             break;
 #undef XRSTOR
@@ -441,16 +444,26 @@ void xrstor(struct vcpu *v, uint64_t mask)
         if ( likely(faults == prev_faults) )
             break;
 #ifndef NDEBUG
-        gprintk(XENLOG_WARNING, "fault#%u: mxcsr=%08x\n",
-                faults, ptr->fpu_sse.mxcsr);
-        gprintk(XENLOG_WARNING, "xs=%016lx xc=%016lx\n",
-                ptr->xsave_hdr.xstate_bv, ptr->xsave_hdr.xcomp_bv);
-        gprintk(XENLOG_WARNING, "r0=%016lx r1=%016lx\n",
-                ptr->xsave_hdr.reserved[0], ptr->xsave_hdr.reserved[1]);
-        gprintk(XENLOG_WARNING, "r2=%016lx r3=%016lx\n",
-                ptr->xsave_hdr.reserved[2], ptr->xsave_hdr.reserved[3]);
-        gprintk(XENLOG_WARNING, "r4=%016lx r5=%016lx\n",
-                ptr->xsave_hdr.reserved[4], ptr->xsave_hdr.reserved[5]);
+        gprintk(XENLOG_WARNING,
+                "fault#%u: mxcsr=%08x\n",
+                faults,
+                ptr->fpu_sse.mxcsr);
+        gprintk(XENLOG_WARNING,
+                "xs=%016lx xc=%016lx\n",
+                ptr->xsave_hdr.xstate_bv,
+                ptr->xsave_hdr.xcomp_bv);
+        gprintk(XENLOG_WARNING,
+                "r0=%016lx r1=%016lx\n",
+                ptr->xsave_hdr.reserved[0],
+                ptr->xsave_hdr.reserved[1]);
+        gprintk(XENLOG_WARNING,
+                "r2=%016lx r3=%016lx\n",
+                ptr->xsave_hdr.reserved[2],
+                ptr->xsave_hdr.reserved[3]);
+        gprintk(XENLOG_WARNING,
+                "r4=%016lx r5=%016lx\n",
+                ptr->xsave_hdr.reserved[4],
+                ptr->xsave_hdr.reserved[5]);
 #endif
         switch ( faults )
         {
@@ -482,7 +495,8 @@ void xrstor(struct vcpu *v, uint64_t mask)
             ptr->fpu_sse.mxcsr = MXCSR_DEFAULT;
             ptr->xsave_hdr.xstate_bv = 0;
             ptr->xsave_hdr.xcomp_bv = v->arch.xcr0_accum & XSTATE_XSAVES_ONLY
-                                      ? XSTATE_COMPACTION_ENABLED : 0;
+                                          ? XSTATE_COMPACTION_ENABLED
+                                          : 0;
             continue;
         }
 
@@ -612,7 +626,7 @@ unsigned int xstate_uncompressed_size(uint64_t xcr0)
      * with respect their index.
      */
     xcr0 &= ~(X86_XCR0_SSE | X86_XCR0_X87);
-    for_each_set_bit ( i, xcr0 )
+    for_each_set_bit(i, xcr0)
     {
         const struct xstate_component *c = &raw_cpu_policy.xstate.comp[i];
         unsigned int s = c->offset + c->size;
@@ -642,7 +656,7 @@ unsigned int xstate_compressed_size(uint64_t xstates)
      * componenets require aligning to 64 first.
      */
     xstates &= ~(X86_XCR0_SSE | X86_XCR0_X87);
-    for_each_set_bit ( i, xstates )
+    for_each_set_bit(i, xstates)
     {
         const struct xstate_component *c = &raw_cpu_policy.xstate.comp[i];
 
@@ -670,14 +684,14 @@ static void __init check_new_xstate(struct xcheck_state *s, uint64_t new)
     BUILD_BUG_ON(X86_XCR0_STATES & X86_XSS_STATES);
 
     BUG_ON(new <= s->states); /* States strictly increase by index. */
-    BUG_ON(s->states & new);  /* States only accumulate. */
+    BUG_ON(s->states & new); /* States only accumulate. */
     BUG_ON(!valid_xcr0(s->states | new)); /* Xen thinks it's a good value. */
     BUG_ON(new & ~(X86_XCR0_STATES | X86_XSS_STATES)); /* Known state. */
-    BUG_ON((new & X86_XCR0_STATES) &&
-           (new & X86_XSS_STATES)); /* User or supervisor, not both. */
+    BUG_ON((new &X86_XCR0_STATES) &&
+           (new &X86_XSS_STATES)); /* User or supervisor, not both. */
 
     s->states |= new;
-    if ( new & X86_XCR0_STATES )
+    if ( new &X86_XCR0_STATES )
     {
         if ( !set_xcr0(s->states & X86_XCR0_STATES) )
             BUG();
@@ -690,15 +704,20 @@ static void __init check_new_xstate(struct xcheck_state *s, uint64_t new)
      */
     hw_size = cpuid_count_ebx(0xd, 0);
 
-    if ( new & X86_XSS_STATES )
+    if ( new &X86_XSS_STATES )
     {
         /*
          * Supervisor states don't exist in an uncompressed image, so check
          * that the uncompressed size doesn't change.  Otherwise...
          */
         if ( hw_size != s->uncomp_size )
-            panic("XSTATE 0x%016"PRIx64", new sup bits {%63pbl}, uncompressed hw size %#x != prev size %#x\n",
-                  s->states, &new, hw_size, s->uncomp_size);
+            panic(
+                "XSTATE 0x%016" PRIx64
+                ", new sup bits {%63pbl}, uncompressed hw size %#x != prev size %#x\n",
+                s->states,
+                &new,
+                hw_size,
+                s->uncomp_size);
     }
     else
     {
@@ -707,8 +726,13 @@ static void __init check_new_xstate(struct xcheck_state *s, uint64_t new)
          * The best check we make is that the size never decreases.
          */
         if ( hw_size < s->uncomp_size )
-            panic("XSTATE 0x%016"PRIx64", new bits {%63pbl}, uncompressed hw size %#x < prev size %#x\n",
-                  s->states, &new, hw_size, s->uncomp_size);
+            panic(
+                "XSTATE 0x%016" PRIx64
+                ", new bits {%63pbl}, uncompressed hw size %#x < prev size %#x\n",
+                s->states,
+                &new,
+                hw_size,
+                s->uncomp_size);
     }
 
     s->uncomp_size = hw_size;
@@ -719,8 +743,11 @@ static void __init check_new_xstate(struct xcheck_state *s, uint64_t new)
     xen_size = xstate_uncompressed_size(s->states & X86_XCR0_STATES);
 
     if ( xen_size != hw_size )
-        panic("XSTATE 0x%016"PRIx64", uncompressed hw size %#x != xen size %#x\n",
-              s->states, hw_size, xen_size);
+        panic("XSTATE 0x%016" PRIx64
+              ", uncompressed hw size %#x != xen size %#x\n",
+              s->states,
+              hw_size,
+              xen_size);
 
     /*
      * Check the compressed size, if available.
@@ -735,8 +762,13 @@ static void __init check_new_xstate(struct xcheck_state *s, uint64_t new)
          * non-zero size, the accumulated size should strictly increase.
          */
         if ( hw_size <= s->comp_size )
-            panic("XSTATE 0x%016"PRIx64", new bits {%63pbl}, compressed hw size %#x <= prev size %#x\n",
-                  s->states, &new, hw_size, s->comp_size);
+            panic(
+                "XSTATE 0x%016" PRIx64
+                ", new bits {%63pbl}, compressed hw size %#x <= prev size %#x\n",
+                s->states,
+                &new,
+                hw_size,
+                s->comp_size);
 
         s->comp_size = hw_size;
 
@@ -746,8 +778,11 @@ static void __init check_new_xstate(struct xcheck_state *s, uint64_t new)
         xen_size = xstate_compressed_size(s->states);
 
         if ( xen_size != hw_size )
-            panic("XSTATE 0x%016"PRIx64", compressed hw size %#x != xen size %#x\n",
-                  s->states, hw_size, xen_size);
+            panic("XSTATE 0x%016" PRIx64
+                  ", compressed hw size %#x != xen size %#x\n",
+                  s->states,
+                  hw_size,
+                  xen_size);
     }
     else if ( hw_size ) /* Compressed size reported, but no XSAVEC ? */
     {
@@ -856,7 +891,7 @@ void xstate_init(struct cpuinfo_x86 *c)
     {
         static fpusse_t __initdata ctxt;
 
-        asm ( "fxsave %0" : "=m" (ctxt) );
+        asm("fxsave %0" : "=m"(ctxt));
         if ( ctxt.mxcsr_mask )
             mxcsr_mask = ctxt.mxcsr_mask;
     }
@@ -864,8 +899,7 @@ void xstate_init(struct cpuinfo_x86 *c)
     if ( !cpu_has_xsave )
         return;
 
-    if ( (bsp && !use_xsave) ||
-         boot_cpu_data.cpuid_level < XSTATE_CPUID )
+    if ( (bsp && !use_xsave) || boot_cpu_data.cpuid_level < XSTATE_CPUID )
     {
         BUG_ON(!bsp);
         setup_clear_cpu_cap(X86_FEATURE_XSAVE);
@@ -903,8 +937,9 @@ void xstate_init(struct cpuinfo_x86 *c)
          * We know FP/SSE and YMM about eax, and nothing about edx at present.
          */
         xsave_cntxt_size = cpuid_count_ebx(0xd, 0);
-        printk("xstate: size: %#x and states: %#"PRIx64"\n",
-               xsave_cntxt_size, xfeature_mask);
+        printk("xstate: size: %#x and states: %#" PRIx64 "\n",
+               xsave_cntxt_size,
+               xfeature_mask);
     }
     else
     {
@@ -925,15 +960,12 @@ int validate_xstate(const struct domain *d, uint64_t xcr0, uint64_t xcr0_accum,
     uint64_t xcr0_max = cpu_policy_xcr0_max(d->arch.cpuid);
     unsigned int i;
 
-    if ( (hdr->xstate_bv & ~xcr0_accum) ||
-         (xcr0 & ~xcr0_accum) ||
-         (xcr0_accum & ~xcr0_max) ||
-         !valid_xcr0(xcr0) ||
+    if ( (hdr->xstate_bv & ~xcr0_accum) || (xcr0 & ~xcr0_accum) ||
+         (xcr0_accum & ~xcr0_max) || !valid_xcr0(xcr0) ||
          !valid_xcr0(xcr0_accum) )
         return -EINVAL;
 
-    if ( (xcr0_accum & ~xfeature_mask) ||
-         hdr->xcomp_bv )
+    if ( (xcr0_accum & ~xfeature_mask) || hdr->xcomp_bv )
         return -EOPNOTSUPP;
 
     for ( i = 0; i < ARRAY_SIZE(hdr->reserved); ++i )
@@ -960,7 +992,8 @@ int handle_xsetbv(u32 index, u64 new_bv)
     {
         gprintk(XENLOG_ERR,
                 "xcr0_max %016" PRIx64 " exceeds hardware max %016" PRIx64 "\n",
-                xcr0_max, xfeature_mask);
+                xcr0_max,
+                xfeature_mask);
         domain_crash(curr->domain);
 
         return -EINVAL;
@@ -972,7 +1005,8 @@ int handle_xsetbv(u32 index, u64 new_bv)
     /* By this point, new_bv really should be accepted by hardware. */
     if ( unlikely(!set_xcr0(new_bv)) )
     {
-        gprintk(XENLOG_ERR, "new_bv %016" PRIx64 " rejected by hardware\n",
+        gprintk(XENLOG_ERR,
+                "new_bv %016" PRIx64 " rejected by hardware\n",
                 new_bv);
         domain_crash(curr->domain);
 
@@ -993,7 +1027,7 @@ int handle_xsetbv(u32 index, u64 new_bv)
 
         clts();
         if ( curr->fpu_dirtied )
-            asm ( "stmxcsr %0" : "=m" (curr->arch.xsave_area->fpu_sse.mxcsr) );
+            asm("stmxcsr %0" : "=m"(curr->arch.xsave_area->fpu_sse.mxcsr));
         else if ( xstate_all(curr) )
         {
             /* See the comment in i387.c:vcpu_restore_fpu_eager(). */
@@ -1013,8 +1047,8 @@ int handle_xsetbv(u32 index, u64 new_bv)
 uint64_t read_bndcfgu(void)
 {
     unsigned long cr0 = read_cr0();
-    struct xsave_struct *xstate
-        = idle_vcpu[smp_processor_id()]->arch.xsave_area;
+    struct xsave_struct *xstate =
+        idle_vcpu[smp_processor_id()]->arch.xsave_area;
     const struct xstate_bndcsr *bndcsr;
 
     ASSERT(cpu_has_mpx);
@@ -1022,17 +1056,17 @@ uint64_t read_bndcfgu(void)
 
     if ( cpu_has_xsavec )
     {
-        asm ( ".byte 0x0f,0xc7,0x27\n" /* xsavec */
-              : "=m" (*xstate)
-              : "a" (X86_XCR0_BNDCSR), "d" (0), "D" (xstate) );
+        asm(".byte 0x0f,0xc7,0x27\n" /* xsavec */
+            : "=m"(*xstate)
+            : "a"(X86_XCR0_BNDCSR), "d"(0), "D"(xstate));
 
         bndcsr = (void *)(xstate + 1);
     }
     else
     {
-        asm ( ".byte 0x0f,0xae,0x27\n" /* xsave */
-              : "=m" (*xstate)
-              : "a" (X86_XCR0_BNDCSR), "d" (0), "D" (xstate) );
+        asm(".byte 0x0f,0xae,0x27\n" /* xsave */
+            : "=m"(*xstate)
+            : "a"(X86_XCR0_BNDCSR), "d"(0), "D"(xstate));
 
         bndcsr = (void *)xstate + xstate_offsets[ilog2(X86_XCR0_BNDCSR)];
     }

@@ -22,8 +22,8 @@
 
 #include <asm/msi.h>
 
-static uint32_t cf_check control_read(
-    const struct pci_dev *pdev, unsigned int reg, void *data)
+static uint32_t cf_check control_read(const struct pci_dev *pdev,
+                                      unsigned int reg, void *data)
 {
     const struct vpci_msi *msi = data;
 
@@ -34,8 +34,8 @@ static uint32_t cf_check control_read(
            (msi->address64 ? PCI_MSI_FLAGS_64BIT : 0);
 }
 
-static void cf_check control_write(
-    const struct pci_dev *pdev, unsigned int reg, uint32_t val, void *data)
+static void cf_check control_write(const struct pci_dev *pdev, unsigned int reg,
+                                   uint32_t val, void *data)
 {
     struct vpci_msi *msi = data;
     unsigned int vectors = min_t(uint8_t,
@@ -98,16 +98,16 @@ static void update_msi(const struct pci_dev *pdev, struct vpci_msi *msi)
 }
 
 /* Handlers for the address field (32bit or low part of a 64bit address). */
-static uint32_t cf_check address_read(
-    const struct pci_dev *pdev, unsigned int reg, void *data)
+static uint32_t cf_check address_read(const struct pci_dev *pdev,
+                                      unsigned int reg, void *data)
 {
     const struct vpci_msi *msi = data;
 
     return msi->address;
 }
 
-static void cf_check address_write(
-    const struct pci_dev *pdev, unsigned int reg, uint32_t val, void *data)
+static void cf_check address_write(const struct pci_dev *pdev, unsigned int reg,
+                                   uint32_t val, void *data)
 {
     struct vpci_msi *msi = data;
 
@@ -119,37 +119,38 @@ static void cf_check address_write(
 }
 
 /* Handlers for the high part of a 64bit address field. */
-static uint32_t cf_check address_hi_read(
-    const struct pci_dev *pdev, unsigned int reg, void *data)
+static uint32_t cf_check address_hi_read(const struct pci_dev *pdev,
+                                         unsigned int reg, void *data)
 {
     const struct vpci_msi *msi = data;
 
     return msi->address >> 32;
 }
 
-static void cf_check address_hi_write(
-    const struct pci_dev *pdev, unsigned int reg, uint32_t val, void *data)
+static void cf_check address_hi_write(const struct pci_dev *pdev,
+                                      unsigned int reg, uint32_t val,
+                                      void *data)
 {
     struct vpci_msi *msi = data;
 
     /* Clear and update high part. */
-    msi->address  = (uint32_t)msi->address;
+    msi->address = (uint32_t)msi->address;
     msi->address |= (uint64_t)val << 32;
 
     update_msi(pdev, msi);
 }
 
 /* Handlers for the data field. */
-static uint32_t cf_check data_read(
-    const struct pci_dev *pdev, unsigned int reg, void *data)
+static uint32_t cf_check data_read(const struct pci_dev *pdev, unsigned int reg,
+                                   void *data)
 {
     const struct vpci_msi *msi = data;
 
     return msi->data;
 }
 
-static void cf_check data_write(
-    const struct pci_dev *pdev, unsigned int reg, uint32_t val, void *data)
+static void cf_check data_write(const struct pci_dev *pdev, unsigned int reg,
+                                uint32_t val, void *data)
 {
     struct vpci_msi *msi = data;
 
@@ -159,16 +160,16 @@ static void cf_check data_write(
 }
 
 /* Handlers for the MSI mask bits. */
-static uint32_t cf_check mask_read(
-    const struct pci_dev *pdev, unsigned int reg, void *data)
+static uint32_t cf_check mask_read(const struct pci_dev *pdev, unsigned int reg,
+                                   void *data)
 {
     const struct vpci_msi *msi = data;
 
     return msi->mask;
 }
 
-static void cf_check mask_write(
-    const struct pci_dev *pdev, unsigned int reg, uint32_t val, void *data)
+static void cf_check mask_write(const struct pci_dev *pdev, unsigned int reg,
+                                uint32_t val, void *data)
 {
     struct vpci_msi *msi = data;
     uint32_t dmask = msi->mask ^ val;
@@ -206,8 +207,12 @@ static int cf_check init_msi(struct pci_dev *pdev)
     if ( !pdev->vpci->msi )
         return -ENOMEM;
 
-    ret = vpci_add_register(pdev->vpci, control_read, control_write,
-                            msi_control_reg(pos), 2, pdev->vpci->msi);
+    ret = vpci_add_register(pdev->vpci,
+                            control_read,
+                            control_write,
+                            msi_control_reg(pos),
+                            2,
+                            pdev->vpci->msi);
     if ( ret )
         /*
          * NB: there's no need to free the msi struct or remove the register
@@ -234,31 +239,45 @@ static int cf_check init_msi(struct pci_dev *pdev)
     pdev->vpci->msi->address64 = is_64bit_address(control);
     pdev->vpci->msi->masking = is_mask_bit_support(control);
 
-    ret = vpci_add_register(pdev->vpci, address_read, address_write,
-                            msi_lower_address_reg(pos), 4, pdev->vpci->msi);
+    ret = vpci_add_register(pdev->vpci,
+                            address_read,
+                            address_write,
+                            msi_lower_address_reg(pos),
+                            4,
+                            pdev->vpci->msi);
     if ( ret )
         return ret;
 
-    ret = vpci_add_register(pdev->vpci, data_read, data_write,
-                            msi_data_reg(pos, pdev->vpci->msi->address64), 2,
+    ret = vpci_add_register(pdev->vpci,
+                            data_read,
+                            data_write,
+                            msi_data_reg(pos, pdev->vpci->msi->address64),
+                            2,
                             pdev->vpci->msi);
     if ( ret )
         return ret;
 
     if ( pdev->vpci->msi->address64 )
     {
-        ret = vpci_add_register(pdev->vpci, address_hi_read, address_hi_write,
-                                msi_upper_address_reg(pos), 4, pdev->vpci->msi);
+        ret = vpci_add_register(pdev->vpci,
+                                address_hi_read,
+                                address_hi_write,
+                                msi_upper_address_reg(pos),
+                                4,
+                                pdev->vpci->msi);
         if ( ret )
             return ret;
     }
 
     if ( pdev->vpci->msi->masking )
     {
-        ret = vpci_add_register(pdev->vpci, mask_read, mask_write,
+        ret = vpci_add_register(pdev->vpci,
+                                mask_read,
+                                mask_write,
                                 msi_mask_bits_reg(pos,
                                                   pdev->vpci->msi->address64),
-                                4, pdev->vpci->msi);
+                                4,
+                                pdev->vpci->msi);
         if ( ret )
             return ret;
         /*
@@ -270,6 +289,7 @@ static int cf_check init_msi(struct pci_dev *pdev)
 
     return 0;
 }
+
 REGISTER_VPCI_INIT(init_msi, VPCI_PRIORITY_LOW);
 
 void vpci_dump_msi(void)
@@ -277,7 +297,7 @@ void vpci_dump_msi(void)
     struct domain *d;
 
     rcu_read_lock(&domlist_read_lock);
-    for_each_domain ( d )
+    for_each_domain(d)
     {
         const struct pci_dev *pdev;
 
@@ -289,7 +309,7 @@ void vpci_dump_msi(void)
         if ( !read_trylock(&d->pci_lock) )
             continue;
 
-        for_each_pdev ( d, pdev )
+        for_each_pdev(d, pdev)
         {
             const struct vpci_msi *msi;
             const struct vpci_msix *msix;
@@ -303,11 +323,13 @@ void vpci_dump_msi(void)
                 printk("%pp MSI\n", &pdev->sbdf);
 
                 printk("  enabled: %d 64-bit: %d",
-                       msi->enabled, msi->address64);
+                       msi->enabled,
+                       msi->address64);
                 if ( msi->masking )
                     printk(" mask=%08x", msi->mask);
                 printk(" vectors max: %u enabled: %u\n",
-                       pdev->msi_maxvec, msi->vectors);
+                       pdev->msi_maxvec,
+                       msi->vectors);
 
                 vpci_msi_arch_print(msi);
             }
@@ -320,7 +342,9 @@ void vpci_dump_msi(void)
                 printk("%pp MSI-X\n", &pdev->sbdf);
 
                 printk("  entries: %u maskall: %d enabled: %d\n",
-                       msix->max_entries, msix->masked, msix->enabled);
+                       msix->max_entries,
+                       msix->masked,
+                       msix->enabled);
 
                 rc = vpci_msix_arch_print(msix);
                 if ( rc )
@@ -352,8 +376,7 @@ void vpci_dump_msi(void)
         }
         read_unlock(&d->pci_lock);
 
-    domain_done:
-        ;
+    domain_done:;
     }
     rcu_read_unlock(&domlist_read_lock);
 }

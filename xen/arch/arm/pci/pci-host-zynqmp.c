@@ -38,10 +38,9 @@ const struct pci_ecam_ops nwl_pcie_ops = {
     }
 };
 
-static const struct dt_device_match __initconstrel nwl_pcie_dt_match[] =
-{
+static const struct dt_device_match __initconstrel nwl_pcie_dt_match[] = {
     { .compatible = "xlnx,nwl-pcie-2.11" },
-    { },
+    {},
 };
 
 static int __init pci_host_generic_probe(struct dt_device_node *dev,
@@ -51,8 +50,7 @@ static int __init pci_host_generic_probe(struct dt_device_node *dev,
 }
 
 DT_DEVICE_START(pci_gen, "PCI HOST ZYNQMP", DEVICE_PCI_HOSTBRIDGE)
-.dt_match = nwl_pcie_dt_match,
-.init = pci_host_generic_probe,
+    .dt_match = nwl_pcie_dt_match, .init = pci_host_generic_probe,
 DT_DEVICE_END
 
 /*

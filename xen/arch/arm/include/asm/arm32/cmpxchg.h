@@ -6,45 +6,41 @@
 
 extern void __bad_xchg(volatile void *ptr, int size);
 
-static inline unsigned long __xchg(unsigned long x, volatile void *ptr, int size)
+static inline unsigned long __xchg(unsigned long x, volatile void *ptr,
+                                   int size)
 {
-	unsigned long ret;
-	unsigned int tmp;
+    unsigned long ret;
+    unsigned int tmp;
 
-	smp_mb();
-	prefetchw((const void *)ptr);
+    smp_mb();
+    prefetchw((const void *)ptr);
 
-	switch (size) {
-	case 1:
-		asm volatile("@	__xchg1\n"
-		"1:	ldrexb	%0, [%3]\n"
-		"	strexb	%1, %2, [%3]\n"
-		"	teq	%1, #0\n"
-		"	bne	1b"
-			: "=&r" (ret), "=&r" (tmp)
-			: "r" (x), "r" (ptr)
-			: "memory", "cc");
-		break;
-	case 4:
-		asm volatile("@	__xchg4\n"
-		"1:	ldrex	%0, [%3]\n"
-		"	strex	%1, %2, [%3]\n"
-		"	teq	%1, #0\n"
-		"	bne	1b"
-			: "=&r" (ret), "=&r" (tmp)
-			: "r" (x), "r" (ptr)
-			: "memory", "cc");
-		break;
-	default:
-		__bad_xchg(ptr, size), ret = 0;
-		break;
-	}
-	smp_mb();
+    switch ( size )
+    {
+    case 1:
+        asm volatile(
+            "@	__xchg1\n" "1:	ldrexb	%0, [%3]\n" "	strexb	%1, %2, [%3]\n" "	teq	%1, #0\n" "	bne	1b"
+            : "=&r"(ret), "=&r"(tmp)
+            : "r"(x), "r"(ptr)
+            : "memory", "cc");
+        break;
+    case 4:
+        asm volatile(
+            "@	__xchg4\n" "1:	ldrex	%0, [%3]\n" "	strex	%1, %2, [%3]\n" "	teq	%1, #0\n" "	bne	1b"
+            : "=&r"(ret), "=&r"(tmp)
+            : "r"(x), "r"(ptr)
+            : "memory", "cc");
+        break;
+    default:
+        __bad_xchg(ptr, size), ret = 0;
+        break;
+    }
+    smp_mb();
 
-	return ret;
+    return ret;
 }
 
-#define xchg(ptr,x) \
+#define xchg(ptr, x) \
 	((__typeof__(*(ptr)))__xchg((unsigned long)(x),(ptr),sizeof(*(ptr))))
 
 /*
@@ -86,70 +82,61 @@ static inline bool __cmpxchg_case_##name(volatile void *ptr,		\
 
 __CMPXCHG_CASE(b, 1)
 __CMPXCHG_CASE(h, 2)
-__CMPXCHG_CASE( , 4)
+__CMPXCHG_CASE(, 4)
 
-static inline bool __cmpxchg_case_8(volatile uint64_t *ptr,
-			 	    uint64_t *old,
-			 	    uint64_t new,
-			 	    bool timeout,
-				    unsigned int max_try)
+static inline bool __cmpxchg_case_8(volatile uint64_t *ptr, uint64_t *old,
+                                    uint64_t new, bool timeout,
+                                    unsigned int max_try)
 {
-	uint64_t oldval;
-	uint64_t res;
+    uint64_t oldval;
+    uint64_t res;
 
-	do {
-		asm volatile(
-		"	ldrexd		%1, %H1, [%3]\n"
-		"	teq		%1, %4\n"
-		"	teqeq		%H1, %H4\n"
-		"	movne		%0, #0\n"
-		"	movne		%H0, #0\n"
-		"	bne		2f\n"
-		"	strexd		%0, %5, %H5, [%3]\n"
-		"2:"
-		: "=&r" (res), "=&r" (oldval), "+Qo" (*ptr)
-		: "r" (ptr), "r" (*old), "r" (new)
-		: "memory", "cc");
-		if (!res)
-			break;
-	} while (!timeout || ((--max_try) > 0));
+    do
+    {
+        asm volatile(
+            "	ldrexd		%1, %H1, [%3]\n" "	teq		%1, %4\n" "	teqeq		%H1, %H4\n" "	movne		%0, #0\n" "	movne		%H0, #0\n" "	bne		2f\n" "	strexd		%0, %5, %H5, [%3]\n" "2:"
+            : "=&r"(res), "=&r"(oldval), "+Qo"(*ptr)
+            : "r"(ptr), "r"(*old), "r"(new)
+            : "memory", "cc");
+        if ( !res )
+            break;
+    } while ( !timeout || ((--max_try) > 0) );
 
-	*old = oldval;
+    *old = oldval;
 
-	return !res;
+    return !res;
 }
 
 static always_inline bool __int_cmpxchg(volatile void *ptr, unsigned long *old,
-					unsigned long new, int size,
-					bool timeout, unsigned int max_try)
+                                        unsigned long new, int size,
+                                        bool timeout, unsigned int max_try)
 {
-	prefetchw((const void *)ptr);
+    prefetchw((const void *)ptr);
 
-	switch (size) {
-	case 1:
-		return __cmpxchg_case_1(ptr, old, new, timeout, max_try);
-	case 2:
-		return __cmpxchg_case_2(ptr, old, new, timeout, max_try);
-	case 4:
-		return __cmpxchg_case_4(ptr, old, new, timeout, max_try);
-	default:
-		return __bad_cmpxchg(ptr, size);
-	}
+    switch ( size )
+    {
+    case 1:
+        return __cmpxchg_case_1(ptr, old, new, timeout, max_try);
+    case 2:
+        return __cmpxchg_case_2(ptr, old, new, timeout, max_try);
+    case 4:
+        return __cmpxchg_case_4(ptr, old, new, timeout, max_try);
+    default:
+        return __bad_cmpxchg(ptr, size);
+    }
 
-	ASSERT_UNREACHABLE();
+    ASSERT_UNREACHABLE();
 }
 
-static always_inline unsigned long __cmpxchg(volatile void *ptr,
-					     unsigned long old,
-					     unsigned long new,
-					     int size)
+static always_inline unsigned long
+__cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
 {
-	smp_mb();
-	if (!__int_cmpxchg(ptr, &old, new, size, false, 0))
-		ASSERT_UNREACHABLE();
-	smp_mb();
+    smp_mb();
+    if ( !__int_cmpxchg(ptr, &old, new, size, false, 0) )
+        ASSERT_UNREACHABLE();
+    smp_mb();
 
-	return old;
+    return old;
 }
 
 /*
@@ -163,18 +150,17 @@ static always_inline unsigned long __cmpxchg(volatile void *ptr,
  * timeout) and false if the update has failed.
  */
 static always_inline bool __cmpxchg_timeout(volatile void *ptr,
-					    unsigned long *old,
-					    unsigned long new,
-					    int size,
-					    unsigned int max_try)
+                                            unsigned long *old,
+                                            unsigned long new, int size,
+                                            unsigned int max_try)
 {
-	bool ret;
+    bool ret;
 
-	smp_mb();
-	ret = __int_cmpxchg(ptr, old, new, size, true, max_try);
-	smp_mb();
+    smp_mb();
+    ret = __int_cmpxchg(ptr, old, new, size, true, max_try);
+    smp_mb();
 
-	return ret;
+    return ret;
 }
 
 /*
@@ -188,35 +174,33 @@ static always_inline bool __cmpxchg_timeout(volatile void *ptr,
  * timeout) and false if the update has failed.
  */
 static always_inline bool __cmpxchg64_timeout(volatile uint64_t *ptr,
-					      uint64_t *old,
-					      uint64_t new,
-					      unsigned int max_try)
+                                              uint64_t *old, uint64_t new,
+                                              unsigned int max_try)
 {
-	bool ret;
+    bool ret;
 
-	smp_mb();
-	ret = __cmpxchg_case_8(ptr, old, new, true, max_try);
-	smp_mb();
+    smp_mb();
+    ret = __cmpxchg_case_8(ptr, old, new, true, max_try);
+    smp_mb();
 
-	return ret;
+    return ret;
 }
 
-#define cmpxchg(ptr,o,n)						\
+#define cmpxchg(ptr, o, n)						\
 	((__typeof__(*(ptr)))__cmpxchg((ptr),				\
 				       (unsigned long)(o),		\
 				       (unsigned long)(n),		\
 				       sizeof(*(ptr))))
 
-static inline uint64_t cmpxchg64(volatile uint64_t *ptr,
-				 uint64_t old,
-				 uint64_t new)
+static inline uint64_t cmpxchg64(volatile uint64_t *ptr, uint64_t old,
+                                 uint64_t new)
 {
-	smp_mb();
-	if (!__cmpxchg_case_8(ptr, &old, new, false, 0))
-		ASSERT_UNREACHABLE();
-	smp_mb();
+    smp_mb();
+    if ( !__cmpxchg_case_8(ptr, &old, new, false, 0) )
+        ASSERT_UNREACHABLE();
+    smp_mb();
 
-	return old;
+    return old;
 }
 
 #endif

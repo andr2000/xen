@@ -4,9 +4,10 @@
 #include "vmce.h"
 #include "mce.h"
 
-static struct mcinfo_recovery *
-mci_action_add_pageoffline(int bank, struct mc_info *mi,
-                           mfn_t mfn, uint32_t status)
+static struct mcinfo_recovery *mci_action_add_pageoffline(int bank,
+                                                          struct mc_info *mi,
+                                                          mfn_t mfn,
+                                                          uint32_t status)
 {
     struct mcinfo_recovery *rec;
 
@@ -27,10 +28,8 @@ mci_action_add_pageoffline(int bank, struct mc_info *mi,
     return rec;
 }
 
-void
-mc_memerr_dhandler(struct mca_binfo *binfo,
-                   enum mce_result *result,
-                   const struct cpu_user_regs *regs)
+void mc_memerr_dhandler(struct mca_binfo *binfo, enum mce_result *result,
+                        const struct cpu_user_regs *regs)
 {
     struct mcinfo_bank *bank = binfo->mib;
     struct mcinfo_global *global = binfo->mig;
@@ -41,8 +40,10 @@ mc_memerr_dhandler(struct mca_binfo *binfo,
     int vmce_vcpuid;
     unsigned int mc_vcpuid;
 
-    if ( !alternative_call(mce_callbacks.check_addr, bank->mc_status,
-                           bank->mc_misc, MC_ADDR_PHYSICAL) )
+    if ( !alternative_call(mce_callbacks.check_addr,
+                           bank->mc_status,
+                           bank->mc_misc,
+                           MC_ADDR_PHYSICAL) )
     {
         dprintk(XENLOG_WARNING,
                 "No physical address provided for memory error\n");
@@ -53,7 +54,7 @@ mc_memerr_dhandler(struct mca_binfo *binfo,
     if ( offline_page(mfn, 1, &status) )
     {
         dprintk(XENLOG_WARNING,
-                "Failed to offline page %"PRI_mfn" for MCE error\n",
+                "Failed to offline page %" PRI_mfn " for MCE error\n",
                 mfn_x(mfn));
         return;
     }
@@ -71,14 +72,15 @@ mc_memerr_dhandler(struct mca_binfo *binfo,
         if ( status & PG_OFFLINE_OWNED )
         {
             bank->mc_domid = status >> PG_OFFLINE_OWNER_SHIFT;
-            mce_printk(MCE_QUIET, "MCE: This error page is ownded"
-                       " by DOM %d\n", bank->mc_domid);
+            mce_printk(MCE_QUIET,
+                       "MCE: This error page is ownded" " by DOM %d\n",
+                       bank->mc_domid);
             /*
              * XXX: Cannot handle shared pages yet
              * (this should identify all domains and gfn mapping to
              *  the mfn in question)
              */
-            BUG_ON( bank->mc_domid == DOMID_COW );
+            BUG_ON(bank->mc_domid == DOMID_COW);
             if ( bank->mc_domid != DOMID_XEN )
             {
                 d = rcu_lock_domain_by_id(bank->mc_domid);
@@ -87,8 +89,10 @@ mc_memerr_dhandler(struct mca_binfo *binfo,
 
                 if ( unmmap_broken_page(d, mfn, gfn) )
                 {
-                    printk("Unmap broken memory %"PRI_mfn" for DOM%d failed\n",
-                           mfn_x(mfn), d->domain_id);
+                    printk("Unmap broken memory %" PRI_mfn
+                           " for DOM%d failed\n",
+                           mfn_x(mfn),
+                           d->domain_id);
                     goto vmce_failed;
                 }
 
@@ -113,16 +117,18 @@ mc_memerr_dhandler(struct mca_binfo *binfo,
                                 (bank->mc_addr & (PAGE_SIZE - 1));
                 if ( fill_vmsr_data(bank, d, global->mc_gstatus, vmce_vcpuid) )
                 {
-                    mce_printk(MCE_QUIET, "Fill vMCE# data for DOM%d "
-                               "failed\n", bank->mc_domid);
+                    mce_printk(MCE_QUIET,
+                               "Fill vMCE# data for DOM%d " "failed\n",
+                               bank->mc_domid);
                     goto vmce_failed;
                 }
 
                 /* We will inject vMCE to DOMU */
                 if ( inject_vmce(d, vmce_vcpuid) < 0 )
                 {
-                    mce_printk(MCE_QUIET, "inject vMCE to DOM%d"
-                               " failed\n", d->domain_id);
+                    mce_printk(MCE_QUIET,
+                               "inject vMCE to DOM%d" " failed\n",
+                               d->domain_id);
                     goto vmce_failed;
                 }
 
@@ -137,7 +143,7 @@ mc_memerr_dhandler(struct mca_binfo *binfo,
                 *result = MCER_RECOVERED;
 
                 return;
-vmce_failed:
+            vmce_failed:
                 domain_crash(d);
                 rcu_unlock_domain(d);
             }

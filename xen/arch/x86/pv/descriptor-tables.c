@@ -106,15 +106,15 @@ int pv_set_gdt(struct vcpu *v, const unsigned long frames[],
 
     return 0;
 
- fail:
+fail:
     while ( i-- > 0 )
         put_page_and_type(mfn_to_page(_mfn(frames[i])));
 
     return -EINVAL;
 }
 
-long do_set_gdt(
-    XEN_GUEST_HANDLE_PARAM(xen_ulong_t) frame_list, unsigned int entries)
+long do_set_gdt(XEN_GUEST_HANDLE_PARAM(xen_ulong_t) frame_list,
+                unsigned int entries)
 {
     unsigned int nr_frames = DIV_ROUND_UP(entries, 512);
     unsigned long frames[16];
@@ -140,8 +140,8 @@ long do_set_gdt(
 
 #ifdef CONFIG_PV32
 
-int compat_set_gdt(
-    XEN_GUEST_HANDLE_PARAM(uint) frame_list, unsigned int entries)
+int compat_set_gdt(XEN_GUEST_HANDLE_PARAM(uint) frame_list,
+                   unsigned int entries)
 {
     struct vcpu *curr = current;
     unsigned int i, nr_frames = DIV_ROUND_UP(entries, 512);
@@ -176,8 +176,8 @@ int compat_set_gdt(
     return ret;
 }
 
-int compat_update_descriptor(
-    uint32_t pa_lo, uint32_t pa_hi, uint32_t desc_lo, uint32_t desc_hi)
+int compat_update_descriptor(uint32_t pa_lo, uint32_t pa_hi, uint32_t desc_lo,
+                             uint32_t desc_hi)
 {
     seg_desc_t d;
 
@@ -264,12 +264,12 @@ static bool check_descriptor(const struct domain *dom, seg_desc_t *d)
     if ( b & (is_pv_32bit_domain(dom) ? 0xe0 : 0xff) )
         goto bad;
 
- good:
+good:
     d->a = a;
     d->b = b;
     return true;
 
- bad:
+bad:
     return false;
 }
 
@@ -331,7 +331,7 @@ long do_update_descriptor(uint64_t gaddr, seg_desc_t d)
 
     ret = 0; /* success */
 
- out:
+out:
     put_page(page);
 
     return ret;

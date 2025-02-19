@@ -76,7 +76,7 @@ int is_igd_vt_enabled_quirk(void)
 
     /* integrated graphics on Intel platforms is located at 0:2.0 */
     ggc = pci_conf_read16(IGD_DEV, GGC);
-    return ( ggc & GGC_MEMORY_VT_ENABLED ? 1 : 0 );
+    return (ggc & GGC_MEMORY_VT_ENABLED ? 1 : 0);
 }
 
 /*
@@ -192,9 +192,9 @@ static void __init map_igd_reg(void)
     if ( igd_reg_va )
         return;
 
-    igd_mmio   = pci_conf_read32(IGD_DEV, PCI_BASE_ADDRESS_1);
+    igd_mmio = pci_conf_read32(IGD_DEV, PCI_BASE_ADDRESS_1);
     igd_mmio <<= 32;
-    igd_mmio  += pci_conf_read32(IGD_DEV, PCI_BASE_ADDRESS_0);
+    igd_mmio += pci_conf_read32(IGD_DEV, PCI_BASE_ADDRESS_0);
     igd_reg_va = ioremap(igd_mmio & IGD_BAR_MASK, 0x3000);
 }
 
@@ -329,6 +329,7 @@ static int __init cf_check parse_snb_timeout(const char *s)
 
     return (q && *q) ? -EINVAL : 0;
 }
+
 custom_param("snb_igd_quirk", parse_snb_timeout);
 
 /*
@@ -350,11 +351,13 @@ static void __init tylersburg_intremap_quirk(void)
         default:
             continue;
 
-        case 0x34038086: case 0x34068086:
+        case 0x34038086:
+        case 0x34068086:
             if ( rev >= 0x22 )
                 continue;
-            printk(XENLOG_WARNING VTDPREFIX
-                   "Disabling IOMMU due to Intel 5500/5520 chipset errata #47 and #53\n");
+            printk(
+                XENLOG_WARNING VTDPREFIX
+                "Disabling IOMMU due to Intel 5500/5520 chipset errata #47 and #53\n");
             iommu_enable = false;
             break;
 
@@ -407,8 +410,7 @@ void __init platform_quirks_init(void)
  */
 
 static int __must_check map_me_phantom_function(struct domain *domain,
-                                                unsigned int dev,
-                                                domid_t domid,
+                                                unsigned int dev, domid_t domid,
                                                 paddr_t pgd_maddr,
                                                 unsigned int mode)
 {
@@ -422,12 +424,17 @@ static int __must_check map_me_phantom_function(struct domain *domain,
 
     /* map or unmap ME phantom function */
     if ( !(mode & UNMAP_ME_PHANTOM_FUNC) )
-        rc = domain_context_mapping_one(domain, drhd->iommu, 0,
-                                        PCI_DEVFN(dev, 7), NULL,
-                                        domid, pgd_maddr, mode);
+        rc = domain_context_mapping_one(domain,
+                                        drhd->iommu,
+                                        0,
+                                        PCI_DEVFN(dev, 7),
+                                        NULL,
+                                        domid,
+                                        pgd_maddr,
+                                        mode);
     else
-        rc = domain_context_unmap_one(domain, drhd->iommu, 0,
-                                      PCI_DEVFN(dev, 7));
+        rc =
+            domain_context_unmap_one(domain, drhd->iommu, 0, PCI_DEVFN(dev, 7));
 
     return rc;
 }
@@ -447,20 +454,20 @@ int me_wifi_quirk(struct domain *domain, uint8_t bus, uint8_t devfn,
 
         /* if device is WLAN device, map ME phantom device 0:3.7 */
         id = pci_conf_read32(PCI_SBDF(0, bus, devfn), 0);
-        switch (id)
+        switch ( id )
         {
-            case 0x42328086:
-            case 0x42358086:
-            case 0x42368086:
-            case 0x42378086:
-            case 0x423a8086:
-            case 0x423b8086:
-            case 0x423c8086:
-            case 0x423d8086:
-                rc = map_me_phantom_function(domain, 3, domid, pgd_maddr, mode);
-                break;
-            default:
-                break;
+        case 0x42328086:
+        case 0x42358086:
+        case 0x42368086:
+        case 0x42378086:
+        case 0x423a8086:
+        case 0x423b8086:
+        case 0x423c8086:
+        case 0x423d8086:
+            rc = map_me_phantom_function(domain, 3, domid, pgd_maddr, mode);
+            break;
+        default:
+            break;
         }
     }
     else if ( IS_ILK(id) || IS_CPT(id) )
@@ -471,22 +478,22 @@ int me_wifi_quirk(struct domain *domain, uint8_t bus, uint8_t devfn,
 
         /* if device is WLAN device, map ME phantom device 0:22.7 */
         id = pci_conf_read32(PCI_SBDF(0, bus, devfn), 0);
-        switch (id)
+        switch ( id )
         {
-            case 0x00878086:        /* Kilmer Peak */
-            case 0x00898086:
-            case 0x00828086:        /* Taylor Peak */
-            case 0x00858086:
-            case 0x008F8086:        /* Rainbow Peak */
-            case 0x00908086:
-            case 0x00918086:
-            case 0x42388086:        /* Puma Peak */
-            case 0x422b8086:
-            case 0x422c8086:
-                rc = map_me_phantom_function(domain, 22, domid, pgd_maddr, mode);
-                break;
-            default:
-                break;
+        case 0x00878086: /* Kilmer Peak */
+        case 0x00898086:
+        case 0x00828086: /* Taylor Peak */
+        case 0x00858086:
+        case 0x008F8086: /* Rainbow Peak */
+        case 0x00908086:
+        case 0x00918086:
+        case 0x42388086: /* Puma Peak */
+        case 0x422b8086:
+        case 0x422c8086:
+            rc = map_me_phantom_function(domain, 22, domid, pgd_maddr, mode);
+            break;
+        default:
+            break;
         }
     }
 
@@ -523,7 +530,8 @@ void pci_vtd_quirk(const struct pci_dev *pdev)
 
     /* Tylersburg (EP)/Boxboro (MP) chipsets (NHM-EP/EX, WSM-EP/EX) */
     case 0x3400 ... 0x3407: /* host bridges */
-    case 0x3408 ... 0x3411: case 0x3420 ... 0x3421: /* root ports */
+    case 0x3408 ... 0x3411:
+    case 0x3420 ... 0x3421: /* root ports */
     /* JasperForest (Intel Xeon Processor C5500/C3500 */
     case 0x3700 ... 0x370f: /* host bridges */
     case 0x3720 ... 0x3724: /* root ports */
@@ -537,12 +545,14 @@ void pci_vtd_quirk(const struct pci_dev *pdev)
             while ( pos )
             {
                 val = pci_conf_read32(pdev->sbdf, pos + PCI_VNDR_HEADER);
-                if ( PCI_VNDR_HEADER_ID(val) == 4 && PCI_VNDR_HEADER_REV(val) == 1 )
+                if ( PCI_VNDR_HEADER_ID(val) == 4 &&
+                     PCI_VNDR_HEADER_REV(val) == 1 )
                 {
                     pos += PCI_VNDR_HEADER;
                     break;
                 }
-                pos = pci_find_next_ext_capability(pdev->sbdf, pos,
+                pos = pci_find_next_ext_capability(pdev->sbdf,
+                                                   pos,
                                                    PCI_EXT_CAP_ID_VNDR);
             }
             ff = 0;
@@ -561,9 +571,11 @@ void pci_vtd_quirk(const struct pci_dev *pdev)
             action = "Found masked";
         else if ( !ff )
         {
-            pci_conf_write32(pdev->sbdf, pos + PCI_ERR_UNCOR_MASK,
+            pci_conf_write32(pdev->sbdf,
+                             pos + PCI_ERR_UNCOR_MASK,
                              val | PCI_ERR_UNC_UNSUP);
-            pci_conf_write32(pdev->sbdf, pos + PCI_ERR_COR_MASK,
+            pci_conf_write32(pdev->sbdf,
+                             pos + PCI_ERR_COR_MASK,
                              val2 | PCI_ERR_COR_ADV_NFAT);
             action = "Masked";
         }
@@ -577,16 +589,42 @@ void pci_vtd_quirk(const struct pci_dev *pdev)
         printk(XENLOG_INFO "%s UR signaling on %pp\n", action, &pdev->sbdf);
         break;
 
-    case 0x0040: case 0x0044: case 0x0048: /* Nehalem/Westmere */
-    case 0x0100: case 0x0104: case 0x0108: /* Sandybridge */
-    case 0x0150: case 0x0154: case 0x0158: /* Ivybridge */
-    case 0x0a00: case 0x0a04: case 0x0a08: case 0x0a0f: /* Haswell ULT */
-    case 0x0c00: case 0x0c04: case 0x0c08: case 0x0c0f: /* Haswell */
-    case 0x0d00: case 0x0d04: case 0x0d08: case 0x0d0f: /* Haswell */
-    case 0x1600: case 0x1604: case 0x1608: case 0x160f: /* Broadwell */
-    case 0x1610: case 0x1614: case 0x1618: /* Broadwell */
-    case 0x1900: case 0x1904: case 0x1908: case 0x190c: case 0x190f: /* Skylake */
-    case 0x1910: case 0x1918: case 0x191f: /* Skylake */
+    case 0x0040:
+    case 0x0044:
+    case 0x0048: /* Nehalem/Westmere */
+    case 0x0100:
+    case 0x0104:
+    case 0x0108: /* Sandybridge */
+    case 0x0150:
+    case 0x0154:
+    case 0x0158: /* Ivybridge */
+    case 0x0a00:
+    case 0x0a04:
+    case 0x0a08:
+    case 0x0a0f: /* Haswell ULT */
+    case 0x0c00:
+    case 0x0c04:
+    case 0x0c08:
+    case 0x0c0f: /* Haswell */
+    case 0x0d00:
+    case 0x0d04:
+    case 0x0d08:
+    case 0x0d0f: /* Haswell */
+    case 0x1600:
+    case 0x1604:
+    case 0x1608:
+    case 0x160f: /* Broadwell */
+    case 0x1610:
+    case 0x1614:
+    case 0x1618: /* Broadwell */
+    case 0x1900:
+    case 0x1904:
+    case 0x1908:
+    case 0x190c:
+    case 0x190f: /* Skylake */
+    case 0x1910:
+    case 0x1918:
+    case 0x191f: /* Skylake */
         bar = pci_conf_read32(pdev->sbdf, 0x6c);
         bar = (bar << 32) | pci_conf_read32(pdev->sbdf, 0x68);
         pa = bar & 0x7ffffff000UL; /* bits 12...38 */
@@ -602,12 +640,14 @@ void pci_vtd_quirk(const struct pci_dev *pdev)
                 printk(XENLOG_INFO "Masked UR signaling on %pp\n", &pdev->sbdf);
             }
             else
-                printk(XENLOG_ERR "Could not map %"PRIpaddr" for %pp\n",
-                       pa, &pdev->sbdf);
+                printk(XENLOG_ERR "Could not map %" PRIpaddr " for %pp\n",
+                       pa,
+                       &pdev->sbdf);
         }
         else
-            printk(XENLOG_WARNING "Bogus DMIBAR %#"PRIx64" on %pp\n",
-                   bar, &pdev->sbdf);
+            printk(XENLOG_WARNING "Bogus DMIBAR %#" PRIx64 " on %pp\n",
+                   bar,
+                   &pdev->sbdf);
         break;
     }
 }
@@ -632,7 +672,6 @@ void __init quirk_iommu_caps(struct vtd_iommu *iommu)
      */
     if ( boot_cpu_data.x86_vendor == X86_VENDOR_INTEL &&
          boot_cpu_data.x86 == 6 &&
-         (boot_cpu_data.x86_model == 0x2a ||
-          boot_cpu_data.x86_model == 0x2d) )
+         (boot_cpu_data.x86_model == 0x2a || boot_cpu_data.x86_model == 0x2d) )
         iommu->cap &= ~(0xful << 34);
 }

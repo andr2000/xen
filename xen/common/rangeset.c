@@ -21,20 +21,20 @@ struct range {
 struct rangeset {
     /* Owning domain and threaded list of rangesets. */
     struct list_head rangeset_list;
-    struct domain   *domain;
+    struct domain *domain;
 
     /* Ordered list of ranges contained in this set, and protecting lock. */
     struct list_head range_list;
 
     /* Number of ranges that can be allocated */
-    long             nr_ranges;
-    rwlock_t         lock;
+    long nr_ranges;
+    rwlock_t lock;
 
     /* Pretty-printing name. */
-    char             name[32];
+    char name[32];
 
     /* RANGESETF flags. */
-    unsigned int     flags;
+    unsigned int flags;
 };
 
 /*****************************
@@ -42,12 +42,11 @@ struct rangeset {
  */
 
 /* Find highest range lower than or containing s. NULL if no such range. */
-static struct range *find_range(
-    struct rangeset *r, unsigned long s)
+static struct range *find_range(struct rangeset *r, unsigned long s)
 {
     struct range *x = NULL, *y;
 
-    list_for_each_entry ( y, &r->range_list, list )
+    list_for_each_entry(y, &r->range_list, list)
     {
         if ( y->s > s )
             break;
@@ -58,8 +57,7 @@ static struct range *find_range(
 }
 
 /* Return the lowest range in the set r, or NULL if r is empty. */
-static struct range *first_range(
-    struct rangeset *r)
+static struct range *first_range(struct rangeset *r)
 {
     if ( list_empty(&r->range_list) )
         return NULL;
@@ -67,8 +65,7 @@ static struct range *first_range(
 }
 
 /* Return range following x in ascending order, or NULL if x is the highest. */
-static struct range *next_range(
-    struct rangeset *r, struct range *x)
+static struct range *next_range(struct rangeset *r, struct range *x)
 {
     if ( x->list.next == &r->range_list )
         return NULL;
@@ -76,15 +73,13 @@ static struct range *next_range(
 }
 
 /* Insert range y after range x in r. Insert as first range if x is NULL. */
-static void insert_range(
-    struct rangeset *r, struct range *x, struct range *y)
+static void insert_range(struct rangeset *r, struct range *x, struct range *y)
 {
     list_add(&y->list, (x != NULL) ? &x->list : &r->range_list);
 }
 
 /* Remove a range from its list and free it. */
-static void destroy_range(
-    struct rangeset *r, struct range *x)
+static void destroy_range(struct rangeset *r, struct range *x)
 {
     r->nr_ranges++;
 
@@ -93,8 +88,7 @@ static void destroy_range(
 }
 
 /* Allocate a new range */
-static struct range *alloc_range(
-    struct rangeset *r)
+static struct range *alloc_range(struct rangeset *r)
 {
     struct range *x;
 
@@ -112,8 +106,7 @@ static struct range *alloc_range(
  * Core public functions
  */
 
-int rangeset_add_range(
-    struct rangeset *r, unsigned long s, unsigned long e)
+int rangeset_add_range(struct rangeset *r, unsigned long s, unsigned long e)
 {
     struct range *x, *y;
     int rc = 0;
@@ -156,10 +149,10 @@ int rangeset_add_range(
             x = next_range(r, x);
             x->s = s;
         }
-        
+
         x->e = (y->e > e) ? y->e : e;
 
-        for ( ; ; )
+        for ( ;; )
         {
             y = next_range(r, x);
             if ( (y == NULL) || (y->e > x->e) )
@@ -175,13 +168,12 @@ int rangeset_add_range(
         destroy_range(r, y);
     }
 
- out:
+out:
     write_unlock(&r->lock);
     return rc;
 }
 
-int rangeset_remove_range(
-    struct rangeset *r, unsigned long s, unsigned long e)
+int rangeset_remove_range(struct rangeset *r, unsigned long s, unsigned long e)
 {
     struct range *x, *y, *t;
     int rc = 0;
@@ -243,13 +235,13 @@ int rangeset_remove_range(
             destroy_range(r, x);
     }
 
- out:
+out:
     write_unlock(&r->lock);
     return rc;
 }
 
-bool rangeset_contains_range(
-    struct rangeset *r, unsigned long s, unsigned long e)
+bool rangeset_contains_range(struct rangeset *r, unsigned long s,
+                             unsigned long e)
 {
     struct range *x;
     bool contains;
@@ -267,8 +259,8 @@ bool rangeset_contains_range(
     return contains;
 }
 
-bool rangeset_overlaps_range(
-    struct rangeset *r, unsigned long s, unsigned long e)
+bool rangeset_overlaps_range(struct rangeset *r, unsigned long s,
+                             unsigned long e)
 {
     struct range *x;
     bool overlaps;
@@ -286,9 +278,10 @@ bool rangeset_overlaps_range(
     return overlaps;
 }
 
-int rangeset_report_ranges(
-    struct rangeset *r, unsigned long s, unsigned long e,
-    int (*cb)(unsigned long s, unsigned long e, void *data), void *ctxt)
+int rangeset_report_ranges(struct rangeset *r, unsigned long s, unsigned long e,
+                           int (*cb)(unsigned long s, unsigned long e,
+                                     void *data),
+                           void *ctxt)
 {
     struct range *x;
     int rc = 0;
@@ -312,8 +305,7 @@ int rangeset_claim_range(struct rangeset *r, unsigned long size,
 
     write_lock(&r->lock);
 
-    for ( prev = NULL, next = first_range(r);
-          next;
+    for ( prev = NULL, next = first_range(r); next;
           prev = next, next = next_range(r, next) )
     {
         if ( (next->s - start) >= size )
@@ -328,11 +320,11 @@ int rangeset_claim_range(struct rangeset *r, unsigned long size,
     if ( (~0UL - start) + 1 >= size )
         goto insert;
 
- out:
+out:
     write_unlock(&r->lock);
     return -ENOSPC;
 
- insert:
+insert:
     if ( unlikely(!prev) )
     {
         next = alloc_range(r);
@@ -396,32 +388,28 @@ int rangeset_merge(struct rangeset *r1, struct rangeset *r2)
     return rangeset_report_ranges(r2, 0, ~0UL, merge, r1);
 }
 
-int rangeset_add_singleton(
-    struct rangeset *r, unsigned long s)
+int rangeset_add_singleton(struct rangeset *r, unsigned long s)
 {
     return rangeset_add_range(r, s, s);
 }
 
-int rangeset_remove_singleton(
-    struct rangeset *r, unsigned long s)
+int rangeset_remove_singleton(struct rangeset *r, unsigned long s)
 {
     return rangeset_remove_range(r, s, s);
 }
 
-bool rangeset_contains_singleton(
-    struct rangeset *r, unsigned long s)
+bool rangeset_contains_singleton(struct rangeset *r, unsigned long s)
 {
     return rangeset_contains_range(r, s, s);
 }
 
-bool rangeset_is_empty(
-    const struct rangeset *r)
+bool rangeset_is_empty(const struct rangeset *r)
 {
     return ((r == NULL) || list_empty(&r->range_list));
 }
 
-struct rangeset *rangeset_new(
-    struct domain *d, const char *name, unsigned int flags)
+struct rangeset *rangeset_new(struct domain *d, const char *name,
+                              unsigned int flags)
 {
     struct rangeset *r;
 
@@ -459,8 +447,7 @@ void rangeset_purge(struct rangeset *r)
         destroy_range(r, x);
 }
 
-void rangeset_destroy(
-    struct rangeset *r)
+void rangeset_destroy(struct rangeset *r)
 {
     if ( r == NULL )
         return;
@@ -477,21 +464,18 @@ void rangeset_destroy(
     xfree(r);
 }
 
-void rangeset_limit(
-    struct rangeset *r, unsigned int limit)
+void rangeset_limit(struct rangeset *r, unsigned int limit)
 {
     r->nr_ranges = limit;
 }
 
-void rangeset_domain_initialise(
-    struct domain *d)
+void rangeset_domain_initialise(struct domain *d)
 {
     INIT_LIST_HEAD(&d->rangesets);
     spin_lock_init(&d->rangesets_lock);
 }
 
-void rangeset_domain_destroy(
-    struct domain *d)
+void rangeset_domain_destroy(struct domain *d)
 {
     struct rangeset *r;
 
@@ -569,8 +553,7 @@ static void rangeset_printk(struct rangeset *r)
     read_unlock(&r->lock);
 }
 
-void rangeset_domain_printk(
-    struct domain *d)
+void rangeset_domain_printk(struct domain *d)
 {
     struct rangeset *r;
 
@@ -581,7 +564,7 @@ void rangeset_domain_printk(
     if ( list_empty(&d->rangesets) )
         printk("    None\n");
 
-    list_for_each_entry ( r, &d->rangesets, rangeset_list )
+    list_for_each_entry(r, &d->rangesets, rangeset_list)
     {
         if ( r->flags & RANGESETF_no_print )
             continue;

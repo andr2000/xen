@@ -58,14 +58,14 @@ struct fsif_stat_request {
 /* This structure is a copy of some fields from stat structure, returned
  * via the ring. */
 struct fsif_stat_response {
-    int32_t  stat_mode;
+    int32_t stat_mode;
     uint32_t stat_uid;
     uint32_t stat_gid;
-    int32_t  stat_ret;
-    int64_t  stat_size;
-    int64_t  stat_atime;
-    int64_t  stat_mtime;
-    int64_t  stat_ctime;
+    int32_t stat_ret;
+    int64_t stat_size;
+    int64_t stat_atime;
+    int64_t stat_mtime;
+    int64_t stat_ctime;
 };
 
 struct fsif_truncate_request {
@@ -119,27 +119,27 @@ struct fsif_sync_request {
     uint32_t fd;
 };
 
-
 /* FS operation request */
 struct fsif_request {
-    uint8_t type;                 /* Type of the request                  */
+    uint8_t type; /* Type of the request                  */
     uint8_t pad;
-    uint16_t id;                  /* Request ID, copied to the response   */
+    uint16_t id; /* Request ID, copied to the response   */
     uint32_t pad2;
+
     union {
-        struct fsif_open_request     fopen;
-        struct fsif_close_request    fclose;
-        struct fsif_read_request     fread;
-        struct fsif_write_request    fwrite;
-        struct fsif_stat_request     fstat;
+        struct fsif_open_request fopen;
+        struct fsif_close_request fclose;
+        struct fsif_read_request fread;
+        struct fsif_write_request fwrite;
+        struct fsif_stat_request fstat;
         struct fsif_truncate_request ftruncate;
-        struct fsif_remove_request   fremove;
-        struct fsif_rename_request   frename;
-        struct fsif_create_request   fcreate;
-        struct fsif_list_request     flist;
-        struct fsif_chmod_request    fchmod;
-        struct fsif_space_request    fspace;
-        struct fsif_sync_request     fsync;
+        struct fsif_remove_request fremove;
+        struct fsif_rename_request frename;
+        struct fsif_create_request fcreate;
+        struct fsif_list_request flist;
+        struct fsif_chmod_request fchmod;
+        struct fsif_space_request fspace;
+        struct fsif_sync_request fsync;
     } u;
 };
 typedef struct fsif_request fsif_request_t;
@@ -149,6 +149,7 @@ struct fsif_response {
     uint16_t id;
     uint16_t pad1;
     uint32_t pad2;
+
     union {
         uint64_t ret_val;
         struct fsif_stat_response fstat;
@@ -170,6 +171,5 @@ DEFINE_RING_TYPES(fsif, struct fsif_request, struct fsif_response);
 #define STATE_READY           "ready"
 #define STATE_CLOSING         "closing"
 #define STATE_CLOSED          "closed"
-
 
 #endif

@@ -14,8 +14,7 @@
 #include <xen/list.h>
 #include <xen/percpu.h>
 
-struct tasklet
-{
+struct tasklet {
     struct list_head list;
     int scheduled_on;
     bool is_softirq;
@@ -46,8 +45,8 @@ static inline bool tasklet_work_to_do(unsigned int cpu)
      * Work must be enqueued *and* scheduled. Otherwise there is no work to
      * do, and/or scheduler needs to run to update idle vcpu priority.
      */
-    return per_cpu(tasklet_work_to_do, cpu) == (TASKLET_enqueued|
-                                                TASKLET_scheduled);
+    return per_cpu(tasklet_work_to_do, cpu) ==
+           (TASKLET_enqueued | TASKLET_scheduled);
 }
 
 static inline bool tasklet_is_scheduled(const struct tasklet *t)
@@ -60,8 +59,8 @@ void tasklet_schedule(struct tasklet *t);
 void do_tasklet(void);
 void tasklet_kill(struct tasklet *t);
 void tasklet_init(struct tasklet *t, void (*func)(void *data), void *data);
-void softirq_tasklet_init(struct tasklet *t,
-                          void (*func)(void *data), void *data);
+void softirq_tasklet_init(struct tasklet *t, void (*func)(void *data),
+                          void *data);
 void tasklet_subsys_init(void);
 
 #endif /* __XEN_TASKLET_H__ */

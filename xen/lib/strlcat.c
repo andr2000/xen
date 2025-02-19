@@ -16,18 +16,18 @@
  */
 size_t strlcat(char *dest, const char *src, size_t size)
 {
-	size_t slen = strlen(src);
-	size_t dlen = strnlen(dest, size);
-	char *p = dest + dlen;
+    size_t slen = strlen(src);
+    size_t dlen = strnlen(dest, size);
+    char *p = dest + dlen;
 
-	while ((p - dest) < size)
-		if ((*p++ = *src++) == '\0')
-			break;
+    while ( (p - dest) < size )
+        if ( (*p++ = *src++) == '\0' )
+            break;
 
-	if (dlen < size)
-		*(p-1) = '\0';
+    if ( dlen < size )
+        *(p - 1) = '\0';
 
-	return slen + dlen;
+    return slen + dlen;
 }
 
 /*

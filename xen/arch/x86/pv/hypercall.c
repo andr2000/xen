@@ -17,8 +17,7 @@
 #include <asm/multicall.h>
 
 /* Forced inline to cause 'compat' to be evaluated at compile time. */
-static void always_inline
-_pv_hypercall(struct cpu_user_regs *regs, bool compat)
+static void always_inline _pv_hypercall(struct cpu_user_regs *regs, bool compat)
 {
     struct vcpu *curr = current;
     unsigned long eax = -1; /* Clang -Wsometimes-uninitialized */
@@ -98,8 +97,13 @@ enum mc_disposition pv_do_multicall_call(struct mc_state *state)
         struct compat_multicall_entry *call = &state->compat_call;
 
         op = call->op;
-        call_handlers_pv32(op, call->result, call->args[0], call->args[1],
-                           call->args[2], call->args[3], call->args[4]);
+        call_handlers_pv32(op,
+                           call->result,
+                           call->args[0],
+                           call->args[1],
+                           call->args[2],
+                           call->args[3],
+                           call->args[4]);
     }
     else
 #endif
@@ -107,14 +111,19 @@ enum mc_disposition pv_do_multicall_call(struct mc_state *state)
         struct multicall_entry *call = &state->call;
 
         op = call->op;
-        call_handlers_pv64(op, call->result, call->args[0], call->args[1],
-                           call->args[2], call->args[3], call->args[4]);
+        call_handlers_pv64(op,
+                           call->result,
+                           call->args[0],
+                           call->args[1],
+                           call->args[2],
+                           call->args[3],
+                           call->args[4]);
     }
 
-    return unlikely(op == __HYPERVISOR_iret)
-           ? mc_exit
+    return unlikely(op == __HYPERVISOR_iret) ? mc_exit
            : likely(guest_kernel_mode(curr, guest_cpu_user_regs()))
-             ? mc_continue : mc_preempt;
+               ? mc_continue
+               : mc_preempt;
 }
 
 void pv_ring3_init_hypercall_page(void *p)
@@ -130,24 +139,24 @@ void pv_ring3_init_hypercall_page(void *p)
              * expects a special stack frame. Guests jump at this transfer
              * point instead of calling it.
              */
-            *(u8  *)(p+ 0) = 0x51;    /* push %rcx */
-            *(u16 *)(p+ 1) = 0x5341;  /* push %r11 */
-            *(u8  *)(p+ 3) = 0x50;    /* push %rax */
-            *(u8  *)(p+ 4) = 0xb8;    /* mov  $__HYPERVISOR_iret, %eax */
-            *(u32 *)(p+ 5) = __HYPERVISOR_iret;
-            *(u16 *)(p+ 9) = 0x050f;  /* syscall */
+            *(u8 *)(p + 0) = 0x51; /* push %rcx */
+            *(u16 *)(p + 1) = 0x5341; /* push %r11 */
+            *(u8 *)(p + 3) = 0x50; /* push %rax */
+            *(u8 *)(p + 4) = 0xb8; /* mov  $__HYPERVISOR_iret, %eax */
+            *(u32 *)(p + 5) = __HYPERVISOR_iret;
+            *(u16 *)(p + 9) = 0x050f; /* syscall */
 
             continue;
         }
 
-        *(u8  *)(p+ 0) = 0x51;    /* push %rcx */
-        *(u16 *)(p+ 1) = 0x5341;  /* push %r11 */
-        *(u8  *)(p+ 3) = 0xb8;    /* mov  $<i>,%eax */
-        *(u32 *)(p+ 4) = i;
-        *(u16 *)(p+ 8) = 0x050f;  /* syscall */
-        *(u16 *)(p+10) = 0x5b41;  /* pop  %r11 */
-        *(u8  *)(p+12) = 0x59;    /* pop  %rcx */
-        *(u8  *)(p+13) = 0xc3;    /* ret */
+        *(u8 *)(p + 0) = 0x51; /* push %rcx */
+        *(u16 *)(p + 1) = 0x5341; /* push %r11 */
+        *(u8 *)(p + 3) = 0xb8; /* mov  $<i>,%eax */
+        *(u32 *)(p + 4) = i;
+        *(u16 *)(p + 8) = 0x050f; /* syscall */
+        *(u16 *)(p + 10) = 0x5b41; /* pop  %r11 */
+        *(u8 *)(p + 12) = 0x59; /* pop  %rcx */
+        *(u8 *)(p + 13) = 0xc3; /* ret */
     }
 }
 
@@ -165,18 +174,18 @@ void pv_ring1_init_hypercall_page(void *p)
              * expects a special stack frame. Guests jump at this transfer
              * point instead of calling it.
              */
-            *(u8  *)(p+ 0) = 0x50;    /* push %eax */
-            *(u8  *)(p+ 1) = 0xb8;    /* mov  $__HYPERVISOR_iret, %eax */
-            *(u32 *)(p+ 2) = __HYPERVISOR_iret;
-            *(u16 *)(p+ 6) = (HYPERCALL_VECTOR << 8) | 0xcd; /* int  $xx */
+            *(u8 *)(p + 0) = 0x50; /* push %eax */
+            *(u8 *)(p + 1) = 0xb8; /* mov  $__HYPERVISOR_iret, %eax */
+            *(u32 *)(p + 2) = __HYPERVISOR_iret;
+            *(u16 *)(p + 6) = (HYPERCALL_VECTOR << 8) | 0xcd; /* int  $xx */
 
             continue;
         }
 
-        *(u8  *)(p+ 0) = 0xb8;    /* mov  $<i>,%eax */
-        *(u32 *)(p+ 1) = i;
-        *(u16 *)(p+ 5) = (HYPERCALL_VECTOR << 8) | 0xcd; /* int  $xx */
-        *(u8  *)(p+ 7) = 0xc3;    /* ret */
+        *(u8 *)(p + 0) = 0xb8; /* mov  $<i>,%eax */
+        *(u32 *)(p + 1) = i;
+        *(u16 *)(p + 5) = (HYPERCALL_VECTOR << 8) | 0xcd; /* int  $xx */
+        *(u8 *)(p + 7) = 0xc3; /* ret */
     }
 }
 
@@ -203,4 +212,3 @@ void pv_hypercall(struct cpu_user_regs *regs)
  * indent-tabs-mode: nil
  * End:
  */
-

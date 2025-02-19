@@ -51,8 +51,8 @@ static const char *decode_trap_cause(unsigned long cause)
     };
 
     const char *res = cause < ARRAY_SIZE(trap_causes)
-                      ? array_access_nospec(trap_causes, cause)
-                      : NULL;
+                          ? array_access_nospec(trap_causes, cause)
+                          : NULL;
 
     return res ?: "UNKNOWN";
 }

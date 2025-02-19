@@ -21,7 +21,7 @@ static int apply_hook(livepatch_payload_t *payload)
 
     printk(KERN_DEBUG "%s: Hook starting.\n", __func__);
 
-    for (i = 0; i < payload->nfuncs; i++)
+    for ( i = 0; i < payload->nfuncs; i++ )
     {
         const struct livepatch_func *func = &payload->funcs[i];
 
@@ -40,7 +40,7 @@ static int revert_hook(livepatch_payload_t *payload)
 
     printk(KERN_DEBUG "%s: Hook starting.\n", __func__);
 
-    for (i = 0; i < payload->nfuncs; i++)
+    for ( i = 0; i < payload->nfuncs; i++ )
     {
         const struct livepatch_func *func = &payload->funcs[i];
 
@@ -59,7 +59,7 @@ static void post_revert_hook(livepatch_payload_t *payload)
 
     printk(KERN_DEBUG "%s: Hook starting.\n", __func__);
 
-    for (i = 0; i < payload->nfuncs; i++)
+    for ( i = 0; i < payload->nfuncs; i++ )
     {
         const struct livepatch_func *func = &payload->funcs[i];
 

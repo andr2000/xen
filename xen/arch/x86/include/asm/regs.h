@@ -24,10 +24,10 @@
 
 static inline void read_sregs(struct cpu_user_regs *regs)
 {
-    asm ( "mov %%ds, %0" : "=m" (regs->ds) );
-    asm ( "mov %%es, %0" : "=m" (regs->es) );
-    asm ( "mov %%fs, %0" : "=m" (regs->fs) );
-    asm ( "mov %%gs, %0" : "=m" (regs->gs) );
+    asm("mov %%ds, %0" : "=m"(regs->ds));
+    asm("mov %%es, %0" : "=m"(regs->es));
+    asm("mov %%fs, %0" : "=m"(regs->fs));
+    asm("mov %%gs, %0" : "=m"(regs->gs));
 }
 
 #endif /* __X86_REGS_H__ */

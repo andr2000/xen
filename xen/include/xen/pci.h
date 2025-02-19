@@ -49,22 +49,25 @@
 
 typedef union {
     uint32_t sbdf;
+
     struct {
         union {
             uint16_t bdf;
+
             struct {
                 union {
                     struct {
-                        uint8_t fn   : 3,
-                                dev  : 5;
+                        uint8_t fn:3, dev:5;
                     };
-                    uint8_t     devfn,
-                                extfunc;
+
+                    uint8_t devfn, extfunc;
                 };
-                uint8_t         bus;
+
+                uint8_t bus;
             };
         };
-        uint16_t                seg;
+
+        uint16_t seg;
     };
 } pci_sbdf_t;
 
@@ -72,7 +75,7 @@ typedef union {
 #include <asm/pci.h>
 #else
 
-struct arch_pci_dev { };
+struct arch_pci_dev {};
 
 static inline bool is_pci_passthrough_enabled(void)
 {
@@ -88,6 +91,7 @@ struct pci_dev_info {
      */
     bool is_extfn;
     bool is_virtfn;
+
     struct {
         u8 bus;
         u8 devfn;
@@ -110,6 +114,7 @@ struct pci_dev {
             uint8_t bus;
             uint16_t seg;
         };
+
         pci_sbdf_t sbdf;
     };
 
@@ -133,21 +138,23 @@ struct pci_dev {
     enum pdev_type {
         DEV_TYPE_PCI_UNKNOWN,
         DEV_TYPE_PCIe_ENDPOINT,
-        DEV_TYPE_PCIe_BRIDGE,       // PCIe root port, switch
-        DEV_TYPE_PCIe2PCI_BRIDGE,   // PCIe-to-PCI/PCIx bridge
-        DEV_TYPE_PCI2PCIe_BRIDGE,   // PCI/PCIx-to-PCIe bridge
+        DEV_TYPE_PCIe_BRIDGE, // PCIe root port, switch
+        DEV_TYPE_PCIe2PCI_BRIDGE, // PCIe-to-PCI/PCIx bridge
+        DEV_TYPE_PCI2PCIe_BRIDGE, // PCI/PCIx-to-PCIe bridge
         DEV_TYPE_LEGACY_PCI_BRIDGE, // Legacy PCI bridge
-        DEV_TYPE_PCI_HOST_BRIDGE,   // PCI Host bridge
+        DEV_TYPE_PCI_HOST_BRIDGE, // PCI Host bridge
         DEV_TYPE_PCI,
     } type;
 
     struct pci_dev_info info;
     struct arch_pci_dev arch;
+
     struct {
         struct list_head list;
         unsigned int cap_pos;
         unsigned int queue_depth;
     } ats;
+
     struct {
         s_time_t time;
         unsigned int count;
@@ -159,6 +166,7 @@ struct pci_dev {
      * List entry if VF.
      */
     struct list_head vf_list;
+
     union {
         struct pf_info {
             /* Only populated for PFs. */
@@ -183,11 +191,13 @@ struct pci_dev {
  * interrupt handling related (the mask bit register).
  */
 void pcidevs_lock_unsafe(void);
+
 static always_inline void pcidevs_lock(void)
 {
     pcidevs_lock_unsafe();
     block_lock_speculation();
 }
+
 void pcidevs_unlock(void);
 bool __must_check pcidevs_locked(void);
 
@@ -197,8 +207,8 @@ bool __must_check pcidevs_locked(void);
  * not the contents of each entry).
  * This check is not suitable for protecting other state or critical regions.
  */
-#define ASSERT_PDEV_LIST_IS_READ_LOCKED(d)                               \
-        /* NB: d may be evaluated multiple times, or not at all */       \
+#define ASSERT_PDEV_LIST_IS_READ_LOCKED(d)
+/* NB: d may be evaluated multiple times, or not at all */       \
         ASSERT(pcidevs_locked() || ((d) && rw_is_locked(&(d)->pci_lock)))
 #else
 #define ASSERT_PDEV_LIST_IS_READ_LOCKED(d) ((void)(d))
@@ -217,8 +227,8 @@ int pci_release_devices(struct domain *d);
 void pci_segments_init(void);
 int pci_add_segment(u16 seg);
 const unsigned long *pci_get_ro_map(u16 seg);
-int pci_add_device(u16 seg, u8 bus, u8 devfn,
-                   const struct pci_dev_info *info, nodeid_t node);
+int pci_add_device(u16 seg, u8 bus, u8 devfn, const struct pci_dev_info *info,
+                   nodeid_t node);
 int pci_remove_device(u16 seg, u8 bus, u8 devfn);
 int pci_ro_device(int seg, int bus, int devfn);
 int pci_hide_device(unsigned int seg, unsigned int bus, unsigned int devfn);
@@ -234,10 +244,10 @@ void pci_conf_write16(pci_sbdf_t sbdf, unsigned int reg, uint16_t data);
 void pci_conf_write32(pci_sbdf_t sbdf, unsigned int reg, uint32_t data);
 uint32_t pci_conf_read(uint32_t cf8, uint8_t offset, uint8_t bytes);
 void pci_conf_write(uint32_t cf8, uint8_t offset, uint8_t bytes, uint32_t data);
-int pci_mmcfg_read(unsigned int seg, unsigned int bus,
-                   unsigned int devfn, int reg, int len, u32 *value);
-int pci_mmcfg_write(unsigned int seg, unsigned int bus,
-                    unsigned int devfn, int reg, int len, u32 value);
+int pci_mmcfg_read(unsigned int seg, unsigned int bus, unsigned int devfn,
+                   int reg, int len, u32 *value);
+int pci_mmcfg_write(unsigned int seg, unsigned int bus, unsigned int devfn,
+                    int reg, int len, u32 value);
 unsigned int pci_find_cap_offset(pci_sbdf_t sbdf, unsigned int cap);
 unsigned int pci_find_next_cap_ttl(pci_sbdf_t sbdf, unsigned int pos,
                                    const unsigned int caps[], unsigned int n,

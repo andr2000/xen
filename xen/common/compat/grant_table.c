@@ -60,8 +60,8 @@ CHECK_gnttab_swap_grant_ref;
 CHECK_gnttab_cache_flush;
 #undef xen_gnttab_cache_flush
 
-int compat_grant_table_op(
-    unsigned int cmd, XEN_GUEST_HANDLE_PARAM(void) uop, unsigned int count)
+int compat_grant_table_op(unsigned int cmd, XEN_GUEST_HANDLE_PARAM(void) uop,
+                          unsigned int count)
 {
     int rc = 0;
     unsigned int i, cmd_op;
@@ -90,47 +90,47 @@ int compat_grant_table_op(
         break
 
 #ifndef CHECK_gnttab_map_grant_ref
-    CASE(map_grant_ref);
+        CASE(map_grant_ref);
 #endif
 
 #ifndef CHECK_gnttab_unmap_grant_ref
-    CASE(unmap_grant_ref);
+        CASE(unmap_grant_ref);
 #endif
 
 #ifndef CHECK_gnttab_unmap_and_replace
-    CASE(unmap_and_replace);
+        CASE(unmap_and_replace);
 #endif
 
 #ifndef CHECK_gnttab_setup_table
-    CASE(setup_table);
+        CASE(setup_table);
 #endif
 
 #ifndef CHECK_gnttab_transfer
-    CASE(transfer);
+        CASE(transfer);
 #endif
 
 #ifndef CHECK_gnttab_copy
-    CASE(copy);
+        CASE(copy);
 #endif
 
 #ifndef CHECK_gnttab_query_size
-    CASE(query_size);
+        CASE(query_size);
 #endif
 
 #ifndef CHECK_gnttab_dump_table
-    CASE(dump_table);
+        CASE(dump_table);
 #endif
 
 #ifndef CHECK_gnttab_get_status_frames
-    CASE(get_status_frames);
+        CASE(get_status_frames);
 #endif
 
 #ifndef CHECK_gnttab_swap_grant_ref
-    CASE(swap_grant_ref);
+        CASE(swap_grant_ref);
 #endif
 
 #ifndef CHECK_gnttab_cache_flush
-    CASE(cache_flush);
+        CASE(cache_flush);
 #endif
 
 #undef CASE
@@ -144,6 +144,7 @@ int compat_grant_table_op(
     for ( i = 0; i < count && rc == 0; )
     {
         unsigned int n;
+
         union {
             XEN_GUEST_HANDLE(void) uop;
             struct gnttab_setup_table *setup;
@@ -151,6 +152,7 @@ int compat_grant_table_op(
             struct gnttab_copy *copy;
             struct gnttab_get_status_frames *get_status;
         } nat;
+
         union {
             struct compat_gnttab_setup_table setup;
             struct compat_gnttab_transfer xfer;
@@ -166,7 +168,8 @@ int compat_grant_table_op(
                 rc = -EINVAL;
             else if ( unlikely(__copy_from_guest(&cmp.setup, uop, 1)) )
                 rc = -EFAULT;
-            else if ( unlikely(!compat_handle_okay(cmp.setup.frame_list, cmp.setup.nr_frames)) )
+            else if ( unlikely(!compat_handle_okay(cmp.setup.frame_list,
+                                                   cmp.setup.nr_frames)) )
                 rc = -EFAULT;
             else
             {
@@ -180,7 +183,8 @@ int compat_grant_table_op(
 #undef XLAT_gnttab_setup_table_HNDL_frame_list
                 rc = gnttab_setup_table(guest_handle_cast(nat.uop,
                                                           gnttab_setup_table_t),
-                                        1, max_frame_list_size_in_page);
+                                        1,
+                                        max_frame_list_size_in_page);
             }
             ASSERT(rc <= 0);
             if ( rc == 0 )
@@ -217,7 +221,9 @@ int compat_grant_table_op(
             break;
 
         case GNTTABOP_transfer:
-            for ( n = 0; n < COMPAT_ARG_XLAT_SIZE / sizeof(*nat.xfer) && i < count && rc == 0; ++i, ++n )
+            for ( n = 0; n < COMPAT_ARG_XLAT_SIZE / sizeof(*nat.xfer) &&
+                         i < count && rc == 0;
+                  ++i, ++n )
             {
                 if ( unlikely(__copy_from_guest_offset(&cmp.xfer, uop, i, 1)) )
                     rc = -EFAULT;
@@ -227,7 +233,9 @@ int compat_grant_table_op(
                 }
             }
             if ( rc == 0 )
-                rc = gnttab_transfer(guest_handle_cast(nat.uop, gnttab_transfer_t), n);
+                rc = gnttab_transfer(guest_handle_cast(nat.uop,
+                                                       gnttab_transfer_t),
+                                     n);
             if ( rc > 0 )
             {
                 ASSERT(rc < n);
@@ -251,7 +259,9 @@ int compat_grant_table_op(
             break;
 
         case GNTTABOP_copy:
-            for ( n = 0; n < COMPAT_ARG_XLAT_SIZE / sizeof(*nat.copy) && i < count && rc == 0; ++i, ++n )
+            for ( n = 0; n < COMPAT_ARG_XLAT_SIZE / sizeof(*nat.copy) &&
+                         i < count && rc == 0;
+                  ++i, ++n )
             {
                 if ( unlikely(__copy_from_guest_offset(&cmp.copy, uop, i, 1)) )
                     rc = -EFAULT;
@@ -296,7 +306,7 @@ int compat_grant_table_op(
             break;
 
         case GNTTABOP_get_status_frames:
-            if ( count != 1)
+            if ( count != 1 )
             {
                 rc = -EINVAL;
                 break;
@@ -315,15 +325,15 @@ int compat_grant_table_op(
 #undef XLAT_gnttab_get_status_frames_HNDL_frame_list
 
             rc = gnttab_get_status_frames(
-                guest_handle_cast(nat.uop, gnttab_get_status_frames_t), count);
+                guest_handle_cast(nat.uop, gnttab_get_status_frames_t),
+                count);
             if ( rc >= 0 )
             {
                 XEN_GUEST_HANDLE_PARAM(gnttab_get_status_frames_compat_t) get =
-                    guest_handle_cast(uop,
-                                      gnttab_get_status_frames_compat_t);
+                    guest_handle_cast(uop, gnttab_get_status_frames_compat_t);
 
-                if ( unlikely(__copy_field_to_guest(get, nat.get_status,
-                                                    status)) )
+                if ( unlikely(
+                         __copy_field_to_guest(get, nat.get_status, status)) )
                     rc = -EFAULT;
                 else
                     i = 1;
@@ -341,7 +351,10 @@ int compat_grant_table_op(
         ASSERT(i < count);
         ASSERT(!guest_handle_is_null(cnt_uop));
         rc = hypercall_create_continuation(__HYPERVISOR_grant_table_op,
-                                           "ihi", cmd, cnt_uop, count - i);
+                                           "ihi",
+                                           cmd,
+                                           cnt_uop,
+                                           count - i);
     }
 
     return rc;

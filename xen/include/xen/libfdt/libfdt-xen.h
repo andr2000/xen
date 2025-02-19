@@ -14,8 +14,7 @@
 #include <xen/libfdt/libfdt.h>
 
 static inline int fdt_get_mem_rsv_paddr(const void *fdt, int n,
-                                        paddr_t *address,
-                                        paddr_t *size)
+                                        paddr_t *address, paddr_t *size)
 {
     uint64_t dt_addr;
     uint64_t dt_size;

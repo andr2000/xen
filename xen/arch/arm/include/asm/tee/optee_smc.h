@@ -15,7 +15,6 @@
  * macros below.
  */
 
-
 #define OPTEE_SMC_STD_CALL_VAL(func_num) \
 	ARM_SMCCC_CALL_VAL(ARM_SMCCC_STD_CALL, ARM_SMCCC_CONV_32, \
 			   ARM_SMCCC_OWNER_TRUSTED_OS, (func_num))

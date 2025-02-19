@@ -28,30 +28,31 @@ typedef u8 mtrr_type;
                                    MSR_IA32_MTRR_PHYSBASE(0)) / 2)
 
 struct mtrr_var_range {
-	uint64_t base;
-	uint64_t mask;
+    uint64_t base;
+    uint64_t mask;
 };
 
 #define NUM_FIXED_RANGES 88
 #define NUM_FIXED_MSR 11
-struct mtrr_state {
-	struct mtrr_var_range *var_ranges;
-	mtrr_type fixed_ranges[NUM_FIXED_RANGES];
-	bool enabled;
-	bool fixed_enabled;
-	bool have_fixed;
-	mtrr_type def_type;
 
-	u64       mtrr_cap;
-	/* ranges in var MSRs are overlapped or not:0(no overlapped) */
-	bool      overlapped;
+struct mtrr_state {
+    struct mtrr_var_range *var_ranges;
+    mtrr_type fixed_ranges[NUM_FIXED_RANGES];
+    bool enabled;
+    bool fixed_enabled;
+    bool have_fixed;
+    mtrr_type def_type;
+
+    u64 mtrr_cap;
+    /* ranges in var MSRs are overlapped or not:0(no overlapped) */
+    bool overlapped;
 };
 extern struct mtrr_state mtrr_state;
 
 extern void cf_check mtrr_save_fixed_ranges(void *info);
 extern void mtrr_save_state(void);
-extern int mtrr_add(unsigned long base, unsigned long size,
-                    unsigned int type, char increment);
+extern int mtrr_add(unsigned long base, unsigned long size, unsigned int type,
+                    char increment);
 extern int mtrr_add_page(unsigned long base, unsigned long size,
                          unsigned int type, char increment);
 extern int mtrr_del(int reg, unsigned long base, unsigned long size);

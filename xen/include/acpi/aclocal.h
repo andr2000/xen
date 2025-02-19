@@ -53,19 +53,19 @@
  ****************************************************************************/
 
 union acpi_name_union {
-	u32 integer;
-	char ascii[4];
+    u32 integer;
+    char ascii[4];
 };
 
 /*
  * ACPI Table Descriptor.  One per ACPI table
  */
 struct acpi_table_desc {
-	acpi_physical_address address;
-	struct acpi_table_header *pointer;
-	u32 length;		/* Length fixed at 32 bits */
-	union acpi_name_union signature;
-	u8 flags;
+    acpi_physical_address address;
+    struct acpi_table_header *pointer;
+    u32 length; /* Length fixed at 32 bits */
+    union acpi_name_union signature;
+    u8 flags;
 };
 
 /* Flags for above */
@@ -79,10 +79,10 @@ struct acpi_table_desc {
 /* One internal RSDT for table management */
 
 struct acpi_internal_rsdt {
-	struct acpi_table_desc *tables;
-	u32 count;
-	u32 size;
-	u8 flags;
+    struct acpi_table_desc *tables;
+    u32 count;
+    u32 size;
+    u8 flags;
 };
 
 /* Flags for above */
@@ -103,9 +103,9 @@ struct acpi_internal_rsdt {
  ****************************************************************************/
 
 struct acpi_bit_register_info {
-	u8 parent_register;
-	u8 bit_position;
-	u16 access_bit_mask;
+    u8 parent_register;
+    u8 bit_position;
+    u16 access_bit_mask;
 };
 
 /*
@@ -204,4 +204,4 @@ struct acpi_bit_register_info {
 #define ACPI_ADDRESS_TYPE_IO_RANGE              1
 #define ACPI_ADDRESS_TYPE_BUS_NUMBER_RANGE      2
 
-#endif				/* __ACLOCAL_H__ */
+#endif /* __ACLOCAL_H__ */

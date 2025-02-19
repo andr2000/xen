@@ -59,7 +59,6 @@
 /* Never set a timer shorter than this value. */
 #define CSCHED_MIN_TIMER            XEN_SYSCTL_SCHED_RATELIMIT_MIN
 
-
 /*
  * Priorities
  */
@@ -67,7 +66,6 @@
 #define CSCHED_PRI_TS_UNDER     -1      /* time-share w/ credits */
 #define CSCHED_PRI_TS_OVER      -2      /* time-share w/o credits */
 #define CSCHED_PRI_IDLE         -64     /* idle */
-
 
 /*
  * Flags
@@ -81,7 +79,6 @@
 #define CSCHED_FLAG_UNIT_MIGRATING 0x2  /* UNIT may have moved to a new pcpu */
 #define CSCHED_FLAG_UNIT_PINNED    0x4  /* UNIT can run only on 1 pcpu */
 
-
 /*
  * Useful macros
  */
@@ -92,7 +89,6 @@
 #define CSCHED_UNIT(unit)   ((struct csched_unit *) (unit)->priv)
 #define CSCHED_DOM(_dom)    ((struct csched_dom *) (_dom)->sched_priv)
 #define RUNQ(_cpu)          (&(CSCHED_PCPU(_cpu)->runq))
-
 
 /*
  * CSCHED_STATS
@@ -125,7 +121,6 @@
 #define SCHED_UNIT_STAT_SET(_V, _X, _Y)    do {} while ( 0 )
 
 #endif /* SCHED_STATS */
-
 
 /*
  * Credit tracing events ("only" 512 available!). Check
@@ -175,7 +170,7 @@ struct csched_unit {
     struct csched_dom *sdom;
     struct sched_unit *unit;
 
-    s_time_t start_time;   /* When we were scheduled (used for credit) */
+    s_time_t start_time; /* When we were scheduled (used for credit) */
     unsigned flags;
     int pri;
 
@@ -239,14 +234,12 @@ struct csched_private {
 static void cf_check csched_tick(void *_cpu);
 static void cf_check csched_acct(void *dummy);
 
-static inline int
-__unit_on_runq(const struct csched_unit *svc)
+static inline int __unit_on_runq(const struct csched_unit *svc)
 {
     return !list_empty(&svc->runq_elem);
 }
 
-static inline struct csched_unit *
-__runq_elem(struct list_head *elem)
+static inline struct csched_unit *__runq_elem(struct list_head *elem)
 {
     return list_entry(elem, struct csched_unit, runq_elem);
 }
@@ -263,34 +256,30 @@ static inline bool is_runq_idle(unsigned int cpu)
            is_idle_unit(__runq_elem(RUNQ(cpu)->next)->unit);
 }
 
-static inline void
-inc_nr_runnable(unsigned int cpu)
+static inline void inc_nr_runnable(unsigned int cpu)
 {
     ASSERT(spin_is_locked(get_sched_res(cpu)->schedule_lock));
     CSCHED_PCPU(cpu)->nr_runnable++;
-
 }
 
-static inline void
-dec_nr_runnable(unsigned int cpu)
+static inline void dec_nr_runnable(unsigned int cpu)
 {
     ASSERT(spin_is_locked(get_sched_res(cpu)->schedule_lock));
     ASSERT(CSCHED_PCPU(cpu)->nr_runnable >= 1);
     CSCHED_PCPU(cpu)->nr_runnable--;
 }
 
-static inline void
-__runq_insert(struct csched_unit *svc)
+static inline void __runq_insert(struct csched_unit *svc)
 {
     unsigned int cpu = sched_unit_master(svc->unit);
-    const struct list_head * const runq = RUNQ(cpu);
+    const struct list_head *const runq = RUNQ(cpu);
     struct list_head *iter;
 
-    BUG_ON( __unit_on_runq(svc) );
+    BUG_ON(__unit_on_runq(svc));
 
-    list_for_each( iter, runq )
+    list_for_each(iter, runq)
     {
-        const struct csched_unit * const iter_svc = __runq_elem(iter);
+        const struct csched_unit *const iter_svc = __runq_elem(iter);
         if ( svc->pri > iter_svc->pri )
             break;
     }
@@ -298,25 +287,22 @@ __runq_insert(struct csched_unit *svc)
     /* If the unit yielded, try to put it behind one lower-priority
      * runnable unit if we can.  The next runq_sort will bring it forward
      * within 30ms if the queue too long. */
-    if ( test_bit(CSCHED_FLAG_UNIT_YIELD, &svc->flags)
-         && __runq_elem(iter)->pri > CSCHED_PRI_IDLE
-         && iter->next != runq )
-        iter=iter->next;
+    if ( test_bit(CSCHED_FLAG_UNIT_YIELD, &svc->flags) &&
+         __runq_elem(iter)->pri > CSCHED_PRI_IDLE && iter->next != runq )
+        iter = iter->next;
 
     list_add_tail(&svc->runq_elem, iter);
 }
 
-static inline void
-runq_insert(struct csched_unit *svc)
+static inline void runq_insert(struct csched_unit *svc)
 {
     __runq_insert(svc);
     inc_nr_runnable(sched_unit_master(svc->unit));
 }
 
-static inline void
-__runq_remove(struct csched_unit *svc)
+static inline void __runq_remove(struct csched_unit *svc)
 {
-    BUG_ON( !__unit_on_runq(svc) );
+    BUG_ON(!__unit_on_runq(svc));
     list_del_init(&svc->runq_elem);
 
     /*
@@ -325,8 +311,7 @@ __runq_remove(struct csched_unit *svc)
     clear_bit(CSCHED_FLAG_UNIT_YIELD, &svc->flags);
 }
 
-static inline void
-runq_remove(struct csched_unit *svc)
+static inline void runq_remove(struct csched_unit *svc)
 {
     dec_nr_runnable(sched_unit_master(svc->unit));
     __runq_remove(svc);
@@ -339,7 +324,7 @@ static void burn_credits(struct csched_unit *svc, s_time_t now)
     unsigned int credits;
 
     /* Assert svc is current */
-    ASSERT( svc == CSCHED_UNIT(curr_on_cpu(sched_unit_master(svc->unit))) );
+    ASSERT(svc == CSCHED_UNIT(curr_on_cpu(sched_unit_master(svc->unit))));
 
     if ( (delta = now - svc->start_time) <= 0 )
         return;
@@ -362,7 +347,7 @@ static inline void __runq_tickle(const struct csched_unit *new)
     unsigned int cpu = sched_unit_master(new->unit);
     const struct sched_resource *sr = get_sched_res(cpu);
     const struct sched_unit *unit = new->unit;
-    struct csched_unit * const cur = CSCHED_UNIT(curr_on_cpu(cpu));
+    struct csched_unit *const cur = CSCHED_UNIT(curr_on_cpu(cpu));
     struct csched_private *prv = CSCHED_PRIV(sr->scheduler);
     cpumask_t mask, idle_mask, *online;
     int balance_step, idlers_empty;
@@ -402,8 +387,7 @@ static inline void __runq_tickle(const struct csched_unit *new)
      * suitable idler on which to run new, run it here, but try to
      * find a suitable idler on which to run cur instead.
      */
-    if ( cur->pri == CSCHED_PRI_IDLE
-         || (idlers_empty && new->pri > cur->pri) )
+    if ( cur->pri == CSCHED_PRI_IDLE || (idlers_empty && new->pri > cur->pri) )
     {
         if ( cur->pri != CSCHED_PRI_IDLE )
             SCHED_STAT_CRANK(tickled_busy_cpu);
@@ -417,19 +401,21 @@ static inline void __runq_tickle(const struct csched_unit *new)
          * Soft and hard affinity balancing loop. For units without
          * a useful soft affinity, consider hard affinity only.
          */
-        for_each_affinity_balance_step( balance_step )
+        for_each_affinity_balance_step(balance_step)
         {
             int new_idlers_empty;
 
-            if ( balance_step == BALANCE_SOFT_AFFINITY
-                 && !has_soft_affinity(unit) )
+            if ( balance_step == BALANCE_SOFT_AFFINITY &&
+                 !has_soft_affinity(unit) )
                 continue;
 
             /* Are there idlers suitable for new (for this balance step)? */
-            affinity_balance_cpumask(unit, balance_step,
+            affinity_balance_cpumask(unit,
+                                     balance_step,
                                      cpumask_scratch_cpu(cpu));
             cpumask_and(cpumask_scratch_cpu(cpu),
-                        cpumask_scratch_cpu(cpu), &idle_mask);
+                        cpumask_scratch_cpu(cpu),
+                        &idle_mask);
             new_idlers_empty = cpumask_empty(cpumask_scratch_cpu(cpu));
 
             /*
@@ -437,8 +423,7 @@ static inline void __runq_tickle(const struct csched_unit *new)
              * for new in its soft affinity mask, make sure we check its
              * hard affinity as well, before taking final decisions.
              */
-            if ( new_idlers_empty
-                 && balance_step == BALANCE_SOFT_AFFINITY )
+            if ( new_idlers_empty && balance_step == BALANCE_SOFT_AFFINITY )
                 continue;
 
             /*
@@ -487,7 +472,7 @@ static inline void __runq_tickle(const struct csched_unit *new)
         }
     }
 
- tickle:
+tickle:
     if ( !cpumask_empty(&mask) )
     {
         if ( unlikely(tb_init_done) )
@@ -514,8 +499,8 @@ static inline void __runq_tickle(const struct csched_unit *new)
         SCHED_STAT_CRANK(tickled_no_cpu);
 }
 
-static void cf_check
-csched_free_pdata(const struct scheduler *ops, void *pcpu, int cpu)
+static void cf_check csched_free_pdata(const struct scheduler *ops, void *pcpu,
+                                       int cpu)
 {
     const struct csched_private *prv = CSCHED_PRIV(ops);
 
@@ -531,8 +516,8 @@ csched_free_pdata(const struct scheduler *ops, void *pcpu, int cpu)
     xfree(pcpu);
 }
 
-static void cf_check
-csched_deinit_pdata(const struct scheduler *ops, void *pcpu, int cpu)
+static void cf_check csched_deinit_pdata(const struct scheduler *ops,
+                                         void *pcpu, int cpu)
 {
     struct csched_private *prv = CSCHED_PRIV(ops);
     struct csched_pcpu *spc = pcpu;
@@ -564,7 +549,7 @@ csched_deinit_pdata(const struct scheduler *ops, void *pcpu, int cpu)
     {
         cpumask_and(cpumask_scratch, prv->cpus, &node_to_cpumask(node));
         if ( !cpumask_empty(cpumask_scratch) )
-            prv->balance_bias[node] =  cpumask_first(cpumask_scratch);
+            prv->balance_bias[node] = cpumask_first(cpumask_scratch);
     }
     kill_timer(&spc->ticker);
     if ( prv->ncpus == 0 )
@@ -573,8 +558,7 @@ csched_deinit_pdata(const struct scheduler *ops, void *pcpu, int cpu)
     spin_unlock_irqrestore(&prv->lock, flags);
 }
 
-static void *cf_check
-csched_alloc_pdata(const struct scheduler *ops, int cpu)
+static void *cf_check csched_alloc_pdata(const struct scheduler *ops, int cpu)
 {
     struct csched_pcpu *spc;
 
@@ -586,8 +570,8 @@ csched_alloc_pdata(const struct scheduler *ops, int cpu)
     return spc;
 }
 
-static void
-init_pdata(struct csched_private *prv, struct csched_pcpu *spc, int cpu)
+static void init_pdata(struct csched_private *prv, struct csched_pcpu *spc,
+                       int cpu)
 {
     ASSERT(spin_is_locked(&prv->lock));
     /* cpu data needs to be allocated, but STILL uninitialized. */
@@ -609,7 +593,7 @@ init_pdata(struct csched_private *prv, struct csched_pcpu *spc, int cpu)
         prv->balance_bias[cpu_to_node(cpu)] = cpu;
 
     init_timer(&spc->ticker, csched_tick, (void *)(unsigned long)cpu, cpu);
-    set_timer(&spc->ticker, NOW() + MICROSECS(prv->tick_period_us) );
+    set_timer(&spc->ticker, NOW() + MICROSECS(prv->tick_period_us));
 
     INIT_LIST_HEAD(&spc->runq);
     spc->runq_sort_last = prv->runq_sort;
@@ -623,8 +607,8 @@ init_pdata(struct csched_private *prv, struct csched_pcpu *spc, int cpu)
     spc->last_load_balance = NOW();
 }
 
-static void cf_check
-csched_move_timers(const struct scheduler *ops, struct sched_resource *sr)
+static void cf_check csched_move_timers(const struct scheduler *ops,
+                                        struct sched_resource *sr)
 {
     struct csched_private *prv = CSCHED_PRIV(ops);
     struct csched_pcpu *spc = sr->sched_priv;
@@ -636,9 +620,9 @@ csched_move_timers(const struct scheduler *ops, struct sched_resource *sr)
 }
 
 /* Change the scheduler of cpu to us (Credit). */
-static spinlock_t *cf_check
-csched_switch_sched(struct scheduler *new_ops, unsigned int cpu,
-                    void *pdata, void *vdata)
+static spinlock_t *cf_check csched_switch_sched(struct scheduler *new_ops,
+                                                unsigned int cpu, void *pdata,
+                                                void *vdata)
 {
     struct sched_resource *sr = get_sched_res(cpu);
     struct csched_private *prv = CSCHED_PRIV(new_ops);
@@ -662,26 +646,26 @@ csched_switch_sched(struct scheduler *new_ops, unsigned int cpu,
 }
 
 #ifndef NDEBUG
-static inline void
-__csched_unit_check(const struct sched_unit *unit)
+static inline void __csched_unit_check(const struct sched_unit *unit)
 {
-    struct csched_unit * const svc = CSCHED_UNIT(unit);
-    struct csched_dom * const sdom = svc->sdom;
+    struct csched_unit *const svc = CSCHED_UNIT(unit);
+    struct csched_dom *const sdom = svc->sdom;
 
-    BUG_ON( svc->unit != unit );
-    BUG_ON( sdom != CSCHED_DOM(unit->domain) );
+    BUG_ON(svc->unit != unit);
+    BUG_ON(sdom != CSCHED_DOM(unit->domain));
     if ( sdom )
     {
-        BUG_ON( is_idle_unit(unit) );
-        BUG_ON( sdom->dom != unit->domain );
+        BUG_ON(is_idle_unit(unit));
+        BUG_ON(sdom->dom != unit->domain);
     }
     else
     {
-        BUG_ON( !is_idle_unit(unit) );
+        BUG_ON(!is_idle_unit(unit));
     }
 
     SCHED_STAT_CRANK(unit_check);
 }
+
 #define CSCHED_UNIT_CHECK(unit)  (__csched_unit_check(unit))
 #else
 #define CSCHED_UNIT_CHECK(unit)
@@ -696,9 +680,8 @@ __csched_unit_check(const struct sched_unit *unit)
 static unsigned int vcpu_migration_delay_us;
 integer_param("vcpu_migration_delay", vcpu_migration_delay_us);
 
-static inline bool
-__csched_vcpu_is_cache_hot(const struct csched_private *prv,
-                           const struct csched_unit *svc)
+static inline bool __csched_vcpu_is_cache_hot(const struct csched_private *prv,
+                                              const struct csched_unit *svc)
 {
     bool hot = prv->unit_migr_delay &&
                (NOW() - svc->last_sched_time) < prv->unit_migr_delay;
@@ -709,10 +692,10 @@ __csched_vcpu_is_cache_hot(const struct csched_private *prv,
     return hot;
 }
 
-static inline int
-__csched_unit_is_migrateable(const struct csched_private *prv,
-                             const struct sched_unit *unit,
-                             int dest_cpu, const cpumask_t *mask)
+static inline int __csched_unit_is_migrateable(const struct csched_private *prv,
+                                               const struct sched_unit *unit,
+                                               int dest_cpu,
+                                               const cpumask_t *mask)
 {
     const struct csched_unit *svc = CSCHED_UNIT(unit);
     /*
@@ -728,9 +711,8 @@ __csched_unit_is_migrateable(const struct csched_private *prv,
            cpumask_test_cpu(dest_cpu, mask);
 }
 
-static int
-_csched_cpu_pick(const struct scheduler *ops, const struct sched_unit *unit,
-                 bool commit)
+static int _csched_cpu_pick(const struct scheduler *ops,
+                            const struct sched_unit *unit, bool commit)
 {
     int cpu = sched_unit_master(unit);
     /* We must always use cpu's scratch space */
@@ -740,7 +722,7 @@ _csched_cpu_pick(const struct scheduler *ops, const struct sched_unit *unit,
     struct csched_pcpu *spc = NULL;
     int balance_step;
 
-    for_each_affinity_balance_step( balance_step )
+    for_each_affinity_balance_step(balance_step)
     {
         affinity_balance_cpumask(unit, balance_step, cpus);
         cpumask_and(cpus, online, cpus);
@@ -766,8 +748,8 @@ _csched_cpu_pick(const struct scheduler *ops, const struct sched_unit *unit,
 
         /* If present, prefer vc's current processor */
         cpu = cpumask_test_cpu(sched_unit_master(unit), cpus)
-                ? sched_unit_master(unit)
-                : cpumask_cycle(sched_unit_master(unit), cpus);
+                  ? sched_unit_master(unit)
+                  : cpumask_cycle(sched_unit_master(unit), cpus);
         ASSERT(cpumask_test_cpu(cpu, cpus));
 
         /*
@@ -820,18 +802,20 @@ _csched_cpu_pick(const struct scheduler *ops, const struct sched_unit *unit,
             {
                 /* We're on the same socket, so check the busy-ness of threads.
                  * Migrate if # of idlers is less at all */
-                ASSERT( cpumask_test_cpu(nxt, per_cpu(cpu_core_mask, cpu)) );
+                ASSERT(cpumask_test_cpu(nxt, per_cpu(cpu_core_mask, cpu)));
                 migrate_factor = 1;
-                cpumask_and(&cpu_idlers, &idlers, per_cpu(cpu_sibling_mask,
-                            cpu));
-                cpumask_and(&nxt_idlers, &idlers, per_cpu(cpu_sibling_mask,
-                            nxt));
+                cpumask_and(&cpu_idlers,
+                            &idlers,
+                            per_cpu(cpu_sibling_mask, cpu));
+                cpumask_and(&nxt_idlers,
+                            &idlers,
+                            per_cpu(cpu_sibling_mask, nxt));
             }
             else
             {
                 /* We're on different sockets, so check the busy-ness of cores.
                  * Migrate only if the other core is twice as idle */
-                ASSERT( !cpumask_test_cpu(nxt, per_cpu(cpu_core_mask, cpu)) );
+                ASSERT(!cpumask_test_cpu(nxt, per_cpu(cpu_core_mask, cpu)));
                 migrate_factor = 2;
                 cpumask_and(&cpu_idlers, &idlers, per_cpu(cpu_core_mask, cpu));
                 cpumask_and(&nxt_idlers, &idlers, per_cpu(cpu_core_mask, nxt));
@@ -840,9 +824,9 @@ _csched_cpu_pick(const struct scheduler *ops, const struct sched_unit *unit,
             weight_cpu = cpumask_weight(&cpu_idlers);
             weight_nxt = cpumask_weight(&nxt_idlers);
             /* smt_power_savings: consolidate work rather than spreading it */
-            if ( sched_smt_power_savings ?
-                 weight_cpu > weight_nxt :
-                 weight_cpu * migrate_factor < weight_nxt )
+            if ( sched_smt_power_savings
+                     ? weight_cpu > weight_nxt
+                     : weight_cpu * migrate_factor < weight_nxt )
             {
                 cpumask_and(&nxt_idlers, &nxt_idlers, cpus);
                 spc = CSCHED_PCPU(nxt);
@@ -861,9 +845,12 @@ _csched_cpu_pick(const struct scheduler *ops, const struct sched_unit *unit,
     }
 
     if ( commit && spc )
-       spc->idle_bias = cpu;
+        spc->idle_bias = cpu;
 
-    TRACE_TIME(TRC_CSCHED_PICKED_CPU, unit->domain->domain_id, unit->unit_id, cpu);
+    TRACE_TIME(TRC_CSCHED_PICKED_CPU,
+               unit->domain->domain_id,
+               unit->unit_id,
+               cpu);
 
     return cpu;
 }
@@ -884,10 +871,10 @@ csched_res_pick(const struct scheduler *ops, const struct sched_unit *unit)
     return get_sched_res(_csched_cpu_pick(ops, unit, true));
 }
 
-static inline void
-__csched_unit_acct_start(struct csched_private *prv, struct csched_unit *svc)
+static inline void __csched_unit_acct_start(struct csched_private *prv,
+                                            struct csched_unit *svc)
 {
-    struct csched_dom * const sdom = svc->sdom;
+    struct csched_dom *const sdom = svc->sdom;
     unsigned long flags;
 
     spin_lock_irqsave(&prv->lock, flags);
@@ -907,24 +894,25 @@ __csched_unit_acct_start(struct csched_private *prv, struct csched_unit *svc)
         }
     }
 
-    TRACE_TIME(TRC_CSCHED_ACCOUNT_START, sdom->dom->domain_id,
-               svc->unit->unit_id, sdom->active_unit_count);
+    TRACE_TIME(TRC_CSCHED_ACCOUNT_START,
+               sdom->dom->domain_id,
+               svc->unit->unit_id,
+               sdom->active_unit_count);
 
     spin_unlock_irqrestore(&prv->lock, flags);
 }
 
-static inline void
-__csched_unit_acct_stop_locked(struct csched_private *prv,
-    struct csched_unit *svc)
+static inline void __csched_unit_acct_stop_locked(struct csched_private *prv,
+                                                  struct csched_unit *svc)
 {
-    struct csched_dom * const sdom = svc->sdom;
+    struct csched_dom *const sdom = svc->sdom;
 
-    BUG_ON( list_empty(&svc->active_unit_elem) );
+    BUG_ON(list_empty(&svc->active_unit_elem));
 
     SCHED_UNIT_STAT_CRANK(svc, state_idle);
     SCHED_STAT_CRANK(acct_unit_idle);
 
-    BUG_ON( prv->weight < sdom->weight );
+    BUG_ON(prv->weight < sdom->weight);
     sdom->active_unit_count--;
     list_del_init(&svc->active_unit_elem);
     prv->weight -= sdom->weight;
@@ -933,21 +921,22 @@ __csched_unit_acct_stop_locked(struct csched_private *prv,
         list_del_init(&sdom->active_sdom_elem);
     }
 
-    TRACE_TIME(TRC_CSCHED_ACCOUNT_STOP, sdom->dom->domain_id,
-               svc->unit->unit_id, sdom->active_unit_count);
+    TRACE_TIME(TRC_CSCHED_ACCOUNT_STOP,
+               sdom->dom->domain_id,
+               svc->unit->unit_id,
+               sdom->active_unit_count);
 }
 
-static void
-csched_unit_acct(struct csched_private *prv, unsigned int cpu)
+static void csched_unit_acct(struct csched_private *prv, unsigned int cpu)
 {
     struct sched_unit *currunit = current->sched_unit;
-    struct csched_unit * const svc = CSCHED_UNIT(currunit);
+    struct csched_unit *const svc = CSCHED_UNIT(currunit);
     const struct sched_resource *sr = get_sched_res(cpu);
     const struct scheduler *ops = sr->scheduler;
 
-    ASSERT( sched_unit_master(currunit) == cpu );
-    ASSERT( svc->sdom != NULL );
-    ASSERT( !is_idle_unit(svc->unit) );
+    ASSERT(sched_unit_master(currunit) == cpu);
+    ASSERT(svc->sdom != NULL);
+    ASSERT(!is_idle_unit(svc->unit));
 
     /*
      * If this UNIT's priority was boosted when it last awoke, reset it.
@@ -957,7 +946,8 @@ csched_unit_acct(struct csched_private *prv, unsigned int cpu)
     if ( svc->pri == CSCHED_PRI_TS_BOOST )
     {
         svc->pri = CSCHED_PRI_TS_UNDER;
-        TRACE_TIME(TRC_CSCHED_BOOST_END, svc->sdom->dom->domain_id,
+        TRACE_TIME(TRC_CSCHED_BOOST_END,
+                   svc->sdom->dom->domain_id,
                    svc->unit->unit_id);
     }
 
@@ -1005,8 +995,8 @@ csched_unit_acct(struct csched_private *prv, unsigned int cpu)
     }
 }
 
-static void *cf_check csched_alloc_udata(
-    const struct scheduler *ops, struct sched_unit *unit, void *dd)
+static void *cf_check csched_alloc_udata(const struct scheduler *ops,
+                                         struct sched_unit *unit, void *dd)
 {
     struct csched_unit *svc;
 
@@ -1019,20 +1009,19 @@ static void *cf_check csched_alloc_udata(
     INIT_LIST_HEAD(&svc->active_unit_elem);
     svc->sdom = dd;
     svc->unit = unit;
-    svc->pri = is_idle_unit(unit) ?
-        CSCHED_PRI_IDLE : CSCHED_PRI_TS_UNDER;
+    svc->pri = is_idle_unit(unit) ? CSCHED_PRI_IDLE : CSCHED_PRI_TS_UNDER;
     SCHED_UNIT_STATS_RESET(svc);
     SCHED_STAT_CRANK(unit_alloc);
     return svc;
 }
 
-static void cf_check
-csched_unit_insert(const struct scheduler *ops, struct sched_unit *unit)
+static void cf_check csched_unit_insert(const struct scheduler *ops,
+                                        struct sched_unit *unit)
 {
     struct csched_unit *svc = unit->priv;
     spinlock_t *lock;
 
-    BUG_ON( is_idle_unit(unit) );
+    BUG_ON(is_idle_unit(unit));
 
     /* csched_res_pick() looks in vc->processor's runq, so we need the lock. */
     lock = unit_schedule_lock_irq(unit);
@@ -1051,22 +1040,21 @@ csched_unit_insert(const struct scheduler *ops, struct sched_unit *unit)
     SCHED_STAT_CRANK(unit_insert);
 }
 
-static void cf_check
-csched_free_udata(const struct scheduler *ops, void *priv)
+static void cf_check csched_free_udata(const struct scheduler *ops, void *priv)
 {
     struct csched_unit *svc = priv;
 
-    BUG_ON( !list_empty(&svc->runq_elem) );
+    BUG_ON(!list_empty(&svc->runq_elem));
 
     xfree(svc);
 }
 
-static void cf_check
-csched_unit_remove(const struct scheduler *ops, struct sched_unit *unit)
+static void cf_check csched_unit_remove(const struct scheduler *ops,
+                                        struct sched_unit *unit)
 {
     struct csched_private *prv = CSCHED_PRIV(ops);
-    struct csched_unit * const svc = CSCHED_UNIT(unit);
-    struct csched_dom * const sdom = svc->sdom;
+    struct csched_unit *const svc = CSCHED_UNIT(unit);
+    struct csched_dom *const sdom = svc->sdom;
 
     SCHED_STAT_CRANK(unit_remove);
 
@@ -1085,19 +1073,19 @@ csched_unit_remove(const struct scheduler *ops, struct sched_unit *unit)
 
     spin_unlock_irq(&prv->lock);
 
-    BUG_ON( sdom == NULL );
+    BUG_ON(sdom == NULL);
 }
 
-static void cf_check
-csched_unit_sleep(const struct scheduler *ops, struct sched_unit *unit)
+static void cf_check csched_unit_sleep(const struct scheduler *ops,
+                                       struct sched_unit *unit)
 {
-    struct csched_unit * const svc = CSCHED_UNIT(unit);
+    struct csched_unit *const svc = CSCHED_UNIT(unit);
     unsigned int cpu = sched_unit_master(unit);
     const struct sched_resource *sr = get_sched_res(cpu);
 
     SCHED_STAT_CRANK(unit_sleep);
 
-    BUG_ON( is_idle_unit(unit) );
+    BUG_ON(is_idle_unit(unit));
 
     if ( curr_on_cpu(cpu) == unit )
     {
@@ -1113,13 +1101,13 @@ csched_unit_sleep(const struct scheduler *ops, struct sched_unit *unit)
         runq_remove(svc);
 }
 
-static void cf_check
-csched_unit_wake(const struct scheduler *ops, struct sched_unit *unit)
+static void cf_check csched_unit_wake(const struct scheduler *ops,
+                                      struct sched_unit *unit)
 {
-    struct csched_unit * const svc = CSCHED_UNIT(unit);
+    struct csched_unit *const svc = CSCHED_UNIT(unit);
     bool migrating;
 
-    BUG_ON( is_idle_unit(unit) );
+    BUG_ON(is_idle_unit(unit));
 
     if ( unlikely(curr_on_cpu(sched_unit_master(unit)) == unit) )
     {
@@ -1164,7 +1152,9 @@ csched_unit_wake(const struct scheduler *ops, struct sched_unit *unit)
     if ( !migrating && svc->pri == CSCHED_PRI_TS_UNDER &&
          !test_bit(CSCHED_FLAG_UNIT_PARKED, &svc->flags) )
     {
-        TRACE_TIME(TRC_CSCHED_BOOST_START, unit->domain->domain_id, unit->unit_id);
+        TRACE_TIME(TRC_CSCHED_BOOST_START,
+                   unit->domain->domain_id,
+                   unit->unit_id);
         SCHED_STAT_CRANK(unit_boost);
         svc->pri = CSCHED_PRI_TS_BOOST;
     }
@@ -1174,22 +1164,20 @@ csched_unit_wake(const struct scheduler *ops, struct sched_unit *unit)
     __runq_tickle(svc);
 }
 
-static void cf_check
-csched_unit_yield(const struct scheduler *ops, struct sched_unit *unit)
+static void cf_check csched_unit_yield(const struct scheduler *ops,
+                                       struct sched_unit *unit)
 {
-    struct csched_unit * const svc = CSCHED_UNIT(unit);
+    struct csched_unit *const svc = CSCHED_UNIT(unit);
 
     /* Let the scheduler know that this vcpu is trying to yield */
     set_bit(CSCHED_FLAG_UNIT_YIELD, &svc->flags);
 }
 
-static int cf_check
-csched_dom_cntl(
-    const struct scheduler *ops,
-    struct domain *d,
-    struct xen_domctl_scheduler_op *op)
+static int cf_check csched_dom_cntl(const struct scheduler *ops,
+                                    struct domain *d,
+                                    struct xen_domctl_scheduler_op *op)
 {
-    struct csched_dom * const sdom = CSCHED_DOM(d);
+    struct csched_dom *const sdom = CSCHED_DOM(d);
     struct csched_private *prv = CSCHED_PRIV(ops);
     unsigned long flags;
     int rc = 0;
@@ -1228,9 +1216,10 @@ csched_dom_cntl(
     return rc;
 }
 
-static void cf_check
-csched_aff_cntl(const struct scheduler *ops, struct sched_unit *unit,
-                const cpumask_t *hard, const cpumask_t *soft)
+static void cf_check csched_aff_cntl(const struct scheduler *ops,
+                                     struct sched_unit *unit,
+                                     const cpumask_t *hard,
+                                     const cpumask_t *soft)
 {
     struct csched_unit *svc = CSCHED_UNIT(unit);
 
@@ -1244,8 +1233,8 @@ csched_aff_cntl(const struct scheduler *ops, struct sched_unit *unit,
         clear_bit(CSCHED_FLAG_UNIT_PINNED, &svc->flags);
 }
 
-static inline void
-__csched_set_tslice(struct csched_private *prv, unsigned int timeslice_ms)
+static inline void __csched_set_tslice(struct csched_private *prv,
+                                       unsigned int timeslice_ms)
 {
     prv->tslice = MILLISECS(timeslice_ms);
     prv->ticks_per_tslice = CSCHED_TICKS_PER_TSLICE;
@@ -1256,9 +1245,8 @@ __csched_set_tslice(struct csched_private *prv, unsigned int timeslice_ms)
     prv->credit = prv->credits_per_tslice * prv->ncpus;
 }
 
-static int cf_check
-csched_sys_cntl(const struct scheduler *ops,
-                        struct xen_sysctl_scheduler_op *sc)
+static int cf_check csched_sys_cntl(const struct scheduler *ops,
+                                    struct xen_sysctl_scheduler_op *sc)
 {
     int rc = -EINVAL;
     struct xen_sysctl_credit_schedule *params = &sc->u.sched_credit;
@@ -1268,14 +1256,14 @@ csched_sys_cntl(const struct scheduler *ops,
     switch ( sc->cmd )
     {
     case XEN_SYSCTL_SCHEDOP_putinfo:
-        if ( params->tslice_ms > XEN_SYSCTL_CSCHED_TSLICE_MAX
-             || params->tslice_ms < XEN_SYSCTL_CSCHED_TSLICE_MIN
-             || (params->ratelimit_us
-                 && (params->ratelimit_us > XEN_SYSCTL_SCHED_RATELIMIT_MAX
-                     || params->ratelimit_us < XEN_SYSCTL_SCHED_RATELIMIT_MIN))
-             || MICROSECS(params->ratelimit_us) > MILLISECS(params->tslice_ms)
-             || params->vcpu_migr_delay_us > XEN_SYSCTL_CSCHED_MGR_DLY_MAX_US )
-                goto out;
+        if ( params->tslice_ms > XEN_SYSCTL_CSCHED_TSLICE_MAX ||
+             params->tslice_ms < XEN_SYSCTL_CSCHED_TSLICE_MIN ||
+             (params->ratelimit_us &&
+              (params->ratelimit_us > XEN_SYSCTL_SCHED_RATELIMIT_MAX ||
+               params->ratelimit_us < XEN_SYSCTL_SCHED_RATELIMIT_MIN)) ||
+             MICROSECS(params->ratelimit_us) > MILLISECS(params->tslice_ms) ||
+             params->vcpu_migr_delay_us > XEN_SYSCTL_CSCHED_MGR_DLY_MAX_US )
+            goto out;
 
         spin_lock_irqsave(&prv->lock, flags);
         __csched_set_tslice(prv, params->tslice_ms);
@@ -1295,12 +1283,12 @@ csched_sys_cntl(const struct scheduler *ops,
         rc = 0;
         break;
     }
-    out:
+out:
     return rc;
 }
 
-static void *cf_check
-csched_alloc_domdata(const struct scheduler *ops, struct domain *dom)
+static void *cf_check csched_alloc_domdata(const struct scheduler *ops,
+                                           struct domain *dom)
 {
     struct csched_dom *sdom;
 
@@ -1317,8 +1305,8 @@ csched_alloc_domdata(const struct scheduler *ops, struct domain *dom)
     return sdom;
 }
 
-static void cf_check
-csched_free_domdata(const struct scheduler *ops, void *data)
+static void cf_check csched_free_domdata(const struct scheduler *ops,
+                                         void *data)
 {
     xfree(data);
 }
@@ -1330,10 +1318,9 @@ csched_free_domdata(const struct scheduler *ops, void *data)
  * through the runq and move up any UNDERs that are preceded by OVERS. We
  * remember the last UNDER to make the move up operation O(1).
  */
-static void
-csched_runq_sort(struct csched_private *prv, unsigned int cpu)
+static void csched_runq_sort(struct csched_private *prv, unsigned int cpu)
 {
-    struct csched_pcpu * const spc = CSCHED_PCPU(cpu);
+    struct csched_pcpu *const spc = CSCHED_PCPU(cpu);
     struct list_head *runq, *elem, *next, *last_under;
     struct csched_unit *svc_elem;
     spinlock_t *lock;
@@ -1374,7 +1361,7 @@ csched_runq_sort(struct csched_private *prv, unsigned int cpu)
     pcpu_schedule_unlock_irqrestore(lock, flags, cpu);
 }
 
-static void cf_check csched_acct(void* dummy)
+static void cf_check csched_acct(void *dummy)
 {
     struct csched_private *prv = dummy;
     unsigned long flags;
@@ -1391,7 +1378,6 @@ static void cf_check csched_acct(void* dummy)
     int credit_balance;
     int credit_xtra;
     int credit;
-
 
     spin_lock_irqsave(&prv->lock, flags);
 
@@ -1420,16 +1406,16 @@ static void cf_check csched_acct(void* dummy)
     credit_xtra = 0;
     credit_cap = 0U;
 
-    list_for_each_safe( iter_sdom, next_sdom, &prv->active_sdom )
+    list_for_each_safe(iter_sdom, next_sdom, &prv->active_sdom)
     {
         sdom = list_entry(iter_sdom, struct csched_dom, active_sdom_elem);
 
-        BUG_ON( is_idle_domain(sdom->dom) );
-        BUG_ON( sdom->active_unit_count == 0 );
-        BUG_ON( sdom->weight == 0 );
-        BUG_ON( (sdom->weight * sdom->active_unit_count) > weight_left );
+        BUG_ON(is_idle_domain(sdom->dom));
+        BUG_ON(sdom->active_unit_count == 0);
+        BUG_ON(sdom->weight == 0);
+        BUG_ON((sdom->weight * sdom->active_unit_count) > weight_left);
 
-        weight_left -= ( sdom->weight * sdom->active_unit_count );
+        weight_left -= (sdom->weight * sdom->active_unit_count);
 
         /*
          * A domain's fair share is computed using its weight in competition
@@ -1442,11 +1428,10 @@ static void cf_check csched_acct(void* dummy)
         credit_peak = sdom->active_unit_count * prv->credits_per_tslice;
         if ( prv->credit_balance < 0 )
         {
-            credit_peak += ( ( -prv->credit_balance
-                               * sdom->weight
-                               * sdom->active_unit_count) +
-                             (weight_total - 1)
-                           ) / weight_total;
+            credit_peak += ((-prv->credit_balance * sdom->weight *
+                             sdom->active_unit_count) +
+                            (weight_total - 1)) /
+                           weight_total;
         }
 
         if ( sdom->cap != 0U )
@@ -1456,15 +1441,13 @@ static void cf_check csched_acct(void* dummy)
                 credit_peak = credit_cap;
 
             /* FIXME -- set cap per-unit as well...? */
-            credit_cap = ( credit_cap + ( sdom->active_unit_count - 1 )
-                         ) / sdom->active_unit_count;
+            credit_cap = (credit_cap + (sdom->active_unit_count - 1)) /
+                         sdom->active_unit_count;
         }
 
-        credit_fair = ( ( credit_total
-                          * sdom->weight
-                          * sdom->active_unit_count )
-                        + (weight_total - 1)
-                      ) / weight_total;
+        credit_fair = ((credit_total * sdom->weight * sdom->active_unit_count) +
+                       (weight_total - 1)) /
+                      weight_total;
 
         if ( credit_fair < credit_peak )
         {
@@ -1475,10 +1458,9 @@ static void cf_check csched_acct(void* dummy)
             if ( weight_left != 0U )
             {
                 /* Give other domains a chance at unused credits */
-                credit_total += ( ( ( credit_fair - credit_peak
-                                    ) * weight_total
-                                  ) + ( weight_left - 1 )
-                                ) / weight_left;
+                credit_total += (((credit_fair - credit_peak) * weight_total) +
+                                 (weight_left - 1)) /
+                                weight_left;
             }
 
             if ( credit_xtra )
@@ -1497,14 +1479,13 @@ static void cf_check csched_acct(void* dummy)
         }
 
         /* Compute fair share per UNIT */
-        credit_fair = ( credit_fair + ( sdom->active_unit_count - 1 )
-                      ) / sdom->active_unit_count;
+        credit_fair = (credit_fair + (sdom->active_unit_count - 1)) /
+                      sdom->active_unit_count;
 
-
-        list_for_each_safe( iter_unit, next_unit, &sdom->active_unit )
+        list_for_each_safe(iter_unit, next_unit, &sdom->active_unit)
         {
             svc = list_entry(iter_unit, struct csched_unit, active_unit_elem);
-            BUG_ON( sdom != svc->sdom );
+            BUG_ON(sdom != svc->sdom);
 
             /* Increment credit */
             atomic_add(credit_fair, &svc->credit);
@@ -1519,8 +1500,7 @@ static void cf_check csched_acct(void* dummy)
                 svc->pri = CSCHED_PRI_TS_OVER;
 
                 /* Park running UNITs of capped-out domains */
-                if ( sdom->cap != 0U &&
-                     credit < -credit_cap &&
+                if ( sdom->cap != 0U && credit < -credit_cap &&
                      !test_and_set_bit(CSCHED_FLAG_UNIT_PARKED, &svc->flags) )
                 {
                     SCHED_STAT_CRANK(unit_park);
@@ -1577,7 +1557,7 @@ static void cf_check csched_acct(void* dummy)
     prv->runq_sort++;
 
 out:
-    set_timer( &prv->master_ticker, NOW() + prv->tslice);
+    set_timer(&prv->master_ticker, NOW() + prv->tslice);
 }
 
 static void cf_check csched_tick(void *_cpu)
@@ -1604,15 +1584,15 @@ static void cf_check csched_tick(void *_cpu)
      */
     csched_runq_sort(prv, cpu);
 
-    set_timer(&spc->ticker, NOW() + MICROSECS(prv->tick_period_us) );
+    set_timer(&spc->ticker, NOW() + MICROSECS(prv->tick_period_us));
 }
 
-static struct csched_unit *
-csched_runq_steal(int peer_cpu, int cpu, int pri, int balance_step)
+static struct csched_unit *csched_runq_steal(int peer_cpu, int cpu, int pri,
+                                             int balance_step)
 {
     const struct sched_resource *sr = get_sched_res(cpu);
-    const struct csched_private * const prv = CSCHED_PRIV(sr->scheduler);
-    const struct csched_pcpu * const peer_pcpu = CSCHED_PCPU(peer_cpu);
+    const struct csched_private *const prv = CSCHED_PRIV(sr->scheduler);
+    const struct csched_pcpu *const peer_pcpu = CSCHED_PCPU(peer_cpu);
     struct csched_unit *speer;
     struct list_head *iter;
     struct sched_unit *unit;
@@ -1626,7 +1606,7 @@ csched_runq_steal(int peer_cpu, int cpu, int pri, int balance_step)
     if ( unlikely(is_idle_unit(curr_on_cpu(peer_cpu))) )
         goto out;
 
-    list_for_each( iter, &peer_pcpu->runq )
+    list_for_each(iter, &peer_pcpu->runq)
     {
         speer = __runq_elem(iter);
 
@@ -1646,7 +1626,7 @@ csched_runq_steal(int peer_cpu, int cpu, int pri, int balance_step)
 
         /* Is this UNIT runnable on our PCPU? */
         unit = speer->unit;
-        BUG_ON( is_idle_unit(unit) );
+        BUG_ON(is_idle_unit(unit));
 
         /*
          * If the unit is still in peer_cpu's scheduling tail, or if it
@@ -1670,8 +1650,10 @@ csched_runq_steal(int peer_cpu, int cpu, int pri, int balance_step)
         if ( __csched_unit_is_migrateable(prv, unit, cpu, cpumask_scratch) )
         {
             /* We got a candidate. Grab it! */
-            TRACE_TIME(TRC_CSCHED_STOLEN_UNIT, peer_cpu,
-                       unit->domain->domain_id, unit->unit_id);
+            TRACE_TIME(TRC_CSCHED_STOLEN_UNIT,
+                       peer_cpu,
+                       unit->domain->domain_id,
+                       unit->unit_id);
             SCHED_UNIT_STAT_CRANK(speer, migrate_q);
             SCHED_STAT_CRANK(migrate_queued);
             runq_remove(speer);
@@ -1685,7 +1667,7 @@ csched_runq_steal(int peer_cpu, int cpu, int pri, int balance_step)
             return speer;
         }
     }
- out:
+out:
     SCHED_STAT_CRANK(steal_peer_idle);
     return NULL;
 }
@@ -1695,12 +1677,14 @@ csched_runq_steal(int peer_cpu, int cpu, int pri, int balance_step)
  * This prevents spending too much time doing load balancing, particularly
  * when the system has a high number of YIELDs due to spinlock priority inversion.
  */
-static unsigned int __ro_after_init load_balance_ratelimit_us = CSCHED_DEFAULT_LOAD_BALANCE_RATELIMIT_US;
+static unsigned int __ro_after_init load_balance_ratelimit_us =
+    CSCHED_DEFAULT_LOAD_BALANCE_RATELIMIT_US;
 integer_param("load-balance-ratelimit", load_balance_ratelimit_us);
 
-static struct csched_unit *
-csched_load_balance(struct csched_private *prv, int cpu,
-                    struct csched_unit *snext, bool *stolen)
+static struct csched_unit *csched_load_balance(struct csched_private *prv,
+                                               int cpu,
+                                               struct csched_unit *snext,
+                                               bool *stolen)
 {
     const struct cpupool *c = get_sched_res(cpu)->cpupool;
     struct csched_unit *speer;
@@ -1729,7 +1713,7 @@ csched_load_balance(struct csched_private *prv, int cpu,
      *  1. any "soft-affine work" to steal first,
      *  2. if not finding anything, any "hard-affine work" to steal.
      */
-    for_each_affinity_balance_step( bstep )
+    for_each_affinity_balance_step(bstep)
     {
         /*
          * We peek at the non-idling CPUs in a node-wise fashion. In fact,
@@ -1782,7 +1766,9 @@ csched_load_balance(struct csched_private *prv, int cpu,
                  */
                 if ( CSCHED_PCPU(peer_cpu)->nr_runnable <= 1 )
                 {
-                    TRACE_TIME(TRC_CSCHED_STEAL_CHECK, peer_cpu, /* skipp'n */ 0);
+                    TRACE_TIME(TRC_CSCHED_STEAL_CHECK,
+                               peer_cpu,
+                               /* skipp'n */ 0);
                     goto next_cpu;
                 }
 
@@ -1805,8 +1791,10 @@ csched_load_balance(struct csched_private *prv, int cpu,
                 TRACE_TIME(TRC_CSCHED_STEAL_CHECK, peer_cpu, /* checked */ 1);
 
                 /* Any work over there to steal? */
-                speer = cpumask_test_cpu(peer_cpu, online) ?
-                    csched_runq_steal(peer_cpu, cpu, snext->pri, bstep) : NULL;
+                speer =
+                    cpumask_test_cpu(peer_cpu, online)
+                        ? csched_runq_steal(peer_cpu, cpu, snext->pri, bstep)
+                        : NULL;
                 pcpu_schedule_unlock(lock, peer_cpu);
 
                 /* As soon as one unit is found, balancing ends */
@@ -1822,17 +1810,17 @@ csched_load_balance(struct csched_private *prv, int cpu,
                     return speer;
                 }
 
- next_cpu:
+            next_cpu:
                 peer_cpu = cpumask_cycle(peer_cpu, &workers);
 
-            } while( peer_cpu != first_cpu );
+            } while ( peer_cpu != first_cpu );
 
- next_node:
+        next_node:
             peer_node = cycle_node(peer_node, node_online_map);
-        } while( peer_node != node );
+        } while ( peer_node != node );
     }
 
- out:
+out:
     /* Failed to find more important work elsewhere... */
     __runq_remove(snext);
     return snext;
@@ -1842,15 +1830,15 @@ csched_load_balance(struct csched_private *prv, int cpu,
  * This function is in the critical path. It is designed to be simple and
  * fast for the common case.
  */
-static void cf_check csched_schedule(
-    const struct scheduler *ops, struct sched_unit *unit, s_time_t now,
-    bool tasklet_work_scheduled)
+static void cf_check csched_schedule(const struct scheduler *ops,
+                                     struct sched_unit *unit, s_time_t now,
+                                     bool tasklet_work_scheduled)
 {
     const unsigned int cur_cpu = smp_processor_id();
     const unsigned int sched_cpu = sched_get_resource_cpu(cur_cpu);
     struct csched_pcpu *spc = CSCHED_PCPU(cur_cpu);
-    struct list_head * const runq = RUNQ(sched_cpu);
-    struct csched_unit * const scurr = CSCHED_UNIT(unit);
+    struct list_head *const runq = RUNQ(sched_cpu);
+    struct csched_unit *const scurr = CSCHED_UNIT(unit);
     struct csched_private *prv = CSCHED_PRIV(ops);
     struct csched_unit *snext;
     s_time_t runtime, tslice;
@@ -1865,9 +1853,9 @@ static void cf_check csched_schedule(
             uint16_t cpu;
             uint8_t tasklet, idle;
         } d = {
-            .cpu     = cur_cpu,
+            .cpu = cur_cpu,
             .tasklet = tasklet_work_scheduled,
-            .idle    = is_idle_unit(unit),
+            .idle = is_idle_unit(unit),
         };
 
         trace_time(TRC_CSCHED_SCHEDULE, sizeof(d), &d);
@@ -1910,12 +1898,10 @@ static void cf_check csched_schedule(
      * In fact, it may be the case that scurr is about to spin, and there's
      * no point forcing it to do so until rate limiting expires.
      */
-    if ( !test_bit(CSCHED_FLAG_UNIT_YIELD, &scurr->flags)
-         && !tasklet_work_scheduled
-         && prv->ratelimit
-         && unit_runnable_state(unit)
-         && !is_idle_unit(unit)
-         && runtime < prv->ratelimit )
+    if ( !test_bit(CSCHED_FLAG_UNIT_YIELD, &scurr->flags) &&
+         !tasklet_work_scheduled && prv->ratelimit &&
+         unit_runnable_state(unit) && !is_idle_unit(unit) &&
+         runtime < prv->ratelimit )
     {
         snext = scurr;
         snext->start_time += now;
@@ -1935,8 +1921,8 @@ static void cf_check csched_schedule(
                 uint16_t unit, dom;
                 uint32_t runtime;
             } d = {
-                .dom     = unit->domain->domain_id,
-                .unit    = unit->unit_id,
+                .dom = unit->domain->domain_id,
+                .unit = unit->unit_id,
                 .runtime = runtime,
             };
 
@@ -1954,12 +1940,13 @@ static void cf_check csched_schedule(
         __runq_insert(scurr);
     else
     {
-        BUG_ON( is_idle_unit(unit) || list_empty(runq) );
+        BUG_ON(is_idle_unit(unit) || list_empty(runq));
         /* Current has blocked. Update the runnable counter for this cpu. */
         dec_nr_runnable(sched_cpu);
     }
 
-    do {
+    do
+    {
         snext = __runq_elem(runq->next);
 
         /* Tasklet work (which runs in idle UNIT context) overrides all else. */
@@ -1979,8 +1966,9 @@ static void cf_check csched_schedule(
          * more urgent work... If we don't, csched_load_balance() will
          * return snext, but already removed from the runq.
          */
-        if ( snext->pri <= CSCHED_PRI_TS_OVER
-             && now - spc->last_load_balance > prv->load_balance_ratelimit ) {
+        if ( snext->pri <= CSCHED_PRI_TS_OVER &&
+             now - spc->last_load_balance > prv->load_balance_ratelimit )
+        {
             spc->last_load_balance = now;
             snext = csched_load_balance(prv, sched_cpu, snext, &migrated);
         }
@@ -2010,8 +1998,7 @@ out:
     /*
      * Return task to run next...
      */
-    unit->next_time = (is_idle_unit(snext->unit) ?
-                -1 : tslice);
+    unit->next_time = (is_idle_unit(snext->unit) ? -1 : tslice);
     unit->next_task = snext->unit;
     snext->unit->migrated = migrated;
 
@@ -2019,45 +2006,46 @@ out:
     if ( !is_idle_unit(unit) && is_idle_unit(unit->next_task) )
         stop_timer(&spc->ticker);
     if ( is_idle_unit(unit) && !is_idle_unit(unit->next_task) )
-        set_timer(&spc->ticker, now + MICROSECS(prv->tick_period_us)
-                                - now % MICROSECS(prv->tick_period_us) );
+        set_timer(&spc->ticker,
+                  now + MICROSECS(prv->tick_period_us) -
+                      now % MICROSECS(prv->tick_period_us));
 
     CSCHED_UNIT_CHECK(unit->next_task);
 }
 
-static void
-csched_dump_unit(const struct csched_unit *svc)
+static void csched_dump_unit(const struct csched_unit *svc)
 {
-    struct csched_dom * const sdom = svc->sdom;
+    struct csched_dom *const sdom = svc->sdom;
 
     printk("[%i.%i] pri=%i flags=%x cpu=%i",
-            svc->unit->domain->domain_id,
-            svc->unit->unit_id,
-            svc->pri,
-            svc->flags,
-            sched_unit_master(svc->unit));
+           svc->unit->domain->domain_id,
+           svc->unit->unit_id,
+           svc->pri,
+           svc->flags,
+           sched_unit_master(svc->unit));
 
     if ( sdom )
     {
-        printk(" credit=%i [w=%u,cap=%u]", atomic_read(&svc->credit),
-                sdom->weight, sdom->cap);
+        printk(" credit=%i [w=%u,cap=%u]",
+               atomic_read(&svc->credit),
+               sdom->weight,
+               sdom->cap);
 #ifdef CSCHED_STATS
         printk(" (%d+%u) {a/i=%u/%u m=%u+%u (k=%u)}",
-                svc->stats.credit_last,
-                svc->stats.credit_incr,
-                svc->stats.state_active,
-                svc->stats.state_idle,
-                svc->stats.migrate_q,
-                svc->stats.migrate_r,
-                svc->stats.kicked_away);
+               svc->stats.credit_last,
+               svc->stats.credit_incr,
+               svc->stats.state_active,
+               svc->stats.state_idle,
+               svc->stats.migrate_q,
+               svc->stats.migrate_r,
+               svc->stats.kicked_away);
 #endif
     }
 
     printk("\n");
 }
 
-static void cf_check
-csched_dump_pcpu(const struct scheduler *ops, int cpu)
+static void cf_check csched_dump_pcpu(const struct scheduler *ops, int cpu)
 {
     const struct list_head *runq;
     struct list_head *iter;
@@ -2082,7 +2070,9 @@ csched_dump_pcpu(const struct scheduler *ops, int cpu)
     runq = &spc->runq;
 
     printk("CPU[%02d] nr_run=%d, sort=%d, sibling={%*pbl}, core={%*pbl}\n",
-           cpu, spc->nr_runnable, spc->runq_sort_last,
+           cpu,
+           spc->nr_runnable,
+           spc->runq_sort_last,
            CPUMASK_PR(per_cpu(cpu_sibling_mask, cpu)),
            CPUMASK_PR(per_cpu(cpu_core_mask, cpu)));
 
@@ -2095,7 +2085,7 @@ csched_dump_pcpu(const struct scheduler *ops, int cpu)
     }
 
     loop = 0;
-    list_for_each( iter, runq )
+    list_for_each(iter, runq)
     {
         svc = __runq_elem(iter);
         if ( svc )
@@ -2109,8 +2099,7 @@ csched_dump_pcpu(const struct scheduler *ops, int cpu)
     spin_unlock_irqrestore(&prv->lock, flags);
 }
 
-static void cf_check
-csched_dump(const struct scheduler *ops)
+static void cf_check csched_dump(const struct scheduler *ops)
 {
     struct list_head *iter_sdom, *iter_svc;
     struct csched_private *prv = CSCHED_PRIV(ops);
@@ -2119,43 +2108,35 @@ csched_dump(const struct scheduler *ops)
 
     spin_lock_irqsave(&prv->lock, flags);
 
-    printk("info:\n"
-           "\tncpus              = %u\n"
-           "\tmaster             = %u\n"
-           "\tcredit             = %u\n"
-           "\tcredit balance     = %d\n"
-           "\tweight             = %u\n"
-           "\trunq_sort          = %u\n"
-           "\tdefault-weight     = %d\n"
-           "\ttslice             = %"PRI_stime"ms\n"
-           "\tratelimit          = %"PRI_stime"us\n"
-           "\tcredits per msec   = %d\n"
-           "\tticks per tslice   = %d\n"
-           "\tmigration delay    = %"PRI_stime"us\n",
-           prv->ncpus,
-           prv->master,
-           prv->credit,
-           prv->credit_balance,
-           prv->weight,
-           prv->runq_sort,
-           CSCHED_DEFAULT_WEIGHT,
-           prv->tslice / MILLISECS(1),
-           prv->ratelimit / MICROSECS(1),
-           CSCHED_CREDITS_PER_MSEC,
-           prv->ticks_per_tslice,
-           prv->unit_migr_delay/ MICROSECS(1));
+    printk(
+        "info:\n" "\tncpus              = %u\n" "\tmaster             = %u\n" "\tcredit             = %u\n" "\tcredit balance     = %d\n" "\tweight             = %u\n" "\trunq_sort          = %u\n" "\tdefault-weight     = %d\n" "\ttslice             = %" PRI_stime
+        "ms\n" "\tratelimit          = %" PRI_stime
+        "us\n" "\tcredits per msec   = %d\n" "\tticks per tslice   = %d\n" "\tmigration delay    = %" PRI_stime
+        "us\n",
+        prv->ncpus,
+        prv->master,
+        prv->credit,
+        prv->credit_balance,
+        prv->weight,
+        prv->runq_sort,
+        CSCHED_DEFAULT_WEIGHT,
+        prv->tslice / MILLISECS(1),
+        prv->ratelimit / MICROSECS(1),
+        CSCHED_CREDITS_PER_MSEC,
+        prv->ticks_per_tslice,
+        prv->unit_migr_delay / MICROSECS(1));
 
     printk("idlers: %*pb\n", CPUMASK_PR(prv->idlers));
 
     printk("active units:\n");
     loop = 0;
-    list_for_each( iter_sdom, &prv->active_sdom )
+    list_for_each(iter_sdom, &prv->active_sdom)
     {
         const struct csched_dom *sdom;
 
         sdom = list_entry(iter_sdom, struct csched_dom, active_sdom_elem);
 
-        list_for_each( iter_svc, &sdom->active_unit )
+        list_for_each(iter_svc, &sdom->active_unit)
         {
             const struct csched_unit *svc;
             spinlock_t *lock;
@@ -2173,46 +2154,44 @@ csched_dump(const struct scheduler *ops)
     spin_unlock_irqrestore(&prv->lock, flags);
 }
 
-static int __init cf_check
-csched_global_init(void)
+static int __init cf_check csched_global_init(void)
 {
     if ( sched_credit_tslice_ms > XEN_SYSCTL_CSCHED_TSLICE_MAX ||
          sched_credit_tslice_ms < XEN_SYSCTL_CSCHED_TSLICE_MIN )
     {
-        printk("WARNING: sched_credit_tslice_ms outside of valid range [%d,%d].\n"
-               " Resetting to default %u\n",
-               XEN_SYSCTL_CSCHED_TSLICE_MIN,
-               XEN_SYSCTL_CSCHED_TSLICE_MAX,
-               CSCHED_DEFAULT_TSLICE_MS);
+        printk(
+            "WARNING: sched_credit_tslice_ms outside of valid range [%d,%d].\n" " Resetting to default %u\n",
+            XEN_SYSCTL_CSCHED_TSLICE_MIN,
+            XEN_SYSCTL_CSCHED_TSLICE_MAX,
+            CSCHED_DEFAULT_TSLICE_MS);
         sched_credit_tslice_ms = CSCHED_DEFAULT_TSLICE_MS;
     }
 
     if ( MICROSECS(sched_ratelimit_us) > MILLISECS(sched_credit_tslice_ms) )
-        printk("WARNING: sched_ratelimit_us >"
-               "sched_credit_tslice_ms is undefined\n"
-               "Setting ratelimit to tslice\n");
+        printk(
+            "WARNING: sched_ratelimit_us >" "sched_credit_tslice_ms is undefined\n" "Setting ratelimit to tslice\n");
 
     if ( vcpu_migration_delay_us > XEN_SYSCTL_CSCHED_MGR_DLY_MAX_US )
     {
         vcpu_migration_delay_us = 0;
-        printk("WARNING: vcpu_migration_delay outside of valid range [0,%d]us.\n"
-               "Resetting to default: %u\n",
-               XEN_SYSCTL_CSCHED_MGR_DLY_MAX_US, vcpu_migration_delay_us);
+        printk(
+            "WARNING: vcpu_migration_delay outside of valid range [0,%d]us.\n" "Resetting to default: %u\n",
+            XEN_SYSCTL_CSCHED_MGR_DLY_MAX_US,
+            vcpu_migration_delay_us);
     }
 
     if ( load_balance_ratelimit_us > CSCHED_MAX_LOAD_BALANCE_RATELIMIT_US )
     {
         load_balance_ratelimit_us = CSCHED_MAX_LOAD_BALANCE_RATELIMIT_US;
-        printk("WARNING: load-balance-ratelimit outside of valid range [0,%d]us.\n"
-               "Setting to max.\n",
-               CSCHED_MAX_LOAD_BALANCE_RATELIMIT_US);
+        printk(
+            "WARNING: load-balance-ratelimit outside of valid range [0,%d]us.\n" "Setting to max.\n",
+            CSCHED_MAX_LOAD_BALANCE_RATELIMIT_US);
     }
 
     return 0;
 }
 
-static int cf_check
-csched_init(struct scheduler *ops)
+static int cf_check csched_init(struct scheduler *ops)
 {
     struct csched_private *prv;
 
@@ -2227,8 +2206,7 @@ csched_init(struct scheduler *ops)
         return -ENOMEM;
     }
 
-    if ( !zalloc_cpumask_var(&prv->cpus) ||
-         !zalloc_cpumask_var(&prv->idlers) )
+    if ( !zalloc_cpumask_var(&prv->cpus) || !zalloc_cpumask_var(&prv->idlers) )
     {
         free_cpumask_var(prv->cpus);
         xfree(prv->balance_bias);
@@ -2255,8 +2233,7 @@ csched_init(struct scheduler *ops)
     return 0;
 }
 
-static void cf_check
-csched_deinit(struct scheduler *ops)
+static void cf_check csched_deinit(struct scheduler *ops)
 {
     struct csched_private *prv;
 
@@ -2272,40 +2249,40 @@ csched_deinit(struct scheduler *ops)
 }
 
 static const struct scheduler sched_credit_def = {
-    .name           = "SMP Credit Scheduler",
-    .opt_name       = "credit",
-    .sched_id       = XEN_SCHEDULER_CREDIT,
-    .sched_data     = NULL,
+    .name = "SMP Credit Scheduler",
+    .opt_name = "credit",
+    .sched_id = XEN_SCHEDULER_CREDIT,
+    .sched_data = NULL,
 
-    .global_init    = csched_global_init,
+    .global_init = csched_global_init,
 
-    .insert_unit    = csched_unit_insert,
-    .remove_unit    = csched_unit_remove,
+    .insert_unit = csched_unit_insert,
+    .remove_unit = csched_unit_remove,
 
-    .sleep          = csched_unit_sleep,
-    .wake           = csched_unit_wake,
-    .yield          = csched_unit_yield,
+    .sleep = csched_unit_sleep,
+    .wake = csched_unit_wake,
+    .yield = csched_unit_yield,
 
-    .adjust         = csched_dom_cntl,
-    .adjust_affinity= csched_aff_cntl,
-    .adjust_global  = csched_sys_cntl,
+    .adjust = csched_dom_cntl,
+    .adjust_affinity = csched_aff_cntl,
+    .adjust_global = csched_sys_cntl,
 
-    .pick_resource  = csched_res_pick,
-    .do_schedule    = csched_schedule,
+    .pick_resource = csched_res_pick,
+    .do_schedule = csched_schedule,
 
     .dump_cpu_state = csched_dump_pcpu,
-    .dump_settings  = csched_dump,
-    .init           = csched_init,
-    .deinit         = csched_deinit,
-    .alloc_udata    = csched_alloc_udata,
-    .free_udata     = csched_free_udata,
-    .alloc_pdata    = csched_alloc_pdata,
-    .deinit_pdata   = csched_deinit_pdata,
-    .free_pdata     = csched_free_pdata,
-    .switch_sched   = csched_switch_sched,
-    .alloc_domdata  = csched_alloc_domdata,
-    .free_domdata   = csched_free_domdata,
-    .move_timers    = csched_move_timers,
+    .dump_settings = csched_dump,
+    .init = csched_init,
+    .deinit = csched_deinit,
+    .alloc_udata = csched_alloc_udata,
+    .free_udata = csched_free_udata,
+    .alloc_pdata = csched_alloc_pdata,
+    .deinit_pdata = csched_deinit_pdata,
+    .free_pdata = csched_free_pdata,
+    .switch_sched = csched_switch_sched,
+    .alloc_domdata = csched_alloc_domdata,
+    .free_domdata = csched_free_domdata,
+    .move_timers = csched_move_timers,
 };
 
 REGISTER_SCHEDULER(sched_credit_def);

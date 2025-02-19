@@ -22,8 +22,8 @@
  * functions which ever write (non-zero) data onto a shadow page.
  */
 
-static inline void
-shadow_write_entries(void *d, const void *s, unsigned int entries, mfn_t mfn)
+static inline void shadow_write_entries(void *d, const void *s,
+                                        unsigned int entries, mfn_t mfn)
 /*
  * This function does the actual writes to shadow pages.
  * It must not be called directly, since it doesn't do the bookkeeping
@@ -72,8 +72,8 @@ shadow_write_entries(void *d, const void *s, unsigned int entries, mfn_t mfn)
  * "type" is only used to distinguish grant map pages from ordinary RAM
  * i.e. non-p2m_is_grant() pages are treated as p2m_ram_rw.
  */
-static int inline
-shadow_get_page_from_l1e(shadow_l1e_t sl1e, struct domain *d, p2m_type_t type)
+static inline int shadow_get_page_from_l1e(shadow_l1e_t sl1e, struct domain *d,
+                                           p2m_type_t type)
 {
     int res;
     mfn_t mfn = shadow_l1e_get_mfn(sl1e);
@@ -100,15 +100,17 @@ shadow_get_page_from_l1e(shadow_l1e_t sl1e, struct domain *d, p2m_type_t type)
          !(res = xsm_priv_mapping(XSM_TARGET, d, owner)) )
     {
         res = get_page_from_l1e(sl1e, d, owner);
-        SHADOW_PRINTK("privileged %pd installs map of %pd's mfn %"PRI_mfn": %s\n",
-                      d, owner, mfn_x(mfn),
+        SHADOW_PRINTK("privileged %pd installs map of %pd's mfn %" PRI_mfn
+                      ": %s\n",
+                      d,
+                      owner,
+                      mfn_x(mfn),
                       res >= 0 ? "success" : "failed");
     }
     /* Okay, it might still be a grant mapping PTE.  Try it. */
-    else if ( owner &&
-              (type == p2m_grant_map_rw ||
-               (type == p2m_grant_map_ro &&
-                !(shadow_l1e_get_flags(sl1e) & _PAGE_RW))) )
+    else if ( owner && (type == p2m_grant_map_rw ||
+                        (type == p2m_grant_map_ro &&
+                         !(shadow_l1e_get_flags(sl1e) & _PAGE_RW))) )
     {
         /*
          * It's a grant mapping.  The grant table implementation will
@@ -129,8 +131,8 @@ shadow_get_page_from_l1e(shadow_l1e_t sl1e, struct domain *d, p2m_type_t type)
     return res;
 }
 
-int shadow_set_l4e(struct domain *d, shadow_l4e_t *sl4e,
-                   shadow_l4e_t new_sl4e, mfn_t sl4mfn)
+int shadow_set_l4e(struct domain *d, shadow_l4e_t *sl4e, shadow_l4e_t new_sl4e,
+                   mfn_t sl4mfn)
 {
     int flags = 0;
     shadow_l4e_t old_sl4e;
@@ -139,7 +141,8 @@ int shadow_set_l4e(struct domain *d, shadow_l4e_t *sl4e,
     ASSERT(sl4e != NULL);
     old_sl4e = *sl4e;
 
-    if ( old_sl4e.l4 == new_sl4e.l4 ) return 0; /* Nothing to do */
+    if ( old_sl4e.l4 == new_sl4e.l4 )
+        return 0; /* Nothing to do */
 
     paddr = mfn_to_maddr(sl4mfn) | PAGE_OFFSET(sl4e);
 
@@ -181,8 +184,8 @@ int shadow_set_l4e(struct domain *d, shadow_l4e_t *sl4e,
     return flags;
 }
 
-int shadow_set_l3e(struct domain *d, shadow_l3e_t *sl3e,
-                   shadow_l3e_t new_sl3e, mfn_t sl3mfn)
+int shadow_set_l3e(struct domain *d, shadow_l3e_t *sl3e, shadow_l3e_t new_sl3e,
+                   mfn_t sl3mfn)
 {
     int flags = 0;
     shadow_l3e_t old_sl3e;
@@ -191,7 +194,8 @@ int shadow_set_l3e(struct domain *d, shadow_l3e_t *sl3e,
     ASSERT(sl3e != NULL);
     old_sl3e = *sl3e;
 
-    if ( old_sl3e.l3 == new_sl3e.l3 ) return 0; /* Nothing to do */
+    if ( old_sl3e.l3 == new_sl3e.l3 )
+        return 0; /* Nothing to do */
 
     paddr = mfn_to_maddr(sl3mfn) | PAGE_OFFSET(sl3e);
 
@@ -225,9 +229,8 @@ int shadow_set_l3e(struct domain *d, shadow_l3e_t *sl3e,
     return flags;
 }
 
-int shadow_set_l2e(struct domain *d, shadow_l2e_t *sl2e,
-                   shadow_l2e_t new_sl2e, mfn_t sl2mfn,
-                   unsigned int type_fl1_shadow,
+int shadow_set_l2e(struct domain *d, shadow_l2e_t *sl2e, shadow_l2e_t new_sl2e,
+                   mfn_t sl2mfn, unsigned int type_fl1_shadow,
                    mfn_t (*next_page)(mfn_t smfn))
 {
     int flags = 0;
@@ -251,7 +254,8 @@ int shadow_set_l2e(struct domain *d, shadow_l2e_t *sl2e,
     ASSERT(sl2e != NULL);
     old_sl2e = *sl2e;
 
-    if ( old_sl2e.l2 == new_sl2e.l2 ) return 0; /* Nothing to do */
+    if ( old_sl2e.l2 == new_sl2e.l2 )
+        return 0; /* Nothing to do */
 
     paddr = mfn_to_maddr(sl2mfn) | PAGE_OFFSET(sl2e);
 
@@ -267,7 +271,7 @@ int shadow_set_l2e(struct domain *d, shadow_l2e_t *sl2e,
             return SHADOW_SET_ERROR;
         }
 
-#if (SHADOW_OPTIMIZATIONS & SHOPT_OUT_OF_SYNC)
+#if ( SHADOW_OPTIMIZATIONS & SHOPT_OUT_OF_SYNC )
         {
             struct page_info *sp = mfn_to_page(sl1mfn);
             mfn_t gl1mfn;
@@ -278,8 +282,8 @@ int shadow_set_l2e(struct domain *d, shadow_l2e_t *sl2e,
              * If the shadow is a fl1 then the backpointer contains the
              * GFN instead of the GMFN, and it's definitely not OOS.
              */
-            if ( (sp->u.sh.type != type_fl1_shadow) && mfn_valid(gl1mfn)
-                 && mfn_is_out_of_sync(gl1mfn) )
+            if ( (sp->u.sh.type != type_fl1_shadow) && mfn_valid(gl1mfn) &&
+                 mfn_is_out_of_sync(gl1mfn) )
                 sh_resync(d, gl1mfn);
         }
 #endif
@@ -314,9 +318,8 @@ int shadow_set_l2e(struct domain *d, shadow_l2e_t *sl2e,
     return flags;
 }
 
-int shadow_set_l1e(struct domain *d, shadow_l1e_t *sl1e,
-                   shadow_l1e_t new_sl1e, p2m_type_t new_type,
-                   mfn_t sl1mfn)
+int shadow_set_l1e(struct domain *d, shadow_l1e_t *sl1e, shadow_l1e_t new_sl1e,
+                   p2m_type_t new_type, mfn_t sl1mfn)
 {
     int flags = 0;
     shadow_l1e_t old_sl1e;
@@ -336,7 +339,8 @@ int shadow_set_l1e(struct domain *d, shadow_l1e_t *sl1e,
 
     old_sl1e = *sl1e;
 
-    if ( old_sl1e.l1 == new_sl1e.l1 ) return 0; /* Nothing to do */
+    if ( old_sl1e.l1 == new_sl1e.l1 )
+        return 0; /* Nothing to do */
 
     if ( (shadow_l1e_get_flags(new_sl1e) & _PAGE_PRESENT) &&
          !sh_l1e_is_magic(new_sl1e) )
@@ -355,14 +359,16 @@ int shadow_set_l1e(struct domain *d, shadow_l1e_t *sl1e,
                 flags |= SHADOW_SET_ERROR;
                 new_sl1e = shadow_l1e_empty();
                 break;
-            case PAGE_FLIPPABLE & -PAGE_FLIPPABLE ... PAGE_FLIPPABLE:
+            case PAGE_FLIPPABLE & -PAGE_FLIPPABLE... PAGE_FLIPPABLE:
                 ASSERT(!(rc & ~PAGE_FLIPPABLE));
                 new_sl1e = shadow_l1e_flip_flags(new_sl1e, rc);
                 /* fall through */
             case 0:
                 shadow_vram_get_mfn(shadow_l1e_get_mfn(new_sl1e),
                                     shadow_l1e_get_flags(new_sl1e),
-                                    sl1mfn, sl1e, d);
+                                    sl1mfn,
+                                    sl1e,
+                                    d);
                 break;
             }
 #undef PAGE_FLIPPABLE
@@ -385,8 +391,11 @@ int shadow_set_l1e(struct domain *d, shadow_l1e_t *sl1e,
          * guest l1e did, it's the guest's responsibility to trigger a flush
          * later.
          */
-        shadow_vram_put_mfn(shadow_l1e_get_mfn(old_sl1e), old_sl1f,
-                            sl1mfn, sl1e, d);
+        shadow_vram_put_mfn(shadow_l1e_get_mfn(old_sl1e),
+                            old_sl1f,
+                            sl1mfn,
+                            sl1e,
+                            d);
         shadow_put_page_from_l1e(old_sl1e, d);
         TRACE_SHADOW_PATH_FLAG(TRCE_SFLAG_SHADOW_L1_PUT_REF);
     }

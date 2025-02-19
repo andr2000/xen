@@ -10,7 +10,7 @@
  * address indicates where Xen image will be loaded and run from. This
  * address must be aligned to a PAGE_SIZE.
  */
-#if (XEN_START_ADDRESS % PAGE_SIZE) != 0
+#if ( XEN_START_ADDRESS % PAGE_SIZE ) != 0
 #error "XEN_START_ADDRESS must be aligned to 4KB"
 #endif
 

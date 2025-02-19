@@ -27,10 +27,9 @@ int mls_context_to_sid(char oldc, char **scontext, struct context *context,
                        struct sidtab *s);
 
 int mls_convert_context(struct policydb *oldp, struct policydb *newp,
-                                                    struct context *context);
+                        struct context *context);
 
 int mls_compute_sid(struct context *scontext, struct context *tcontext,
-                        u16 tclass, u32 specified, struct context *newcontext);
+                    u16 tclass, u32 specified, struct context *newcontext);
 
-#endif    /* _SS_MLS_H */
-
+#endif /* _SS_MLS_H */

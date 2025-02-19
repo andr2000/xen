@@ -53,22 +53,23 @@ static void cf_check update_cpb(void *data)
 {
     struct cpufreq_policy *policy = data;
 
-    if (policy->turbo != CPUFREQ_TURBO_UNSUPPORTED) {
+    if ( policy->turbo != CPUFREQ_TURBO_UNSUPPORTED )
+    {
         uint64_t msr_content;
- 
+
         rdmsrl(MSR_K8_HWCR, msr_content);
 
-        if (policy->turbo == CPUFREQ_TURBO_ENABLED)
+        if ( policy->turbo == CPUFREQ_TURBO_ENABLED )
             msr_content &= ~MSR_HWCR_CPBDIS_MASK;
         else
-            msr_content |= MSR_HWCR_CPBDIS_MASK; 
+            msr_content |= MSR_HWCR_CPBDIS_MASK;
 
         wrmsrl(MSR_K8_HWCR, msr_content);
     }
 }
 
-static int cf_check powernow_cpufreq_update(
-    unsigned int cpu, struct cpufreq_policy *policy)
+static int cf_check powernow_cpufreq_update(unsigned int cpu,
+                                            struct cpufreq_policy *policy)
 {
     if ( !cpu_online(cpu) )
         return -EINVAL;
@@ -78,9 +79,9 @@ static int cf_check powernow_cpufreq_update(
     return 0;
 }
 
-static int cf_check powernow_cpufreq_target(
-    struct cpufreq_policy *policy,
-    unsigned int target_freq, unsigned int relation)
+static int cf_check powernow_cpufreq_target(struct cpufreq_policy *policy,
+                                            unsigned int target_freq,
+                                            unsigned int relation)
 {
     struct acpi_cpufreq_data *data = cpufreq_drv_data[policy->cpu];
     struct processor_performance *perf;
@@ -88,8 +89,9 @@ static int cf_check powernow_cpufreq_target(
     unsigned int next_perf_state; /* Index into perf table */
     int result;
 
-    if (unlikely(data == NULL ||
-        data->acpi_data == NULL || data->freq_table == NULL)) {
+    if ( unlikely(data == NULL || data->acpi_data == NULL ||
+                  data->freq_table == NULL) )
+    {
         return -ENODEV;
     }
 
@@ -97,32 +99,39 @@ static int cf_check powernow_cpufreq_target(
     result = cpufreq_frequency_table_target(policy,
                                             data->freq_table,
                                             target_freq,
-                                            relation, &next_state);
-    if (unlikely(result))
+                                            relation,
+                                            &next_state);
+    if ( unlikely(result) )
         return result;
 
     next_perf_state = data->freq_table[next_state].index;
-    if (perf->state == next_perf_state) {
-        if (unlikely(data->arch_cpu_flags & ARCH_CPU_FLAG_RESUME)) 
+    if ( perf->state == next_perf_state )
+    {
+        if ( unlikely(data->arch_cpu_flags & ARCH_CPU_FLAG_RESUME) )
             data->arch_cpu_flags &= ~ARCH_CPU_FLAG_RESUME;
         else
             return 0;
     }
 
-    if (policy->shared_type == CPUFREQ_SHARED_TYPE_HW &&
-        likely(policy->cpu == smp_processor_id())) {
+    if ( policy->shared_type == CPUFREQ_SHARED_TYPE_HW &&
+         likely(policy->cpu == smp_processor_id()) )
+    {
         transition_pstate(&next_perf_state);
         cpufreq_statistic_update(policy->cpu, perf->state, next_perf_state);
-    } else {
+    }
+    else
+    {
         cpumask_t online_policy_cpus;
         unsigned int cpu;
 
         cpumask_and(&online_policy_cpus, policy->cpus, &cpu_online_map);
 
-        if (policy->shared_type == CPUFREQ_SHARED_TYPE_ALL ||
-            unlikely(policy->cpu != smp_processor_id()))
-            on_selected_cpus(&online_policy_cpus, transition_pstate,
-                             &next_perf_state, 1);
+        if ( policy->shared_type == CPUFREQ_SHARED_TYPE_ALL ||
+             unlikely(policy->cpu != smp_processor_id()) )
+            on_selected_cpus(&online_policy_cpus,
+                             transition_pstate,
+                             &next_perf_state,
+                             1);
         else
             transition_pstate(&next_perf_state);
 
@@ -142,7 +151,7 @@ static void amd_fixup_frequency(struct xen_processor_px *px)
     int index = px->control & 0x00000007;
     const struct cpuinfo_x86 *c = &current_cpu_data;
 
-    if ((c->x86 != 0x10 || c->x86_model >= 10) && c->x86 != 0x11)
+    if ( (c->x86 != 0x10 || c->x86_model >= 10) && c->x86 != 0x11 )
         return;
 
     rdmsr(MSR_PSTATE_DEF_BASE + index, lo, hi);
@@ -150,12 +159,12 @@ static void amd_fixup_frequency(struct xen_processor_px *px)
      * MSR C001_0064+:
      * Bit 63: PstateEn. Read-write. If set, the P-state is valid.
      */
-    if (!(hi & (1U << 31)))
+    if ( !(hi & (1U << 31)) )
         return;
 
     fid = lo & 0x3f;
     did = (lo >> 6) & 7;
-    if (c->x86 == 0x10)
+    if ( c->x86 == 0x10 )
         px->core_frequency = (100 * (fid + 16)) >> did;
     else
         px->core_frequency = (100 * (fid + 8)) >> did;
@@ -177,7 +186,7 @@ static void cf_check get_cpu_data(void *arg)
     data->max_hw_pstate = (msr_content & HW_PSTATE_MAX_MASK) >>
                           HW_PSTATE_MAX_SHIFT;
 
-    for (i = 0; i < perf->state_count && i <= data->max_hw_pstate; i++)
+    for ( i = 0; i < perf->state_count && i <= data->max_hw_pstate; i++ )
         amd_fixup_frequency(&perf->states[i]);
 }
 
@@ -186,13 +195,15 @@ static int cf_check powernow_cpufreq_verify(struct cpufreq_policy *policy)
     struct acpi_cpufreq_data *data;
     struct processor_performance *perf;
 
-    if (!policy || !(data = cpufreq_drv_data[policy->cpu]) ||
-        !processor_pminfo[policy->cpu])
+    if ( !policy || !(data = cpufreq_drv_data[policy->cpu]) ||
+         !processor_pminfo[policy->cpu] )
         return -EINVAL;
 
     perf = &processor_pminfo[policy->cpu]->perf;
 
-    cpufreq_verify_within_limits(policy, 0, 
+    cpufreq_verify_within_limits(
+        policy,
+        0,
         perf->states[perf->platform_limit].core_frequency * 1000);
 
     return cpufreq_frequency_table_verify(policy, data->freq_table);
@@ -210,7 +221,7 @@ static int cf_check powernow_cpufreq_cpu_init(struct cpufreq_policy *policy)
     struct cpuinfo_x86 *c = &cpu_data[policy->cpu];
 
     data = xzalloc(struct acpi_cpufreq_data);
-    if (!data)
+    if ( !data )
         return -ENOMEM;
 
     cpufreq_drv_data[cpu] = data;
@@ -220,58 +231,69 @@ static int cf_check powernow_cpufreq_cpu_init(struct cpufreq_policy *policy)
     info.perf = perf = data->acpi_data;
     policy->shared_type = perf->shared_type;
 
-    if (policy->shared_type == CPUFREQ_SHARED_TYPE_ALL ||
-        policy->shared_type == CPUFREQ_SHARED_TYPE_ANY) {
+    if ( policy->shared_type == CPUFREQ_SHARED_TYPE_ALL ||
+         policy->shared_type == CPUFREQ_SHARED_TYPE_ANY )
+    {
         cpumask_set_cpu(cpu, policy->cpus);
-        if (cpumask_weight(policy->cpus) != 1) {
+        if ( cpumask_weight(policy->cpus) != 1 )
+        {
             printk(XENLOG_WARNING "Unsupported sharing type %d (%u CPUs)\n",
-                   policy->shared_type, cpumask_weight(policy->cpus));
+                   policy->shared_type,
+                   cpumask_weight(policy->cpus));
             result = -ENODEV;
             goto err_unreg;
         }
-    } else {
+    }
+    else
+    {
         cpumask_copy(policy->cpus, cpumask_of(cpu));
     }
 
     /* capability check */
-    if (perf->state_count <= 1) {
+    if ( perf->state_count <= 1 )
+    {
         printk("No P-States\n");
         result = -ENODEV;
         goto err_unreg;
     }
 
-    if (perf->control_register.space_id != perf->status_register.space_id) {
+    if ( perf->control_register.space_id != perf->status_register.space_id )
+    {
         result = -ENODEV;
         goto err_unreg;
     }
 
-    data->freq_table = xmalloc_array(struct cpufreq_frequency_table, 
-                                    (perf->state_count+1));
-    if (!data->freq_table) {
+    data->freq_table = xmalloc_array(struct cpufreq_frequency_table,
+                                     (perf->state_count + 1));
+    if ( !data->freq_table )
+    {
         result = -ENOMEM;
         goto err_unreg;
     }
 
     /* detect transition latency */
     policy->cpuinfo.transition_latency = 0;
-    for (i=0; i<perf->state_count; i++) {
-        if ((perf->states[i].transition_latency * 1000) >
-            policy->cpuinfo.transition_latency)
+    for ( i = 0; i < perf->state_count; i++ )
+    {
+        if ( (perf->states[i].transition_latency * 1000) >
+             policy->cpuinfo.transition_latency )
             policy->cpuinfo.transition_latency =
                 perf->states[i].transition_latency * 1000;
     }
 
-    policy->governor = cpufreq_opt_governor ? : CPUFREQ_DEFAULT_GOVERNOR;
+    policy->governor = cpufreq_opt_governor ?: CPUFREQ_DEFAULT_GOVERNOR;
 
     on_selected_cpus(cpumask_of(cpu), get_cpu_data, &info, 1);
 
     /* table init */
-    for (i = 0; i < perf->state_count && i <= info.max_hw_pstate; i++) {
-        if (i > 0 && perf->states[i].core_frequency >=
-            data->freq_table[valid_states-1].frequency / 1000)
+    for ( i = 0; i < perf->state_count && i <= info.max_hw_pstate; i++ )
+    {
+        if ( i > 0 && perf->states[i].core_frequency >=
+                          data->freq_table[valid_states - 1].frequency / 1000 )
             continue;
 
-        data->freq_table[valid_states].index = perf->states[i].control & HW_PSTATE_MASK;
+        data->freq_table[valid_states].index = perf->states[i].control &
+                                               HW_PSTATE_MASK;
         data->freq_table[valid_states].frequency =
             perf->states[i].core_frequency * 1000;
         valid_states++;
@@ -280,7 +302,7 @@ static int cf_check powernow_cpufreq_cpu_init(struct cpufreq_policy *policy)
     perf->state = 0;
 
     result = cpufreq_frequency_table_cpuinfo(policy, data->freq_table);
-    if (result)
+    if ( result )
         goto err_freqfree;
 
     if ( cpu_has(c, X86_FEATURE_CPB) )
@@ -308,7 +330,8 @@ static int cf_check powernow_cpufreq_cpu_exit(struct cpufreq_policy *policy)
 {
     struct acpi_cpufreq_data *data = cpufreq_drv_data[policy->cpu];
 
-    if (data) {
+    if ( data )
+    {
         cpufreq_drv_data[policy->cpu] = NULL;
         xfree(data->freq_table);
         xfree(data);
@@ -317,15 +340,15 @@ static int cf_check powernow_cpufreq_cpu_exit(struct cpufreq_policy *policy)
     return 0;
 }
 
-static const struct cpufreq_driver __initconst_cf_clobber
-powernow_cpufreq_driver = {
-    .name   = "powernow",
-    .verify = powernow_cpufreq_verify,
-    .target = powernow_cpufreq_target,
-    .init   = powernow_cpufreq_cpu_init,
-    .exit   = powernow_cpufreq_cpu_exit,
-    .update = powernow_cpufreq_update
-};
+static const struct cpufreq_driver
+    __initconst_cf_clobber powernow_cpufreq_driver = {
+        .name = "powernow",
+        .verify = powernow_cpufreq_verify,
+        .target = powernow_cpufreq_target,
+        .init = powernow_cpufreq_cpu_init,
+        .exit = powernow_cpufreq_cpu_exit,
+        .update = powernow_cpufreq_update
+    };
 
 unsigned int __init powernow_register_driver(void)
 {

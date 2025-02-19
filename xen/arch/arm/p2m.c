@@ -34,9 +34,7 @@ void p2m_write_unlock(struct p2m_domain *p2m)
     write_unlock(&p2m->lock);
 }
 
-void memory_type_changed(struct domain *d)
-{
-}
+void memory_type_changed(struct domain *d) {}
 
 mfn_t p2m_lookup(struct domain *d, gfn_t gfn, p2m_type_t *t)
 {
@@ -83,8 +81,7 @@ struct page_info *p2m_get_page_from_gfn(struct domain *d, gfn_t gfn,
     return get_page(page, d) ? page : NULL;
 }
 
-int guest_physmap_mark_populate_on_demand(struct domain *d,
-                                          unsigned long gfn,
+int guest_physmap_mark_populate_on_demand(struct domain *d, unsigned long gfn,
                                           unsigned int order)
 {
     return -ENOSYS;
@@ -109,10 +106,8 @@ int p2m_insert_mapping(struct domain *d, gfn_t start_gfn, unsigned long nr,
     return rc;
 }
 
-static inline int p2m_remove_mapping(struct domain *d,
-                                     gfn_t start_gfn,
-                                     unsigned long nr,
-                                     mfn_t mfn)
+static inline int p2m_remove_mapping(struct domain *d, gfn_t start_gfn,
+                                     unsigned long nr, mfn_t mfn)
 {
     struct p2m_domain *p2m = p2m_get_hostp2m(d);
     unsigned long i;
@@ -130,8 +125,12 @@ static inline int p2m_remove_mapping(struct domain *d,
     {
         unsigned int cur_order;
         p2m_type_t t;
-        mfn_t mfn_return = p2m_get_entry(p2m, gfn_add(start_gfn, i), &t, NULL,
-                                         &cur_order, NULL);
+        mfn_t mfn_return = p2m_get_entry(p2m,
+                                         gfn_add(start_gfn, i),
+                                         &t,
+                                         NULL,
+                                         &cur_order,
+                                         NULL);
 
         if ( p2m_is_any_ram(t) &&
              (!mfn_valid(mfn) || !mfn_eq(mfn_add(mfn, i), mfn_return)) )
@@ -144,8 +143,12 @@ static inline int p2m_remove_mapping(struct domain *d,
              ((gfn_x(start_gfn) + i) & ((1UL << cur_order) - 1));
     }
 
-    rc = p2m_set_entry(p2m, start_gfn, nr, INVALID_MFN,
-                       p2m_invalid, p2m_access_rwx);
+    rc = p2m_set_entry(p2m,
+                       start_gfn,
+                       nr,
+                       INVALID_MFN,
+                       p2m_invalid,
+                       p2m_access_rwx);
 
 out:
     p2m_write_unlock(p2m);
@@ -153,34 +156,24 @@ out:
     return rc;
 }
 
-int map_regions_p2mt(struct domain *d,
-                     gfn_t gfn,
-                     unsigned long nr,
-                     mfn_t mfn,
+int map_regions_p2mt(struct domain *d, gfn_t gfn, unsigned long nr, mfn_t mfn,
                      p2m_type_t p2mt)
 {
     return p2m_insert_mapping(d, gfn, nr, mfn, p2mt);
 }
 
-int unmap_regions_p2mt(struct domain *d,
-                       gfn_t gfn,
-                       unsigned long nr,
-                       mfn_t mfn)
+int unmap_regions_p2mt(struct domain *d, gfn_t gfn, unsigned long nr, mfn_t mfn)
 {
     return p2m_remove_mapping(d, gfn, nr, mfn);
 }
 
-int map_mmio_regions(struct domain *d,
-                     gfn_t start_gfn,
-                     unsigned long nr,
+int map_mmio_regions(struct domain *d, gfn_t start_gfn, unsigned long nr,
                      mfn_t mfn)
 {
     return p2m_insert_mapping(d, start_gfn, nr, mfn, p2m_mmio_direct_dev);
 }
 
-int unmap_mmio_regions(struct domain *d,
-                       gfn_t start_gfn,
-                       unsigned long nr,
+int unmap_mmio_regions(struct domain *d, gfn_t start_gfn, unsigned long nr,
                        mfn_t mfn)
 {
     return p2m_remove_mapping(d, start_gfn, nr, mfn);
@@ -196,19 +189,17 @@ int map_dev_mmio_page(struct domain *d, gfn_t gfn, mfn_t mfn)
     res = p2m_insert_mapping(d, gfn, 1, mfn, p2m_mmio_direct_c);
     if ( res < 0 )
     {
-        printk(XENLOG_G_ERR "Unable to map MFN %#"PRI_mfn" in %pd\n",
-               mfn_x(mfn), d);
+        printk(XENLOG_G_ERR "Unable to map MFN %#" PRI_mfn " in %pd\n",
+               mfn_x(mfn),
+               d);
         return res;
     }
 
     return 0;
 }
 
-int guest_physmap_add_entry(struct domain *d,
-                            gfn_t gfn,
-                            mfn_t mfn,
-                            unsigned long page_order,
-                            p2m_type_t t)
+int guest_physmap_add_entry(struct domain *d, gfn_t gfn, mfn_t mfn,
+                            unsigned long page_order, p2m_type_t t)
 {
     return p2m_insert_mapping(d, gfn, (1 << page_order), mfn, t);
 }
@@ -335,7 +326,7 @@ int p2m_cache_flush_range(struct domain *d, gfn_t *pstart, gfn_t end)
 
     while ( gfn_x(start) < gfn_x(end) )
     {
-       /*
+        /*
          * Cleaning the cache for the P2M may take a long time. So we
          * need to be able to preempt. We will arbitrarily preempt every
          * time count reach 512 or above.
@@ -537,7 +528,9 @@ struct page_info *get_page_from_gva(struct vcpu *v, vaddr_t va,
         if ( !guest_walk_tables(v, va, &ipa, &s1_perms) )
         {
             dprintk(XENLOG_G_DEBUG,
-                    "%pv: Failed to walk page-table va %#"PRIvaddr"\n", v, va);
+                    "%pv: Failed to walk page-table va %#" PRIvaddr "\n",
+                    v,
+                    va);
             return NULL;
         }
 
@@ -566,8 +559,10 @@ struct page_info *get_page_from_gva(struct vcpu *v, vaddr_t va,
 
     if ( !mfn_valid(mfn) )
     {
-        dprintk(XENLOG_G_DEBUG, "%pv: Invalid MFN %#"PRI_mfn"\n",
-                v, mfn_x(mfn));
+        dprintk(XENLOG_G_DEBUG,
+                "%pv: Invalid MFN %#" PRI_mfn "\n",
+                v,
+                mfn_x(mfn));
         return NULL;
     }
 
@@ -576,8 +571,10 @@ struct page_info *get_page_from_gva(struct vcpu *v, vaddr_t va,
 
     if ( unlikely(!get_page(page, d)) )
     {
-        dprintk(XENLOG_G_DEBUG, "%pv: Failing to acquire the MFN %#"PRI_mfn"\n",
-                v, mfn_x(maddr_to_mfn(maddr)));
+        dprintk(XENLOG_G_DEBUG,
+                "%pv: Failing to acquire the MFN %#" PRI_mfn "\n",
+                v,
+                mfn_x(maddr_to_mfn(maddr)));
         return NULL;
     }
 

@@ -25,25 +25,25 @@
 #endif
 #include <xen/bitops.h>
 #ifdef CONFIG_HAS_DEVICE_TREE
-# include <asm/setup.h>
-# include <xen/device_tree.h>
+#include <asm/setup.h>
+#include <xen/device_tree.h>
 #endif
 
 #ifdef CONFIG_MULTIBOOT
-int __init xsm_multiboot_policy_init(
-    struct boot_info *bi, void **policy_buffer, size_t *policy_size)
+int __init xsm_multiboot_policy_init(struct boot_info *bi, void **policy_buffer,
+                                     size_t *policy_size)
 {
     unsigned int i;
     int rc = 0;
     u32 *_policy_start;
     unsigned long _policy_len;
 
-    for_each_boot_module_by_type ( i, bi, BOOTMOD_UNKNOWN )
+    for_each_boot_module_by_type(i, bi, BOOTMOD_UNKNOWN)
     {
         struct boot_module *bm = &bi->mods[i];
 
         _policy_start = bootstrap_map_bm(bm);
-        _policy_len   = bm->size;
+        _policy_len = bm->size;
 
         if ( (xsm_magic_t)(*_policy_start) == XSM_MAGIC )
         {
@@ -51,11 +51,11 @@ int __init xsm_multiboot_policy_init(
             *policy_size = _policy_len;
 
             printk("Policy len %#lx, start at %p.\n",
-                   _policy_len,_policy_start);
+                   _policy_len,
+                   _policy_start);
 
             bm->type = BOOTMOD_XSM_POLICY;
             break;
-
         }
 
         bootstrap_unmap();
@@ -83,8 +83,9 @@ int __init xsm_dt_policy_init(void **policy_buffer, size_t *policy_size)
         return -EINVAL;
     }
 
-    printk("xsm: Policy len = 0x%"PRIpaddr" start at 0x%"PRIpaddr"\n",
-           len, paddr);
+    printk("xsm: Policy len = 0x%" PRIpaddr " start at 0x%" PRIpaddr "\n",
+           len,
+           paddr);
 
     *policy_buffer = xmalloc_bytes(len);
     if ( !*policy_buffer )

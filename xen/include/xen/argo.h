@@ -30,13 +30,9 @@ static inline int argo_init(struct domain *d)
     return 0;
 }
 
-static inline void argo_destroy(struct domain *d)
-{
-}
+static inline void argo_destroy(struct domain *d) {}
 
-static inline void argo_soft_reset(struct domain *d)
-{
-}
+static inline void argo_soft_reset(struct domain *d) {}
 
 #endif
 

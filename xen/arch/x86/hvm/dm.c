@@ -30,14 +30,16 @@ static bool _raw_copy_from_guest_buf_offset(void *dst,
     if ( buf_idx >= args->nr_bufs )
         return false;
 
-    buf_bytes =  args->buf[buf_idx].size;
+    buf_bytes = args->buf[buf_idx].size;
 
     if ( (offset_bytes + dst_bytes) < offset_bytes ||
          (offset_bytes + dst_bytes) > buf_bytes )
         return false;
 
-    return !copy_from_guest_offset(dst, args->buf[buf_idx].h,
-                                   offset_bytes, dst_bytes);
+    return !copy_from_guest_offset(dst,
+                                   args->buf[buf_idx].h,
+                                   offset_bytes,
+                                   dst_bytes);
 }
 
 #define COPY_FROM_GUEST_BUF_OFFSET(dst, bufs, buf_idx, offset_bytes) \
@@ -61,13 +63,12 @@ static int track_dirty_vram(struct domain *d, xen_pfn_t first_pfn,
         return -EINVAL;
 
     return shadow_mode_enabled(d)
-        ? shadow_track_dirty_vram(d, first_pfn, nr_frames, buf->h)
-        :    hap_track_dirty_vram(d, first_pfn, nr_frames, buf->h);
+               ? shadow_track_dirty_vram(d, first_pfn, nr_frames, buf->h)
+               : hap_track_dirty_vram(d, first_pfn, nr_frames, buf->h);
 }
 
-static int set_pci_intx_level(struct domain *d, uint16_t domain,
-                              uint8_t bus, uint8_t device,
-                              uint8_t intx, uint8_t level)
+static int set_pci_intx_level(struct domain *d, uint16_t domain, uint8_t bus,
+                              uint8_t device, uint8_t intx, uint8_t level)
 {
     if ( domain != 0 || bus != 0 || device > 0x1f || intx > 3 )
         return -EINVAL;
@@ -87,8 +88,7 @@ static int set_pci_intx_level(struct domain *d, uint16_t domain,
     return 0;
 }
 
-static int set_isa_irq_level(struct domain *d, uint8_t isa_irq,
-                             uint8_t level)
+static int set_isa_irq_level(struct domain *d, uint8_t isa_irq, uint8_t level)
 {
     if ( isa_irq > 15 )
         return -EINVAL;
@@ -108,15 +108,14 @@ static int set_isa_irq_level(struct domain *d, uint8_t isa_irq,
     return 0;
 }
 
-static int modified_memory(struct domain *d,
-                           const struct dmop_args *bufs,
+static int modified_memory(struct domain *d, const struct dmop_args *bufs,
                            struct xen_dm_op_modified_memory *header)
 {
 #define EXTENTS_BUFFER 1
 
     /* Process maximum of 256 pfns before checking for continuation. */
     const unsigned int cont_check_interval = 0x100;
-    unsigned int *rem_extents =  &header->nr_extents;
+    unsigned int *rem_extents = &header->nr_extents;
     unsigned int batch_rem_pfns = cont_check_interval;
     /* Used for continuation. */
     unsigned int *pfns_done = &header->opaque;
@@ -125,8 +124,7 @@ static int modified_memory(struct domain *d,
         return 0;
 
     if ( (bufs->buf[EXTENTS_BUFFER].size /
-          sizeof(struct xen_dm_op_modified_memory_extent)) <
-         *rem_extents )
+          sizeof(struct xen_dm_op_modified_memory_extent)) < *rem_extents )
         return -EINVAL;
 
     while ( *rem_extents > 0 )
@@ -135,7 +133,9 @@ static int modified_memory(struct domain *d,
         unsigned int batch_nr;
         xen_pfn_t pfn, end_pfn;
 
-        if ( !COPY_FROM_GUEST_BUF_OFFSET(extent, bufs, EXTENTS_BUFFER,
+        if ( !COPY_FROM_GUEST_BUF_OFFSET(extent,
+                                         bufs,
+                                         EXTENTS_BUFFER,
                                          (*rem_extents - 1) * sizeof(extent)) )
             return -EFAULT;
 
@@ -211,12 +211,10 @@ static bool allow_p2m_type_change(p2m_type_t old, p2m_type_t new)
     if ( old == p2m_ioreq_server )
         return new == p2m_ram_rw;
 
-    return p2m_is_ram(old) ||
-           (p2m_is_hole(old) && new == p2m_mmio_dm);
+    return p2m_is_ram(old) || (p2m_is_hole(old) && new == p2m_mmio_dm);
 }
 
-static int set_mem_type(struct domain *d,
-                        struct xen_dm_op_set_mem_type *data)
+static int set_mem_type(struct domain *d, struct xen_dm_op_set_mem_type *data)
 {
     xen_pfn_t last_pfn = data->first_pfn + data->nr - 1;
     unsigned int iter = 0, mem_type;
@@ -224,8 +222,8 @@ static int set_mem_type(struct domain *d,
 
     /* Interface types to internal p2m types */
     static const p2m_type_t memtype[] = {
-        [HVMMEM_ram_rw]  = p2m_ram_rw,
-        [HVMMEM_ram_ro]  = p2m_ram_ro,
+        [HVMMEM_ram_rw] = p2m_ram_rw,
+        [HVMMEM_ram_ro] = p2m_ram_ro,
         [HVMMEM_mmio_dm] = p2m_mmio_dm,
         [HVMMEM_unused] = p2m_invalid,
         [HVMMEM_ioreq_server] = p2m_ioreq_server,
@@ -307,8 +305,8 @@ static int inject_event(struct domain *d,
         return -EINVAL;
 
     if ( cmpxchg(&v->arch.hvm.inject_event.vector,
-                 HVM_EVENT_VECTOR_UNSET, HVM_EVENT_VECTOR_UPDATING) !=
-         HVM_EVENT_VECTOR_UNSET )
+                 HVM_EVENT_VECTOR_UNSET,
+                 HVM_EVENT_VECTOR_UPDATING) != HVM_EVENT_VECTOR_UNSET )
         return -EBUSY;
 
     v->arch.hvm.inject_event.type = data->type;
@@ -330,25 +328,36 @@ int dm_op(const struct dmop_args *op_args)
     size_t offset;
 
     static const uint8_t op_size[] = {
-        [XEN_DMOP_create_ioreq_server]              = sizeof(struct xen_dm_op_create_ioreq_server),
-        [XEN_DMOP_get_ioreq_server_info]            = sizeof(struct xen_dm_op_get_ioreq_server_info),
-        [XEN_DMOP_map_io_range_to_ioreq_server]     = sizeof(struct xen_dm_op_ioreq_server_range),
-        [XEN_DMOP_unmap_io_range_from_ioreq_server] = sizeof(struct xen_dm_op_ioreq_server_range),
-        [XEN_DMOP_set_ioreq_server_state]           = sizeof(struct xen_dm_op_set_ioreq_server_state),
-        [XEN_DMOP_destroy_ioreq_server]             = sizeof(struct xen_dm_op_destroy_ioreq_server),
-        [XEN_DMOP_track_dirty_vram]                 = sizeof(struct xen_dm_op_track_dirty_vram),
-        [XEN_DMOP_set_pci_intx_level]               = sizeof(struct xen_dm_op_set_pci_intx_level),
-        [XEN_DMOP_set_isa_irq_level]                = sizeof(struct xen_dm_op_set_isa_irq_level),
-        [XEN_DMOP_set_pci_link_route]               = sizeof(struct xen_dm_op_set_pci_link_route),
-        [XEN_DMOP_modified_memory]                  = sizeof(struct xen_dm_op_modified_memory),
-        [XEN_DMOP_set_mem_type]                     = sizeof(struct xen_dm_op_set_mem_type),
-        [XEN_DMOP_inject_event]                     = sizeof(struct xen_dm_op_inject_event),
-        [XEN_DMOP_inject_msi]                       = sizeof(struct xen_dm_op_inject_msi),
-        [XEN_DMOP_map_mem_type_to_ioreq_server]     = sizeof(struct xen_dm_op_map_mem_type_to_ioreq_server),
-        [XEN_DMOP_remote_shutdown]                  = sizeof(struct xen_dm_op_remote_shutdown),
-        [XEN_DMOP_relocate_memory]                  = sizeof(struct xen_dm_op_relocate_memory),
-        [XEN_DMOP_pin_memory_cacheattr]             = sizeof(struct xen_dm_op_pin_memory_cacheattr),
-        [XEN_DMOP_nr_vcpus]                         = sizeof(struct xen_dm_op_nr_vcpus),
+        [XEN_DMOP_create_ioreq_server] =
+            sizeof(struct xen_dm_op_create_ioreq_server),
+        [XEN_DMOP_get_ioreq_server_info] =
+            sizeof(struct xen_dm_op_get_ioreq_server_info),
+        [XEN_DMOP_map_io_range_to_ioreq_server] =
+            sizeof(struct xen_dm_op_ioreq_server_range),
+        [XEN_DMOP_unmap_io_range_from_ioreq_server] =
+            sizeof(struct xen_dm_op_ioreq_server_range),
+        [XEN_DMOP_set_ioreq_server_state] =
+            sizeof(struct xen_dm_op_set_ioreq_server_state),
+        [XEN_DMOP_destroy_ioreq_server] =
+            sizeof(struct xen_dm_op_destroy_ioreq_server),
+        [XEN_DMOP_track_dirty_vram] = sizeof(struct xen_dm_op_track_dirty_vram),
+        [XEN_DMOP_set_pci_intx_level] =
+            sizeof(struct xen_dm_op_set_pci_intx_level),
+        [XEN_DMOP_set_isa_irq_level] =
+            sizeof(struct xen_dm_op_set_isa_irq_level),
+        [XEN_DMOP_set_pci_link_route] =
+            sizeof(struct xen_dm_op_set_pci_link_route),
+        [XEN_DMOP_modified_memory] = sizeof(struct xen_dm_op_modified_memory),
+        [XEN_DMOP_set_mem_type] = sizeof(struct xen_dm_op_set_mem_type),
+        [XEN_DMOP_inject_event] = sizeof(struct xen_dm_op_inject_event),
+        [XEN_DMOP_inject_msi] = sizeof(struct xen_dm_op_inject_msi),
+        [XEN_DMOP_map_mem_type_to_ioreq_server] =
+            sizeof(struct xen_dm_op_map_mem_type_to_ioreq_server),
+        [XEN_DMOP_remote_shutdown] = sizeof(struct xen_dm_op_remote_shutdown),
+        [XEN_DMOP_relocate_memory] = sizeof(struct xen_dm_op_relocate_memory),
+        [XEN_DMOP_pin_memory_cacheattr] =
+            sizeof(struct xen_dm_op_pin_memory_cacheattr),
+        [XEN_DMOP_nr_vcpus] = sizeof(struct xen_dm_op_nr_vcpus),
     };
 
     rc = rcu_lock_remote_domain_by_id(op_args->domid, &d);
@@ -383,7 +392,9 @@ int dm_op(const struct dmop_args *op_args)
     if ( op_args->buf[0].size < offset + op_size[op.op] )
         goto out;
 
-    if ( copy_from_guest_offset((void *)&op.u, op_args->buf[0].h, offset,
+    if ( copy_from_guest_offset((void *)&op.u,
+                                op_args->buf[0].h,
+                                offset,
                                 op_size[op.op]) )
         goto out;
 
@@ -406,8 +417,8 @@ int dm_op(const struct dmop_args *op_args)
             break;
 
         if ( first_gfn == 0 )
-            rc = ioreq_server_map_mem_type(d, data->id,
-                                           data->type, data->flags);
+            rc =
+                ioreq_server_map_mem_type(d, data->id, data->type, data->flags);
         else
             rc = 0;
 
@@ -445,8 +456,7 @@ int dm_op(const struct dmop_args *op_args)
 
     case XEN_DMOP_track_dirty_vram:
     {
-        const struct xen_dm_op_track_dirty_vram *data =
-            &op.u.track_dirty_vram;
+        const struct xen_dm_op_track_dirty_vram *data = &op.u.track_dirty_vram;
 
         rc = -EINVAL;
         if ( data->pad )
@@ -464,8 +474,11 @@ int dm_op(const struct dmop_args *op_args)
         const struct xen_dm_op_set_pci_intx_level *data =
             &op.u.set_pci_intx_level;
 
-        rc = set_pci_intx_level(d, data->domain, data->bus,
-                                data->device, data->intx,
+        rc = set_pci_intx_level(d,
+                                data->domain,
+                                data->bus,
+                                data->device,
+                                data->intx,
                                 data->level);
         break;
     }
@@ -490,8 +503,7 @@ int dm_op(const struct dmop_args *op_args)
 
     case XEN_DMOP_modified_memory:
     {
-        struct xen_dm_op_modified_memory *data =
-            &op.u.modified_memory;
+        struct xen_dm_op_modified_memory *data = &op.u.modified_memory;
 
         rc = modified_memory(d, op_args, data);
         const_op = !rc;
@@ -500,8 +512,7 @@ int dm_op(const struct dmop_args *op_args)
 
     case XEN_DMOP_set_mem_type:
     {
-        struct xen_dm_op_set_mem_type *data =
-            &op.u.set_mem_type;
+        struct xen_dm_op_set_mem_type *data = &op.u.set_mem_type;
 
         const_op = false;
 
@@ -515,8 +526,7 @@ int dm_op(const struct dmop_args *op_args)
 
     case XEN_DMOP_inject_event:
     {
-        const struct xen_dm_op_inject_event *data =
-            &op.u.inject_event;
+        const struct xen_dm_op_inject_event *data = &op.u.inject_event;
 
         rc = -EINVAL;
         if ( data->pad0 || data->pad1 )
@@ -528,8 +538,7 @@ int dm_op(const struct dmop_args *op_args)
 
     case XEN_DMOP_inject_msi:
     {
-        const struct xen_dm_op_inject_msi *data =
-            &op.u.inject_msi;
+        const struct xen_dm_op_inject_msi *data = &op.u.inject_msi;
 
         rc = -EINVAL;
         if ( data->pad )
@@ -541,8 +550,7 @@ int dm_op(const struct dmop_args *op_args)
 
     case XEN_DMOP_remote_shutdown:
     {
-        const struct xen_dm_op_remote_shutdown *data =
-            &op.u.remote_shutdown;
+        const struct xen_dm_op_remote_shutdown *data = &op.u.remote_shutdown;
 
         domain_shutdown(d, data->reason);
         rc = 0;
@@ -591,8 +599,8 @@ int dm_op(const struct dmop_args *op_args)
             break;
         }
 
-        rc = hvm_set_mem_pinned_cacheattr(d, data->start, data->end,
-                                          data->type);
+        rc =
+            hvm_set_mem_pinned_cacheattr(d, data->start, data->end, data->type);
         break;
     }
 
@@ -611,12 +619,14 @@ int dm_op(const struct dmop_args *op_args)
         break;
     }
 
-    if ( (!rc || rc == -ERESTART) &&
-         !const_op && copy_to_guest_offset(op_args->buf[0].h, offset,
-                                           (void *)&op.u, op_size[op.op]) )
+    if ( (!rc || rc == -ERESTART) && !const_op &&
+         copy_to_guest_offset(op_args->buf[0].h,
+                              offset,
+                              (void *)&op.u,
+                              op_size[op.op]) )
         rc = -EFAULT;
 
- out:
+out:
     rcu_unlock_domain(d);
 
     return rc;
@@ -643,8 +653,8 @@ CHECK_dm_op_relocate_memory;
 CHECK_dm_op_pin_memory_cacheattr;
 CHECK_dm_op_nr_vcpus;
 
-int compat_dm_op(
-    domid_t domid, unsigned int nr_bufs, XEN_GUEST_HANDLE_PARAM(void) bufs)
+int compat_dm_op(domid_t domid, unsigned int nr_bufs,
+                 XEN_GUEST_HANDLE_PARAM(void) bufs)
 {
     struct dmop_args args;
     unsigned int i;
@@ -674,8 +684,11 @@ int compat_dm_op(
     rc = dm_op(&args);
 
     if ( rc == -ERESTART )
-        rc = hypercall_create_continuation(__HYPERVISOR_dm_op, "iih",
-                                           domid, nr_bufs, bufs);
+        rc = hypercall_create_continuation(__HYPERVISOR_dm_op,
+                                           "iih",
+                                           domid,
+                                           nr_bufs,
+                                           bufs);
 
     return rc;
 }

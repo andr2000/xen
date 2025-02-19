@@ -67,10 +67,9 @@ static bool set_ad_bits(guest_intpte_t *guest_p, guest_intpte_t *walk_p,
  * If a translation exists, the accumulated access rights are compared to the
  * requested walk, to see whether the access is permitted.
  */
-bool
-guest_walk_tables(const struct vcpu *v, struct p2m_domain *p2m,
-                  unsigned long va, walk_t *gw, uint32_t walk,
-                  gfn_t top_gfn, mfn_t top_mfn, void *top_map)
+bool guest_walk_tables(const struct vcpu *v, struct p2m_domain *p2m,
+                       unsigned long va, walk_t *gw, uint32_t walk,
+                       gfn_t top_gfn, mfn_t top_mfn, void *top_map)
 {
     struct domain *d = v->domain;
     guest_l1e_t *l1p = NULL;
@@ -100,7 +99,8 @@ guest_walk_tables(const struct vcpu *v, struct p2m_domain *p2m,
      * inputs to a guest walk, but a whole load of code currently passes in
      * other PFEC_ constants.
      */
-    walk &= (PFEC_implicit | PFEC_insn_fetch | PFEC_user_mode | PFEC_write_access);
+    walk &= (PFEC_implicit | PFEC_insn_fetch | PFEC_user_mode |
+             PFEC_write_access);
 
     /* Only implicit supervisor data accesses exist. */
     ASSERT(!(walk & PFEC_implicit) ||
@@ -124,9 +124,8 @@ guest_walk_tables(const struct vcpu *v, struct p2m_domain *p2m,
 
     /* Get the l4e from the top level table and check its flags*/
     gw->l4mfn = top_mfn;
-    l4p = (guest_l4e_t *) top_map;
-    l4gpa = gfn_to_gaddr(top_gfn) +
-            guest_l4_table_offset(va) * sizeof(gw->l4e);
+    l4p = (guest_l4e_t *)top_map;
+    l4gpa = gfn_to_gaddr(top_gfn) + guest_l4_table_offset(va) * sizeof(gw->l4e);
     if ( !hvmemul_read_cache(v, l4gpa, &gw->l4e, sizeof(gw->l4e)) )
     {
         gw->l4e = l4p[guest_l4_table_offset(va)];
@@ -145,14 +144,10 @@ guest_walk_tables(const struct vcpu *v, struct p2m_domain *p2m,
 
     /* Accumulate l4e access rights. */
     ar_and &= gflags;
-    ar_or  |= gflags;
+    ar_or |= gflags;
 
     /* Map the l3 table */
-    l3p = map_domain_gfn(p2m,
-                         guest_l4e_get_gfn(gw->l4e),
-                         &gw->l3mfn,
-                         qt,
-                         &rc);
+    l3p = map_domain_gfn(p2m, guest_l4e_get_gfn(gw->l4e), &gw->l3mfn, qt, &rc);
     if ( l3p == NULL )
     {
         gw->pfec |= rc & PFEC_synth_mask;
@@ -180,7 +175,7 @@ guest_walk_tables(const struct vcpu *v, struct p2m_domain *p2m,
 
     /* Accumulate l3e access rights. */
     ar_and &= gflags;
-    ar_or  |= gflags;
+    ar_or |= gflags;
 
     if ( gflags & _PAGE_PSE )
     {
@@ -193,15 +188,15 @@ guest_walk_tables(const struct vcpu *v, struct p2m_domain *p2m,
          * Grant full access in the l1e, since all the guest entry's
          * access controls are enforced in the l3e.
          */
-        int flags = (_PAGE_PRESENT|_PAGE_USER|_PAGE_RW|
-                     _PAGE_ACCESSED|_PAGE_DIRTY);
+        int flags = (_PAGE_PRESENT | _PAGE_USER | _PAGE_RW | _PAGE_ACCESSED |
+                     _PAGE_DIRTY);
         /*
          * Import protection key and cache-control bits. Note that _PAGE_PAT
          * is actually _PAGE_PSE, and it is always set. We will clear it in
          * case _PAGE_PSE_PAT (bit 12, i.e. first bit of gfn) is clear.
          */
-        flags |= (guest_l3e_get_flags(gw->l3e)
-                  & (_PAGE_PKEY_BITS|_PAGE_PAT|_PAGE_PWT|_PAGE_PCD));
+        flags |= (guest_l3e_get_flags(gw->l3e) &
+                  (_PAGE_PKEY_BITS | _PAGE_PAT | _PAGE_PWT | _PAGE_PCD));
         if ( !(gfn_x(start) & 1) )
             /* _PAGE_PSE_PAT not set: remove _PAGE_PAT from flags. */
             flags &= ~_PAGE_PAT;
@@ -239,11 +234,7 @@ guest_walk_tables(const struct vcpu *v, struct p2m_domain *p2m,
 #endif /* PAE or 64... */
 
     /* Map the l2 table */
-    l2p = map_domain_gfn(p2m,
-                         guest_l3e_get_gfn(gw->l3e),
-                         &gw->l2mfn,
-                         qt,
-                         &rc);
+    l2p = map_domain_gfn(p2m, guest_l3e_get_gfn(gw->l3e), &gw->l2mfn, qt, &rc);
     if ( l2p == NULL )
     {
         gw->pfec |= rc & PFEC_synth_mask;
@@ -255,7 +246,7 @@ guest_walk_tables(const struct vcpu *v, struct p2m_domain *p2m,
 #else /* 32-bit only... */
 
     gw->l2mfn = top_mfn;
-    l2p = (guest_l2e_t *) top_map;
+    l2p = (guest_l2e_t *)top_map;
     l2gpa = gfn_to_gaddr(top_gfn);
 
 #endif /* All levels... */
@@ -291,7 +282,7 @@ guest_walk_tables(const struct vcpu *v, struct p2m_domain *p2m,
 
     /* Accumulate l2e access rights. */
     ar_and &= gflags;
-    ar_or  |= gflags;
+    ar_or |= gflags;
 
     if ( gflags & _PAGE_PSE )
     {
@@ -310,15 +301,15 @@ guest_walk_tables(const struct vcpu *v, struct p2m_domain *p2m,
          * Grant full access in the l1e, since all the guest entry's
          * access controls are enforced in the shadow l2e.
          */
-        int flags = (_PAGE_PRESENT|_PAGE_USER|_PAGE_RW|
-                     _PAGE_ACCESSED|_PAGE_DIRTY);
+        int flags = (_PAGE_PRESENT | _PAGE_USER | _PAGE_RW | _PAGE_ACCESSED |
+                     _PAGE_DIRTY);
         /*
          * Import protection key and cache-control bits. Note that _PAGE_PAT
          * is actually _PAGE_PSE, and it is always set. We will clear it in
          * case _PAGE_PSE_PAT (bit 12, i.e. first bit of gfn) is clear.
          */
-        flags |= (guest_l2e_get_flags(gw->l2e)
-                  & (_PAGE_PKEY_BITS|_PAGE_PAT|_PAGE_PWT|_PAGE_PCD));
+        flags |= (guest_l2e_get_flags(gw->l2e) &
+                  (_PAGE_PKEY_BITS | _PAGE_PAT | _PAGE_PWT | _PAGE_PCD));
         if ( !(gfn_x(start) & 1) )
             /* _PAGE_PSE_PAT not set: remove _PAGE_PAT from flags. */
             flags &= ~_PAGE_PAT;
@@ -327,7 +318,7 @@ guest_walk_tables(const struct vcpu *v, struct p2m_domain *p2m,
         start = _gfn((gfn_x(start) & ~GUEST_L2_GFN_MASK) +
                      guest_l1_table_offset(va));
 #if GUEST_PAGING_LEVELS == 2
-         /* Wider than 32 bits if PSE36 superpage. */
+        /* Wider than 32 bits if PSE36 superpage. */
         gw->el1e = (gfn_x(start) << PAGE_SHIFT) | flags;
 #else
         gw->l1e = guest_l1e_from_gfn(start, flags);
@@ -338,11 +329,7 @@ guest_walk_tables(const struct vcpu *v, struct p2m_domain *p2m,
     }
 
     /* Map the l1 table */
-    l1p = map_domain_gfn(p2m,
-                         guest_l2e_get_gfn(gw->l2e),
-                         &gw->l1mfn,
-                         qt,
-                         &rc);
+    l1p = map_domain_gfn(p2m, guest_l2e_get_gfn(gw->l2e), &gw->l1mfn, qt, &rc);
     if ( l1p == NULL )
     {
         gw->pfec |= rc & PFEC_synth_mask;
@@ -370,11 +357,11 @@ guest_walk_tables(const struct vcpu *v, struct p2m_domain *p2m,
 
     /* Accumulate l1e access rights. */
     ar_and &= gflags;
-    ar_or  |= gflags;
+    ar_or |= gflags;
 
     leaf_level = 1;
 
- leaf:
+leaf:
     gw->pfec |= PFEC_page_present;
 
     /*
@@ -400,8 +387,7 @@ guest_walk_tables(const struct vcpu *v, struct p2m_domain *p2m,
      * gw->l1e contains the appropriate leaf pkey.
      */
     if ( !(walk & PFEC_insn_fetch) &&
-         ((ar & _PAGE_USER) ? guest_pku_enabled(v)
-                            : guest_pks_enabled(v)) )
+         ((ar & _PAGE_USER) ? guest_pku_enabled(v) : guest_pks_enabled(v)) )
     {
         unsigned int pkey = guest_l1e_get_pkey(gw->l1e);
         unsigned int pkr = (ar & _PAGE_USER) ? rdpkru() : rdpkrs();
@@ -467,7 +453,8 @@ guest_walk_tables(const struct vcpu *v, struct p2m_domain *p2m,
         break;
 
     case 1:
-        if ( set_ad_bits(&l1p[guest_l1_table_offset(va)].l1, &gw->l1e.l1,
+        if ( set_ad_bits(&l1p[guest_l1_table_offset(va)].l1,
+                         &gw->l1e.l1,
                          (walk & PFEC_write_access)) )
         {
             paging_mark_dirty(d, gw->l1mfn);
@@ -475,7 +462,8 @@ guest_walk_tables(const struct vcpu *v, struct p2m_domain *p2m,
         }
         /* Fallthrough */
     case 2:
-        if ( set_ad_bits(&l2p[guest_l2_table_offset(va)].l2, &gw->l2e.l2,
+        if ( set_ad_bits(&l2p[guest_l2_table_offset(va)].l2,
+                         &gw->l2e.l2,
                          (walk & PFEC_write_access) && leaf_level == 2) )
         {
             paging_mark_dirty(d, gw->l2mfn);
@@ -484,14 +472,16 @@ guest_walk_tables(const struct vcpu *v, struct p2m_domain *p2m,
         /* Fallthrough */
 #if GUEST_PAGING_LEVELS == 4 /* 64-bit only... */
     case 3:
-        if ( set_ad_bits(&l3p[guest_l3_table_offset(va)].l3, &gw->l3e.l3,
+        if ( set_ad_bits(&l3p[guest_l3_table_offset(va)].l3,
+                         &gw->l3e.l3,
                          (walk & PFEC_write_access) && leaf_level == 3) )
         {
             paging_mark_dirty(d, gw->l3mfn);
             hvmemul_write_cache(v, l3gpa, &gw->l3e, sizeof(gw->l3e));
         }
 
-        if ( set_ad_bits(&l4p[guest_l4_table_offset(va)].l4, &gw->l4e.l4,
+        if ( set_ad_bits(&l4p[guest_l4_table_offset(va)].l4,
+                         &gw->l4e.l4,
                          false) )
         {
             paging_mark_dirty(d, gw->l4mfn);
@@ -501,7 +491,7 @@ guest_walk_tables(const struct vcpu *v, struct p2m_domain *p2m,
         break;
     }
 
- out:
+out:
 #if GUEST_PAGING_LEVELS == 4
     if ( l3p )
     {
@@ -545,8 +535,8 @@ void *map_domain_gfn(struct p2m_domain *p2m, gfn_t gfn, mfn_t *mfn,
 
     /* Translate the gfn, unsharing if shared. */
     page = paging_mode_translate(p2m->domain)
-           ? p2m_get_page_from_gfn(p2m, gfn, &p2mt, NULL, q)
-           : get_page_from_gfn(p2m->domain, gfn_x(gfn), &p2mt, q);
+               ? p2m_get_page_from_gfn(p2m, gfn, &p2mt, NULL, q)
+               : get_page_from_gfn(p2m->domain, gfn_x(gfn), &p2mt, q);
     if ( p2m_is_paging(p2mt) )
     {
         ASSERT(p2m_is_hostp2m(p2m));

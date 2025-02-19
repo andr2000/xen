@@ -15,8 +15,8 @@
 
 #include <asm/setup.h>
 
-int map_irq_to_domain(struct domain *d, unsigned int irq,
-                      bool need_mapping, const char *devname)
+int map_irq_to_domain(struct domain *d, unsigned int irq, bool need_mapping,
+                      const char *devname)
 {
     int res;
 
@@ -48,8 +48,8 @@ int map_irq_to_domain(struct domain *d, unsigned int irq,
     return 0;
 }
 
-int map_range_to_domain(const struct dt_device_node *dev,
-                        uint64_t addr, uint64_t len, void *data)
+int map_range_to_domain(const struct dt_device_node *dev, uint64_t addr,
+                        uint64_t len, void *data)
 {
     struct map_range_data *mr_data = data;
     struct domain *d = mr_data->d;
@@ -57,8 +57,12 @@ int map_range_to_domain(const struct dt_device_node *dev,
 
     if ( (addr != (paddr_t)addr) || (((paddr_t)~0 - addr) < len) )
     {
-        printk(XENLOG_ERR "%s: [0x%"PRIx64", 0x%"PRIx64"] exceeds the maximum allowed PA width (%u bits)",
-               dt_node_full_name(dev), addr, (addr + len), PADDR_BITS);
+        printk(XENLOG_ERR "%s: [0x%" PRIx64 ", 0x%" PRIx64
+                          "] exceeds the maximum allowed PA width (%u bits)",
+               dt_node_full_name(dev),
+               addr,
+               (addr + len),
+               PADDR_BITS);
         return -ERANGE;
     }
 
@@ -67,17 +71,21 @@ int map_range_to_domain(const struct dt_device_node *dev,
      * They are not MMIO and therefore a domain should not be able to
      * manage them via the IOMEM interface.
      */
-    if ( strncasecmp(dt_node_full_name(dev), "/reserved-memory/",
+    if ( strncasecmp(dt_node_full_name(dev),
+                     "/reserved-memory/",
                      strlen("/reserved-memory/")) != 0 )
     {
-        res = iomem_permit_access(d, paddr_to_pfn(addr),
-                paddr_to_pfn(PAGE_ALIGN(addr + len - 1)));
+        res = iomem_permit_access(d,
+                                  paddr_to_pfn(addr),
+                                  paddr_to_pfn(PAGE_ALIGN(addr + len - 1)));
         if ( res )
         {
-            printk(XENLOG_ERR "Unable to permit to dom%d access to"
-                    " 0x%"PRIx64" - 0x%"PRIx64"\n",
-                    d->domain_id,
-                    addr & PAGE_MASK, PAGE_ALIGN(addr + len) - 1);
+            printk(XENLOG_ERR
+                   "Unable to permit to dom%d access to" " 0x%" PRIx64
+                   " - 0x%" PRIx64 "\n",
+                   d->domain_id,
+                   addr & PAGE_MASK,
+                   PAGE_ALIGN(addr + len) - 1);
             return res;
         }
     }
@@ -92,16 +100,19 @@ int map_range_to_domain(const struct dt_device_node *dev,
 
         if ( res < 0 )
         {
-            printk(XENLOG_ERR "Unable to map 0x%"PRIx64
-                   " - 0x%"PRIx64" in domain %d\n",
-                   addr & PAGE_MASK, PAGE_ALIGN(addr + len) - 1,
+            printk(XENLOG_ERR "Unable to map 0x%" PRIx64 " - 0x%" PRIx64
+                              " in domain %d\n",
+                   addr & PAGE_MASK,
+                   PAGE_ALIGN(addr + len) - 1,
                    d->domain_id);
             return res;
         }
     }
 
-    dt_dprintk("  - MMIO: %010"PRIx64" - %010"PRIx64" P2MType=%x\n",
-               addr, addr + len, mr_data->p2mt);
+    dt_dprintk("  - MMIO: %010" PRIx64 " - %010" PRIx64 " P2MType=%x\n",
+               addr,
+               addr + len,
+               mr_data->p2mt);
 
     if ( mr_data->iomem_ranges )
     {
@@ -123,10 +134,8 @@ int map_range_to_domain(const struct dt_device_node *dev,
  *   < 0 error
  *   0   success
  */
-int map_device_irqs_to_domain(struct domain *d,
-                              struct dt_device_node *dev,
-                              bool need_mapping,
-                              struct rangeset *irq_ranges)
+int map_device_irqs_to_domain(struct domain *d, struct dt_device_node *dev,
+                              bool need_mapping, struct rangeset *irq_ranges)
 {
     unsigned int i, nirq;
     int res, irq;
@@ -141,7 +150,8 @@ int map_device_irqs_to_domain(struct domain *d,
         if ( res )
         {
             printk(XENLOG_ERR "Unable to retrieve irq %u for %s\n",
-                   i, dt_node_full_name(dev));
+                   i,
+                   dt_node_full_name(dev));
             return res;
         }
 
@@ -151,8 +161,10 @@ int map_device_irqs_to_domain(struct domain *d,
          */
         if ( rirq.controller != dt_interrupt_controller )
         {
-            dt_dprintk("irq %u not connected to primary controller. Connected to %s\n",
-                      i, dt_node_full_name(rirq.controller));
+            dt_dprintk(
+                "irq %u not connected to primary controller. Connected to %s\n",
+                i,
+                dt_node_full_name(rirq.controller));
             continue;
         }
 
@@ -160,7 +172,8 @@ int map_device_irqs_to_domain(struct domain *d,
         if ( irq < 0 )
         {
             printk(XENLOG_ERR "Unable to get irq %u for %s\n",
-                   i, dt_node_full_name(dev));
+                   i,
+                   dt_node_full_name(dev));
             return irq;
         }
 
@@ -180,8 +193,7 @@ int map_device_irqs_to_domain(struct domain *d,
 }
 
 static int map_dt_irq_to_domain(const struct dt_device_node *dev,
-                                const struct dt_irq *dt_irq,
-                                void *data)
+                                const struct dt_irq *dt_irq, void *data)
 {
     struct map_range_data *mr_data = data;
     struct domain *d = mr_data->d;
@@ -199,7 +211,9 @@ static int map_dt_irq_to_domain(const struct dt_device_node *dev,
     if ( res )
     {
         printk(XENLOG_ERR "%s: Unable to setup IRQ%u to %pd\n",
-               dt_node_name(dev), irq, d);
+               dt_node_name(dev),
+               irq,
+               d);
         return res;
     }
 
@@ -225,8 +239,7 @@ static int map_device_children(const struct dt_device_node *dev,
     {
         int ret;
 
-        dt_dprintk("Mapping children of %s to guest\n",
-                   dt_node_full_name(dev));
+        dt_dprintk("Mapping children of %s to guest\n", dt_node_full_name(dev));
 
         ret = dt_for_each_irq_map(dev, &map_dt_irq_to_domain, mr_data);
         if ( ret < 0 )
@@ -269,7 +282,7 @@ int handle_device(struct domain *d, struct dt_device_node *dev, p2m_type_t p2mt,
         .p2mt = p2mt,
         .skip_mapping = !own_device ||
                         (is_pci_passthrough_enabled() &&
-                        (device_get_class(dev) == DEVICE_PCI_HOSTBRIDGE)),
+                         (device_get_class(dev) == DEVICE_PCI_HOSTBRIDGE)),
         .iomem_ranges = iomem_ranges,
         .irq_ranges = irq_ranges
     };
@@ -277,7 +290,9 @@ int handle_device(struct domain *d, struct dt_device_node *dev, p2m_type_t p2mt,
     naddr = dt_number_of_address(dev);
 
     dt_dprintk("%s passthrough = %d naddr = %u\n",
-               dt_node_full_name(dev), own_device, naddr);
+               dt_node_full_name(dev),
+               own_device,
+               naddr);
 
     if ( own_device )
     {
@@ -316,7 +331,8 @@ int handle_device(struct domain *d, struct dt_device_node *dev, p2m_type_t p2mt,
         if ( res )
         {
             printk(XENLOG_ERR "Unable to retrieve address %u for %s\n",
-                   i, dt_node_full_name(dev));
+                   i,
+                   dt_node_full_name(dev));
             return res;
         }
 

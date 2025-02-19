@@ -27,7 +27,7 @@ nodemask_t __read_mostly node_online_map = { { [0] = 1UL } };
 
 /* time.c */
 
-unsigned long __ro_after_init cpu_khz;  /* CPU clock frequency in kHz. */
+unsigned long __ro_after_init cpu_khz; /* CPU clock frequency in kHz. */
 
 s_time_t get_s_time(void)
 {
@@ -194,8 +194,7 @@ int arch_sanitise_domain_config(struct xen_domctl_createdomain *config)
     BUG_ON("unimplemented");
 }
 
-int arch_domain_create(struct domain *d,
-                       struct xen_domctl_createdomain *config,
+int arch_domain_create(struct domain *d, struct xen_domctl_createdomain *config,
                        unsigned int flags)
 {
     BUG_ON("unimplemented");
@@ -296,8 +295,8 @@ struct vcpu *alloc_vcpu_struct(const struct domain *d)
     BUG_ON("unimplemented");
 }
 
-unsigned long
-hypercall_create_continuation(unsigned int op, const char *format, ...)
+unsigned long hypercall_create_continuation(unsigned int op, const char *format,
+                                            ...)
 {
     BUG_ON("unimplemented");
 }
@@ -340,17 +339,13 @@ int arch_set_paging_mempool_size(struct domain *d, uint64_t size)
     BUG_ON("unimplemented");
 }
 
-int unmap_mmio_regions(struct domain *d,
-                       gfn_t start_gfn,
-                       unsigned long nr,
+int unmap_mmio_regions(struct domain *d, gfn_t start_gfn, unsigned long nr,
                        mfn_t mfn)
 {
     BUG_ON("unimplemented");
 }
 
-int map_mmio_regions(struct domain *d,
-                     gfn_t start_gfn,
-                     unsigned long nr,
+int map_mmio_regions(struct domain *d, gfn_t start_gfn, unsigned long nr,
                      mfn_t mfn)
 {
     BUG_ON("unimplemented");

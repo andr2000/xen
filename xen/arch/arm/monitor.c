@@ -48,9 +48,7 @@ int arch_monitor_domctl_event(struct domain *d,
 
 int monitor_smc(void)
 {
-    vm_event_request_t req = {
-        .reason = VM_EVENT_REASON_PRIVILEGED_CALL
-    };
+    vm_event_request_t req = { .reason = VM_EVENT_REASON_PRIVILEGED_CALL };
 
     return monitor_traps(current, 1, &req);
 }

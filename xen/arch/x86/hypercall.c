@@ -23,8 +23,8 @@
     __arg;                                                                  \
 })
 
-unsigned long hypercall_create_continuation(
-    unsigned int op, const char *format, ...)
+unsigned long hypercall_create_continuation(unsigned int op, const char *format,
+                                            ...)
 {
     struct vcpu *curr = current;
     struct mc_state *mcs = &curr->mc_state;
@@ -60,12 +60,24 @@ unsigned long hypercall_create_continuation(
                 arg = NEXT_ARG(p, args);
                 switch ( i )
                 {
-                case 0: regs->rdi = arg; break;
-                case 1: regs->rsi = arg; break;
-                case 2: regs->rdx = arg; break;
-                case 3: regs->r10 = arg; break;
-                case 4: regs->r8  = arg; break;
-                case 5: regs->r9  = arg; break;
+                case 0:
+                    regs->rdi = arg;
+                    break;
+                case 1:
+                    regs->rsi = arg;
+                    break;
+                case 2:
+                    regs->rdx = arg;
+                    break;
+                case 3:
+                    regs->r10 = arg;
+                    break;
+                case 4:
+                    regs->r8 = arg;
+                    break;
+                case 5:
+                    regs->r9 = arg;
+                    break;
                 }
             }
         }
@@ -76,12 +88,24 @@ unsigned long hypercall_create_continuation(
                 arg = NEXT_ARG(p, args);
                 switch ( i )
                 {
-                case 0: regs->rbx = arg; break;
-                case 1: regs->rcx = arg; break;
-                case 2: regs->rdx = arg; break;
-                case 3: regs->rsi = arg; break;
-                case 4: regs->rdi = arg; break;
-                case 5: regs->rbp = arg; break;
+                case 0:
+                    regs->rbx = arg;
+                    break;
+                case 1:
+                    regs->rcx = arg;
+                    break;
+                case 2:
+                    regs->rdx = arg;
+                    break;
+                case 3:
+                    regs->rsi = arg;
+                    break;
+                case 4:
+                    regs->rdi = arg;
+                    break;
+                case 5:
+                    regs->rbp = arg;
+                    break;
                 }
             }
         }
@@ -91,7 +115,7 @@ unsigned long hypercall_create_continuation(
 
     return op;
 
- bad_fmt:
+bad_fmt:
     va_end(args);
     gprintk(XENLOG_ERR, "Bad hypercall continuation format '%c'\n", *p);
     ASSERT_UNREACHABLE();
@@ -143,9 +167,12 @@ int hypercall_xlat_continuation(unsigned int *id, unsigned int nr,
                 if ( cval == nval )
                     mask &= ~1U;
                 else if ( nval == (unsigned int)nval )
-                    domain_crash(current->domain,
-                                 "multicall (op %lu) bogus continuation arg%u (%#lx)\n",
-                                 mcs->call.op, i, nval);
+                    domain_crash(
+                        current->domain,
+                        "multicall (op %lu) bogus continuation arg%u (%#lx)\n",
+                        mcs->call.op,
+                        i,
+                        nval);
             }
             else if ( id && *id == i )
             {
@@ -158,9 +185,12 @@ int hypercall_xlat_continuation(unsigned int *id, unsigned int nr,
                 ++rc;
             }
             else if ( mcs->call.args[i] != (unsigned int)mcs->call.args[i] )
-                domain_crash(current->domain,
-                             "multicall (op %lu) bad continuation arg%u (%#lx)\n",
-                             mcs->call.op, i, mcs->call.args[i]);
+                domain_crash(
+                    current->domain,
+                    "multicall (op %lu) bad continuation arg%u (%#lx)\n",
+                    mcs->call.op,
+                    i,
+                    mcs->call.args[i]);
         }
     }
     else
@@ -172,13 +202,28 @@ int hypercall_xlat_continuation(unsigned int *id, unsigned int nr,
 
             switch ( i )
             {
-            case 0: reg = &regs->rbx; break;
-            case 1: reg = &regs->rcx; break;
-            case 2: reg = &regs->rdx; break;
-            case 3: reg = &regs->rsi; break;
-            case 4: reg = &regs->rdi; break;
-            case 5: reg = &regs->rbp; break;
-            default: BUG(); reg = NULL; break;
+            case 0:
+                reg = &regs->rbx;
+                break;
+            case 1:
+                reg = &regs->rcx;
+                break;
+            case 2:
+                reg = &regs->rdx;
+                break;
+            case 3:
+                reg = &regs->rsi;
+                break;
+            case 4:
+                reg = &regs->rdi;
+                break;
+            case 5:
+                reg = &regs->rbp;
+                break;
+            default:
+                BUG();
+                reg = NULL;
+                break;
             }
             if ( (mask & 1) )
             {
@@ -187,9 +232,12 @@ int hypercall_xlat_continuation(unsigned int *id, unsigned int nr,
                 if ( cval == nval )
                     mask &= ~1U;
                 else if ( nval == (unsigned int)nval )
-                    domain_crash(current->domain,
-                                 "hypercall (op %u) bogus continuation arg%u (%#lx)\n",
-                                 regs->eax, i, nval);
+                    domain_crash(
+                        current->domain,
+                        "hypercall (op %u) bogus continuation arg%u (%#lx)\n",
+                        regs->eax,
+                        i,
+                        nval);
             }
             else if ( id && *id == i )
             {
@@ -204,7 +252,9 @@ int hypercall_xlat_continuation(unsigned int *id, unsigned int nr,
             else if ( *reg != (unsigned int)*reg )
                 domain_crash(current->domain,
                              "hypercall (op %u) bad continuation arg%u (%#lx)\n",
-                             regs->eax, i, *reg);
+                             regs->eax,
+                             i,
+                             *reg);
         }
     }
 
@@ -235,4 +285,3 @@ enum mc_disposition arch_do_multicall_call(struct mc_state *mcs)
  * indent-tabs-mode: nil
  * End:
  */
-

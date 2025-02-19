@@ -23,9 +23,7 @@ static inline uint32_t attr_const gen_endbr64(void)
 {
     uint32_t res;
 
-    asm ( "mov $~0xfa1e0ff3, %[res]\n\t"
-          "not %[res]\n\t"
-          : [res] "=&r" (res) );
+    asm("mov $~0xfa1e0ff3, %[res]\n\t" "not %[res]\n\t" : [res] "=&r"(res));
 
     return res;
 }
@@ -49,9 +47,7 @@ static inline uint32_t attr_const gen_endbr64_poison(void)
 {
     uint32_t res;
 
-    asm ( "mov $~0x011f0f66, %[res]\n\t"
-          "not %[res]\n\t"
-          : [res] "=&r" (res) );
+    asm("mov $~0x011f0f66, %[res]\n\t" "not %[res]\n\t" : [res] "=&r"(res));
 
     return res;
 }

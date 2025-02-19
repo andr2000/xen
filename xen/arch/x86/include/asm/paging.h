@@ -41,7 +41,7 @@
 #endif
 
 /* common paging mode bits */
-#define PG_mode_shift  10 
+#define PG_mode_shift  10
 #ifdef CONFIG_HVM
 /* Refcounts based on shadow tables instead of guest tables */
 #define PG_refcounts   (XEN_DOMCTL_SHADOW_ENABLE_REFCOUNT << PG_mode_shift)
@@ -87,38 +87,31 @@
 struct shadow_paging_mode {
 #ifdef CONFIG_SHADOW_PAGING
 #ifdef CONFIG_HVM
-    int           (*guess_wrmap           )(struct vcpu *v, 
-                                            unsigned long vaddr, mfn_t gmfn);
-    void          (*pagetable_dying       )(paddr_t gpa);
-    void          (*trace_emul_write_val  )(const void *ptr, unsigned long vaddr,
-                                            const void *src, unsigned int bytes);
+    int (*guess_wrmap)(struct vcpu *v, unsigned long vaddr, mfn_t gmfn);
+    void (*pagetable_dying)(paddr_t gpa);
+    void (*trace_emul_write_val)(const void *ptr, unsigned long vaddr,
+                                 const void *src, unsigned int bytes);
 #endif
 #endif
     /* For outsiders to tell what mode we're in */
     unsigned int shadow_levels;
 };
 
-
 /************************************************/
 /*        common paging interface               */
 /************************************************/
 struct paging_mode {
-    int           (*page_fault            )(struct vcpu *v, unsigned long va,
-                                            struct cpu_user_regs *regs);
-    bool          (*invlpg                )(struct vcpu *v,
-                                            unsigned long linear);
+    int (*page_fault)(struct vcpu *v, unsigned long va,
+                      struct cpu_user_regs *regs);
+    bool (*invlpg)(struct vcpu *v, unsigned long linear);
 #ifdef CONFIG_HVM
-    unsigned long (*gva_to_gfn            )(struct vcpu *v,
-                                            struct p2m_domain *p2m,
-                                            unsigned long va,
-                                            uint32_t *pfec);
-    unsigned long (*p2m_ga_to_gfn         )(struct vcpu *v,
-                                            struct p2m_domain *p2m,
-                                            unsigned long cr3,
-                                            paddr_t ga, uint32_t *pfec,
-                                            unsigned int *page_order);
+    unsigned long (*gva_to_gfn)(struct vcpu *v, struct p2m_domain *p2m,
+                                unsigned long va, uint32_t *pfec);
+    unsigned long (*p2m_ga_to_gfn)(struct vcpu *v, struct p2m_domain *p2m,
+                                   unsigned long cr3, paddr_t ga,
+                                   uint32_t *pfec, unsigned int *page_order);
 #endif
-    pagetable_t   (*update_cr3            )(struct vcpu *v, bool noflush);
+    pagetable_t (*update_cr3)(struct vcpu *v, bool noflush);
 
     unsigned int guest_levels;
 
@@ -136,10 +129,8 @@ struct paging_mode {
 #if PG_log_dirty
 
 /* get the dirty bitmap for a specific range of pfns */
-void paging_log_dirty_range(struct domain *d,
-                            unsigned long begin_pfn,
-                            unsigned long nr,
-                            uint8_t *dirty_bitmap);
+void paging_log_dirty_range(struct domain *d, unsigned long begin_pfn,
+                            unsigned long nr, uint8_t *dirty_bitmap);
 
 /* log dirty initialization */
 void paging_log_dirty_init(struct domain *d, const struct log_dirty_ops *ops);
@@ -187,10 +178,17 @@ struct sh_dirty_vram {
 #else /* !PG_log_dirty */
 
 static inline void paging_log_dirty_init(struct domain *d,
-                                         const struct log_dirty_ops *ops) {}
+                                         const struct log_dirty_ops *ops)
+{}
+
 static inline void paging_mark_dirty(struct domain *d, mfn_t gmfn) {}
+
 static inline void paging_mark_pfn_dirty(struct domain *d, pfn_t pfn) {}
-static inline bool paging_mfn_is_dirty(struct domain *d, mfn_t gmfn) { return false; }
+
+static inline bool paging_mfn_is_dirty(struct domain *d, mfn_t gmfn)
+{
+    return false;
+}
 
 #endif /* PG_log_dirty */
 
@@ -209,8 +207,7 @@ int paging_domain_init(struct domain *d);
  * and disable ephemeral shadow modes (test mode and log-dirty mode) and
  * manipulate the log-dirty bitmap. */
 int paging_domctl(struct domain *d, struct xen_domctl_shadow_op *sc,
-                  XEN_GUEST_HANDLE_PARAM(xen_domctl_t) u_domctl,
-                  bool resuming);
+                  XEN_GUEST_HANDLE_PARAM(xen_domctl_t) u_domctl, bool resuming);
 
 /* Call when destroying a vcpu/domain */
 void paging_vcpu_teardown(struct vcpu *v);
@@ -237,8 +234,7 @@ void paging_update_nestedmode(struct vcpu *v);
  * Note: under shadow paging, this function handles all page faults;
  * however, for hardware-assisted paging, this function handles only 
  * host page faults (i.e. nested page faults). */
-static inline int
-paging_fault(unsigned long va, struct cpu_user_regs *regs)
+static inline int paging_fault(unsigned long va, struct cpu_user_regs *regs)
 {
     struct vcpu *v = current;
     return paging_get_hostmode(v)->page_fault(v, va, regs);
@@ -258,8 +254,7 @@ void paging_invlpg(struct vcpu *v, unsigned long linear);
  * SDM Intel 64 Volume 3, Chapter Paging, PAGE-FAULT EXCEPTIONS:
  * The PFEC_insn_fetch flag is set only when NX or SMEP are enabled.
  */
-unsigned long paging_gva_to_gfn(struct vcpu *v,
-                                unsigned long va,
+unsigned long paging_gva_to_gfn(struct vcpu *v, unsigned long va,
                                 uint32_t *pfec);
 
 #ifdef CONFIG_HVM
@@ -272,14 +267,13 @@ unsigned long paging_gva_to_gfn(struct vcpu *v,
  * If the GFN returned is not INVALID_GFN, *page_order gives
  * the size of the superpage (if any) it was found in. */
 static inline unsigned long paging_ga_to_gfn_cr3(struct vcpu *v,
-                                                 unsigned long cr3,
-                                                 paddr_t ga,
+                                                 unsigned long cr3, paddr_t ga,
                                                  uint32_t *pfec,
                                                  unsigned int *page_order)
 {
     struct p2m_domain *p2m = v->domain->arch.p2m;
-    return paging_get_hostmode(v)->p2m_ga_to_gfn(v, p2m, cr3, ga, pfec,
-        page_order);
+    return paging_get_hostmode(v)
+        ->p2m_ga_to_gfn(v, p2m, cr3, ga, pfec, page_order);
 }
 
 /* Flush selected vCPUs TLBs.  NULL for all. */

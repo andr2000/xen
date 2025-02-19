@@ -13,10 +13,8 @@ static inline cycles_t get_cycles(void)
     return rdtsc_ordered();
 }
 
-unsigned long
-mktime (unsigned int year, unsigned int mon,
-        unsigned int day, unsigned int hour,
-        unsigned int min, unsigned int sec);
+unsigned long mktime(unsigned int year, unsigned int mon, unsigned int day,
+                     unsigned int hour, unsigned int min, unsigned int sec);
 
 int time_suspend(void);
 int time_resume(void);
@@ -46,7 +44,6 @@ int tsc_set_info(struct domain *d, uint32_t tsc_mode, uint64_t elapsed_nsec,
 
 void tsc_get_info(struct domain *d, uint32_t *tsc_mode, uint64_t *elapsed_nsec,
                   uint32_t *gtsc_khz, uint32_t *incarnation);
-   
 
 void force_update_vcpu_system_time(struct vcpu *v);
 

@@ -62,7 +62,8 @@ void hwdom_shutdown(unsigned char reason)
 
     default:
         printk("Hardware Dom%u shutdown (unknown reason %u): ",
-               hardware_domain->domain_id, reason);
+               hardware_domain->domain_id,
+               reason);
         reboot_or_halt();
     }
 }

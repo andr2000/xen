@@ -4,8 +4,7 @@
 /* ARM64 VFP instruction requires fpregs address to be 128-byte aligned */
 #define __vfp_aligned __attribute__((aligned(16)))
 
-struct vfp_state
-{
+struct vfp_state {
     /*
      * When SVE is enabled for the guest, fpregs memory will be used to
      * save/restore P0-P15 registers, otherwise it will be used for the V0-V31

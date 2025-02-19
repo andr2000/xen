@@ -76,7 +76,6 @@ uint16_t tee_get_type(void)
     return cur_mediator->tee_type;
 }
 
-
 static int __init tee_init(void)
 {
     const struct tee_mediator_desc *desc;
@@ -104,7 +103,7 @@ void __init init_tee_secondary(void)
 
 void tee_free_domain_ctx(struct domain *d)
 {
-    if ( cur_mediator && cur_mediator->ops->free_domain_ctx)
+    if ( cur_mediator && cur_mediator->ops->free_domain_ctx )
         cur_mediator->ops->free_domain_ctx(d);
 }
 

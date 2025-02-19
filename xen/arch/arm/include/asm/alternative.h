@@ -12,24 +12,25 @@
 #include <xen/stringify.h>
 
 struct alt_instr {
-	int32_t  orig_offset;	/* offset to original instruction */
-	int32_t  repl_offset;	/* offset to replacement instruction */
-	uint16_t cpufeature;	/* cpufeature bit set for replacement */
-	uint8_t  orig_len;	/* size of original instruction(s) */
-	uint8_t  repl_len;	/* size of new instruction(s), <= orig_len */
+    int32_t orig_offset; /* offset to original instruction */
+    int32_t repl_offset; /* offset to replacement instruction */
+    uint16_t cpufeature; /* cpufeature bit set for replacement */
+    uint8_t orig_len; /* size of original instruction(s) */
+    uint8_t repl_len; /* size of new instruction(s), <= orig_len */
 };
 
 /* Xen: helpers used by common code. */
-#define __ALT_PTR(a,f)		((const void *)&(a)->f + (a)->f)
+#define __ALT_PTR(a, f)		((const void *)&(a)->f + (a)->f)
 #define ALT_ORIG_PTR(a)		__ALT_PTR(a, orig_offset)
 #define ALT_REPL_PTR(a)		__ALT_PTR(a, repl_offset)
 
 typedef void (*alternative_cb_t)(const struct alt_instr *alt,
-				 const uint32_t *origptr, uint32_t *updptr,
-				 int nr_inst);
+                                 const uint32_t *origptr, uint32_t *updptr,
+                                 int nr_inst);
 
 void apply_alternatives_all(void);
-int apply_alternatives(const struct alt_instr *start, const struct alt_instr *end);
+int apply_alternatives(const struct alt_instr *start,
+                       const struct alt_instr *end);
 
 #define ALTINSTR_ENTRY(feature, cb)					      \
 	" .word 661b - .\n"				/* label           */ \
@@ -90,29 +91,24 @@ int apply_alternatives(const struct alt_instr *start, const struct alt_instr *en
 #include <asm/asm_defns.h>
 #include <asm/macros.h>
 
-.macro altinstruction_entry orig_offset repl_offset feature orig_len repl_len
-	.word \orig_offset - .
-	.word \repl_offset - .
-	.hword \feature
-	.byte \orig_len
-	.byte \repl_len
-.endm
+.macro altinstruction_entry orig_offset repl_offset feature orig_len
+        repl_len.word \orig_offset -
+        ..word \repl_offset -
+        ..hword \feature.byte \orig_len.byte \repl_len
+        .endm
 
-.macro alternative_insn insn1, insn2, cap, enable = 1
-	.if \enable
-661:	\insn1
-662:	.pushsection .altinstructions, "a"
-	altinstruction_entry 661b, 663f, \cap, 662b-661b, 664f-663f
-	.popsection
-	.pushsection .altinstr_replacement, "ax"
-663:	\insn2
-664:	.popsection
-	.org	. - (664b-663b) + (662b-661b)
-	.org	. - (662b-661b) + (664b-663b)
-	.endif
-.endm
+        .macro alternative_insn insn1,
+    insn2, cap,
+    enable = 1 .if \enable 661 :	\insn1 662 :.pushsection.altinstructions,
+    "a" altinstruction_entry 661b, 663f, \cap, 662b - 661b,
+    664f - 663f .popsection.pushsection.altinstr_replacement,
+    "ax" 663 :	\insn2 664 :.popsection.org.- (664b - 663b) + (662b - 661b).org.-
+        (662b - 661b) +
+        (664b - 663b)
+            .endif
+            .endm
 
-/*
+            /*
  * Alternative sequences
  *
  * The code for the case where the capability is not present will be
@@ -131,82 +127,64 @@ int apply_alternatives(const struct alt_instr *start, const struct alt_instr *en
  *    alternative sequence are not fixed up).
  */
 
-/*
+            /*
  * Begin an alternative code sequence.
  */
-.macro alternative_if_not cap
-	.set .Lasm_alt_mode, 0
-	.pushsection .altinstructions, "a"
-	altinstruction_entry 661f, 663f, \cap, 662f-661f, 664f-663f
-	.popsection
-661:
-.endm
+            .macro alternative_if_not cap.set.Lasm_alt_mode,
+    0 .pushsection.altinstructions, "a" altinstruction_entry 661f, 663f, \cap,
+    662f - 661f,
+    664f - 663f .popsection 661
+    :.endm
 
-.macro alternative_if cap
-	.set .Lasm_alt_mode, 1
-	.pushsection .altinstructions, "a"
-	altinstruction_entry 663f, 661f, \cap, 664f-663f, 662f-661f
-	.popsection
-	.pushsection .altinstr_replacement, "ax"
-	.align 2	/* So GAS knows label 661 is suitably aligned */
-661:
-.endm
+         .macro alternative_if cap.set.Lasm_alt_mode,
+    1 .pushsection.altinstructions, "a" altinstruction_entry 663f, 661f, \cap,
+    664f - 663f, 662f - 661f .popsection.pushsection.altinstr_replacement,
+    "ax".align 2 /* So GAS knows label 661 is suitably aligned */
+        661
+    :.endm
 
-/*
+         /*
  * Provide the other half of the alternative code sequence.
  */
-.macro alternative_else
-662:
-	.if .Lasm_alt_mode==0
-	.pushsection .altinstr_replacement, "ax"
-	.else
-	.popsection
-	.endif
-663:
-.endm
+         .macro alternative_else 662
+    :.if.Lasm_alt_mode == 0 .pushsection.altinstr_replacement,
+    "ax".else.popsection.endif 663
+    :.endm
 
-.macro alternative_cb cb
-	.set .Lasm_alt_mode, 0
-	.pushsection .altinstructions, "a"
-	altinstruction_entry 661f, \cb, ARM_CB_PATCH, 662f-661f, 0
-	.popsection
-661:
-.endm
+         .macro alternative_cb cb.set.Lasm_alt_mode,
+    0 .pushsection.altinstructions, "a" altinstruction_entry 661f, \cb,
+    ARM_CB_PATCH, 662f - 661f,
+    0 .popsection 661
+    :.endm
 
-/*
+         /*
  * Complete an alternative code sequence.
  */
-.macro alternative_endif
-664:
-	.if .Lasm_alt_mode==0
-	.popsection
-	.endif
-	.org	. - (664b-663b) + (662b-661b)
-	.org	. - (662b-661b) + (664b-663b)
-.endm
+         .macro alternative_endif 664
+    :.if.Lasm_alt_mode == 0 .popsection.endif.org.- (664b - 663b) +
+                              (662b - 661b).org.- (662b - 661b) +
+                              (664b - 663b)
+                                      .endm
 
-/*
+                                      /*
  * Provides a trivial alternative or default sequence consisting solely
  * of NOPs. The number of NOPs is chosen automatically to match the
  * previous case.
  */
-.macro alternative_else_nop_endif
-alternative_else
-	nops	(662b-661b) / ARCH_PATCH_INSN_SIZE
-alternative_endif
-.endm
+                                      .macro alternative_else_nop_endif
+                                          alternative_else nops(662b - 661b) /
+                                  ARCH_PATCH_INSN_SIZE alternative_endif
+                                      .endm
 
-/*
+                                      /*
  * Callback-based alternative epilogue
  */
-.macro alternative_cb_end
-662:
-.endm
+                                      .macro alternative_cb_end 662 :.endm
 
 #define _ALTERNATIVE_CFG(insn1, insn2, cap, cfg, ...)	\
 	alternative_insn insn1, insn2, cap, IS_ENABLED(cfg)
 
-#endif  /*  __ASSEMBLY__  */
+#endif /*  __ASSEMBLY__  */
 
 /*
  * Usage: asm(ALTERNATIVE(oldinstr, newinstr, feature));

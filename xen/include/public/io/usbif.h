@@ -252,7 +252,7 @@ enum usb_spec_version {
     USB_VER_UNKNOWN = 0,
     USB_VER_USB11,
     USB_VER_USB20,
-    USB_VER_USB30,    /* not supported yet */
+    USB_VER_USB30, /* not supported yet */
 };
 
 /*
@@ -329,31 +329,32 @@ struct usbif_request_segment {
 };
 
 struct usbif_urb_request {
-    uint16_t id;                  /* request id */
-    uint16_t nr_buffer_segs;      /* number of urb->transfer_buffer segments */
+    uint16_t id; /* request id */
+    uint16_t nr_buffer_segs; /* number of urb->transfer_buffer segments */
 
     /* basic urb parameter */
     uint32_t pipe;
     uint16_t transfer_flags;
 #define USBIF_SHORT_NOT_OK      0x0001
     uint16_t buffer_length;
+
     union {
-        uint8_t ctrl[8];                 /* setup_packet (Ctrl) */
+        uint8_t ctrl[8]; /* setup_packet (Ctrl) */
 
         struct {
-            uint16_t interval;           /* maximum (1024*8) in usb core */
-            uint16_t start_frame;        /* start frame */
-            uint16_t number_of_packets;  /* number of ISO packet */
+            uint16_t interval; /* maximum (1024*8) in usb core */
+            uint16_t start_frame; /* start frame */
+            uint16_t number_of_packets; /* number of ISO packet */
             uint16_t nr_frame_desc_segs; /* number of iso_frame_desc segments */
         } isoc;
 
         struct {
-            uint16_t interval;           /* maximum (1024*8) in usb core */
+            uint16_t interval; /* maximum (1024*8) in usb core */
             uint16_t pad[3];
         } intr;
 
         struct {
-            uint16_t unlink_id;          /* unlink request id */
+            uint16_t unlink_id; /* unlink request id */
             uint16_t pad[3];
         } unlink;
 
@@ -365,9 +366,9 @@ struct usbif_urb_request {
 typedef struct usbif_urb_request usbif_urb_request_t;
 
 struct usbif_urb_response {
-    uint16_t id;           /* request id */
-    uint16_t start_frame;  /* start frame (ISO) */
-    int32_t status;        /* status (non-ISO) */
+    uint16_t id; /* request id */
+    uint16_t start_frame; /* start frame (ISO) */
+    int32_t status; /* status (non-ISO) */
 #define USBIF_STATUS_OK         0
 #define USBIF_STATUS_NODEV      (-19)
 #define USBIF_STATUS_INVAL      (-22)
@@ -376,11 +377,12 @@ struct usbif_urb_response {
 #define USBIF_STATUS_BABBLE     (-75)
 #define USBIF_STATUS_SHUTDOWN   (-108)
     int32_t actual_length; /* actual transfer length */
-    int32_t error_count;   /* number of ISO errors */
+    int32_t error_count; /* number of ISO errors */
 };
 typedef struct usbif_urb_response usbif_urb_response_t;
 
-DEFINE_RING_TYPES(usbif_urb, struct usbif_urb_request, struct usbif_urb_response);
+DEFINE_RING_TYPES(usbif_urb, struct usbif_urb_request,
+                  struct usbif_urb_response);
 #define USB_URB_RING_SIZE __CONST_RING_SIZE(usbif_urb, USBIF_RING_SIZE)
 
 /*
@@ -392,9 +394,9 @@ struct usbif_conn_request {
 typedef struct usbif_conn_request usbif_conn_request_t;
 
 struct usbif_conn_response {
-    uint16_t id;           /* request id */
-    uint8_t portnum;       /* port number */
-    uint8_t speed;         /* usb_device_speed */
+    uint16_t id; /* request id */
+    uint8_t portnum; /* port number */
+    uint8_t speed; /* usb_device_speed */
 #define USBIF_SPEED_NONE        0
 #define USBIF_SPEED_LOW         1
 #define USBIF_SPEED_FULL        2
@@ -402,7 +404,8 @@ struct usbif_conn_response {
 };
 typedef struct usbif_conn_response usbif_conn_response_t;
 
-DEFINE_RING_TYPES(usbif_conn, struct usbif_conn_request, struct usbif_conn_response);
+DEFINE_RING_TYPES(usbif_conn, struct usbif_conn_request,
+                  struct usbif_conn_response);
 #define USB_CONN_RING_SIZE __CONST_RING_SIZE(usbif_conn, USBIF_RING_SIZE)
 
 #endif /* __XEN_PUBLIC_IO_USBIF_H__ */

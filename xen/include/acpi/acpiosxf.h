@@ -59,25 +59,25 @@ acpi_physical_address acpi_os_get_root_pointer(void);
  * Memory mapping
  */
 void __iomem *acpi_os_map_memory(acpi_physical_address where,
-				 acpi_native_uint length);
+                                 acpi_native_uint length);
 
-void acpi_os_unmap_memory(void __iomem * logical_address, acpi_size size);
+void acpi_os_unmap_memory(void __iomem *logical_address, acpi_size size);
 
 /*
  * Platform and hardware-independent I/O interfaces
  */
-acpi_status acpi_os_read_port(acpi_io_address address, u32 * value, u32 width);
+acpi_status acpi_os_read_port(acpi_io_address address, u32 *value, u32 width);
 
 acpi_status acpi_os_write_port(acpi_io_address address, u32 value, u32 width);
 
 /*
  * Platform and hardware-independent physical memory interfaces
  */
-acpi_status
-acpi_os_read_memory(acpi_physical_address address, u32 * value, u32 width);
+acpi_status acpi_os_read_memory(acpi_physical_address address, u32 *value,
+                                u32 width);
 
-acpi_status
-acpi_os_write_memory(acpi_physical_address address, u32 value, u32 width);
+acpi_status acpi_os_write_memory(acpi_physical_address address, u32 value,
+                                 u32 width);
 
 /*
  * Debug print routines
@@ -86,4 +86,4 @@ void ACPI_INTERNAL_VAR_XFACE acpi_os_printf(const char *format, ...);
 
 void acpi_os_vprintf(const char *format, va_list args);
 
-#endif				/* __ACPIOSXF_H__ */
+#endif /* __ACPIOSXF_H__ */

@@ -1,4 +1,4 @@
- /* SPDX-License-Identifier: GPL-2.0-only */
+/* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Taken and modified from Linux.
  *
@@ -31,19 +31,28 @@
 
 void __bad_atomic_size(void);
 
-static always_inline void read_atomic_size(const volatile void *p,
-                                           void *res,
+static always_inline void read_atomic_size(const volatile void *p, void *res,
                                            unsigned int size)
 {
     switch ( size )
     {
-    case 1: *(uint8_t *)res = readb_cpu(p); break;
-    case 2: *(uint16_t *)res = readw_cpu(p); break;
-    case 4: *(uint32_t *)res = readl_cpu(p); break;
+    case 1:
+        *(uint8_t *)res = readb_cpu(p);
+        break;
+    case 2:
+        *(uint16_t *)res = readw_cpu(p);
+        break;
+    case 4:
+        *(uint32_t *)res = readl_cpu(p);
+        break;
 #ifndef CONFIG_RISCV_32
-    case 8: *(uint64_t *)res = readq_cpu(p); break;
+    case 8:
+        *(uint64_t *)res = readq_cpu(p);
+        break;
 #endif
-    default: __bad_atomic_size(); break;
+    default:
+        __bad_atomic_size();
+        break;
     }
 }
 
@@ -53,19 +62,28 @@ static always_inline void read_atomic_size(const volatile void *p,
     x_.val;                                                 \
 })
 
-static always_inline void _write_atomic(volatile void *p,
-                                        unsigned long x,
+static always_inline void _write_atomic(volatile void *p, unsigned long x,
                                         unsigned int size)
 {
     switch ( size )
     {
-    case 1: writeb_cpu(x, p); break;
-    case 2: writew_cpu(x, p); break;
-    case 4: writel_cpu(x, p); break;
+    case 1:
+        writeb_cpu(x, p);
+        break;
+    case 2:
+        writew_cpu(x, p);
+        break;
+    case 4:
+        writel_cpu(x, p);
+        break;
 #ifndef CONFIG_RISCV_32
-    case 8: writeq_cpu(x, p); break;
+    case 8:
+        writeq_cpu(x, p);
+        break;
 #endif
-    default: __bad_atomic_size(); break;
+    default:
+        __bad_atomic_size();
+        break;
     }
 }
 
@@ -76,8 +94,8 @@ static always_inline void _write_atomic(volatile void *p,
     _write_atomic(p, x_.ul, sizeof(*(p)));                          \
 })
 
-static always_inline void _add_sized(volatile void *p,
-                                     unsigned long x, unsigned int size)
+static always_inline void _add_sized(volatile void *p, unsigned long x,
+                                     unsigned int size)
 {
     switch ( size )
     {
@@ -107,7 +125,9 @@ static always_inline void _add_sized(volatile void *p,
         break;
     }
 #endif
-    default: __bad_atomic_size(); break;
+    default:
+        __bad_atomic_size();
+        break;
     }
 }
 
@@ -137,7 +157,7 @@ void atomic##prefix##_##op(c_type i, atomic##prefix##_t *v) \
         : "+A" (v->counter)                                 \
         : "r" (unary_op i)                                  \
         : "memory" );                                       \
-}                                                           \
+}
 
 /*
  * Only CONFIG_GENERIC_ATOMIC64=y was ported to Xen that is the reason why
@@ -149,7 +169,7 @@ void atomic##prefix##_##op(c_type i, atomic##prefix##_t *v) \
 ATOMIC_OPS(add, add, +)
 ATOMIC_OPS(sub, add, -)
 ATOMIC_OPS(and, and, +)
-ATOMIC_OPS( or,  or, +)
+ATOMIC_OPS(or, or, +)
 ATOMIC_OPS(xor, xor, +)
 
 #undef ATOMIC_OP
@@ -199,7 +219,7 @@ ATOMIC_OPS(sub, add, -)
         ATOMIC_FETCH_OP(op, asm_op, +, w, int,   )
 
 ATOMIC_OPS(and, and)
-ATOMIC_OPS( or,  or)
+ATOMIC_OPS(or, or)
 ATOMIC_OPS(xor, xor)
 
 #undef ATOMIC_OPS
@@ -212,15 +232,10 @@ static inline int atomic_add_unless(atomic_t *v, int a, int u)
 {
     int prev, rc;
 
-    asm volatile (
-        "0: lr.w     %[p],  %[c]\n"
-        "   beq      %[p],  %[u], 1f\n"
-        "   add      %[rc], %[p], %[a]\n"
-        "   sc.w.aqrl  %[rc], %[rc], %[c]\n"
-        "   bnez     %[rc], 0b\n"
-        "1:\n"
-        : [p] "=&r" (prev), [rc] "=&r" (rc), [c] "+A" (v->counter)
-        : [a] "r" (a), [u] "r" (u)
+    asm volatile(
+        "0: lr.w     %[p],  %[c]\n" "   beq      %[p],  %[u], 1f\n" "   add      %[rc], %[p], %[a]\n" "   sc.w.aqrl  %[rc], %[rc], %[c]\n" "   bnez     %[rc], 0b\n" "1:\n"
+        : [p] "=&r"(prev), [rc] "=&r"(rc), [c] "+A"(v->counter)
+        : [a] "r"(a), [u] "r"(u)
         : "memory");
     return prev;
 }
@@ -229,16 +244,11 @@ static inline int atomic_sub_if_positive(atomic_t *v, int offset)
 {
     int prev, rc;
 
-    asm volatile (
-        "0: lr.w     %[p],  %[c]\n"
-        "   sub      %[rc], %[p], %[o]\n"
-        "   bltz     %[rc], 1f\n"
-        "   sc.w.aqrl  %[rc], %[rc], %[c]\n"
-        "   bnez     %[rc], 0b\n"
-        "1:\n"
-        : [p] "=&r" (prev), [rc] "=&r" (rc), [c] "+A" (v->counter)
-        : [o] "r" (offset)
-        : "memory" );
+    asm volatile(
+        "0: lr.w     %[p],  %[c]\n" "   sub      %[rc], %[p], %[o]\n" "   bltz     %[rc], 1f\n" "   sc.w.aqrl  %[rc], %[rc], %[c]\n" "   bnez     %[rc], 0b\n" "1:\n"
+        : [p] "=&r"(prev), [rc] "=&r"(rc), [c] "+A"(v->counter)
+        : [o] "r"(offset)
+        : "memory");
     return prev - offset;
 }
 

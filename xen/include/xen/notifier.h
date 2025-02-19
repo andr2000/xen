@@ -6,7 +6,7 @@
  *
  * Original code from Linux kernel 2.6.27 (Alan Cox <Alan.Cox@linux.org>)
  */
- 
+
 #ifndef __XEN_NOTIFIER_H__
 #define __XEN_NOTIFIER_H__
 
@@ -36,15 +36,13 @@ struct notifier_head {
 #define NOTIFIER_HEAD(name) \
     struct notifier_head name = { .head = LIST_HEAD_INIT((name).head) }
 
+void notifier_chain_register(struct notifier_head *nh,
+                             struct notifier_block *n);
+void notifier_chain_unregister(struct notifier_head *nh,
+                               struct notifier_block *n);
 
-void notifier_chain_register(
-    struct notifier_head *nh, struct notifier_block *n);
-void notifier_chain_unregister(
-    struct notifier_head *nh, struct notifier_block *n);
-
-int notifier_call_chain(
-    struct notifier_head *nh, unsigned long val, void *v,
-    struct notifier_block **pcursor);
+int notifier_call_chain(struct notifier_head *nh, unsigned long val, void *v,
+                        struct notifier_block **pcursor);
 
 /* Notifier flag values: OR into @val passed to notifier_call_chain(). */
 #define NOTIFY_FORWARD 0x0000 /* Call chain highest-priority-first */

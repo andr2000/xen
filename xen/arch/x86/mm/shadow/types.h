@@ -50,56 +50,116 @@ typedef l4_pgentry_t shadow_l4e_t;
 
 /* Access functions for them */
 static inline paddr_t shadow_l1e_get_paddr(shadow_l1e_t sl1e)
-{ return l1e_get_paddr(sl1e); }
+{
+    return l1e_get_paddr(sl1e);
+}
+
 static inline paddr_t shadow_l2e_get_paddr(shadow_l2e_t sl2e)
-{ return l2e_get_paddr(sl2e); }
+{
+    return l2e_get_paddr(sl2e);
+}
+
 static inline paddr_t shadow_l3e_get_paddr(shadow_l3e_t sl3e)
-{ return l3e_get_paddr(sl3e); }
+{
+    return l3e_get_paddr(sl3e);
+}
+
 static inline paddr_t shadow_l4e_get_paddr(shadow_l4e_t sl4e)
-{ return l4e_get_paddr(sl4e); }
+{
+    return l4e_get_paddr(sl4e);
+}
 
 static inline mfn_t shadow_l1e_get_mfn(shadow_l1e_t sl1e)
-{ return l1e_get_mfn(sl1e); }
+{
+    return l1e_get_mfn(sl1e);
+}
+
 static inline mfn_t shadow_l2e_get_mfn(shadow_l2e_t sl2e)
-{ return l2e_get_mfn(sl2e); }
+{
+    return l2e_get_mfn(sl2e);
+}
+
 static inline mfn_t shadow_l3e_get_mfn(shadow_l3e_t sl3e)
-{ return l3e_get_mfn(sl3e); }
+{
+    return l3e_get_mfn(sl3e);
+}
+
 static inline mfn_t shadow_l4e_get_mfn(shadow_l4e_t sl4e)
-{ return l4e_get_mfn(sl4e); }
+{
+    return l4e_get_mfn(sl4e);
+}
 
 static inline u32 shadow_l1e_get_flags(shadow_l1e_t sl1e)
-{ return l1e_get_flags(sl1e); }
-static inline u32 shadow_l2e_get_flags(shadow_l2e_t sl2e)
-{ return l2e_get_flags(sl2e); }
-static inline u32 shadow_l3e_get_flags(shadow_l3e_t sl3e)
-{ return l3e_get_flags(sl3e); }
-static inline u32 shadow_l4e_get_flags(shadow_l4e_t sl4e)
-{ return l4e_get_flags(sl4e); }
+{
+    return l1e_get_flags(sl1e);
+}
 
-static inline shadow_l1e_t
-shadow_l1e_remove_flags(shadow_l1e_t sl1e, u32 flags)
-{ l1e_remove_flags(sl1e, flags); return sl1e; }
-static inline shadow_l1e_t
-shadow_l1e_flip_flags(shadow_l1e_t sl1e, u32 flags)
-{ l1e_flip_flags(sl1e, flags); return sl1e; }
+static inline u32 shadow_l2e_get_flags(shadow_l2e_t sl2e)
+{
+    return l2e_get_flags(sl2e);
+}
+
+static inline u32 shadow_l3e_get_flags(shadow_l3e_t sl3e)
+{
+    return l3e_get_flags(sl3e);
+}
+
+static inline u32 shadow_l4e_get_flags(shadow_l4e_t sl4e)
+{
+    return l4e_get_flags(sl4e);
+}
+
+static inline shadow_l1e_t shadow_l1e_remove_flags(shadow_l1e_t sl1e, u32 flags)
+{
+    l1e_remove_flags(sl1e, flags);
+    return sl1e;
+}
+
+static inline shadow_l1e_t shadow_l1e_flip_flags(shadow_l1e_t sl1e, u32 flags)
+{
+    l1e_flip_flags(sl1e, flags);
+    return sl1e;
+}
 
 static inline shadow_l1e_t shadow_l1e_empty(void)
-{ return l1e_empty(); }
+{
+    return l1e_empty();
+}
+
 static inline shadow_l2e_t shadow_l2e_empty(void)
-{ return l2e_empty(); }
+{
+    return l2e_empty();
+}
+
 static inline shadow_l3e_t shadow_l3e_empty(void)
-{ return l3e_empty(); }
+{
+    return l3e_empty();
+}
+
 static inline shadow_l4e_t shadow_l4e_empty(void)
-{ return l4e_empty(); }
+{
+    return l4e_empty();
+}
 
 static inline shadow_l1e_t shadow_l1e_from_mfn(mfn_t mfn, u32 flags)
-{ return l1e_from_mfn(mfn, flags); }
+{
+    return l1e_from_mfn(mfn, flags);
+}
+
 static inline shadow_l2e_t shadow_l2e_from_mfn(mfn_t mfn, u32 flags)
-{ return l2e_from_mfn(mfn, flags); }
+{
+    return l2e_from_mfn(mfn, flags);
+}
+
 static inline shadow_l3e_t shadow_l3e_from_mfn(mfn_t mfn, u32 flags)
-{ return l3e_from_mfn(mfn, flags); }
+{
+    return l3e_from_mfn(mfn, flags);
+}
+
 static inline shadow_l4e_t shadow_l4e_from_mfn(mfn_t mfn, u32 flags)
-{ return l4e_from_mfn(mfn, flags); }
+{
+    return l4e_from_mfn(mfn, flags);
+}
 
 #define shadow_l1_table_offset(a) l1_table_offset(a)
 #define shadow_l2_table_offset(a) l2_table_offset(a)
@@ -169,7 +229,7 @@ static inline shadow_l4e_t shadow_l4e_from_mfn(mfn_t mfn, u32 flags)
 })
 #endif
 
- /* Override get_gfn to work with gfn_t */
+/* Override get_gfn to work with gfn_t */
 #undef get_gfn_query
 #define get_gfn_query(d, g, t) get_gfn_type((d), gfn_x(g), (t), 0)
 
@@ -247,20 +307,17 @@ static inline shadow_l4e_t shadow_l4e_from_mfn(mfn_t mfn, u32 flags)
 #define SH_PRI_gpte PRI_gpte
 #define SH_PRI_gfn  PRI_gfn
 
-int shadow_set_l1e(struct domain *d, shadow_l1e_t *sl1e,
-                   shadow_l1e_t new_sl1e, p2m_type_t new_type,
-                   mfn_t sl1mfn);
-int shadow_set_l2e(struct domain *d, shadow_l2e_t *sl2e,
-                   shadow_l2e_t new_sl2e, mfn_t sl2mfn,
-                   unsigned int type_fl1_shadow,
+int shadow_set_l1e(struct domain *d, shadow_l1e_t *sl1e, shadow_l1e_t new_sl1e,
+                   p2m_type_t new_type, mfn_t sl1mfn);
+int shadow_set_l2e(struct domain *d, shadow_l2e_t *sl2e, shadow_l2e_t new_sl2e,
+                   mfn_t sl2mfn, unsigned int type_fl1_shadow,
                    mfn_t (*next_page)(mfn_t smfn));
-int shadow_set_l3e(struct domain *d, shadow_l3e_t *sl3e,
-                   shadow_l3e_t new_sl3e, mfn_t sl3mfn);
-int shadow_set_l4e(struct domain *d, shadow_l4e_t *sl4e,
-                   shadow_l4e_t new_sl4e, mfn_t sl4mfn);
+int shadow_set_l3e(struct domain *d, shadow_l3e_t *sl3e, shadow_l3e_t new_sl3e,
+                   mfn_t sl3mfn);
+int shadow_set_l4e(struct domain *d, shadow_l4e_t *sl4e, shadow_l4e_t new_sl4e,
+                   mfn_t sl4mfn);
 
-static void inline
-shadow_put_page_from_l1e(shadow_l1e_t sl1e, struct domain *d)
+static inline void shadow_put_page_from_l1e(shadow_l1e_t sl1e, struct domain *d)
 {
     if ( !shadow_mode_refcounts(d) )
         return;
@@ -268,7 +325,7 @@ shadow_put_page_from_l1e(shadow_l1e_t sl1e, struct domain *d)
     put_page_from_l1e(sl1e, d);
 }
 
-#if (SHADOW_OPTIMIZATIONS & SHOPT_FAST_FAULT_PATH)
+#if ( SHADOW_OPTIMIZATIONS & SHOPT_FAST_FAULT_PATH )
 /******************************************************************************
  * We implement a "fast path" for two special cases: faults that require
  * MMIO emulation, and faults where the guest PTE is not present.  We
@@ -288,9 +345,9 @@ shadow_put_page_from_l1e(shadow_l1e_t sl1e, struct domain *d)
  */
 
 #ifdef CONFIG_BIGMEM
-# define SH_L1E_MAGIC_MASK (0xfffff00000000000UL | _PAGE_PRESENT)
+#define SH_L1E_MAGIC_MASK (0xfffff00000000000UL | _PAGE_PRESENT)
 #else
-# define SH_L1E_MAGIC_MASK (0xfffffff000000000UL | _PAGE_PRESENT)
+#define SH_L1E_MAGIC_MASK (0xfffffff000000000UL | _PAGE_PRESENT)
 #endif
 
 static inline bool sh_have_pte_rsvd_bits(void)
@@ -316,8 +373,7 @@ static inline shadow_l1e_t sh_l1e_gnp(void)
      * On systems with no reserved physical address bits we can't engage the
      * fast fault path.
      */
-    return sh_have_pte_rsvd_bits() ? sh_l1e_gnp_raw()
-                                   : shadow_l1e_empty();
+    return sh_have_pte_rsvd_bits() ? sh_l1e_gnp_raw() : shadow_l1e_empty();
 }
 
 static inline bool sh_l1e_is_gnp(shadow_l1e_t sl1e)
@@ -346,8 +402,7 @@ static inline shadow_l1e_t sh_l1e_mmio(gfn_t gfn, u32 gflags)
     BUILD_BUG_ON(SH_L1E_MMIO_MAGIC_BIT <= _PAGE_USER);
 
     if ( !sh_have_pte_rsvd_bits() ||
-         (cpu_has_bug_l1tf &&
-          !is_l1tf_safe_maddr(shadow_l1e_get_paddr(sl1e))) )
+         (cpu_has_bug_l1tf && !is_l1tf_safe_maddr(shadow_l1e_get_paddr(sl1e))) )
         sl1e = shadow_l1e_empty();
 
     return sl1e;
@@ -375,7 +430,6 @@ static inline uint32_t sh_l1e_mmio_get_flags(shadow_l1e_t sl1e)
 #define sh_l1e_is_magic(_e) (0)
 
 #endif /* SHOPT_FAST_FAULT_PATH */
-
 
 #endif /* _XEN_SHADOW_TYPES_H */
 

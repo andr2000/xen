@@ -57,35 +57,27 @@ string_runtime_param("conswitch", opt_conswitch);
 static bool __initdata opt_sync_console;
 boolean_param("sync_console", opt_sync_console);
 static const char __initconst warning_sync_console[] =
-    "WARNING: CONSOLE OUTPUT IS SYNCHRONOUS\n"
-    "This option is intended to aid debugging of Xen by ensuring\n"
-    "that all output is synchronously delivered on the serial line.\n"
-    "However it can introduce SIGNIFICANT latencies and affect\n"
-    "timekeeping. It is NOT recommended for production use!\n";
+    "WARNING: CONSOLE OUTPUT IS SYNCHRONOUS\n" "This option is intended to aid debugging of Xen by ensuring\n" "that all output is synchronously delivered on the serial line.\n" "However it can introduce SIGNIFICANT latencies and affect\n" "timekeeping. It is NOT recommended for production use!\n";
 
 /* console_to_ring: send guest (incl. dom 0) console data to console ring. */
 static bool __read_mostly opt_console_to_ring;
 boolean_param("console_to_ring", opt_console_to_ring);
 
 /* console_timestamps: include a timestamp prefix on every Xen console line. */
-enum con_timestamp_mode
-{
-    TSM_NONE,          /* No timestamps */
-    TSM_DATE,          /* [YYYY-MM-DD HH:MM:SS] */
-    TSM_DATE_MS,       /* [YYYY-MM-DD HH:MM:SS.mmm] */
-    TSM_BOOT,          /* [SSSSSS.uuuuuu] */
-    TSM_RAW,           /* [XXXXXXXXXXXXXXXX] */
+enum con_timestamp_mode {
+    TSM_NONE, /* No timestamps */
+    TSM_DATE, /* [YYYY-MM-DD HH:MM:SS] */
+    TSM_DATE_MS, /* [YYYY-MM-DD HH:MM:SS.mmm] */
+    TSM_BOOT, /* [SSSSSS.uuuuuu] */
+    TSM_RAW, /* [XXXXXXXXXXXXXXXX] */
 };
 
 static enum con_timestamp_mode __read_mostly opt_con_timestamp_mode = TSM_NONE;
 
 #ifdef CONFIG_HYPFS
 static const char con_timestamp_mode_2_string[][7] = {
-    [TSM_NONE] = "none",
-    [TSM_DATE] = "date",
-    [TSM_DATE_MS] = "datems",
-    [TSM_BOOT] = "boot",
-    [TSM_RAW] = "raw",
+    [TSM_NONE] = "none", [TSM_DATE] = "date", [TSM_DATE_MS] = "datems",
+    [TSM_BOOT] = "boot", [TSM_RAW] = "raw",
 };
 
 static void cf_check con_timestamp_mode_upd(struct param_hypfs *par)
@@ -170,8 +162,11 @@ static char xenlog_guest_val[LOGLVL_VAL_SZ];
 
 static void xenlog_update_val(int lower, int upper, char *val)
 {
-    static const char * const lvl2opt[] =
-        { "none", "error", "warning", "info", "all" };
+    static const char *const lvl2opt[] = { "none",
+                                           "error",
+                                           "warning",
+                                           "info",
+                                           "all" };
 
     snprintf(val, LOGLVL_VAL_SZ, "%s/%s", lvl2opt[lower], lvl2opt[upper]);
 }
@@ -184,7 +179,8 @@ static void __init cf_check xenlog_init(struct param_hypfs *par)
 
 static void __init cf_check xenlog_guest_init(struct param_hypfs *par)
 {
-    xenlog_update_val(xenlog_guest_lower_thresh, xenlog_guest_upper_thresh,
+    xenlog_update_val(xenlog_guest_lower_thresh,
+                      xenlog_guest_upper_thresh,
                       xenlog_guest_val);
     custom_runtime_set_var(par, xenlog_guest_val);
 }
@@ -192,9 +188,7 @@ static void __init cf_check xenlog_guest_init(struct param_hypfs *par)
 #define xenlog_val       NULL
 #define xenlog_guest_val NULL
 
-static void xenlog_update_val(int lower, int upper, char *val)
-{
-}
+static void xenlog_update_val(int lower, int upper, char *val) {}
 #endif
 
 /*
@@ -218,12 +212,12 @@ static atomic_t print_everything = ATOMIC_INIT(0);
 
 static int __parse_loglvl(const char *s, const char **ps)
 {
-    ___parse_loglvl(s, ps, "none",    0);
-    ___parse_loglvl(s, ps, "error",   1);
+    ___parse_loglvl(s, ps, "none", 0);
+    ___parse_loglvl(s, ps, "error", 1);
     ___parse_loglvl(s, ps, "warning", 2);
-    ___parse_loglvl(s, ps, "info",    3);
-    ___parse_loglvl(s, ps, "debug",   4);
-    ___parse_loglvl(s, ps, "all",     4);
+    ___parse_loglvl(s, ps, "info", 3);
+    ___parse_loglvl(s, ps, "debug", 4);
+    ___parse_loglvl(s, ps, "all", 4);
     return 2; /* sane fallback */
 }
 
@@ -231,7 +225,7 @@ static int _parse_loglvl(const char *s, int *lower, int *upper, char *val)
 {
     *lower = *upper = __parse_loglvl(s, &s);
     if ( *s == '/' )
-        *upper = __parse_loglvl(s+1, &s);
+        *upper = __parse_loglvl(s + 1, &s);
     if ( *upper < *lower )
         *upper = *lower;
 
@@ -244,7 +238,9 @@ static int cf_check parse_loglvl(const char *s)
 {
     int ret;
 
-    ret = _parse_loglvl(s, &xenlog_lower_thresh, &xenlog_upper_thresh,
+    ret = _parse_loglvl(s,
+                        &xenlog_lower_thresh,
+                        &xenlog_upper_thresh,
                         xenlog_val);
     custom_runtime_set_var(param_2_parfs(parse_loglvl), xenlog_val);
 
@@ -255,10 +251,11 @@ static int cf_check parse_guest_loglvl(const char *s)
 {
     int ret;
 
-    ret = _parse_loglvl(s, &xenlog_guest_lower_thresh,
-                        &xenlog_guest_upper_thresh, xenlog_guest_val);
-    custom_runtime_set_var(param_2_parfs(parse_guest_loglvl),
-                           xenlog_guest_val);
+    ret = _parse_loglvl(s,
+                        &xenlog_guest_lower_thresh,
+                        &xenlog_guest_upper_thresh,
+                        xenlog_guest_val);
+    custom_runtime_set_var(param_2_parfs(parse_guest_loglvl), xenlog_guest_val);
 
     return ret;
 }
@@ -267,11 +264,16 @@ static const char *loglvl_str(int lvl)
 {
     switch ( lvl )
     {
-    case 0: return "Nothing";
-    case 1: return "Errors";
-    case 2: return "Errors and warnings";
-    case 3: return "Errors, warnings and info";
-    case 4: return "All";
+    case 0:
+        return "Nothing";
+    case 1:
+        return "Errors";
+    case 2:
+        return "Errors and warnings";
+    case 3:
+        return "Errors, warnings and info";
+    case 4:
+        return "All";
     }
     return "???";
 }
@@ -295,7 +297,8 @@ static void cf_check do_toggle_guest(unsigned char key, bool unused)
         thresh_adj = "standard";
     }
     printk("'%c' pressed -> %s log level adjustments enabled\n",
-           key, thresh_adj);
+           key,
+           thresh_adj);
 }
 
 static void do_adj_thresh(unsigned char key)
@@ -303,7 +306,9 @@ static void do_adj_thresh(unsigned char key)
     if ( *upper_thresh_adj < *lower_thresh_adj )
         *upper_thresh_adj = *lower_thresh_adj;
     printk("'%c' pressed -> %s log level: %s (rate limited %s)\n",
-           key, thresh_adj, loglvl_str(*lower_thresh_adj),
+           key,
+           thresh_adj,
+           loglvl_str(*lower_thresh_adj),
            loglvl_str(*upper_thresh_adj));
 }
 
@@ -342,15 +347,13 @@ long read_console_ring(struct xen_sysctl_readconsole *op)
     XEN_GUEST_HANDLE_PARAM(char) str;
     uint32_t idx, len, max, sofar, c, p;
 
-    str   = guest_handle_cast(op->buffer, char),
-    max   = op->count;
+    str = guest_handle_cast(op->buffer, char), max = op->count;
     sofar = 0;
 
     c = read_atomic(&conringc);
     p = read_atomic(&conringp);
-    if ( op->incremental &&
-         (c <= p ? c < op->index && op->index <= p
-                 : c < op->index || op->index <= p) )
+    if ( op->incremental && (c <= p ? c < op->index && op->index <= p
+                                    : c < op->index || op->index <= p) )
         c = op->index;
 
     while ( (c != p) && (sofar < max) )
@@ -379,7 +382,6 @@ long read_console_ring(struct xen_sysctl_readconsole *op)
 
     return 0;
 }
-
 
 /*
  * *******************************************************
@@ -480,7 +482,7 @@ static unsigned int __read_mostly console_rx = 0;
 struct domain *console_input_domain(void)
 {
     if ( console_rx == 0 )
-            return NULL;
+        return NULL;
     return rcu_lock_domain_by_id(console_rx - 1);
 }
 #endif
@@ -493,7 +495,7 @@ static void switch_serial_input(void)
      * Rotate among Xen, dom0 and boot-time created domUs while skipping
      * switching serial input to non existing domains.
      */
-    for ( ; ; )
+    for ( ;; )
     {
         domid_t domid;
         struct domain *d;
@@ -559,8 +561,7 @@ static void __serial_rx(char c)
          * domain, without a full PV ring to Dom0 (in that case input
          * comes from the PV ring), then send the character to it.
          */
-        if ( d != NULL &&
-             !d->arch.vpl011.backend_in_domain &&
+        if ( d != NULL && !d->arch.vpl011.backend_in_domain &&
              d->arch.vpl011.backend.xen != NULL )
             vpl011_rx_char_xen(d, c);
         else
@@ -607,6 +608,7 @@ static void cf_check notify_dom0_con_ring(void *unused)
 {
     send_global_virq(VIRQ_CON_RING);
 }
+
 static DECLARE_SOFTIRQ_TASKLET(notify_dom0_con_ring_tasklet,
                                notify_dom0_con_ring, NULL);
 
@@ -614,9 +616,9 @@ static DECLARE_SOFTIRQ_TASKLET(notify_dom0_con_ring_tasklet,
 static inline void xen_console_write_debug_port(const char *buf, size_t len)
 {
     unsigned long tmp;
-    asm volatile ( "rep outsb;"
-                   : "=&S" (tmp), "=&c" (tmp)
-                   : "0" (buf), "1" (len), "d" (XEN_HVM_DEBUGCONS_IOPORT) );
+    asm volatile("rep outsb;"
+                 : "=&S"(tmp), "=&c"(tmp)
+                 : "0"(buf), "1"(len), "d"(XEN_HVM_DEBUGCONS_IOPORT));
 }
 #endif
 
@@ -630,9 +632,11 @@ static long guest_console_write(XEN_GUEST_HANDLE_PARAM(char) buffer,
     while ( count > 0 )
     {
         if ( kcount && hypercall_preempt_check() )
-            return hypercall_create_continuation(
-                __HYPERVISOR_console_io, "iih",
-                CONSOLEIO_write, count, buffer);
+            return hypercall_create_continuation(__HYPERVISOR_console_io,
+                                                 "iih",
+                                                 CONSOLEIO_write,
+                                                 count,
+                                                 buffer);
 
         kcount = min((size_t)count, sizeof(kbuf) - 1);
         if ( copy_from_guest(kbuf, buffer, kcount) )
@@ -704,8 +708,8 @@ static long guest_console_write(XEN_GUEST_HANDLE_PARAM(char) buffer,
     return 0;
 }
 
-long do_console_io(
-    unsigned int cmd, unsigned int count, XEN_GUEST_HANDLE_PARAM(char) buffer)
+long do_console_io(unsigned int cmd, unsigned int count,
+                   XEN_GUEST_HANDLE_PARAM(char) buffer)
 {
     long rc;
     unsigned int idx, len;
@@ -754,7 +758,6 @@ long do_console_io(
 
     return rc;
 }
-
 
 /*
  * *****************************************************
@@ -817,10 +820,9 @@ static int printk_prefix_check(char *p, char **pp)
 
     *pp = p;
 
-    return ((atomic_read(&print_everything) != 0) ||
-            (loglvl < lower_thresh) ||
+    return ((atomic_read(&print_everything) != 0) || (loglvl < lower_thresh) ||
             ((loglvl < upper_thresh) && printk_ratelimit()));
-} 
+}
 
 static int cf_check parse_console_timestamps(const char *s)
 {
@@ -873,17 +875,29 @@ static void printk_start_of_line(const char *prefix)
             /* nothing */;
         else if ( mode == TSM_DATE )
         {
-            snprintf(tstr, sizeof(tstr), "[%04u-%02u-%02u %02u:%02u:%02u] ",
-                     1900 + tm.tm_year, tm.tm_mon + 1, tm.tm_mday,
-                     tm.tm_hour, tm.tm_min, tm.tm_sec);
+            snprintf(tstr,
+                     sizeof(tstr),
+                     "[%04u-%02u-%02u %02u:%02u:%02u] ",
+                     1900 + tm.tm_year,
+                     tm.tm_mon + 1,
+                     tm.tm_mday,
+                     tm.tm_hour,
+                     tm.tm_min,
+                     tm.tm_sec);
             break;
         }
         else
         {
-            snprintf(tstr, sizeof(tstr),
-                     "[%04u-%02u-%02u %02u:%02u:%02u.%03"PRIu64"] ",
-                     1900 + tm.tm_year, tm.tm_mon + 1, tm.tm_mday,
-                     tm.tm_hour, tm.tm_min, tm.tm_sec, nsec / 1000000);
+            snprintf(tstr,
+                     sizeof(tstr),
+                     "[%04u-%02u-%02u %02u:%02u:%02u.%03" PRIu64 "] ",
+                     1900 + tm.tm_year,
+                     tm.tm_mon + 1,
+                     tm.tm_mday,
+                     tm.tm_hour,
+                     tm.tm_min,
+                     tm.tm_sec,
+                     nsec / 1000000);
             break;
         }
         /* fall through */
@@ -893,13 +907,16 @@ static void printk_start_of_line(const char *prefix)
 
         if ( sec | nsec )
         {
-            snprintf(tstr, sizeof(tstr), "[%5"PRIu64".%06"PRIu64"] ",
-                     sec, nsec / 1000);
+            snprintf(tstr,
+                     sizeof(tstr),
+                     "[%5" PRIu64 ".%06" PRIu64 "] ",
+                     sec,
+                     nsec / 1000);
             break;
         }
         /* fall through */
     case TSM_RAW:
-        snprintf(tstr, sizeof(tstr), "[%016"PRIx64"] ", get_cycles());
+        snprintf(tstr, sizeof(tstr), "[%016" PRIx64 "] ", get_cycles());
         break;
 
     case TSM_NONE:
@@ -914,10 +931,11 @@ static void vprintk_common(const char *prefix, const char *fmt, va_list args)
 {
     struct vps {
         bool continued, do_print;
-    }            *state;
+    } *state;
+
     static DEFINE_PER_CPU(struct vps, state);
-    static char   buf[1024];
-    char         *p, *q;
+    static char buf[1024];
+    char *p, *q;
     unsigned long flags;
 
     /* console_lock can be acquired recursively from __printk_ratelimit(). */
@@ -1033,9 +1051,14 @@ void __init console_init_preirq(void)
     __putstr(xen_banner());
     nrspin_unlock(&console_lock);
     printk("Xen version %d.%d%s (%s@%s) (%s) %s %s\n",
-           xen_major_version(), xen_minor_version(), xen_extra_version(),
-           xen_compile_by(), xen_compile_domain(), xen_compiler(),
-           xen_build_info(), xen_compile_date());
+           xen_major_version(),
+           xen_minor_version(),
+           xen_extra_version(),
+           xen_compile_by(),
+           xen_compile_domain(),
+           xen_compiler(),
+           xen_build_info(),
+           xen_compile_date());
     printk("Latest ChangeSet: %s\n", xen_changeset());
 
     /* Locate and print the buildid, if applicable. */
@@ -1069,7 +1092,7 @@ void __init console_init_ring(void)
     opt_conring_size = PAGE_SIZE << order;
 
     nrspin_lock_irqsave(&console_lock, flags);
-    for ( i = conringc ; i != conringp; i++ )
+    for ( i = conringc; i != conringp; i++ )
         ring[i & (opt_conring_size - 1)] = conring[i & (conring_size - 1)];
     conring = ring;
     smp_wmb(); /* Allow users of console_force_unlock() to see larger buffer. */
@@ -1120,14 +1143,22 @@ void __init console_endboot(void)
     if ( opt_conswitch[1] == 'x' )
         console_rx = max_console_rx;
 
-    register_keyhandler('w', dump_console_ring_key,
-                        "synchronously dump console ring buffer (dmesg)", 0);
-    register_irq_keyhandler('+', &do_inc_thresh,
-                            "increase log level threshold", 0);
-    register_irq_keyhandler('-', &do_dec_thresh,
-                            "decrease log level threshold", 0);
-    register_irq_keyhandler('G', &do_toggle_guest,
-                            "toggle host/guest log level adjustment", 0);
+    register_keyhandler('w',
+                        dump_console_ring_key,
+                        "synchronously dump console ring buffer (dmesg)",
+                        0);
+    register_irq_keyhandler('+',
+                            &do_inc_thresh,
+                            "increase log level threshold",
+                            0);
+    register_irq_keyhandler('-',
+                            &do_dec_thresh,
+                            "decrease log level threshold",
+                            0);
+    register_irq_keyhandler('G',
+                            &do_toggle_guest,
+                            "toggle host/guest log level adjustment",
+                            0);
 
     /* Serial input is directed to DOM0 by default. */
     switch_serial_input();
@@ -1218,7 +1249,7 @@ int __printk_ratelimit(int ratelimit_ms, int ratelimit_burst)
     spin_lock_irqsave(&ratelimit_lock, flags);
     toks += ms - last_msg;
     last_msg = ms;
-    if ( toks > (ratelimit_burst * ratelimit_ms))
+    if ( toks > (ratelimit_burst * ratelimit_ms) )
         toks = ratelimit_burst * ratelimit_ms;
     if ( toks >= ratelimit_ms )
     {
@@ -1311,7 +1342,8 @@ void panic(const char *fmt, ...)
  * **************************************************************
  */
 
-static void cf_check suspend_steal_fn(const char *str, size_t nr) { }
+static void cf_check suspend_steal_fn(const char *str, size_t nr) {}
+
 static int suspend_steal_id;
 
 int console_suspend(void)
@@ -1337,4 +1369,3 @@ int console_resume(void)
  * indent-tabs-mode: nil
  * End:
  */
-

@@ -149,8 +149,7 @@
  * User-accessible registers: most of these need to be saved/restored
  * for every nested Xen invocation.
  */
-struct cpu_user_regs
-{
+struct cpu_user_regs {
     uint64_t gprs[32];
     uint64_t lr;
     uint64_t ctr;
@@ -160,8 +159,8 @@ struct cpu_user_regs
     uint64_t msr;
     uint64_t fpscr;
     uint64_t xer;
-    uint64_t hid4;  /* debug only */
-    uint64_t dar;   /* debug only */
+    uint64_t hid4; /* debug only */
+    uint64_t dar; /* debug only */
     uint32_t dsisr; /* debug only */
     uint32_t cr;
     uint32_t __pad; /* good spot for another 32bit reg */
@@ -170,35 +169,35 @@ struct cpu_user_regs
 
 static inline void sync(void)
 {
-    asm volatile ( "sync" );
+    asm volatile("sync");
 }
 
 static inline void isync(void)
 {
-    asm volatile ( "isync" );
+    asm volatile("isync");
 }
 
 static inline unsigned long mfmsr(void)
 {
     unsigned long msr;
-    asm volatile ( "mfmsr %0" : "=r" (msr) );
+    asm volatile("mfmsr %0" : "=r"(msr));
     return msr;
 }
 
 static inline void mtmsrd(unsigned long msr)
 {
-    asm volatile ( "mtmsrd %0" : : "r" (msr) );
+    asm volatile("mtmsrd %0" : : "r"(msr));
 }
 
 static inline void mtspr(uint16_t spr, unsigned long val)
 {
-    asm volatile ( "mtspr %0, %1" : : "K" (spr), "r" (val) );
+    asm volatile("mtspr %0, %1" : : "K"(spr), "r"(val));
 }
 
 static inline unsigned long mfspr(uint16_t spr)
 {
     unsigned long val;
-    asm volatile ( "mfspr %0, %1" : "=r" (val) : "K" (spr) );
+    asm volatile("mfspr %0, %1" : "=r"(val) : "K"(spr));
     return val;
 }
 
@@ -209,7 +208,7 @@ static inline unsigned long mfspr(uint16_t spr)
  */
 static inline void noreturn die(void)
 {
-    for ( ; ; )
+    for ( ;; )
         HMT_very_low();
 }
 

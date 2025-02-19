@@ -46,10 +46,10 @@
  * one or more of the following formats.
  */
 union uu {
-    int64_t        q;              /* as a (signed) quad */
-    uint64_t       uq;             /* as an unsigned quad */
-    long           sl[2];          /* as two signed longs */
-    unsigned long  ul[2];          /* as two unsigned longs */
+    int64_t q; /* as a (signed) quad */
+    uint64_t uq; /* as an unsigned quad */
+    long sl[2]; /* as two signed longs */
+    unsigned long ul[2]; /* as two unsigned longs */
 };
 
 #ifdef __BIG_ENDIAN
@@ -111,7 +111,7 @@ static void shl(register digit *p, register int len, register int sh)
 {
     register int i;
 
-    for (i = 0; i < len; i++)
+    for ( i = 0; i < len; i++ )
         p[i] = LHALF(p[i] << sh) | (p[i + 1] >> (HALF_BITS - sh));
     p[i] = LHALF(p[i] << sh);
 }
@@ -136,17 +136,19 @@ u64 __qdivrem(u64 uq, u64 vq, u64 *arq)
     /*
      * Take care of special cases: divide by zero, and u < v.
      */
-    if (vq == 0) {
+    if ( vq == 0 )
+    {
         /* divide by zero. */
-        static volatile const unsigned int zero = 0;
+        static const volatile unsigned int zero = 0;
 
         tmp.ul[H] = tmp.ul[L] = 1 / zero;
-        if (arq)
+        if ( arq )
             *arq = uq;
         return (tmp.q);
     }
-    if (uq < vq) {
-        if (arq)
+    if ( uq < vq )
+    {
+        if ( arq )
             *arq = uq;
         return (0);
     }
@@ -178,8 +180,10 @@ u64 __qdivrem(u64 uq, u64 vq, u64 *arq)
     v[2] = LHALF(tmp.ul[H]);
     v[3] = HHALF(tmp.ul[L]);
     v[4] = LHALF(tmp.ul[L]);
-    for (n = 4; v[1] == 0; v++) {
-        if (--n == 1) {
+    for ( n = 4; v[1] == 0; v++ )
+    {
+        if ( --n == 1 )
+        {
             unsigned long rbj; /* r*B+u[j] (not root boy jim) */
             digit q1, q2, q3, q4;
 
@@ -199,7 +203,7 @@ u64 __qdivrem(u64 uq, u64 vq, u64 *arq)
             q3 = rbj / t;
             rbj = COMBINE(rbj % t, u[4]);
             q4 = rbj / t;
-            if (arq)
+            if ( arq )
                 *arq = rbj % t;
             tmp.ul[H] = COMBINE(q1, q2);
             tmp.ul[L] = COMBINE(q3, q4);
@@ -212,9 +216,9 @@ u64 __qdivrem(u64 uq, u64 vq, u64 *arq)
      * there is a complete four-digit quotient at &qspace[1] when
      * we finally stop.
      */
-    for (m = 4 - n; u[1] == 0; u++)
+    for ( m = 4 - n; u[1] == 0; u++ )
         m--;
-    for (i = 4 - m; --i >= 0;)
+    for ( i = 4 - m; --i >= 0; )
         q[i] = 0;
     q += 4 - m;
 
@@ -225,11 +229,12 @@ u64 __qdivrem(u64 uq, u64 vq, u64 *arq)
      * D1: choose multiplier 1 << d to ensure v[1] >= B/2.
      */
     d = 0;
-    for (t = v[1]; t < B / 2; t <<= 1)
+    for ( t = v[1]; t < B / 2; t <<= 1 )
         d++;
-    if (d > 0) {
-        shl(&u[0], m + n, d);  /* u <<= d */
-        shl(&v[1], n - 1, d);  /* v <<= d */
+    if ( d > 0 )
+    {
+        shl(&u[0], m + n, d); /* u <<= d */
+        shl(&v[1], n - 1, d); /* v <<= d */
     }
     /*
      * D2: j = 0.
@@ -237,7 +242,8 @@ u64 __qdivrem(u64 uq, u64 vq, u64 *arq)
     j = 0;
     v1 = v[1]; /* for D3 -- note that v[1..n] are constant */
     v2 = v[2]; /* for D3 */
-    do {
+    do
+    {
         register digit uj0, uj1, uj2;
 
         /*
@@ -251,20 +257,24 @@ u64 __qdivrem(u64 uq, u64 vq, u64 *arq)
         uj0 = u[j + 0]; /* for D3 only -- note that u[j+...] change */
         uj1 = u[j + 1]; /* for D3 only */
         uj2 = u[j + 2]; /* for D3 only */
-        if (uj0 == v1) {
+        if ( uj0 == v1 )
+        {
             qhat = B;
             rhat = uj1;
             goto qhat_too_big;
-        } else {
+        }
+        else
+        {
             unsigned long nn = COMBINE(uj0, uj1);
 
             qhat = nn / v1;
             rhat = nn % v1;
         }
-        while (v2 * qhat > COMBINE(rhat, uj2)) {
+        while ( v2 * qhat > COMBINE(rhat, uj2) )
+        {
         qhat_too_big:
             qhat--;
-            if ((rhat += v1) >= B)
+            if ( (rhat += v1) >= B )
                 break;
         }
         /*
@@ -273,7 +283,8 @@ u64 __qdivrem(u64 uq, u64 vq, u64 *arq)
          * We split this up so that we do not require v[0] = 0,
          * and to eliminate a final special case.
          */
-        for (t = 0, i = n; i > 0; i--) {
+        for ( t = 0, i = n; i > 0; i-- )
+        {
             t = u[i + j] - v[i] * qhat - t;
             u[i + j] = LHALF(t);
             t = (B - HHALF(t)) & (B - 1);
@@ -286,9 +297,11 @@ u64 __qdivrem(u64 uq, u64 vq, u64 *arq)
          * in that (rare) case, qhat was too large (by exactly 1).
          * Fix it by adding v[1..n] to u[j..j+n].
          */
-        if (HHALF(t)) {
+        if ( HHALF(t) )
+        {
             qhat--;
-            for (t = 0, i = n; i > 0; i--) { /* D6: add back. */
+            for ( t = 0, i = n; i > 0; i-- )
+            { /* D6: add back. */
                 t += u[i + j] + v[i];
                 u[i + j] = LHALF(t);
                 t = HHALF(t);
@@ -296,18 +309,19 @@ u64 __qdivrem(u64 uq, u64 vq, u64 *arq)
             u[j] = LHALF(u[j] + t);
         }
         q[j] = qhat;
-    } while (++j <= m);  /* D7: loop on j. */
+    } while ( ++j <= m ); /* D7: loop on j. */
 
     /*
      * If caller wants the remainder, we have to calculate it as
      * u[m..m+n] >> d (this is at most n digits and thus fits in
      * u[m+1..m+n], but we may need more source digits).
      */
-    if (arq) {
-        if (d) {
-            for (i = m + n; i > m; --i)
-                u[i] = (u[i] >> d) |
-                    LHALF(u[i - 1] << (HALF_BITS - d));
+    if ( arq )
+    {
+        if ( d )
+        {
+            for ( i = m + n; i > m; --i )
+                u[i] = (u[i] >> d) | LHALF(u[i - 1] << (HALF_BITS - d));
             u[i] = 0;
         }
         tmp.ul[H] = COMBINE(uspace[1], uspace[2]);
@@ -333,7 +347,6 @@ int64_t __divdi3(int64_t a, int64_t b)
     uq = __qdivrem(ua, ub, (u64 *)0);
     return (neg ? -uq : uq);
 }
-
 
 /*
  * Divide two unsigned quads.

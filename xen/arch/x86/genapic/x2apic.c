@@ -40,7 +40,7 @@ static void cf_check init_apic_ldr_x2apic_cluster(void)
     }
 
     per_cpu(cluster_cpus, this_cpu) = cluster_cpus_spare;
-    for_each_online_cpu ( cpu )
+    for_each_online_cpu(cpu)
     {
         if ( this_cpu == cpu )
             continue;
@@ -68,8 +68,8 @@ static void cf_check send_IPI_self_x2apic(uint8_t vector)
     apic_wrmsr(APIC_SELF_IPI, vector);
 }
 
-static void cf_check send_IPI_mask_x2apic_phys(
-    const cpumask_t *cpumask, int vector)
+static void cf_check send_IPI_mask_x2apic_phys(const cpumask_t *cpumask,
+                                               int vector)
 {
     unsigned int cpu;
     unsigned long flags;
@@ -89,21 +89,21 @@ static void cf_check send_IPI_mask_x2apic_phys(
 
     local_irq_save(flags);
 
-    for_each_cpu ( cpu, cpumask )
+    for_each_cpu(cpu, cpumask)
     {
         if ( !cpu_online(cpu) || (cpu == smp_processor_id()) )
             continue;
         msr_content = cpu_physical_id(cpu);
-        msr_content = (msr_content << 32) | APIC_DM_FIXED |
-                      APIC_DEST_PHYSICAL | vector;
+        msr_content = (msr_content << 32) | APIC_DM_FIXED | APIC_DEST_PHYSICAL |
+                      vector;
         apic_wrmsr(APIC_ICR, msr_content);
     }
 
     local_irq_restore(flags);
 }
 
-static void cf_check send_IPI_mask_x2apic_cluster(
-    const cpumask_t *cpumask, int vector)
+static void cf_check send_IPI_mask_x2apic_cluster(const cpumask_t *cpumask,
+                                                  int vector)
 {
     unsigned int cpu = smp_processor_id();
     cpumask_t *ipimask = per_cpu(scratch_mask, cpu);
@@ -122,7 +122,7 @@ static void cf_check send_IPI_mask_x2apic_cluster(
         uint64_t msr_content = 0;
 
         cluster_cpus = per_cpu(cluster_cpus, cpumask_first(ipimask));
-        for_each_cpu ( cpu, cluster_cpus )
+        for_each_cpu(cpu, cluster_cpus)
         {
             if ( !cpumask_test_cpu(cpu, ipimask) )
                 continue;
@@ -130,8 +130,8 @@ static void cf_check send_IPI_mask_x2apic_cluster(
         }
 
         BUG_ON(!(msr_content & 0xffff));
-        msr_content = (msr_content << 32) | APIC_DM_FIXED |
-                      APIC_DEST_LOGICAL | vector;
+        msr_content = (msr_content << 32) | APIC_DM_FIXED | APIC_DEST_LOGICAL |
+                      vector;
         apic_wrmsr(APIC_ICR, msr_content);
     }
 
@@ -179,13 +179,14 @@ static const struct genapic __initconst_cf_clobber apic_x2apic_mixed = {
     .send_IPI_self = send_IPI_self_x2apic,
 };
 
-static int cf_check update_clusterinfo(
-    struct notifier_block *nfb, unsigned long action, void *hcpu)
+static int cf_check update_clusterinfo(struct notifier_block *nfb,
+                                       unsigned long action, void *hcpu)
 {
     unsigned int cpu = (unsigned long)hcpu;
     int err = 0;
 
-    switch (action) {
+    switch ( action )
+    {
     case CPU_UP_PREPARE:
         per_cpu(cpu_2_logical_apicid, cpu) = BAD_APICID;
         if ( !cluster_cpus_spare )
@@ -213,15 +214,16 @@ static int cf_check update_clusterinfo(
     return notifier_from_errno(err);
 }
 
-static struct notifier_block x2apic_cpu_nfb = {
-   .notifier_call = update_clusterinfo
-};
+static struct notifier_block x2apic_cpu_nfb = { .notifier_call =
+                                                    update_clusterinfo };
 
 static int8_t __initdata x2apic_phys = -1;
 boolean_param("x2apic_phys", x2apic_phys);
 
 enum {
-   unset, physical, mixed
+    unset,
+    physical,
+    mixed
 } static __initdata x2apic_mode = unset;
 
 static int __init cf_check parse_x2apic_mode(const char *s)
@@ -235,6 +237,7 @@ static int __init cf_check parse_x2apic_mode(const char *s)
 
     return 0;
 }
+
 custom_param("x2apic-mode", parse_x2apic_mode);
 
 const struct genapic *__init apic_x2apic_probe(void)
@@ -251,9 +254,10 @@ const struct genapic *__init apic_x2apic_probe(void)
             x2apic_mode = physical;
         }
         else
-            x2apic_mode = IS_ENABLED(CONFIG_X2APIC_MIXED) ? mixed
-                          : (IS_ENABLED(CONFIG_X2APIC_PHYSICAL) ? physical
-                                                                : mixed);
+            x2apic_mode = IS_ENABLED(CONFIG_X2APIC_MIXED)
+                              ? mixed
+                              : (IS_ENABLED(CONFIG_X2APIC_PHYSICAL) ? physical
+                                                                    : mixed);
     }
 
     if ( x2apic_mode == physical )
@@ -261,7 +265,8 @@ const struct genapic *__init apic_x2apic_probe(void)
 
     if ( !this_cpu(cluster_cpus) )
     {
-        update_clusterinfo(NULL, CPU_UP_PREPARE,
+        update_clusterinfo(NULL,
+                           CPU_UP_PREPARE,
                            (void *)(long)smp_processor_id());
         init_apic_ldr_x2apic_cluster();
         register_cpu_notifier(&x2apic_cpu_nfb);

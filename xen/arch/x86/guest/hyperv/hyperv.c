@@ -41,16 +41,16 @@ const struct hypervisor_ops *__init hyperv_probe(void)
 {
     uint32_t eax, ebx, ecx, edx;
     uint64_t required_msrs = HV_X64_MSR_HYPERCALL_AVAILABLE |
-        HV_X64_MSR_VP_INDEX_AVAILABLE;
+                             HV_X64_MSR_VP_INDEX_AVAILABLE;
 
     cpuid(0x40000000, &eax, &ebx, &ecx, &edx);
-    if ( !((ebx == 0x7263694d) &&  /* "Micr" */
-           (ecx == 0x666f736f) &&  /* "osof" */
-           (edx == 0x76482074)) )  /* "t Hv" */
+    if ( !((ebx == 0x7263694d) && /* "Micr" */
+           (ecx == 0x666f736f) && /* "osof" */
+           (edx == 0x76482074)) ) /* "t Hv" */
         return NULL;
 
     cpuid(0x40000001, &eax, &ebx, &ecx, &edx);
-    if ( eax != 0x31237648 )    /* Hv#1 */
+    if ( eax != 0x31237648 ) /* Hv#1 */
         return NULL;
 
     /* Extract more information from Hyper-V */
@@ -195,8 +195,8 @@ static void __init cf_check e820_fixup(void)
         panic("Unable to reserve Hyper-V hypercall range\n");
 }
 
-static int cf_check flush_tlb(
-    const cpumask_t *mask, const void *va, unsigned int flags)
+static int cf_check flush_tlb(const cpumask_t *mask, const void *va,
+                              unsigned int flags)
 {
     if ( !(ms_hyperv.hints & HV_X64_REMOTE_TLB_FLUSH_RECOMMENDED) )
         return -EOPNOTSUPP;

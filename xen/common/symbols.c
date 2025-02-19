@@ -56,16 +56,20 @@ static unsigned int symbols_expand_symbol(unsigned int off, char *result)
 
     /* for every byte on the compressed symbol data, copy the table
        entry for that byte */
-    while(len) {
-        tptr = &symbols_token_table[ symbols_token_index[*data] ];
+    while ( len )
+    {
+        tptr = &symbols_token_table[symbols_token_index[*data]];
         data++;
         len--;
 
-        while (*tptr) {
-            if(skipped_first) {
+        while ( *tptr )
+        {
+            if ( skipped_first )
+            {
                 *result = *tptr;
                 result++;
-            } else
+            }
+            else
                 skipped_first = 1;
             tptr++;
         }
@@ -86,13 +90,13 @@ static unsigned int get_symbol_offset(unsigned long pos)
 
     /* use the closest marker we have. We have markers every 256 positions,
      * so that should be close enough */
-    name = &symbols_names[ symbols_markers[pos>>8] ];
+    name = &symbols_names[symbols_markers[pos >> 8]];
 
     /* sequentially scan all the symbols up to the point we're searching for.
      * Every symbol is stored in a [<len>][<len> bytes of data] format, so we
      * just need to add the len to the current pointer for every symbol we
      * wish to skip */
-    for(i = 0; i < (pos&0xFF); i++)
+    for ( i = 0; i < (pos & 0xFF); i++ )
         name = name + (*name) + 1;
 
     return name - symbols_names;
@@ -103,10 +107,8 @@ bool is_active_kernel_text(unsigned long addr)
     return !!find_text_region(addr);
 }
 
-const char *symbols_lookup(unsigned long addr,
-                           unsigned long *symbolsize,
-                           unsigned long *offset,
-                           char *namebuf)
+const char *symbols_lookup(unsigned long addr, unsigned long *symbolsize,
+                           unsigned long *offset, char *namebuf)
 {
     unsigned long i, low, high, mid;
     unsigned long symbol_end = 0;
@@ -116,42 +118,47 @@ const char *symbols_lookup(unsigned long addr,
     namebuf[0] = 0;
 
     region = find_text_region(addr);
-    if (!region)
+    if ( !region )
         return NULL;
 
-    if (region->symbols_lookup)
+    if ( region->symbols_lookup )
         return region->symbols_lookup(addr, symbolsize, offset, namebuf);
 
-        /* do a binary search on the sorted symbols_addresses array */
+    /* do a binary search on the sorted symbols_addresses array */
     low = 0;
     high = symbols_num_syms;
 
-    while (high-low > 1) {
+    while ( high - low > 1 )
+    {
         mid = (low + high) / 2;
-        if (symbols_address(mid) <= addr) low = mid;
-        else high = mid;
+        if ( symbols_address(mid) <= addr )
+            low = mid;
+        else
+            high = mid;
     }
 
     /* search for the first aliased symbol. Aliased symbols are
            symbols with the same address */
-    while (low && symbols_address(low - 1) == symbols_address(low))
+    while ( low && symbols_address(low - 1) == symbols_address(low) )
         --low;
 
-        /* Grab name */
+    /* Grab name */
     symbols_expand_symbol(get_symbol_offset(low), namebuf);
 
     /* Search for next non-aliased symbol */
-    for (i = low + 1; i < symbols_num_syms; i++) {
-        if (symbols_address(i) > symbols_address(low)) {
+    for ( i = low + 1; i < symbols_num_syms; i++ )
+    {
+        if ( symbols_address(i) > symbols_address(low) )
+        {
             symbol_end = symbols_address(i);
             break;
         }
     }
 
     /* if we found no next symbol, we use the end of the section */
-    if (!symbol_end)
-        symbol_end = is_kernel_inittext(addr) ?
-            (unsigned long)_einittext : (unsigned long)_etext;
+    if ( !symbol_end )
+        symbol_end = is_kernel_inittext(addr) ? (unsigned long)_einittext
+                                              : (unsigned long)_etext;
 
     *symbolsize = symbol_end - symbols_address(low);
     *offset = addr - symbols_address(low);
@@ -171,8 +178,8 @@ static char symbols_get_symbol_type(unsigned int off)
     return symbols_token_table[symbols_token_index[symbols_names[off + 1]]];
 }
 
-int xensyms_read(uint32_t *symnum, char *type,
-                 unsigned long *address, char *name)
+int xensyms_read(uint32_t *symnum, char *type, unsigned long *address,
+                 char *name)
 {
     /*
      * Symbols are most likely accessed sequentially so we remember position
@@ -246,10 +253,11 @@ unsigned long symbols_lookup_by_name(const char *symname)
             return symbols_address(s->addr);
     }
 #else
-    do {
+    do
+    {
         rc = xensyms_read(&symnum, &type, &addr, name);
         if ( rc )
-           break;
+            break;
 
         if ( !strcmp(name, symname) )
             return addr;

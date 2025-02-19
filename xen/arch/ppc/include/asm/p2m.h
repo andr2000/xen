@@ -13,17 +13,16 @@
  * them in the p2m entry.
  */
 typedef enum {
-    p2m_invalid = 0,    /* Nothing mapped here */
-    p2m_ram_rw,         /* Normal read/write guest RAM */
-    p2m_ram_ro,         /* Read-only; writes are silently dropped */
-    p2m_max_real_type,  /* Types after this won't be store in the p2m */
+    p2m_invalid = 0, /* Nothing mapped here */
+    p2m_ram_rw, /* Normal read/write guest RAM */
+    p2m_ram_ro, /* Read-only; writes are silently dropped */
+    p2m_max_real_type, /* Types after this won't be store in the p2m */
 } p2m_type_t;
 
 #include <xen/p2m-common.h>
 
 static inline int get_page_and_type(struct page_info *page,
-                                    struct domain *domain,
-                                    unsigned long type)
+                                    struct domain *domain, unsigned long type)
 {
     BUG_ON("unimplemented");
     return 1;
@@ -34,8 +33,9 @@ typedef unsigned int p2m_query_t;
 #define P2M_ALLOC    (1u<<0)   /* Populate PoD and paged-out entries */
 #define P2M_UNSHARE  (1u<<1)   /* Break CoW sharing */
 
-static inline struct page_info *get_page_from_gfn(
-    struct domain *d, unsigned long gfn, p2m_type_t *t, p2m_query_t q)
+static inline struct page_info *get_page_from_gfn(struct domain *d,
+                                                  unsigned long gfn,
+                                                  p2m_type_t *t, p2m_query_t q)
 {
     BUG_ON("unimplemented");
     return NULL;
@@ -46,28 +46,26 @@ static inline void memory_type_changed(struct domain *d)
     BUG_ON("unimplemented");
 }
 
-
-static inline int guest_physmap_mark_populate_on_demand(struct domain *d, unsigned long gfn,
+static inline int guest_physmap_mark_populate_on_demand(struct domain *d,
+                                                        unsigned long gfn,
                                                         unsigned int order)
 {
     BUG_ON("unimplemented");
     return 1;
 }
 
-static inline int guest_physmap_add_entry(struct domain *d,
-                            gfn_t gfn,
-                            mfn_t mfn,
-                            unsigned long page_order,
-                            p2m_type_t t)
+static inline int guest_physmap_add_entry(struct domain *d, gfn_t gfn,
+                                          mfn_t mfn, unsigned long page_order,
+                                          p2m_type_t t)
 {
     BUG_ON("unimplemented");
     return 1;
 }
 
 /* Untyped version for RAM only, for compatibility */
-static inline int __must_check
-guest_physmap_add_page(struct domain *d, gfn_t gfn, mfn_t mfn,
-                       unsigned int page_order)
+static inline int __must_check guest_physmap_add_page(struct domain *d,
+                                                      gfn_t gfn, mfn_t mfn,
+                                                      unsigned int page_order)
 {
     return guest_physmap_add_entry(d, gfn, mfn, page_order, p2m_ram_rw);
 }

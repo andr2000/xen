@@ -29,6 +29,7 @@ integer_param("vesa-ram", vram_total);
 static unsigned int __initdata vram_remap;
 
 static unsigned int __initdata font_height;
+
 static int __init cf_check parse_font_height(const char *s)
 {
     if ( simple_strtoul(s, &s, 10) == 8 && (*s++ == 'x') )
@@ -38,6 +39,7 @@ static int __init cf_check parse_font_height(const char *s)
 
     return 0;
 }
+
 custom_param("font", parse_font_height);
 
 static inline paddr_t lfb_base(void)
@@ -55,8 +57,9 @@ void __init vesa_early_init(void)
         return;
 
     if ( font_height == 0 ) /* choose a sensible default */
-        font = ((vlfb_info.height <= 600) ? &font_vga_8x8 :
-                (vlfb_info.height <= 768) ? &font_vga_8x14 : &font_vga_8x16);
+        font = ((vlfb_info.height <= 600)   ? &font_vga_8x8
+                : (vlfb_info.height <= 768) ? &font_vga_8x14
+                                            : &font_vga_8x16);
     else if ( font_height <= 8 )
         font = &font_vga_8x8;
     else if ( font_height <= 14 )
@@ -104,30 +107,41 @@ void __init vesa_init(void)
 
     memset(lfb, 0, vram_remap);
 
-    printk(XENLOG_INFO "vesafb: framebuffer at 0x%" PRIpaddr ", mapped to 0x%p, using %uk, total %uk\n",
-           lfb_base(), lfb,
-           vram_remap >> 10, vram_total >> 10);
+    printk(XENLOG_INFO "vesafb: framebuffer at 0x%" PRIpaddr
+                       ", mapped to 0x%p, using %uk, total %uk\n",
+           lfb_base(),
+           lfb,
+           vram_remap >> 10,
+           vram_total >> 10);
     printk(XENLOG_INFO "vesafb: mode is %dx%dx%u, linelength=%d, font %ux%u\n",
-           vlfb_info.width, vlfb_info.height,
-           vlfb_info.bits_per_pixel, vlfb_info.bytes_per_line,
-           font->width, font->height);
-    printk(XENLOG_INFO "vesafb: %scolor: size=%d:%d:%d:%d, "
-           "shift=%d:%d:%d:%d\n",
-           vlfb_info.bits_per_pixel > 8 ? "True" :
-           vga_compat ? "Pseudo" : "Static Pseudo",
-           vlfb_info.rsvd_size, vlfb_info.red_size,
-           vlfb_info.green_size, vlfb_info.blue_size,
-           vlfb_info.rsvd_pos, vlfb_info.red_pos,
-           vlfb_info.green_pos, vlfb_info.blue_pos);
+           vlfb_info.width,
+           vlfb_info.height,
+           vlfb_info.bits_per_pixel,
+           vlfb_info.bytes_per_line,
+           font->width,
+           font->height);
+    printk(XENLOG_INFO
+           "vesafb: %scolor: size=%d:%d:%d:%d, " "shift=%d:%d:%d:%d\n",
+           vlfb_info.bits_per_pixel > 8 ? "True"
+           : vga_compat                 ? "Pseudo"
+                                        : "Static Pseudo",
+           vlfb_info.rsvd_size,
+           vlfb_info.red_size,
+           vlfb_info.green_size,
+           vlfb_info.blue_size,
+           vlfb_info.rsvd_pos,
+           vlfb_info.red_pos,
+           vlfb_info.green_pos,
+           vlfb_info.blue_pos);
 
     if ( vlfb_info.bits_per_pixel > 8 )
     {
         /* Light grey in truecolor. */
         unsigned int grey = 0xaaaaaaaaU;
         lfbp.pixel_on =
-            ((grey >> (32 - vlfb_info.  red_size)) << vlfb_info.  red_pos) |
+            ((grey >> (32 - vlfb_info.red_size)) << vlfb_info.red_pos) |
             ((grey >> (32 - vlfb_info.green_size)) << vlfb_info.green_pos) |
-            ((grey >> (32 - vlfb_info. blue_size)) << vlfb_info. blue_pos);
+            ((grey >> (32 - vlfb_info.blue_size)) << vlfb_info.blue_pos);
     }
     else
     {
@@ -142,7 +156,7 @@ void __init vesa_init(void)
 
 static void cf_check lfb_flush(void)
 {
-    __asm__ __volatile__ ("sfence" : : : "memory");
+    __asm__ __volatile__("sfence" : : : "memory");
 }
 
 void __init vesa_endboot(bool keep)
@@ -156,7 +170,8 @@ void __init vesa_endboot(bool keep)
     {
         unsigned int i, bpp = (vlfb_info.bits_per_pixel + 7) >> 3;
         for ( i = 0; i < vlfb_info.height; i++ )
-            memset(lfb + i * vlfb_info.bytes_per_line, 0,
+            memset(lfb + i * vlfb_info.bytes_per_line,
+                   0,
                    vlfb_info.width * bpp);
         lfb_flush();
         lfb_free();

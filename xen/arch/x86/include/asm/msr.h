@@ -14,28 +14,28 @@
 #include <asm/cpufeature.h>
 #include <asm/processor.h>
 
-#define rdmsr(msr,val1,val2) \
+#define rdmsr(msr, val1, val2) \
      __asm__ __volatile__("rdmsr" \
 			  : "=a" (val1), "=d" (val2) \
 			  : "c" (msr))
 
-#define rdmsrl(msr,val) do { unsigned long a__,b__; \
+#define rdmsrl(msr, val) do { unsigned long a__,b__; \
        __asm__ __volatile__("rdmsr" \
 			    : "=a" (a__), "=d" (b__) \
 			    : "c" (msr)); \
        val = a__ | ((u64)b__<<32); \
 } while(0)
 
-#define wrmsr(msr,val1,val2) \
+#define wrmsr(msr, val1, val2) \
      __asm__ __volatile__("wrmsr" \
 			  : /* no outputs */ \
 			  : "c" (msr), "a" (val1), "d" (val2))
 
 static inline void wrmsrl(unsigned int msr, uint64_t val)
 {
-        uint32_t lo = val, hi = val >> 32;
+    uint32_t lo = val, hi = val >> 32;
 
-        wrmsr(msr, lo, hi);
+    wrmsr(msr, lo, hi);
 }
 
 /* Non-serialising WRMSR, when available.  Falls back to a serialising WRMSR. */
@@ -46,12 +46,15 @@ static inline void wrmsr_ns(uint32_t msr, uint32_t lo, uint32_t hi)
      * prefix to avoid a trailing NOP.
      */
     alternative_input(".byte 0x2e; wrmsr",
-                      ".byte 0x0f,0x01,0xc6", X86_FEATURE_WRMSRNS,
-                      "c" (msr), "a" (lo), "d" (hi));
+                      ".byte 0x0f,0x01,0xc6",
+                      X86_FEATURE_WRMSRNS,
+                      "c"(msr),
+                      "a"(lo),
+                      "d"(hi));
 }
 
 /* rdmsr with exception handling */
-#define rdmsr_safe(msr,val) ({\
+#define rdmsr_safe(msr, val) ({\
     int rc_; \
     uint64_t lo_, hi_; \
     __asm__ __volatile__( \
@@ -75,13 +78,11 @@ static inline int wrmsr_safe(unsigned int msr, uint64_t val)
     hi = (uint32_t)(val >> 32);
 
     __asm__ __volatile__(
-        "1: wrmsr\n2:\n"
-        ".section .fixup,\"ax\"\n"
-        "3: movl %5,%0\n; jmp 2b\n"
-        ".previous\n"
-        _ASM_EXTABLE(1b, 3b)
-        : "=&r" (rc)
-        : "c" (msr), "a" (lo), "d" (hi), "0" (0), "i" (-EFAULT));
+        "1: wrmsr\n2:\n" ".section .fixup,\"ax\"\n" "3: movl %5,%0\n; jmp 2b\n" ".previous\n" _ASM_EXTABLE(
+            1b,
+            3b)
+        : "=&r"(rc)
+        : "c"(msr), "a"(lo), "d"(hi), "0"(0), "i"(-EFAULT));
     return rc;
 }
 
@@ -100,7 +101,7 @@ static inline uint64_t rdtsc(void)
 {
     uint64_t low, high;
 
-    __asm__ __volatile__("rdtsc" : "=a" (low), "=d" (high));
+    __asm__ __volatile__("rdtsc" : "=a"(low), "=d"(high));
 
     return (high << 32) | low;
 }
@@ -119,9 +120,11 @@ static inline uint64_t rdtsc_ordered(void)
      * instructions to retire before reading the timestamp counter" (APM).
      */
     alternative_io_2("lfence; rdtsc",
-                     "mfence; rdtsc", X86_FEATURE_MFENCE_RDTSC,
-                     "rdtscp",        X86_FEATURE_RDTSCP,
-                     ASM_OUTPUT2("=a" (low), "=d" (high), "=c" (aux)),
+                     "mfence; rdtsc",
+                     X86_FEATURE_MFENCE_RDTSC,
+                     "rdtscp",
+                     X86_FEATURE_RDTSCP,
+                     ASM_OUTPUT2("=a"(low), "=d"(high), "=c"(aux)),
                      /* no inputs */);
 
     return (high << 32) | low;
@@ -135,7 +138,7 @@ static inline uint64_t rdtsc_ordered(void)
     __write_tsc(val);                                           \
 })
 
-#define rdpmc(counter,low,high) \
+#define rdpmc(counter, low, high) \
      __asm__ __volatile__("rdpmc" \
 			  : "=a" (low), "=d" (high) \
 			  : "c" (counter))
@@ -153,9 +156,9 @@ static inline unsigned long __rdfsbase(void)
     unsigned long base;
 
 #ifdef HAVE_AS_FSGSBASE
-    asm volatile ( "rdfsbase %0" : "=r" (base) );
+    asm volatile("rdfsbase %0" : "=r"(base));
 #else
-    asm volatile ( ".byte 0xf3, 0x48, 0x0f, 0xae, 0xc0" : "=a" (base) );
+    asm volatile(".byte 0xf3, 0x48, 0x0f, 0xae, 0xc0" : "=a"(base));
 #endif
 
     return base;
@@ -166,9 +169,9 @@ static inline unsigned long __rdgsbase(void)
     unsigned long base;
 
 #ifdef HAVE_AS_FSGSBASE
-    asm volatile ( "rdgsbase %0" : "=r" (base) );
+    asm volatile("rdgsbase %0" : "=r"(base));
 #else
-    asm volatile ( ".byte 0xf3, 0x48, 0x0f, 0xae, 0xc8" : "=a" (base) );
+    asm volatile(".byte 0xf3, 0x48, 0x0f, 0xae, 0xc8" : "=a"(base));
 #endif
 
     return base;
@@ -177,18 +180,18 @@ static inline unsigned long __rdgsbase(void)
 static inline void __wrfsbase(unsigned long base)
 {
 #ifdef HAVE_AS_FSGSBASE
-    asm volatile ( "wrfsbase %0" :: "r" (base) );
+    asm volatile("wrfsbase %0" ::"r"(base));
 #else
-    asm volatile ( ".byte 0xf3, 0x48, 0x0f, 0xae, 0xd0" :: "a" (base) );
+    asm volatile(".byte 0xf3, 0x48, 0x0f, 0xae, 0xd0" ::"a"(base));
 #endif
 }
 
 static inline void __wrgsbase(unsigned long base)
 {
 #ifdef HAVE_AS_FSGSBASE
-    asm volatile ( "wrgsbase %0" :: "r" (base) );
+    asm volatile("wrgsbase %0" ::"r"(base));
 #else
-    asm volatile ( ".byte 0xf3, 0x48, 0x0f, 0xae, 0xd8" :: "a" (base) );
+    asm volatile(".byte 0xf3, 0x48, 0x0f, 0xae, 0xd8" ::"a"(base));
 #endif
 }
 
@@ -222,9 +225,9 @@ static inline unsigned long read_gs_shadow(void)
 
     if ( read_cr4() & X86_CR4_FSGSBASE )
     {
-        asm volatile ( "swapgs" );
+        asm volatile("swapgs");
         base = __rdgsbase();
-        asm volatile ( "swapgs" );
+        asm volatile("swapgs");
     }
     else
         rdmsrl(MSR_SHADOW_GS_BASE, base);
@@ -252,15 +255,12 @@ static inline void write_gs_shadow(unsigned long base)
 {
     if ( read_cr4() & X86_CR4_FSGSBASE )
     {
-        asm volatile ( "swapgs\n\t"
+        asm volatile("swapgs\n\t"
 #ifdef HAVE_AS_FSGSBASE
-                       "wrgsbase %0\n\t"
-                       "swapgs"
-                       :: "r" (base) );
+                     "wrgsbase %0\n\t" "swapgs" ::"r"(base));
 #else
-                       ".byte 0xf3, 0x48, 0x0f, 0xae, 0xd8\n\t"
-                       "swapgs"
-                       :: "a" (base) );
+                     ".byte 0xf3, 0x48, 0x0f, 0xae, 0xd8\n\t" "swapgs" ::"a"(
+                         base));
 #endif
     }
     else
@@ -268,6 +268,7 @@ static inline void write_gs_shadow(unsigned long base)
 }
 
 DECLARE_PER_CPU(uint64_t, efer);
+
 static inline uint64_t read_efer(void)
 {
     return this_cpu(efer);
@@ -298,8 +299,7 @@ static inline void wrmsr_tsc_aux(uint32_t val)
 uint64_t msr_spec_ctrl_valid_bits(const struct cpu_policy *cp);
 
 /* Container object for per-vCPU MSRs */
-struct vcpu_msrs
-{
+struct vcpu_msrs {
     /*
      * 0x00000048 - MSR_SPEC_CTRL
      * 0xc001011f - MSR_VIRT_SPEC_CTRL (if X86_FEATURE_AMD_SSBD)
@@ -338,6 +338,7 @@ struct vcpu_msrs
      */
     union {
         uint32_t raw;
+
         struct {
             bool cpuid_faulting:1;
         };
@@ -366,8 +367,10 @@ struct vcpu_msrs
          * context switch.
          */
         uint64_t status;
+
         union {
             uint64_t output_mask;
+
             struct {
                 uint32_t output_limit;
                 uint32_t output_offset;

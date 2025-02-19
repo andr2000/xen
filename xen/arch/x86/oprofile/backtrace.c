@@ -16,7 +16,7 @@
 #include <xen/guest_access.h>
 
 struct __packed frame_head {
-    struct frame_head * ebp;
+    struct frame_head *ebp;
     unsigned long ret;
 };
 typedef struct frame_head frame_head_t;
@@ -31,28 +31,27 @@ static struct frame_head *
 dump_hypervisor_backtrace(struct vcpu *vcpu, const struct frame_head *head,
                           int mode)
 {
-    if (!xenoprof_add_trace(vcpu, head->ret, mode))
+    if ( !xenoprof_add_trace(vcpu, head->ret, mode) )
         return 0;
-    
+
     /* frame pointers should strictly progress back up the stack
      * (towards higher addresses) */
-    if (head >= head->ebp)
+    if ( head >= head->ebp )
         return NULL;
-    
+
     return head->ebp;
 }
 
 static inline int is_32bit_vcpu(struct vcpu *vcpu)
 {
-    if (is_hvm_vcpu(vcpu))
+    if ( is_hvm_vcpu(vcpu) )
         return !hvm_long_mode_active(vcpu);
     else
         return is_pv_32bit_vcpu(vcpu);
 }
 
 static struct frame_head *
-dump_guest_backtrace(struct vcpu *vcpu, const struct frame_head *head,
-                     int mode)
+dump_guest_backtrace(struct vcpu *vcpu, const struct frame_head *head, int mode)
 {
     /* Also check accessibility of one struct frame_head beyond. */
     frame_head_t bufhead[2];
@@ -68,15 +67,15 @@ dump_guest_backtrace(struct vcpu *vcpu, const struct frame_head *head,
     }
     else if ( raw_copy_from_guest(bufhead, head, sizeof(bufhead)) )
         return 0;
-    
+
     if ( !xenoprof_add_trace(vcpu, bufhead[0].ret, mode) )
         return 0;
-    
+
     /* frame pointers should strictly progress back up the stack
      * (towards higher addresses) */
     if ( head >= bufhead[0].ebp )
         return NULL;
-    
+
     return bufhead[0].ebp;
 }
 
@@ -112,7 +111,7 @@ dump_guest_backtrace(struct vcpu *vcpu, const struct frame_head *head,
  */
 #if defined(CONFIG_FRAME_POINTER)
 static int valid_hypervisor_stack(const struct frame_head *head,
-				  const struct cpu_user_regs *regs)
+                                  const struct cpu_user_regs *regs)
 {
     unsigned long headaddr = (unsigned long)head;
     unsigned long stack = (unsigned long)regs->rsp;
@@ -123,23 +122,24 @@ static int valid_hypervisor_stack(const struct frame_head *head,
 #else
 /* without fp, it's just junk */
 static int valid_hypervisor_stack(const struct frame_head *head,
-				  const struct cpu_user_regs *regs)
+                                  const struct cpu_user_regs *regs)
 {
     return 0;
 }
 #endif
 
 void xenoprof_backtrace(struct vcpu *vcpu, const struct cpu_user_regs *regs,
-			unsigned long depth, int mode)
+                        unsigned long depth, int mode)
 {
     const struct frame_head *head = (void *)regs->rbp;
 
-    if (mode > 1) {
-        while (depth-- && valid_hypervisor_stack(head, regs))
+    if ( mode > 1 )
+    {
+        while ( depth-- && valid_hypervisor_stack(head, regs) )
             head = dump_hypervisor_backtrace(vcpu, head, mode);
         return;
     }
 
-    while (depth-- && head)
+    while ( depth-- && head )
         head = dump_guest_backtrace(vcpu, head, mode);
 }

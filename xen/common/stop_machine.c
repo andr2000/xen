@@ -107,7 +107,7 @@ int stop_machine_run(int (*fn)(void *data), void *data, unsigned int cpu)
 
     smp_wmb();
 
-    for_each_online_cpu ( i )
+    for_each_online_cpu(i)
         if ( i != this )
             tasklet_schedule_on_cpu(&per_cpu(stopmachine_tasklet, i), i);
 
@@ -182,26 +182,25 @@ static void cf_check stopmachine_action(void *data)
     local_irq_enable();
 }
 
-static int cf_check cpu_callback(
-    struct notifier_block *nfb, unsigned long action, void *hcpu)
+static int cf_check cpu_callback(struct notifier_block *nfb,
+                                 unsigned long action, void *hcpu)
 {
     unsigned int cpu = (unsigned long)hcpu;
 
     if ( action == CPU_UP_PREPARE )
         tasklet_init(&per_cpu(stopmachine_tasklet, cpu),
-                     stopmachine_action, hcpu);
+                     stopmachine_action,
+                     hcpu);
 
     return NOTIFY_DONE;
 }
 
-static struct notifier_block cpu_nfb = {
-    .notifier_call = cpu_callback
-};
+static struct notifier_block cpu_nfb = { .notifier_call = cpu_callback };
 
 static int __init cf_check cpu_stopmachine_init(void)
 {
     unsigned int cpu;
-    for_each_online_cpu ( cpu )
+    for_each_online_cpu(cpu)
     {
         void *hcpu = (void *)(long)cpu;
         cpu_callback(&cpu_nfb, CPU_UP_PREPARE, hcpu);
@@ -209,4 +208,5 @@ static int __init cf_check cpu_stopmachine_init(void)
     register_cpu_notifier(&cpu_nfb);
     return 0;
 }
+
 __initcall(cpu_stopmachine_init);

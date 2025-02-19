@@ -83,8 +83,8 @@ int guest_rdmsr(struct vcpu *v, uint32_t msr, uint64_t *val)
          * The MSR has existed on all Intel parts since before the 64bit days,
          * and is implemented by other vendors.
          */
-        if ( !(cp->x86_vendor & (X86_VENDOR_INTEL | X86_VENDOR_CENTAUR |
-                                 X86_VENDOR_SHANGHAI)) )
+        if ( !(cp->x86_vendor &
+               (X86_VENDOR_INTEL | X86_VENDOR_CENTAUR | X86_VENDOR_SHANGHAI)) )
             goto gp_fault;
 
         *val = IA32_FEATURE_CONTROL_LOCK;
@@ -143,10 +143,10 @@ int guest_rdmsr(struct vcpu *v, uint32_t msr, uint64_t *val)
 
     case MSR_P5_MC_ADDR:
     case MSR_P5_MC_TYPE:
-    case MSR_IA32_MCG_CAP     ... MSR_IA32_MCG_CTL:      /* 0x179 -> 0x17b */
-    case MSR_IA32_MCx_CTL2(0) ... MSR_IA32_MCx_CTL2(31): /* 0x280 -> 0x29f */
-    case MSR_IA32_MCx_CTL(0)  ... MSR_IA32_MCx_MISC(31): /* 0x400 -> 0x47f */
-    case MSR_IA32_MCG_EXT_CTL:                           /* 0x4d0 */
+    case MSR_IA32_MCG_CAP ... MSR_IA32_MCG_CTL: /* 0x179 -> 0x17b */
+    case MSR_IA32_MCx_CTL2(0)... MSR_IA32_MCx_CTL2(31): /* 0x280 -> 0x29f */
+    case MSR_IA32_MCx_CTL(0)... MSR_IA32_MCx_MISC(31): /* 0x400 -> 0x47f */
+    case MSR_IA32_MCG_EXT_CTL: /* 0x4d0 */
         if ( vmce_rdmsr(msr, val) < 0 )
             goto gp_fault;
         break;
@@ -276,10 +276,11 @@ int guest_rdmsr(struct vcpu *v, uint32_t msr, uint64_t *val)
             rdmsrl(msr, *val);
         else
 #endif
-            *val = msrs->dr_mask[
-                array_index_nospec((msr == MSR_AMD64_DR0_ADDRESS_MASK)
-                                   ? 0 : (msr - MSR_AMD64_DR1_ADDRESS_MASK + 1),
-                                   ARRAY_SIZE(msrs->dr_mask))];
+            *val = msrs->dr_mask[array_index_nospec(
+                (msr == MSR_AMD64_DR0_ADDRESS_MASK)
+                    ? 0
+                    : (msr - MSR_AMD64_DR1_ADDRESS_MASK + 1),
+                ARRAY_SIZE(msrs->dr_mask))];
         break;
 
         /*
@@ -298,14 +299,14 @@ int guest_rdmsr(struct vcpu *v, uint32_t msr, uint64_t *val)
 
     return ret;
 
- get_reg: /* Delegate register access to per-vm-type logic. */
+get_reg: /* Delegate register access to per-vm-type logic. */
     if ( is_pv_domain(d) )
         *val = pv_get_reg(v, msr);
     else
         *val = hvm_get_reg(v, msr);
     return X86EMUL_OKAY;
 
- gp_fault:
+gp_fault:
     return X86EMUL_EXCEPTION;
 }
 
@@ -323,15 +324,15 @@ uint64_t msr_spec_ctrl_valid_bits(const struct cpu_policy *cp)
      * Note: SPEC_CTRL_STIBP is specified as safe to use (i.e. ignored)
      * when STIBP isn't enumerated in hardware.
      */
-    return (SPEC_CTRL_IBRS | SPEC_CTRL_STIBP |
-            (ssbd       ? SPEC_CTRL_SSBD       : 0) |
-            (psfd       ? SPEC_CTRL_PSFD       : 0) |
+    return (SPEC_CTRL_IBRS | SPEC_CTRL_STIBP | (ssbd ? SPEC_CTRL_SSBD : 0) |
+            (psfd ? SPEC_CTRL_PSFD : 0) |
             (cp->feat.ipred_ctrl
-             ? (SPEC_CTRL_IPRED_DIS_U | SPEC_CTRL_IPRED_DIS_S) : 0) |
+                 ? (SPEC_CTRL_IPRED_DIS_U | SPEC_CTRL_IPRED_DIS_S)
+                 : 0) |
             (cp->feat.rrsba_ctrl
-             ? (SPEC_CTRL_RRSBA_DIS_U | SPEC_CTRL_RRSBA_DIS_S) : 0) |
-            (cp->feat.bhi_ctrl   ? SPEC_CTRL_BHI_DIS_S : 0) |
-            0);
+                 ? (SPEC_CTRL_RRSBA_DIS_U | SPEC_CTRL_RRSBA_DIS_S)
+                 : 0) |
+            (cp->feat.bhi_ctrl ? SPEC_CTRL_BHI_DIS_S : 0) | 0);
 }
 
 int guest_wrmsr(struct vcpu *v, uint32_t msr, uint64_t val)
@@ -388,8 +389,7 @@ int guest_wrmsr(struct vcpu *v, uint32_t msr, uint64_t val)
          * See note on MSR_IA32_UCODE_WRITE below, which may or may not apply
          * to AMD CPUs as well (at least the architectural/CPUID part does).
          */
-        if ( is_pv_domain(d) ||
-             cp->x86_vendor != X86_VENDOR_AMD )
+        if ( is_pv_domain(d) || cp->x86_vendor != X86_VENDOR_AMD )
             goto gp_fault;
         break;
 
@@ -400,8 +400,7 @@ int guest_wrmsr(struct vcpu *v, uint32_t msr, uint64_t val)
          * for such attempts. Also the MSR is architectural and not qualified
          * by any CPUID bit.
          */
-        if ( is_pv_domain(d) ||
-             cp->x86_vendor != X86_VENDOR_INTEL )
+        if ( is_pv_domain(d) || cp->x86_vendor != X86_VENDOR_INTEL )
             goto gp_fault;
         break;
 
@@ -415,8 +414,7 @@ int guest_wrmsr(struct vcpu *v, uint32_t msr, uint64_t val)
         if ( !cp->feat.ibrsb && !cp->extd.ibpb )
             goto gp_fault; /* MSR available? */
 
-        rsvd = ~(PRED_CMD_IBPB |
-                 (cp->extd.sbpb ? PRED_CMD_SBPB : 0));
+        rsvd = ~(PRED_CMD_IBPB | (cp->extd.sbpb ? PRED_CMD_SBPB : 0));
 
         if ( val & rsvd )
             goto gp_fault; /* Rsvd bit set? */
@@ -455,10 +453,10 @@ int guest_wrmsr(struct vcpu *v, uint32_t msr, uint64_t val)
         break;
     }
 
-    case MSR_IA32_MCG_CAP     ... MSR_IA32_MCG_CTL:      /* 0x179 -> 0x17b */
-    case MSR_IA32_MCx_CTL2(0) ... MSR_IA32_MCx_CTL2(31): /* 0x280 -> 0x29f */
-    case MSR_IA32_MCx_CTL(0)  ... MSR_IA32_MCx_MISC(31): /* 0x400 -> 0x47f */
-    case MSR_IA32_MCG_EXT_CTL:                           /* 0x4d0 */
+    case MSR_IA32_MCG_CAP ... MSR_IA32_MCG_CTL: /* 0x179 -> 0x17b */
+    case MSR_IA32_MCx_CTL2(0)... MSR_IA32_MCx_CTL2(31): /* 0x280 -> 0x29f */
+    case MSR_IA32_MCx_CTL(0)... MSR_IA32_MCx_MISC(31): /* 0x400 -> 0x47f */
+    case MSR_IA32_MCG_EXT_CTL: /* 0x4d0 */
         if ( vmce_wrmsr(msr, val) < 0 )
             goto gp_fault;
         break;
@@ -590,10 +588,11 @@ int guest_wrmsr(struct vcpu *v, uint32_t msr, uint64_t val)
         if ( !cp->extd.dbext || val != (uint32_t)val )
             goto gp_fault;
 
-        msrs->dr_mask[
-            array_index_nospec((msr == MSR_AMD64_DR0_ADDRESS_MASK)
-                               ? 0 : (msr - MSR_AMD64_DR1_ADDRESS_MASK + 1),
-                               ARRAY_SIZE(msrs->dr_mask))] = val;
+        msrs->dr_mask[array_index_nospec((msr == MSR_AMD64_DR0_ADDRESS_MASK)
+                                             ? 0
+                                             : (msr -
+                                                MSR_AMD64_DR1_ADDRESS_MASK + 1),
+                                         ARRAY_SIZE(msrs->dr_mask))] = val;
 
         if ( v == curr && (curr->arch.dr7 & DR7_ACTIVE_MASK) )
             wrmsrl(msr, val);
@@ -611,14 +610,14 @@ int guest_wrmsr(struct vcpu *v, uint32_t msr, uint64_t val)
 
     return ret;
 
- set_reg: /* Delegate register access to per-vm-type logic. */
+set_reg: /* Delegate register access to per-vm-type logic. */
     if ( is_pv_domain(d) )
         pv_set_reg(v, msr, val);
     else
         hvm_set_reg(v, msr, val);
     return X86EMUL_OKAY;
 
- gp_fault:
+gp_fault:
     return X86EMUL_EXCEPTION;
 }
 

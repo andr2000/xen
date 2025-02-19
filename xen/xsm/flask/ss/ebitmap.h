@@ -32,8 +32,8 @@ struct ebitmap_node {
 };
 
 struct ebitmap {
-    struct ebitmap_node *node;    /* first node in the bitmap */
-    u32 highbit;    /* highest position in the total bitmap */
+    struct ebitmap_node *node; /* first node in the bitmap */
+    u32 highbit; /* highest position in the total bitmap */
 };
 
 #define ebitmap_length(e) ((e)->highbit)
@@ -82,13 +82,12 @@ static inline unsigned int ebitmap_next_positive(struct ebitmap *e,
 #define EBITMAP_NODE_OFFSET(node, bit)	\
     (((bit) - (node)->startbit) % EBITMAP_UNIT_SIZE)
 
-static inline int ebitmap_node_get_bit(struct ebitmap_node *n,
-                                       unsigned int bit)
+static inline int ebitmap_node_get_bit(struct ebitmap_node *n, unsigned int bit)
 {
     unsigned int index = EBITMAP_NODE_INDEX(n, bit);
     unsigned int ofs = EBITMAP_NODE_OFFSET(n, bit);
 
-    BUG_ON( index >= EBITMAP_UNIT_NUMS );
+    BUG_ON(index >= EBITMAP_UNIT_NUMS);
     if ( (n->maps[index] & (EBITMAP_BIT << ofs)) )
         return 1;
     return 0;
@@ -110,14 +109,14 @@ static inline void ebitmap_node_clr_bit(struct ebitmap_node *n,
     unsigned int index = EBITMAP_NODE_INDEX(n, bit);
     unsigned int ofs = EBITMAP_NODE_OFFSET(n, bit);
 
-    BUG_ON( index >= EBITMAP_UNIT_NUMS );
+    BUG_ON(index >= EBITMAP_UNIT_NUMS);
     n->maps[index] &= ~(EBITMAP_BIT << ofs);
 }
 
 #define ebitmap_for_each_positive_bit(e, n, bit)	\
     for ( bit = ebitmap_start_positive(e, &n);       \
           bit < ebitmap_length(e);                   \
-          bit = ebitmap_next_positive(e, &n, bit) )   \
+          bit = ebitmap_next_positive(e, &n, bit) )
 
 int ebitmap_cmp(struct ebitmap *e1, struct ebitmap *e2);
 int ebitmap_cpy(struct ebitmap *dst, struct ebitmap *src);
@@ -127,4 +126,4 @@ int ebitmap_set_bit(struct ebitmap *e, unsigned long bit, int value);
 void ebitmap_destroy(struct ebitmap *e);
 int ebitmap_read(struct ebitmap *e, void *fp);
 
-#endif    /* _SS_EBITMAP_H_ */
+#endif /* _SS_EBITMAP_H_ */

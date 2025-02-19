@@ -15,21 +15,21 @@
  * There's one region for the runtime .text/etc, one region for .init during
  * boot only, and one region per livepatch.
  */
-struct virtual_region
-{
+struct virtual_region {
     struct list_head list;
 
-    const void *text_start;                /* .text virtual address start. */
-    const void *text_end;                  /* .text virtual address end. */
+    const void *text_start; /* .text virtual address start. */
+    const void *text_end; /* .text virtual address end. */
 
-    const void *rodata_start;              /* .rodata virtual address start (optional). */
-    const void *rodata_end;                /* .rodata virtual address end. */
+    const void *rodata_start; /* .rodata virtual address start (optional). */
+    const void *rodata_end; /* .rodata virtual address end. */
 
     /* If this is NULL the default lookup mechanism is used. */
     symbols_lookup_t *symbols_lookup;
 
     struct {
-        const struct bug_frame *start, *stop; /* Pointers to array of bug frames. */
+        const struct bug_frame *start,
+            *stop; /* Pointers to array of bug frames. */
     } frame[BUGFRAME_NR];
 
 #ifdef CONFIG_HAS_EX_TABLE

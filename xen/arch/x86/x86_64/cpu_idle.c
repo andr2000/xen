@@ -42,7 +42,7 @@ void *xlat_malloc(unsigned long *xlat_page_current, size_t size)
     if ( unlikely(size > xlat_page_left_size(*xlat_page_current)) )
         return NULL;
 
-    ret = (void *) *xlat_page_current;
+    ret = (void *)*xlat_page_current;
     *xlat_page_current += size;
 
     return ret;
@@ -70,10 +70,10 @@ long compat_set_cx_pminfo(uint32_t acpi_id,
 
     xlat_malloc_init(xlat_page_current);
 
-    xen_power = xlat_malloc_array(xlat_page_current,
-                                  struct xen_processor_power, 1);
+    xen_power =
+        xlat_malloc_array(xlat_page_current, struct xen_processor_power, 1);
     if ( unlikely(xen_power == NULL) )
-	return -EFAULT;
+        return -EFAULT;
 
 #define XLAT_processor_power_HNDL_states(_d_, _s_) do { \
     xen_processor_cx_t *xen_states = NULL; \

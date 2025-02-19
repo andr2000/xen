@@ -23,13 +23,13 @@
 #define HPET_ID_64BIT	0x00002000
 #define HPET_ID_NUMBER	0x00001f00
 #define HPET_ID_REV	0x000000ff
-#define	HPET_ID_NUMBER_SHIFT	8
+#define HPET_ID_NUMBER_SHIFT	8
 #define HPET_ID_VENDOR_SHIFT	16
 
 #define HPET_CFG_ENABLE	0x001
 #define HPET_CFG_LEGACY	0x002
-#define	HPET_LEGACY_8254	2
-#define	HPET_LEGACY_RTC		8
+#define HPET_LEGACY_8254	2
+#define HPET_LEGACY_RTC		8
 
 #define HPET_TN_LEVEL		0x002
 #define HPET_TN_ENABLE		0x004
@@ -44,10 +44,9 @@
 #define HPET_TN_RESERVED	0xffff0081U
 #define HPET_TN_INT_ROUTE_CAP	(0xffffffffULL << 32)
 
-
 #define hpet_read32(x)    \
     (*(volatile u32 *)(fix_to_virt(FIX_HPET_BASE) + (x)))
-#define hpet_write32(y,x) \
+#define hpet_write32(y, x) \
     (*(volatile u32 *)(fix_to_virt(FIX_HPET_BASE) + (x)) = (y))
 
 extern unsigned long hpet_address;

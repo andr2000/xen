@@ -29,9 +29,9 @@ struct hvm_vcpu_io {
      *  The latter is known to be an MMIO frame (not RAM).
      *  This translation is only valid for accesses as per @mmio_access.
      */
-    struct npfec        mmio_access;
-    unsigned long       mmio_gla;
-    unsigned long       mmio_gpfn;
+    struct npfec mmio_access;
+    unsigned long mmio_gla;
+    unsigned long mmio_gpfn;
 
     /*
      * We may need to handle up to 3 distinct memory accesses per
@@ -92,7 +92,7 @@ struct nestedvcpu {
     bool nv_ioportED;
 
     /* L2's control-resgister, just as the L2 sees them. */
-    unsigned long       guest_cr[5];
+    unsigned long guest_cr[5];
 };
 
 #define vcpu_nestedhvm(v) ((v)->arch.hvm.nvcpu)
@@ -104,15 +104,15 @@ struct altp2mvcpu {
      * page reference is held.
      */
     struct page_info *veinfo_pg;
-    uint16_t    p2midx;         /* alternate p2m index */
+    uint16_t p2midx; /* alternate p2m index */
 };
 
 #define vcpu_altp2m(v) ((v)->arch.hvm.avcpu)
 
 struct hvm_vcpu {
     /* Guest control-register and EFER values, just as the guest sees them. */
-    unsigned long       guest_cr[5];
-    unsigned long       guest_efer;
+    unsigned long guest_cr[5];
+    unsigned long guest_efer;
 
     /*
      * Processor-visible control-register values, while guest executes.
@@ -120,57 +120,58 @@ struct hvm_vcpu {
      *  CR1, CR2: Never used (guest_cr[2] is always processor-visible CR2).
      *  CR3:      Always used and kept up to date by paging subsystem.
      */
-    unsigned long       hw_cr[5];
+    unsigned long hw_cr[5];
 
-    struct vlapic       vlapic;
-    int64_t             cache_tsc_offset;
-    uint64_t            guest_time;
+    struct vlapic vlapic;
+    int64_t cache_tsc_offset;
+    uint64_t guest_time;
 
     /* Lock and list for virtual platform timers. */
-    spinlock_t          tm_lock;
-    struct list_head    tm_list;
+    spinlock_t tm_lock;
+    struct list_head tm_list;
 
-    bool                flag_dr_dirty;
-    bool                debug_state_latch;
-    bool                single_step;
+    bool flag_dr_dirty;
+    bool debug_state_latch;
+    bool single_step;
+
     struct {
-        bool     enabled;
+        bool enabled;
         uint16_t p2midx;
     } fast_single_step;
 
     /* (MFN) hypervisor page table */
-    pagetable_t         monitor_table;
+    pagetable_t monitor_table;
 
     struct hvm_vcpu_asid n1asid;
 
-    u64                 msr_tsc_adjust;
+    u64 msr_tsc_adjust;
 
     union {
         struct vmx_vcpu vmx;
         struct svm_vcpu svm;
     };
 
-    struct tasklet      assert_evtchn_irq_tasklet;
+    struct tasklet assert_evtchn_irq_tasklet;
 
-    struct nestedvcpu   nvcpu;
+    struct nestedvcpu nvcpu;
 
-    struct altp2mvcpu   avcpu;
+    struct altp2mvcpu avcpu;
 
-    struct mtrr_state   mtrr;
-    u64                 pat_cr;
+    struct mtrr_state mtrr;
+    u64 pat_cr;
 
     /* In mode delay_for_missed_ticks, VCPUs have differing guest times. */
-    int64_t             stime_offset;
+    int64_t stime_offset;
 
-    u8                  evtchn_upcall_vector;
+    u8 evtchn_upcall_vector;
 
     /* Which cache mode is this VCPU in (CR0:CD/NW)? */
-    u8                  cache_mode;
+    u8 cache_mode;
 
-    struct hvm_vcpu_io  hvm_io;
+    struct hvm_vcpu_io hvm_io;
 
     /* Pending hw/sw interrupt (.vector = -1 means nothing pending). */
-    struct x86_event     inject_event;
+    struct x86_event inject_event;
 
     struct viridian_vcpu *viridian;
 };

@@ -79,6 +79,7 @@ int arch_livepatch_perform_rel(struct livepatch_elf *elf,
 int arch_livepatch_perform_rela(struct livepatch_elf *elf,
                                 const struct livepatch_elf_sec *base,
                                 const struct livepatch_elf_sec *rela);
+
 enum va_type {
     LIVEPATCH_VA_RX, /* .text */
     LIVEPATCH_VA_RW, /* .data */
@@ -89,7 +90,8 @@ enum va_type {
  * Function to secure the allocate pages (from arch_livepatch_alloc_payload)
  * with the right page permissions.
  */
-int arch_livepatch_secure(const void *va, unsigned int pages, enum va_type types);
+int arch_livepatch_secure(const void *va, unsigned int pages,
+                          enum va_type types);
 
 void arch_livepatch_init(void);
 
@@ -97,9 +99,9 @@ void arch_livepatch_init(void);
 #include <asm/livepatch.h>
 int arch_livepatch_verify_func(const struct livepatch_func *func);
 
-static inline
-unsigned int livepatch_insn_len(const struct livepatch_func *func,
-                                const struct livepatch_fstate *state)
+static inline unsigned int
+livepatch_insn_len(const struct livepatch_func *func,
+                   const struct livepatch_fstate *state)
 {
     if ( !func->new_addr )
         return func->new_size - state->patch_offset;
@@ -121,6 +123,7 @@ static inline int livepatch_verify_distance(const struct livepatch_func *func)
 
     return 0;
 }
+
 /*
  * These functions are called around the critical region patching live code,
  * for an architecture to take make appropratie global state adjustments.
@@ -161,6 +164,7 @@ static inline int livepatch_op(struct xen_sysctl_livepatch_op *op)
 }
 
 static inline void check_for_livepatch_work(void) {}
+
 static inline bool is_patch(const void *addr)
 {
     return 0;

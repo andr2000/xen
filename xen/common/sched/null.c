@@ -76,11 +76,11 @@
  * System-wide private data
  */
 struct null_private {
-    spinlock_t lock;        /* scheduler lock; nests inside cpupool_lock */
-    struct list_head ndom;  /* Domains of this scheduler                 */
+    spinlock_t lock; /* scheduler lock; nests inside cpupool_lock */
+    struct list_head ndom; /* Domains of this scheduler                 */
     struct list_head waitq; /* units not assigned to any pCPU            */
-    spinlock_t waitq_lock;  /* serializes waitq; nests inside runq locks */
-    cpumask_t cpus_free;    /* CPUs without a unit associated to them    */
+    spinlock_t waitq_lock; /* serializes waitq; nests inside runq locks */
+    cpumask_t cpus_free; /* CPUs without a unit associated to them    */
 };
 
 /*
@@ -124,7 +124,8 @@ static inline bool unit_check_affinity(struct sched_unit *unit,
                                        unsigned int balance_step)
 {
     affinity_balance_cpumask(unit, balance_step, cpumask_scratch_cpu(cpu));
-    cpumask_and(cpumask_scratch_cpu(cpu), cpumask_scratch_cpu(cpu),
+    cpumask_and(cpumask_scratch_cpu(cpu),
+                cpumask_scratch_cpu(cpu),
                 cpupool_domain_master_cpumask(unit->domain));
 
     return cpumask_test_cpu(cpu, cpumask_scratch_cpu(cpu));
@@ -134,9 +135,8 @@ static int cf_check null_init(struct scheduler *ops)
 {
     struct null_private *prv;
 
-    printk("Initializing null scheduler\n"
-           "WARNING: This is experimental software in development.\n"
-           "Use at your own risk.\n");
+    printk(
+        "Initializing null scheduler\n" "WARNING: This is experimental software in development.\n" "Use at your own risk.\n");
 
     prv = xzalloc(struct null_private);
     if ( prv == NULL )
@@ -166,8 +166,8 @@ static void init_pdata(struct null_private *prv, struct null_pcpu *npc,
     npc->unit = NULL;
 }
 
-static void cf_check null_deinit_pdata(
-    const struct scheduler *ops, void *pcpu, int cpu)
+static void cf_check null_deinit_pdata(const struct scheduler *ops, void *pcpu,
+                                       int cpu)
 {
     struct null_private *prv = null_priv(ops);
     struct null_pcpu *npc = pcpu;
@@ -189,14 +189,14 @@ static void *cf_check null_alloc_pdata(const struct scheduler *ops, int cpu)
     return npc;
 }
 
-static void cf_check null_free_pdata(
-    const struct scheduler *ops, void *pcpu, int cpu)
+static void cf_check null_free_pdata(const struct scheduler *ops, void *pcpu,
+                                     int cpu)
 {
     xfree(pcpu);
 }
 
-static void *cf_check null_alloc_udata(
-    const struct scheduler *ops, struct sched_unit *unit, void *dd)
+static void *cf_check null_alloc_udata(const struct scheduler *ops,
+                                       struct sched_unit *unit, void *dd)
 {
     struct null_unit *nvc;
 
@@ -219,8 +219,8 @@ static void cf_check null_free_udata(const struct scheduler *ops, void *priv)
     xfree(nvc);
 }
 
-static void *cf_check null_alloc_domdata(
-    const struct scheduler *ops, struct domain *d)
+static void *cf_check null_alloc_domdata(const struct scheduler *ops,
+                                         struct domain *d)
 {
     struct null_private *prv = null_priv(ops);
     struct null_dom *ndom;
@@ -270,8 +270,8 @@ static void cf_check null_free_domdata(const struct scheduler *ops, void *data)
  *
  * So this is not part of any hot path.
  */
-static struct sched_resource *
-pick_res(const struct null_private *prv, const struct sched_unit *unit)
+static struct sched_resource *pick_res(const struct null_private *prv,
+                                       const struct sched_unit *unit)
 {
     unsigned int bs;
     unsigned int cpu = sched_unit_master(unit), new_cpu;
@@ -280,7 +280,7 @@ pick_res(const struct null_private *prv, const struct sched_unit *unit)
 
     ASSERT(spin_is_locked(get_sched_res(cpu)->schedule_lock));
 
-    for_each_affinity_balance_step( bs )
+    for_each_affinity_balance_step(bs)
     {
         if ( bs == BALANCE_SOFT_AFFINITY && !has_soft_affinity(unit) )
             continue;
@@ -295,15 +295,16 @@ pick_res(const struct null_private *prv, const struct sched_unit *unit)
          * don't, so we get to keep in the scratch cpumask what we have just
          * put in it.)
          */
-        if ( likely((npc->unit == NULL || npc->unit == unit)
-                    && cpumask_test_cpu(cpu, cpumask_scratch_cpu(cpu))) )
+        if ( likely((npc->unit == NULL || npc->unit == unit) &&
+                    cpumask_test_cpu(cpu, cpumask_scratch_cpu(cpu))) )
         {
             new_cpu = cpu;
             goto out;
         }
 
         /* If not, just go for a free pCPU, within our affinity, if any */
-        cpumask_and(cpumask_scratch_cpu(cpu), cpumask_scratch_cpu(cpu),
+        cpumask_and(cpumask_scratch_cpu(cpu),
+                    cpumask_scratch_cpu(cpu),
                     &prv->cpus_free);
         new_cpu = cpumask_first(cpumask_scratch_cpu(cpu));
 
@@ -325,15 +326,15 @@ pick_res(const struct null_private *prv, const struct sched_unit *unit)
     cpumask_and(cpumask_scratch_cpu(cpu), cpus, unit->cpu_hard_affinity);
     new_cpu = cpumask_any(cpumask_scratch_cpu(cpu));
 
- out:
+out:
     if ( unlikely(tb_init_done) )
     {
         struct {
             uint16_t unit, dom;
             uint32_t new_cpu;
         } d = {
-            .unit    = unit->unit_id,
-            .dom     = unit->domain->domain_id,
+            .unit = unit->unit_id,
+            .dom = unit->domain->domain_id,
             .new_cpu = new_cpu,
         };
 
@@ -363,8 +364,8 @@ static void unit_assign(struct null_private *prv, struct sched_unit *unit,
             uint32_t cpu;
         } d = {
             .unit = unit->unit_id,
-            .dom  = unit->domain->domain_id,
-            .cpu  = cpu,
+            .dom = unit->domain->domain_id,
+            .cpu = cpu,
         };
 
         trace_time(TRC_SNULL_UNIT_ASSIGN, sizeof(d), &d);
@@ -372,7 +373,8 @@ static void unit_assign(struct null_private *prv, struct sched_unit *unit,
 }
 
 /* Returns true if a cpu was tickled */
-static bool unit_deassign(struct null_private *prv, const struct sched_unit *unit)
+static bool unit_deassign(struct null_private *prv,
+                          const struct sched_unit *unit)
 {
     unsigned int bs;
     unsigned int cpu = sched_unit_master(unit);
@@ -386,7 +388,10 @@ static bool unit_deassign(struct null_private *prv, const struct sched_unit *uni
     npc->unit = NULL;
     cpumask_set_cpu(cpu, &prv->cpus_free);
 
-    dprintk(XENLOG_G_INFO, "%d <-- NULL (%pdv%d)\n", cpu, unit->domain,
+    dprintk(XENLOG_G_INFO,
+            "%d <-- NULL (%pdv%d)\n",
+            cpu,
+            unit->domain,
             unit->unit_id);
 
     if ( unlikely(tb_init_done) )
@@ -396,8 +401,8 @@ static bool unit_deassign(struct null_private *prv, const struct sched_unit *uni
             uint32_t cpu;
         } d = {
             .unit = unit->unit_id,
-            .dom  = unit->domain->domain_id,
-            .cpu  = cpu,
+            .dom = unit->domain->domain_id,
+            .cpu = cpu,
         };
 
         trace_time(TRC_SNULL_UNIT_DEASSIGN, sizeof(d), &d);
@@ -410,12 +415,11 @@ static bool unit_deassign(struct null_private *prv, const struct sched_unit *uni
      * suitable to be assigned to it (prioritizing units that have
      * soft-affinity with cpu).
      */
-    for_each_affinity_balance_step( bs )
+    for_each_affinity_balance_step(bs)
     {
-        list_for_each_entry( wvc, &prv->waitq, waitq_elem )
+        list_for_each_entry(wvc, &prv->waitq, waitq_elem)
         {
-            if ( bs == BALANCE_SOFT_AFFINITY &&
-                 !has_soft_affinity(wvc->unit) )
+            if ( bs == BALANCE_SOFT_AFFINITY && !has_soft_affinity(wvc->unit) )
                 continue;
 
             if ( unit_check_affinity(wvc->unit, cpu, bs) )
@@ -434,8 +438,9 @@ static bool unit_deassign(struct null_private *prv, const struct sched_unit *uni
 }
 
 /* Change the scheduler of cpu to us (null). */
-static spinlock_t *cf_check null_switch_sched(
-    struct scheduler *new_ops, unsigned int cpu, void *pdata, void *vdata)
+static spinlock_t *cf_check null_switch_sched(struct scheduler *new_ops,
+                                              unsigned int cpu, void *pdata,
+                                              void *vdata)
 {
     struct sched_resource *sr = get_sched_res(cpu);
     struct null_private *prv = null_priv(new_ops);
@@ -457,8 +462,8 @@ static spinlock_t *cf_check null_switch_sched(
     return &sr->_lock;
 }
 
-static void cf_check null_unit_insert(
-    const struct scheduler *ops, struct sched_unit *unit)
+static void cf_check null_unit_insert(const struct scheduler *ops,
+                                      struct sched_unit *unit)
 {
     struct null_private *prv = null_priv(ops);
     struct null_unit *nvc = null_unit(unit);
@@ -476,7 +481,7 @@ static void cf_check null_unit_insert(
         return;
     }
 
- retry:
+retry:
     sched_set_res(unit, pick_res(prv, unit));
     cpu = sched_unit_master(unit);
     npc = get_sched_res(cpu)->sched_priv;
@@ -485,7 +490,8 @@ static void cf_check null_unit_insert(
 
     lock = unit_schedule_lock(unit);
 
-    cpumask_and(cpumask_scratch_cpu(cpu), unit->cpu_hard_affinity,
+    cpumask_and(cpumask_scratch_cpu(cpu),
+                unit->cpu_hard_affinity,
                 cpupool_domain_master_cpumask(unit->domain));
 
     /* If the pCPU is free, we assign unit to it */
@@ -504,7 +510,7 @@ static void cf_check null_unit_insert(
          * insert or a migrate), but there are other free pCPUs, we can
          * try to pick again.
          */
-         goto retry;
+        goto retry;
     }
     else
     {
@@ -514,8 +520,10 @@ static void cf_check null_unit_insert(
          */
         spin_lock(&prv->waitq_lock);
         list_add_tail(&nvc->waitq_elem, &prv->waitq);
-        dprintk(XENLOG_G_WARNING, "WARNING: %pdv%d not assigned to any CPU!\n",
-                unit->domain, unit->unit_id);
+        dprintk(XENLOG_G_WARNING,
+                "WARNING: %pdv%d not assigned to any CPU!\n",
+                unit->domain,
+                unit->unit_id);
         spin_unlock(&prv->waitq_lock);
     }
     spin_unlock_irq(lock);
@@ -523,8 +531,8 @@ static void cf_check null_unit_insert(
     SCHED_STAT_CRANK(unit_insert);
 }
 
-static void cf_check null_unit_remove(
-    const struct scheduler *ops, struct sched_unit *unit)
+static void cf_check null_unit_remove(const struct scheduler *ops,
+                                      struct sched_unit *unit)
 {
     struct null_private *prv = null_priv(ops);
     struct null_unit *nvc = null_unit(unit);
@@ -560,14 +568,14 @@ static void cf_check null_unit_remove(
     if ( npc->unit )
         unit_deassign(prv, unit);
 
- out:
+out:
     unit_schedule_unlock_irq(lock, unit);
 
     SCHED_STAT_CRANK(unit_remove);
 }
 
-static void cf_check null_unit_wake(
-    const struct scheduler *ops, struct sched_unit *unit)
+static void cf_check null_unit_wake(const struct scheduler *ops,
+                                    struct sched_unit *unit)
 {
     struct null_private *prv = null_priv(ops);
     struct null_unit *nvc = null_unit(unit);
@@ -630,20 +638,24 @@ static void cf_check null_unit_wake(
     list_add_tail(&nvc->waitq_elem, &prv->waitq);
     spin_unlock(&prv->waitq_lock);
 
-    cpumask_and(cpumask_scratch_cpu(cpu), unit->cpu_hard_affinity,
+    cpumask_and(cpumask_scratch_cpu(cpu),
+                unit->cpu_hard_affinity,
                 cpupool_domain_master_cpumask(unit->domain));
-    cpumask_and(cpumask_scratch_cpu(cpu), cpumask_scratch_cpu(cpu),
+    cpumask_and(cpumask_scratch_cpu(cpu),
+                cpumask_scratch_cpu(cpu),
                 &prv->cpus_free);
 
     if ( cpumask_empty(cpumask_scratch_cpu(cpu)) )
-        dprintk(XENLOG_G_WARNING, "WARNING: d%dv%d not assigned to any CPU!\n",
-                unit->domain->domain_id, unit->unit_id);
+        dprintk(XENLOG_G_WARNING,
+                "WARNING: d%dv%d not assigned to any CPU!\n",
+                unit->domain->domain_id,
+                unit->unit_id);
     else
         cpumask_raise_softirq(cpumask_scratch_cpu(cpu), SCHEDULE_SOFTIRQ);
 }
 
-static void cf_check null_unit_sleep(
-    const struct scheduler *ops, struct sched_unit *unit)
+static void cf_check null_unit_sleep(const struct scheduler *ops,
+                                     struct sched_unit *unit)
 {
     struct null_private *prv = null_priv(ops);
     unsigned int cpu = sched_unit_master(unit);
@@ -684,8 +696,9 @@ null_res_pick(const struct scheduler *ops, const struct sched_unit *unit)
     return pick_res(null_priv(ops), unit);
 }
 
-static void cf_check null_unit_migrate(
-    const struct scheduler *ops, struct sched_unit *unit, unsigned int new_cpu)
+static void cf_check null_unit_migrate(const struct scheduler *ops,
+                                       struct sched_unit *unit,
+                                       unsigned int new_cpu)
 {
     struct null_private *prv = null_priv(ops);
     struct null_unit *nvc = null_unit(unit);
@@ -702,9 +715,9 @@ static void cf_check null_unit_migrate(
             uint16_t unit, dom;
             uint16_t cpu, new_cpu;
         } d = {
-            .unit    = unit->unit_id,
-            .dom     = unit->domain->domain_id,
-            .cpu     = sched_unit_master(unit),
+            .unit = unit->unit_id,
+            .dom = unit->domain->domain_id,
+            .cpu = sched_unit_master(unit),
             .new_cpu = new_cpu,
         };
 
@@ -769,7 +782,8 @@ static void cf_check null_unit_migrate(
         {
             list_add_tail(&nvc->waitq_elem, &prv->waitq);
             dprintk(XENLOG_G_WARNING,
-                    "WARNING: %pdv%d not assigned to any CPU!\n", unit->domain,
+                    "WARNING: %pdv%d not assigned to any CPU!\n",
+                    unit->domain,
                     unit->unit_id);
         }
         spin_unlock(&prv->waitq_lock);
@@ -783,15 +797,15 @@ static void cf_check null_unit_migrate(
      * at least. In case of suspend, any temporary inconsistency caused
      * by this, will be fixed-up during resume.
      */
- out:
+out:
     sched_set_res(unit, get_sched_res(new_cpu));
 }
 
 #ifndef NDEBUG
 static inline void null_unit_check(struct sched_unit *unit)
 {
-    struct null_unit * const nvc = null_unit(unit);
-    struct null_dom * const ndom = unit->domain->sched_priv;
+    struct null_unit *const nvc = null_unit(unit);
+    struct null_dom *const ndom = unit->domain->sched_priv;
 
     BUG_ON(nvc->unit != unit);
 
@@ -802,20 +816,20 @@ static inline void null_unit_check(struct sched_unit *unit)
 
     SCHED_STAT_CRANK(unit_check);
 }
+
 #define NULL_UNIT_CHECK(unit)  (null_unit_check(unit))
 #else
 #define NULL_UNIT_CHECK(unit)
 #endif
-
 
 /*
  * The most simple scheduling function of all times! We either return:
  *  - the unit assigned to the pCPU, if there's one and it can run;
  *  - the idle unit, otherwise.
  */
-static void cf_check null_schedule(
-    const struct scheduler *ops, struct sched_unit *prev, s_time_t now,
-    bool tasklet_work_scheduled)
+static void cf_check null_schedule(const struct scheduler *ops,
+                                   struct sched_unit *prev, s_time_t now,
+                                   bool tasklet_work_scheduled)
 {
     unsigned int bs;
     const unsigned int cur_cpu = smp_processor_id();
@@ -834,7 +848,7 @@ static void cf_check null_schedule(
             int16_t unit, dom;
         } d = {
             .tasklet = tasklet_work_scheduled,
-            .cpu     = cur_cpu,
+            .cpu = cur_cpu,
         };
 
         if ( npc->unit == NULL )
@@ -881,9 +895,9 @@ static void cf_check null_schedule(
          * said above, the cpu has just joined a cpupool).
          */
         unit_found = false;
-        for_each_affinity_balance_step( bs )
+        for_each_affinity_balance_step(bs)
         {
-            list_for_each_entry( wvc, &prv->waitq, waitq_elem )
+            list_for_each_entry(wvc, &prv->waitq, waitq_elem)
             {
                 if ( bs == BALANCE_SOFT_AFFINITY &&
                      !has_soft_affinity(wvc->unit) )
@@ -910,7 +924,8 @@ static void cf_check null_schedule(
                      */
                     ASSERT(lock != get_sched_res(sched_cpu)->schedule_lock);
 
-                    if ( lock ) {
+                    if ( lock )
+                    {
                         unit_assign(prv, wvc->unit, sched_cpu);
                         list_del_init(&wvc->waitq_elem);
                         prev->next_task = wvc->unit;
@@ -927,10 +942,10 @@ static void cf_check null_schedule(
          * to be stuck in the waitqueue, when there are free cpus where it
          * could run.
          */
-        if ( unlikely( unit_found && prev->next_task == NULL &&
-                       !list_empty(&prv->waitq)) )
+        if ( unlikely(unit_found && prev->next_task == NULL &&
+                      !list_empty(&prv->waitq)) )
             cpu_raise_softirq(cur_cpu, SCHEDULE_SOFTIRQ);
- unlock:
+    unlock:
         spin_unlock(&prv->waitq_lock);
 
         if ( prev->next_task == NULL &&
@@ -950,9 +965,10 @@ static void cf_check null_schedule(
 static inline void dump_unit(const struct null_private *prv,
                              const struct null_unit *nvc)
 {
-    printk("[%i.%i] pcpu=%d", nvc->unit->domain->domain_id,
-            nvc->unit->unit_id, list_empty(&nvc->waitq_elem) ?
-                                sched_unit_master(nvc->unit) : -1);
+    printk("[%i.%i] pcpu=%d",
+           nvc->unit->domain->domain_id,
+           nvc->unit->unit_id,
+           list_empty(&nvc->waitq_elem) ? sched_unit_master(nvc->unit) : -1);
 }
 
 static void cf_check null_dump_pcpu(const struct scheduler *ops, int cpu)
@@ -966,7 +982,8 @@ static void cf_check null_dump_pcpu(const struct scheduler *ops, int cpu)
     lock = pcpu_schedule_lock_irqsave(cpu, &flags);
 
     printk("CPU[%02d] sibling={%*pbl}, core={%*pbl}",
-           cpu, CPUMASK_PR(per_cpu(cpu_sibling_mask, cpu)),
+           cpu,
+           CPUMASK_PR(per_cpu(cpu_sibling_mask, cpu)),
            CPUMASK_PR(per_cpu(cpu_core_mask, cpu)));
     if ( npc->unit != NULL )
         printk(", unit=%pdv%d", npc->unit->domain, npc->unit->unit_id);
@@ -997,7 +1014,7 @@ static void cf_check null_dump(const struct scheduler *ops)
 
     printk("Domain info:\n");
     loop = 0;
-    list_for_each( iter, &prv->ndom )
+    list_for_each(iter, &prv->ndom)
     {
         struct null_dom *ndom;
         struct sched_unit *unit;
@@ -1005,9 +1022,9 @@ static void cf_check null_dump(const struct scheduler *ops)
         ndom = list_entry(iter, struct null_dom, ndom_elem);
 
         printk("\tDomain: %d\n", ndom->dom->domain_id);
-        for_each_sched_unit( ndom->dom, unit )
+        for_each_sched_unit(ndom->dom, unit)
         {
-            struct null_unit * const nvc = null_unit(unit);
+            struct null_unit *const nvc = null_unit(unit);
             spinlock_t *lock;
 
             lock = unit_schedule_lock(unit);
@@ -1023,7 +1040,7 @@ static void cf_check null_dump(const struct scheduler *ops)
     printk("Waitqueue: ");
     loop = 0;
     spin_lock(&prv->waitq_lock);
-    list_for_each( iter, &prv->waitq )
+    list_for_each(iter, &prv->waitq)
     {
         struct null_unit *nvc = list_entry(iter, struct null_unit, waitq_elem);
 
@@ -1040,34 +1057,34 @@ static void cf_check null_dump(const struct scheduler *ops)
 }
 
 static const struct scheduler sched_null_def = {
-    .name           = "null Scheduler",
-    .opt_name       = "null",
-    .sched_id       = XEN_SCHEDULER_NULL,
-    .sched_data     = NULL,
+    .name = "null Scheduler",
+    .opt_name = "null",
+    .sched_id = XEN_SCHEDULER_NULL,
+    .sched_data = NULL,
 
-    .init           = null_init,
-    .deinit         = null_deinit,
-    .alloc_pdata    = null_alloc_pdata,
-    .free_pdata     = null_free_pdata,
-    .switch_sched   = null_switch_sched,
-    .deinit_pdata   = null_deinit_pdata,
+    .init = null_init,
+    .deinit = null_deinit,
+    .alloc_pdata = null_alloc_pdata,
+    .free_pdata = null_free_pdata,
+    .switch_sched = null_switch_sched,
+    .deinit_pdata = null_deinit_pdata,
 
-    .alloc_udata    = null_alloc_udata,
-    .free_udata     = null_free_udata,
-    .alloc_domdata  = null_alloc_domdata,
-    .free_domdata   = null_free_domdata,
+    .alloc_udata = null_alloc_udata,
+    .free_udata = null_free_udata,
+    .alloc_domdata = null_alloc_domdata,
+    .free_domdata = null_free_domdata,
 
-    .insert_unit    = null_unit_insert,
-    .remove_unit    = null_unit_remove,
+    .insert_unit = null_unit_insert,
+    .remove_unit = null_unit_remove,
 
-    .wake           = null_unit_wake,
-    .sleep          = null_unit_sleep,
-    .pick_resource  = null_res_pick,
-    .migrate        = null_unit_migrate,
-    .do_schedule    = null_schedule,
+    .wake = null_unit_wake,
+    .sleep = null_unit_sleep,
+    .pick_resource = null_res_pick,
+    .migrate = null_unit_migrate,
+    .do_schedule = null_schedule,
 
     .dump_cpu_state = null_dump_pcpu,
-    .dump_settings  = null_dump,
+    .dump_settings = null_dump,
 };
 
 REGISTER_SCHEDULER(sched_null_def);

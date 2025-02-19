@@ -20,13 +20,14 @@
  */
 static inline void invalidate_icache(void)
 {
-    asm volatile (
-        CMD_CP32(ICIALLUIS)     /* Flush I-cache. */
-        CMD_CP32(BPIALLIS)      /* Flush branch predictor. */
-        : : : "memory");
+    asm volatile(CMD_CP32(ICIALLUIS) /* Flush I-cache. */
+                 CMD_CP32(BPIALLIS) /* Flush branch predictor. */
+                 :
+                 :
+                 : "memory");
 
-    dsb(ish);                   /* Ensure completion of the flush I-cache */
-    isb();                      /* Synchronize fetched instruction stream. */
+    dsb(ish); /* Ensure completion of the flush I-cache */
+    isb(); /* Synchronize fetched instruction stream. */
 }
 
 /*
@@ -36,13 +37,14 @@ static inline void invalidate_icache(void)
  */
 static inline void invalidate_icache_local(void)
 {
-    asm volatile (
-        CMD_CP32(ICIALLU)       /* Flush I-cache. */
-        CMD_CP32(BPIALL)        /* Flush branch predictor. */
-        : : : "memory");
+    asm volatile(CMD_CP32(ICIALLU) /* Flush I-cache. */
+                 CMD_CP32(BPIALL) /* Flush branch predictor. */
+                 :
+                 :
+                 : "memory");
 
-    dsb(nsh);                   /* Ensure completion of the flush I-cache */
-    isb();                      /* Synchronize fetched instruction stream. */
+    dsb(nsh); /* Ensure completion of the flush I-cache */
+    isb(); /* Synchronize fetched instruction stream. */
 }
 
 /* Ask the MMU to translate a VA for us */
@@ -71,6 +73,7 @@ static inline uint64_t gva_to_ma_par(vaddr_t va, unsigned int flags)
     WRITE_CP64(tmp, PAR);
     return par;
 }
+
 static inline uint64_t gva_to_ipa_par(vaddr_t va, unsigned int flags)
 {
     uint64_t par, tmp;

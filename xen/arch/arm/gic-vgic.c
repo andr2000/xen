@@ -23,15 +23,17 @@
 
 static void gic_update_one_lr(struct vcpu *v, int i);
 
-static inline void gic_set_lr(int lr, struct pending_irq *p,
-                              unsigned int state)
+static inline void gic_set_lr(int lr, struct pending_irq *p, unsigned int state)
 {
     ASSERT(!local_irq_is_enabled());
 
     clear_bit(GIC_IRQ_GUEST_PRISTINE_LPI, &p->status);
 
-    gic_hw_ops->update_lr(lr, p->irq, p->priority,
-                          p->desc ? p->desc->irq : INVALID_IRQ, state);
+    gic_hw_ops->update_lr(lr,
+                          p->irq,
+                          p->priority,
+                          p->desc ? p->desc->irq : INVALID_IRQ,
+                          state);
 
     set_bit(GIC_IRQ_GUEST_VISIBLE, &p->status);
     clear_bit(GIC_IRQ_GUEST_QUEUED, &p->status);
@@ -47,7 +49,7 @@ static inline void gic_add_to_lr_pending(struct vcpu *v, struct pending_irq *n)
     if ( !list_empty(&n->lr_queue) )
         return;
 
-    list_for_each_entry ( iter, &v->arch.vgic.lr_pending, lr_queue )
+    list_for_each_entry(iter, &v->arch.vgic.lr_pending, lr_queue)
     {
         if ( iter->priority > n->priority )
         {
@@ -86,8 +88,11 @@ void gic_raise_inflight_irq(struct vcpu *v, unsigned int virtual_irq)
     }
 #ifdef GIC_DEBUG
     else
-        gdprintk(XENLOG_DEBUG, "trying to inject irq=%u into %pv, when it is still lr_pending\n",
-                 virtual_irq, v);
+        gdprintk(
+            XENLOG_DEBUG,
+            "trying to inject irq=%u into %pv, when it is still lr_pending\n",
+            virtual_irq,
+            v);
 #endif
 }
 
@@ -98,8 +103,7 @@ void gic_raise_inflight_irq(struct vcpu *v, unsigned int virtual_irq)
  * event gets discarded while the LPI is in an LR, and a new LPI with the
  * same number gets mapped quickly afterwards.
  */
-static unsigned int gic_find_unused_lr(struct vcpu *v,
-                                       struct pending_irq *p,
+static unsigned int gic_find_unused_lr(struct vcpu *v, struct pending_irq *p,
                                        unsigned int lr)
 {
     uint64_t *lr_mask = &this_cpu(lr_mask);
@@ -108,7 +112,7 @@ static unsigned int gic_find_unused_lr(struct vcpu *v,
 
     if ( unlikely(test_bit(GIC_IRQ_GUEST_PRISTINE_LPI, &p->status)) )
     {
-        for_each_set_bit ( used_lr, *lr_mask )
+        for_each_set_bit(used_lr, *lr_mask)
         {
             struct gic_lr lr_val;
 
@@ -124,7 +128,7 @@ static unsigned int gic_find_unused_lr(struct vcpu *v,
 }
 
 void gic_raise_guest_irq(struct vcpu *v, unsigned int virtual_irq,
-        unsigned int priority)
+                         unsigned int priority)
 {
     int i;
     unsigned int nr_lrs = gic_get_nr_lrs();
@@ -140,7 +144,8 @@ void gic_raise_guest_irq(struct vcpu *v, unsigned int virtual_irq,
     {
         i = gic_find_unused_lr(v, p, 0);
 
-        if (i < nr_lrs) {
+        if ( i < nr_lrs )
+        {
             set_bit(i, &this_cpu(lr_mask));
             gic_set_lr(i, p, GICH_LR_PENDING);
             return;
@@ -191,17 +196,26 @@ static void gic_update_one_lr(struct vcpu *v, int i)
                 gic_hw_ops->write_lr(i, &lr_val);
             }
             else
-                gdprintk(XENLOG_WARNING, "unable to inject hw irq=%d into %pv: already active in LR%d\n",
-                         irq, v, i);
+                gdprintk(
+                    XENLOG_WARNING,
+                    "unable to inject hw irq=%d into %pv: already active in LR%d\n",
+                    irq,
+                    v,
+                    i);
         }
     }
     else if ( lr_val.pending )
     {
-        int q __attribute__ ((unused)) = test_and_clear_bit(GIC_IRQ_GUEST_QUEUED, &p->status);
+        int q __attribute__((unused)) = test_and_clear_bit(GIC_IRQ_GUEST_QUEUED,
+                                                           &p->status);
 #ifdef GIC_DEBUG
         if ( q )
-            gdprintk(XENLOG_DEBUG, "trying to inject irq=%d into %pv, when it is already pending in LR%d\n",
-                    irq, v, i);
+            gdprintk(
+                XENLOG_DEBUG,
+                "trying to inject irq=%d into %pv, when it is already pending in LR%d\n",
+                irq,
+                v,
+                i);
 #endif
     }
     else
@@ -220,7 +234,8 @@ static void gic_update_one_lr(struct vcpu *v, int i)
              test_bit(GIC_IRQ_GUEST_QUEUED, &p->status) &&
              !test_bit(GIC_IRQ_GUEST_MIGRATING, &p->status) )
             gic_raise_guest_irq(v, irq, p->priority);
-        else {
+        else
+        {
             list_del_init(&p->inflight);
             /*
              * Remove from inflight, then change physical affinity. It
@@ -255,8 +270,10 @@ void vgic_sync_from_lrs(struct vcpu *v)
 
     spin_lock_irqsave(&v->arch.vgic.lock, flags);
 
-    while ((i = find_next_bit((const unsigned long *) &this_cpu(lr_mask),
-                              nr_lrs, i)) < nr_lrs ) {
+    while ( (i = find_next_bit((const unsigned long *)&this_cpu(lr_mask),
+                               nr_lrs,
+                               i)) < nr_lrs )
+    {
         gic_update_one_lr(v, i);
         i++;
     }
@@ -280,13 +297,13 @@ static void gic_restore_pending_irqs(struct vcpu *v)
         goto out;
 
     inflight_r = &v->arch.vgic.inflight_irqs;
-    list_for_each_entry_safe ( p, t, &v->arch.vgic.lr_pending, lr_queue )
+    list_for_each_entry_safe(p, t, &v->arch.vgic.lr_pending, lr_queue)
     {
         lr = gic_find_unused_lr(v, p, lr);
         if ( lr >= nr_lrs )
         {
             /* No more free LRs: find a lower priority irq to evict */
-            list_for_each_entry_reverse( p_r, inflight_r, inflight )
+            list_for_each_entry_reverse(p_r, inflight_r, inflight)
             {
                 if ( p_r->priority == p->priority )
                     goto out;
@@ -298,7 +315,7 @@ static void gic_restore_pending_irqs(struct vcpu *v)
              * time, so quit */
             goto out;
 
-found:
+        found:
             lr = p_r->lr;
             p_r->lr = GIC_INVALID_LR;
             set_bit(GIC_IRQ_GUEST_QUEUED, &p_r->status);
@@ -328,7 +345,7 @@ void gic_clear_pending_irqs(struct vcpu *v)
     ASSERT(spin_is_locked(&v->arch.vgic.lock));
 
     v->arch.lr_mask = 0;
-    list_for_each_entry_safe ( p, t, &v->arch.vgic.lr_pending, lr_queue )
+    list_for_each_entry_safe(p, t, &v->arch.vgic.lr_pending, lr_queue)
         gic_remove_from_lr_pending(v, p);
 }
 
@@ -364,7 +381,7 @@ int vgic_vcpu_pending_irq(struct vcpu *v)
 
     /* find the first enabled non-active irq, the queue is already
      * ordered by priority */
-    list_for_each_entry( p, &v->arch.vgic.inflight_irqs, inflight )
+    list_for_each_entry(p, &v->arch.vgic.inflight_irqs, inflight)
     {
         if ( GIC_PRI_TO_GUEST(p->priority) >= mask_priority )
             goto out;
@@ -396,10 +413,10 @@ void gic_dump_vgic_info(struct vcpu *v)
 {
     struct pending_irq *p;
 
-    list_for_each_entry ( p, &v->arch.vgic.inflight_irqs, inflight )
+    list_for_each_entry(p, &v->arch.vgic.inflight_irqs, inflight)
         printk("Inflight irq=%u lr=%u\n", p->irq, p->lr);
 
-    list_for_each_entry( p, &v->arch.vgic.lr_pending, lr_queue )
+    list_for_each_entry(p, &v->arch.vgic.lr_pending, lr_queue)
         printk("Pending irq=%d\n", p->irq);
 }
 
@@ -445,8 +462,7 @@ int vgic_connect_hw_irq(struct domain *d, struct vcpu *v, unsigned int virq,
          * The VIRQ should not be already enabled by the guest nor
          * active/pending in the guest.
          */
-        if ( !p->desc &&
-             !test_bit(GIC_IRQ_GUEST_ENABLED, &p->status) &&
+        if ( !p->desc && !test_bit(GIC_IRQ_GUEST_ENABLED, &p->status) &&
              !test_bit(GIC_IRQ_GUEST_VISIBLE, &p->status) &&
              !test_bit(GIC_IRQ_GUEST_ACTIVE, &p->status) )
             p->desc = desc;

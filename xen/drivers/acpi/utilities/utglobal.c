@@ -50,7 +50,7 @@
 
 ACPI_EXPORT_SYMBOL(acpi_gbl_FADT)
 #define _COMPONENT          ACPI_UTILITIES
-    ACPI_MODULE_NAME("utglobal")
+ACPI_MODULE_NAME("utglobal")
 
 /*******************************************************************************
  *
@@ -68,23 +68,22 @@ ACPI_EXPORT_SYMBOL(acpi_gbl_FADT)
 
 const char *__init acpi_format_exception(acpi_status status)
 {
-	const char *exception = NULL;
+    const char *exception = NULL;
 
-	ACPI_FUNCTION_ENTRY();
+    ACPI_FUNCTION_ENTRY();
 
-	exception = acpi_ut_validate_exception(status);
-	if (!exception) {
+    exception = acpi_ut_validate_exception(status);
+    if ( !exception )
+    {
+        /* Exception code was not recognized */
 
-		/* Exception code was not recognized */
+        ACPI_ERROR((AE_INFO, "Unknown exception code: %#X", status));
 
-		ACPI_ERROR((AE_INFO,
-			    "Unknown exception code: %#X", status));
+        exception = "UNKNOWN_STATUS_CODE";
+        dump_execution_state();
+    }
 
-		exception = "UNKNOWN_STATUS_CODE";
-		dump_execution_state();
-	}
-
-	return (ACPI_CAST_PTR(const char, exception));
+    return (ACPI_CAST_PTR(const char, exception));
 }
 
 /******************************************************************************
@@ -94,75 +93,81 @@ const char *__init acpi_format_exception(acpi_status status)
  ******************************************************************************/
 
 struct acpi_bit_register_info acpi_gbl_bit_register_info[ACPI_NUM_BITREG] = {
-	/* Name                                     Parent Register             Register Bit Position                   Register Bit Mask       */
+    /* Name                                     Parent Register             Register Bit Position                   Register Bit Mask       */
 
-	/* ACPI_BITREG_TIMER_STATUS         */ {ACPI_REGISTER_PM1_STATUS,
-						ACPI_BITPOSITION_TIMER_STATUS,
-						ACPI_BITMASK_TIMER_STATUS},
-	/* ACPI_BITREG_BUS_MASTER_STATUS    */ {ACPI_REGISTER_PM1_STATUS,
-						ACPI_BITPOSITION_BUS_MASTER_STATUS,
-						ACPI_BITMASK_BUS_MASTER_STATUS},
-	/* ACPI_BITREG_GLOBAL_LOCK_STATUS   */ {ACPI_REGISTER_PM1_STATUS,
-						ACPI_BITPOSITION_GLOBAL_LOCK_STATUS,
-						ACPI_BITMASK_GLOBAL_LOCK_STATUS},
-	/* ACPI_BITREG_POWER_BUTTON_STATUS  */ {ACPI_REGISTER_PM1_STATUS,
-						ACPI_BITPOSITION_POWER_BUTTON_STATUS,
-						ACPI_BITMASK_POWER_BUTTON_STATUS},
-	/* ACPI_BITREG_SLEEP_BUTTON_STATUS  */ {ACPI_REGISTER_PM1_STATUS,
-						ACPI_BITPOSITION_SLEEP_BUTTON_STATUS,
-						ACPI_BITMASK_SLEEP_BUTTON_STATUS},
-	/* ACPI_BITREG_RT_CLOCK_STATUS      */ {ACPI_REGISTER_PM1_STATUS,
-						ACPI_BITPOSITION_RT_CLOCK_STATUS,
-						ACPI_BITMASK_RT_CLOCK_STATUS},
-	/* ACPI_BITREG_WAKE_STATUS          */ {ACPI_REGISTER_PM1_STATUS,
-						ACPI_BITPOSITION_WAKE_STATUS,
-						ACPI_BITMASK_WAKE_STATUS},
-	/* ACPI_BITREG_PCIEXP_WAKE_STATUS   */ {ACPI_REGISTER_PM1_STATUS,
-						ACPI_BITPOSITION_PCIEXP_WAKE_STATUS,
-						ACPI_BITMASK_PCIEXP_WAKE_STATUS},
+    /* ACPI_BITREG_TIMER_STATUS         */ { ACPI_REGISTER_PM1_STATUS,
+                                            ACPI_BITPOSITION_TIMER_STATUS,        ACPI_BITMASK_TIMER_STATUS       },
+    /* ACPI_BITREG_BUS_MASTER_STATUS    */
+    { ACPI_REGISTER_PM1_STATUS,
+                                            ACPI_BITPOSITION_BUS_MASTER_STATUS,   ACPI_BITMASK_BUS_MASTER_STATUS  },
+    /* ACPI_BITREG_GLOBAL_LOCK_STATUS   */
+    { ACPI_REGISTER_PM1_STATUS,
+                                            ACPI_BITPOSITION_GLOBAL_LOCK_STATUS,  ACPI_BITMASK_GLOBAL_LOCK_STATUS },
+    /* ACPI_BITREG_POWER_BUTTON_STATUS  */
+    { ACPI_REGISTER_PM1_STATUS,
+                                            ACPI_BITPOSITION_POWER_BUTTON_STATUS,
+                                            ACPI_BITMASK_POWER_BUTTON_STATUS                                      },
+    /* ACPI_BITREG_SLEEP_BUTTON_STATUS  */
+    { ACPI_REGISTER_PM1_STATUS,
+                                            ACPI_BITPOSITION_SLEEP_BUTTON_STATUS,
+                                            ACPI_BITMASK_SLEEP_BUTTON_STATUS                                      },
+    /* ACPI_BITREG_RT_CLOCK_STATUS      */
+    { ACPI_REGISTER_PM1_STATUS,
+                                            ACPI_BITPOSITION_RT_CLOCK_STATUS,     ACPI_BITMASK_RT_CLOCK_STATUS    },
+    /* ACPI_BITREG_WAKE_STATUS          */
+    { ACPI_REGISTER_PM1_STATUS,
+                                            ACPI_BITPOSITION_WAKE_STATUS,         ACPI_BITMASK_WAKE_STATUS        },
+    /* ACPI_BITREG_PCIEXP_WAKE_STATUS   */
+    { ACPI_REGISTER_PM1_STATUS,
+                                            ACPI_BITPOSITION_PCIEXP_WAKE_STATUS,  ACPI_BITMASK_PCIEXP_WAKE_STATUS },
 
-	/* ACPI_BITREG_TIMER_ENABLE         */ {ACPI_REGISTER_PM1_ENABLE,
-						ACPI_BITPOSITION_TIMER_ENABLE,
-						ACPI_BITMASK_TIMER_ENABLE},
-	/* ACPI_BITREG_GLOBAL_LOCK_ENABLE   */ {ACPI_REGISTER_PM1_ENABLE,
-						ACPI_BITPOSITION_GLOBAL_LOCK_ENABLE,
-						ACPI_BITMASK_GLOBAL_LOCK_ENABLE},
-	/* ACPI_BITREG_POWER_BUTTON_ENABLE  */ {ACPI_REGISTER_PM1_ENABLE,
-						ACPI_BITPOSITION_POWER_BUTTON_ENABLE,
-						ACPI_BITMASK_POWER_BUTTON_ENABLE},
-	/* ACPI_BITREG_SLEEP_BUTTON_ENABLE  */ {ACPI_REGISTER_PM1_ENABLE,
-						ACPI_BITPOSITION_SLEEP_BUTTON_ENABLE,
-						ACPI_BITMASK_SLEEP_BUTTON_ENABLE},
-	/* ACPI_BITREG_RT_CLOCK_ENABLE      */ {ACPI_REGISTER_PM1_ENABLE,
-						ACPI_BITPOSITION_RT_CLOCK_ENABLE,
-						ACPI_BITMASK_RT_CLOCK_ENABLE},
-	/* ACPI_BITREG_WAKE_ENABLE          */ {ACPI_REGISTER_PM1_ENABLE, 0, 0},
-	/* ACPI_BITREG_PCIEXP_WAKE_DISABLE  */ {ACPI_REGISTER_PM1_ENABLE,
-						ACPI_BITPOSITION_PCIEXP_WAKE_DISABLE,
-						ACPI_BITMASK_PCIEXP_WAKE_DISABLE},
+    /* ACPI_BITREG_TIMER_ENABLE         */
+    { ACPI_REGISTER_PM1_ENABLE,
+                                            ACPI_BITPOSITION_TIMER_ENABLE,        ACPI_BITMASK_TIMER_ENABLE       },
+    /* ACPI_BITREG_GLOBAL_LOCK_ENABLE   */
+    { ACPI_REGISTER_PM1_ENABLE,
+                                            ACPI_BITPOSITION_GLOBAL_LOCK_ENABLE,  ACPI_BITMASK_GLOBAL_LOCK_ENABLE },
+    /* ACPI_BITREG_POWER_BUTTON_ENABLE  */
+    { ACPI_REGISTER_PM1_ENABLE,
+                                            ACPI_BITPOSITION_POWER_BUTTON_ENABLE,
+                                            ACPI_BITMASK_POWER_BUTTON_ENABLE                                      },
+    /* ACPI_BITREG_SLEEP_BUTTON_ENABLE  */
+    { ACPI_REGISTER_PM1_ENABLE,
+                                            ACPI_BITPOSITION_SLEEP_BUTTON_ENABLE,
+                                            ACPI_BITMASK_SLEEP_BUTTON_ENABLE                                      },
+    /* ACPI_BITREG_RT_CLOCK_ENABLE      */
+    { ACPI_REGISTER_PM1_ENABLE,
+                                            ACPI_BITPOSITION_RT_CLOCK_ENABLE,     ACPI_BITMASK_RT_CLOCK_ENABLE    },
+    /* ACPI_BITREG_WAKE_ENABLE          */
+     { ACPI_REGISTER_PM1_ENABLE,  0,        0                               },
+    /* ACPI_BITREG_PCIEXP_WAKE_DISABLE  */
+    { ACPI_REGISTER_PM1_ENABLE,
+                                            ACPI_BITPOSITION_PCIEXP_WAKE_DISABLE,
+                                            ACPI_BITMASK_PCIEXP_WAKE_DISABLE                                      },
 
-	/* ACPI_BITREG_SCI_ENABLE           */ {ACPI_REGISTER_PM1_CONTROL,
-						ACPI_BITPOSITION_SCI_ENABLE,
-						ACPI_BITMASK_SCI_ENABLE},
-	/* ACPI_BITREG_BUS_MASTER_RLD       */ {ACPI_REGISTER_PM1_CONTROL,
-						ACPI_BITPOSITION_BUS_MASTER_RLD,
-						ACPI_BITMASK_BUS_MASTER_RLD},
-	/* ACPI_BITREG_GLOBAL_LOCK_RELEASE  */ {ACPI_REGISTER_PM1_CONTROL,
-						ACPI_BITPOSITION_GLOBAL_LOCK_RELEASE,
-						ACPI_BITMASK_GLOBAL_LOCK_RELEASE},
-	/* ACPI_BITREG_SLEEP_TYPE_A         */ {ACPI_REGISTER_PM1_CONTROL,
-						ACPI_BITPOSITION_SLEEP_TYPE_X,
-						ACPI_BITMASK_SLEEP_TYPE_X},
-	/* ACPI_BITREG_SLEEP_TYPE_B         */ {ACPI_REGISTER_PM1_CONTROL,
-						ACPI_BITPOSITION_SLEEP_TYPE_X,
-						ACPI_BITMASK_SLEEP_TYPE_X},
-	/* ACPI_BITREG_SLEEP_ENABLE         */ {ACPI_REGISTER_PM1_CONTROL,
-						ACPI_BITPOSITION_SLEEP_ENABLE,
-						ACPI_BITMASK_SLEEP_ENABLE},
+    /* ACPI_BITREG_SCI_ENABLE           */
+    { ACPI_REGISTER_PM1_CONTROL,
+                                            ACPI_BITPOSITION_SCI_ENABLE,          ACPI_BITMASK_SCI_ENABLE         },
+    /* ACPI_BITREG_BUS_MASTER_RLD       */
+    { ACPI_REGISTER_PM1_CONTROL,
+                                            ACPI_BITPOSITION_BUS_MASTER_RLD,      ACPI_BITMASK_BUS_MASTER_RLD     },
+    /* ACPI_BITREG_GLOBAL_LOCK_RELEASE  */
+    { ACPI_REGISTER_PM1_CONTROL,
+                                            ACPI_BITPOSITION_GLOBAL_LOCK_RELEASE,
+                                            ACPI_BITMASK_GLOBAL_LOCK_RELEASE                                      },
+    /* ACPI_BITREG_SLEEP_TYPE_A         */
+    { ACPI_REGISTER_PM1_CONTROL,
+                                            ACPI_BITPOSITION_SLEEP_TYPE_X,        ACPI_BITMASK_SLEEP_TYPE_X       },
+    /* ACPI_BITREG_SLEEP_TYPE_B         */
+    { ACPI_REGISTER_PM1_CONTROL,
+                                            ACPI_BITPOSITION_SLEEP_TYPE_X,        ACPI_BITMASK_SLEEP_TYPE_X       },
+    /* ACPI_BITREG_SLEEP_ENABLE         */
+    { ACPI_REGISTER_PM1_CONTROL,
+                                            ACPI_BITPOSITION_SLEEP_ENABLE,        ACPI_BITMASK_SLEEP_ENABLE       },
 
-	/* ACPI_BITREG_ARB_DIS              */ {ACPI_REGISTER_PM2_CONTROL,
-						ACPI_BITPOSITION_ARB_DISABLE,
-						ACPI_BITMASK_ARB_DISABLE}
+    /* ACPI_BITREG_ARB_DIS              */
+    { ACPI_REGISTER_PM2_CONTROL,
+                                            ACPI_BITPOSITION_ARB_DISABLE,         ACPI_BITMASK_ARB_DISABLE        }
 };
 
 #ifdef ACPI_DEBUG_OUTPUT
@@ -182,26 +187,22 @@ struct acpi_bit_register_info acpi_gbl_bit_register_info[ACPI_NUM_BITREG] = {
 /* Region type decoding */
 
 static const char *const acpi_gbl_region_types[ACPI_NUM_PREDEFINED_REGIONS] = {
-	"SystemMemory",
-	"SystemIO",
-	"PCI_Config",
-	"EmbeddedControl",
-	"SMBus",
-	"CMOS",
-	"PCIBARTarget",
-	"DataTable"
+    "SystemMemory", "SystemIO", "PCI_Config",   "EmbeddedControl",
+    "SMBus",        "CMOS",     "PCIBARTarget", "DataTable"
 };
 
 const char *acpi_ut_get_region_name(u8 space_id)
 {
+    if ( space_id >= ACPI_USER_REGION_BEGIN )
+    {
+        return ("UserDefinedRegion");
+    }
+    else if ( space_id >= ACPI_NUM_PREDEFINED_REGIONS )
+    {
+        return ("InvalidSpaceId");
+    }
 
-	if (space_id >= ACPI_USER_REGION_BEGIN) {
-		return ("UserDefinedRegion");
-	} else if (space_id >= ACPI_NUM_PREDEFINED_REGIONS) {
-		return ("InvalidSpaceId");
-	}
-
-	return (ACPI_CAST_PTR(char, acpi_gbl_region_types[space_id]));
+    return (ACPI_CAST_PTR(char, acpi_gbl_region_types[space_id]));
 }
 
 #endif

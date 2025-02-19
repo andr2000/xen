@@ -66,8 +66,7 @@ static inline bool NEED_FLUSH(u32 cpu_stamp, u32 lastuse_stamp)
      *     wrapped, so there's no need for a flush (one is forced every wrap).
      */
     return ((curr_time == 0) ||
-            ((cpu_stamp <= lastuse_stamp) &&
-             (lastuse_stamp <= curr_time)));
+            ((cpu_stamp <= lastuse_stamp) && (lastuse_stamp <= curr_time)));
 }
 
 /*
@@ -82,7 +81,7 @@ static inline void tlbflush_filter(cpumask_t *mask, uint32_t page_timestamp)
     if ( !tlb_clk_enabled )
         return;
 
-    for_each_cpu ( cpu, mask )
+    for_each_cpu(cpu, mask)
         if ( !NEED_FLUSH(per_cpu(tlbflush_time, cpu), page_timestamp) )
             __cpumask_clear_cpu(cpu, mask);
 }
@@ -93,8 +92,7 @@ void cf_check new_tlbflush_clock_period(void);
 static inline unsigned long read_cr3(void)
 {
     unsigned long cr3;
-    __asm__ __volatile__ (
-        "mov %%cr3, %0" : "=r" (cr3) : );
+    __asm__ __volatile__("mov %%cr3, %0" : "=r"(cr3) :);
     return cr3;
 }
 
@@ -102,26 +100,26 @@ static inline unsigned long read_cr3(void)
 void switch_cr3_cr4(unsigned long cr3, unsigned long cr4);
 
 /* flush_* flag fields: */
- /*
+/*
   * Area to flush: 2^flush_order pages. Default is flush entire address space.
   * NB. Multi-page areas do not need to have been mapped with a superpage.
   */
 #define FLUSH_ORDER_MASK 0xff
 #define FLUSH_ORDER(x)   ((x)+1)
- /* Flush TLBs (or parts thereof) */
+/* Flush TLBs (or parts thereof) */
 #define FLUSH_TLB        0x100
- /* Flush TLBs (or parts thereof) including global mappings */
+/* Flush TLBs (or parts thereof) including global mappings */
 #define FLUSH_TLB_GLOBAL 0x200
- /* Flush data caches */
+/* Flush data caches */
 #define FLUSH_CACHE      0x400
- /* VA for the flush has a valid mapping */
+/* VA for the flush has a valid mapping */
 #define FLUSH_VA_VALID   0x800
- /* Flush CPU state */
+/* Flush CPU state */
 #define FLUSH_VCPU_STATE 0x1000
- /* Flush the per-cpu root page table */
+/* Flush the per-cpu root page table */
 #define FLUSH_ROOT_PGTBL 0x2000
 #if CONFIG_HVM
- /* Flush all HVM guests linear TLB (using ASID/VPID) */
+/* Flush all HVM guests linear TLB (using ASID/VPID) */
 #define FLUSH_HVM_ASID_CORE 0x4000
 #else
 #define FLUSH_HVM_ASID_CORE 0
@@ -131,9 +129,9 @@ void switch_cr3_cr4(unsigned long cr3, unsigned long cr4);
  * Adding this to the flags passed to flush_area_mask will prevent using the
  * assisted flush without having any other side effect.
  */
-# define FLUSH_NO_ASSIST 0x8000
+#define FLUSH_NO_ASSIST 0x8000
 #else
-# define FLUSH_NO_ASSIST 0
+#define FLUSH_NO_ASSIST 0
 #endif
 
 /* Flush local TLBs/caches. */
@@ -141,8 +139,7 @@ unsigned int flush_area_local(const void *va, unsigned int flags);
 #define flush_local(flags) flush_area_local(NULL, flags)
 
 /* Flush specified CPUs' TLBs/caches */
-void flush_area_mask(const cpumask_t *mask, const void *va,
-                     unsigned int flags);
+void flush_area_mask(const cpumask_t *mask, const void *va, unsigned int flags);
 #define flush_mask(mask, flags) flush_area_mask(mask, NULL, flags)
 
 /* Flush all CPUs' TLBs/caches */
@@ -158,7 +155,7 @@ void flush_area_mask(const cpumask_t *mask, const void *va,
 /* Flush specified CPUs' TLBs */
 #define flush_tlb_mask(mask)                    \
     flush_mask(mask, FLUSH_TLB)
-#define flush_tlb_one_mask(mask,v)              \
+#define flush_tlb_one_mask(mask, v)              \
     flush_area_mask(mask, (const void *)(v), FLUSH_TLB|FLUSH_ORDER(0))
 
 /*
@@ -182,17 +179,21 @@ void flush_area_mask(const cpumask_t *mask, const void *va,
 }
 
 static inline void flush_page_to_ram(unsigned long mfn, bool sync_icache) {}
-static inline int invalidate_dcache_va_range(const void *p,
-                                             unsigned long size)
-{ return -EOPNOTSUPP; }
+
+static inline int invalidate_dcache_va_range(const void *p, unsigned long size)
+{
+    return -EOPNOTSUPP;
+}
+
 static inline int clean_and_invalidate_dcache_va_range(const void *p,
                                                        unsigned long size)
 {
     unsigned int order = get_order_from_bytes(size);
     /* sub-page granularity support needs to be added if necessary */
-    flush_area_local(p, FLUSH_CACHE|FLUSH_ORDER(order));
+    flush_area_local(p, FLUSH_CACHE | FLUSH_ORDER(order));
     return 0;
 }
+
 static inline int clean_dcache_va_range(const void *p, unsigned long size)
 {
     return clean_and_invalidate_dcache_va_range(p, size);

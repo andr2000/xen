@@ -52,20 +52,23 @@
 /* Generic IO read/write.  These perform native-endian accesses. */
 static inline void __raw_writeb(uint8_t val, volatile void __iomem *addr)
 {
-    asm volatile ( "sb %1, %0"
-                   : "=m" (*(volatile uint8_t __force *)addr) : "r" (val) );
+    asm volatile("sb %1, %0"
+                 : "=m"(*(volatile uint8_t __force *)addr)
+                 : "r"(val));
 }
 
 static inline void __raw_writew(uint16_t val, volatile void __iomem *addr)
 {
-    asm volatile ( "sh %1, %0"
-                   : "=m" (*(volatile uint16_t __force *)addr) : "r" (val) );
+    asm volatile("sh %1, %0"
+                 : "=m"(*(volatile uint16_t __force *)addr)
+                 : "r"(val));
 }
 
 static inline void __raw_writel(uint32_t val, volatile void __iomem *addr)
 {
-    asm volatile ( "sw %1, %0"
-                   : "=m" (*(volatile uint32_t __force *)addr) : "r" (val) );
+    asm volatile("sw %1, %0"
+                 : "=m"(*(volatile uint32_t __force *)addr)
+                 : "r"(val));
 }
 
 static inline void __raw_writeq(uint64_t val, volatile void __iomem *addr)
@@ -73,8 +76,9 @@ static inline void __raw_writeq(uint64_t val, volatile void __iomem *addr)
 #ifdef CONFIG_RISCV_32
     BUILD_BUG_ON("unimplemented");
 #else
-    asm volatile ( "sd %1, %0"
-                   : "=m" (*(volatile uint64_t __force *)addr) : "r" (val) );
+    asm volatile("sd %1, %0"
+                 : "=m"(*(volatile uint64_t __force *)addr)
+                 : "r"(val));
 #endif
 }
 
@@ -82,8 +86,9 @@ static inline uint8_t __raw_readb(const volatile void __iomem *addr)
 {
     uint8_t val;
 
-    asm volatile ( "lb %0, %1" : "=r" (val)
-                   : "m" (*(const volatile uint8_t __force *)addr) );
+    asm volatile("lb %0, %1"
+                 : "=r"(val)
+                 : "m"(*(const volatile uint8_t __force *)addr));
     return val;
 }
 
@@ -91,8 +96,9 @@ static inline uint16_t __raw_readw(const volatile void __iomem *addr)
 {
     uint16_t val;
 
-    asm volatile ( "lh %0, %1" : "=r" (val)
-                   : "m" (*(const volatile uint16_t __force *)addr) );
+    asm volatile("lh %0, %1"
+                 : "=r"(val)
+                 : "m"(*(const volatile uint16_t __force *)addr));
     return val;
 }
 
@@ -100,8 +106,9 @@ static inline uint32_t __raw_readl(const volatile void __iomem *addr)
 {
     uint32_t val;
 
-    asm volatile ( "lw %0, %1" : "=r" (val)
-                   : "m" (*(const volatile uint32_t __force *)addr) );
+    asm volatile("lw %0, %1"
+                 : "=r"(val)
+                 : "m"(*(const volatile uint32_t __force *)addr));
     return val;
 }
 
@@ -112,13 +119,13 @@ static inline uint64_t __raw_readq(const volatile void __iomem *addr)
 #ifdef CONFIG_RISCV_32
     BUILD_BUG_ON("unimplemented");
 #else
-    asm volatile ( "ld %0, %1" : "=r" (val)
-                   : "m" (*(const volatile uint64_t __force *)addr) );
+    asm volatile("ld %0, %1"
+                 : "=r"(val)
+                 : "m"(*(const volatile uint64_t __force *)addr));
 #endif
 
     return val;
 }
-
 
 /*
  * Unordered I/O memory access primitives.  These are even more relaxed than

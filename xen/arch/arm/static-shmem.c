@@ -19,10 +19,8 @@ typedef struct {
 static struct {
     struct membanks_hdr common;
     struct membank bank[NR_SHMEM_BANKS];
-} shm_heap_banks __initdata = {
-    .common.max_banks = NR_SHMEM_BANKS,
-    .common.type = STATIC_SHARED_MEMORY
-};
+} shm_heap_banks __initdata = { .common.max_banks = NR_SHMEM_BANKS,
+                                .common.type = STATIC_SHARED_MEMORY };
 
 static inline struct membanks *get_shmem_heap_banks(void)
 {
@@ -36,7 +34,7 @@ static void __init __maybe_unused build_assertions(void)
      * member and struct shared_meminfo "bank" member
      */
     BUILD_BUG_ON((offsetof(struct membanks, bank) !=
-                 offsetof(struct shared_meminfo, bank)));
+                  offsetof(struct shared_meminfo, bank)));
 }
 
 static const struct membank __init *
@@ -44,7 +42,7 @@ find_shm_bank_by_id(const struct membanks *shmem, const char *shm_id)
 {
     unsigned int bank;
 
-    for ( bank = 0 ; bank < shmem->nr_banks; bank++ )
+    for ( bank = 0; bank < shmem->nr_banks; bank++ )
     {
         if ( strcmp(shm_id, shmem->bank[bank].shmem_extra->shm_id) == 0 )
             break;
@@ -73,17 +71,18 @@ static bool __init is_shm_allocated_to_domio(paddr_t pbase)
 
     if ( d != dom_io )
     {
-        printk(XENLOG_ERR
-               "shm memory node has already been allocated to a specific owner %pd, Please check your configuration\n",
-               d);
+        printk(
+            XENLOG_ERR
+            "shm memory node has already been allocated to a specific owner %pd, Please check your configuration\n",
+            d);
         return false;
     }
 
     return true;
 }
 
-static mfn_t __init acquire_shared_memory_bank(struct domain *d,
-                                               paddr_t pbase, paddr_t psize,
+static mfn_t __init acquire_shared_memory_bank(struct domain *d, paddr_t pbase,
+                                               paddr_t psize,
                                                bool bank_from_heap)
 {
     mfn_t smfn;
@@ -98,7 +97,8 @@ static mfn_t __init acquire_shared_memory_bank(struct domain *d,
     if ( (UINT_MAX - d->max_pages) < nr_pfns )
     {
         printk(XENLOG_ERR "%pd: Over-allocation for d->max_pages: %lu.\n",
-               d, nr_pfns);
+               d,
+               nr_pfns);
         return INVALID_MFN;
     }
     d->max_pages += nr_pfns;
@@ -115,14 +115,16 @@ static mfn_t __init acquire_shared_memory_bank(struct domain *d,
 
     if ( res )
     {
-        printk(XENLOG_ERR "%pd: failed to %s static memory: %d.\n", d,
-               bank_from_heap ? "assign" : "acquire", res);
+        printk(XENLOG_ERR "%pd: failed to %s static memory: %d.\n",
+               d,
+               bank_from_heap ? "assign" : "acquire",
+               res);
         goto fail;
     }
 
     return smfn;
 
- fail:
+fail:
     d->max_pages -= nr_pfns;
     return INVALID_MFN;
 }
@@ -152,7 +154,9 @@ static int __init assign_shared_memory(struct domain *d, paddr_t gbase,
     nr_pages = PFN_DOWN(psize);
     if ( d != dom_io )
     {
-        ret = guest_physmap_add_pages(d, gaddr_to_gfn(gbase), smfn,
+        ret = guest_physmap_add_pages(d,
+                                      gaddr_to_gfn(gbase),
+                                      smfn,
                                       PFN_DOWN(psize));
         if ( ret )
         {
@@ -174,24 +178,25 @@ static int __init assign_shared_memory(struct domain *d, paddr_t gbase,
     {
         if ( !get_page_nr(page + i, d, nr_borrowers) )
         {
-            printk(XENLOG_ERR
-                   "Failed to add %lu references to page %"PRI_mfn".\n",
-                   nr_borrowers, mfn_x(smfn) + i);
+            printk(XENLOG_ERR "Failed to add %lu references to page %" PRI_mfn
+                              ".\n",
+                   nr_borrowers,
+                   mfn_x(smfn) + i);
             goto fail;
         }
     }
 
     return 0;
 
- fail:
+fail:
     while ( --i >= 0 )
         put_page_nr(page + i, nr_borrowers);
     return ret;
 }
 
-static int __init
-append_shm_bank_to_domain(struct kernel_info *kinfo, paddr_t start,
-                          paddr_t size, const char *shm_id)
+static int __init append_shm_bank_to_domain(struct kernel_info *kinfo,
+                                            paddr_t start, paddr_t size,
+                                            const char *shm_id)
 {
     struct membanks *shm_mem = kernel_info_get_shm_mem(kinfo);
     struct shmem_membank_extra *shm_mem_extra;
@@ -241,8 +246,10 @@ static int __init handle_shared_mem_bank(struct domain *d, paddr_t gbase,
          * We found the first borrower of the region, the owner was not
          * specified, so they should be assigned to dom_io.
          */
-        ret = assign_shared_memory(owner_dom_io ? dom_io : d, gbase,
-                                   bank_from_heap, shm_bank);
+        ret = assign_shared_memory(owner_dom_io ? dom_io : d,
+                                   gbase,
+                                   bank_from_heap,
+                                   shm_bank);
         if ( ret )
             return ret;
     }
@@ -250,8 +257,11 @@ static int __init handle_shared_mem_bank(struct domain *d, paddr_t gbase,
     if ( owner_dom_io || (strcmp(role_str, "borrower") == 0) )
     {
         /* Set up P2M foreign mapping for borrower domain. */
-        ret = map_regions_p2mt(d, _gfn(PFN_UP(gbase)), PFN_DOWN(psize),
-                               _mfn(PFN_UP(pbase)), p2m_map_foreign_rw);
+        ret = map_regions_p2mt(d,
+                               _gfn(PFN_UP(gbase)),
+                               PFN_DOWN(psize),
+                               _mfn(PFN_UP(pbase)),
+                               p2m_map_foreign_rw);
         if ( ret )
             return ret;
     }
@@ -275,8 +285,10 @@ static bool __init save_map_heap_pages(struct domain *d, struct page_info *pg,
         shm_heap_banks.bank[idx].shmem_extra = b_extra->bank_extra_info;
         shm_heap_banks.common.nr_banks++;
 
-        ret = handle_shared_mem_bank(b_extra->d, b_extra->gbase,
-                                     b_extra->role_str, true,
+        ret = handle_shared_mem_bank(b_extra->d,
+                                     b_extra->gbase,
+                                     b_extra->role_str,
+                                     true,
                                      &shm_heap_banks.bank[idx]);
         if ( !ret )
         {
@@ -350,22 +362,27 @@ int __init process_shm(struct domain *d, struct kernel_info *kinfo,
 
             if ( is_domain_direct_mapped(d) && (pbase != gbase) )
             {
-                printk("%pd: physical address 0x%"PRIpaddr" and guest address 0x%"PRIpaddr" are not direct-mapped.\n",
-                       d, pbase, gbase);
+                printk("%pd: physical address 0x%" PRIpaddr
+                       " and guest address 0x%" PRIpaddr
+                       " are not direct-mapped.\n",
+                       d,
+                       pbase,
+                       gbase);
                 return -EINVAL;
             }
 
             for ( i = 0; i < PFN_DOWN(psize); i++ )
                 if ( !mfn_valid(mfn_add(maddr_to_mfn(pbase), i)) )
                 {
-                    printk("%pd: invalid physical address 0x%"PRI_mfn"\n",
-                        d, mfn_x(mfn_add(maddr_to_mfn(pbase), i)));
+                    printk("%pd: invalid physical address 0x%" PRI_mfn "\n",
+                           d,
+                           mfn_x(mfn_add(maddr_to_mfn(pbase), i)));
                     return -EINVAL;
                 }
 
             /* The host physical address is supplied by the user */
-            ret = handle_shared_mem_bank(d, gbase, role_str, false,
-                                         boot_shm_bank);
+            ret =
+                handle_shared_mem_bank(d, gbase, role_str, false, boot_shm_bank);
             if ( ret )
                 return ret;
         }
@@ -381,8 +398,9 @@ int __init process_shm(struct domain *d, struct kernel_info *kinfo,
 
             if ( is_domain_direct_mapped(d) )
             {
-                printk("%pd: host and guest physical address must be supplied for direct-mapped domains\n",
-                       d);
+                printk(
+                    "%pd: host and guest physical address must be supplied for direct-mapped domains\n",
+                    d);
                 return -EINVAL;
             }
 
@@ -391,15 +409,18 @@ int __init process_shm(struct domain *d, struct kernel_info *kinfo,
 
             if ( !alloc_bank )
             {
-                alloc_heap_pages_cb_extra cb_arg = { d, role_str, gbase,
-                    boot_shm_bank->shmem_extra };
+                alloc_heap_pages_cb_extra
+                    cb_arg = { d, role_str, gbase, boot_shm_bank->shmem_extra };
 
                 /* shm_id identified bank is not yet allocated */
-                if ( !allocate_domheap_memory(NULL, psize, save_map_heap_pages,
+                if ( !allocate_domheap_memory(NULL,
+                                              psize,
+                                              save_map_heap_pages,
                                               &cb_arg) )
                 {
                     printk(XENLOG_ERR
-                           "Failed to allocate (%"PRIpaddr"KB) pages as static shared memory from heap\n",
+                           "Failed to allocate (%" PRIpaddr
+                           "KB) pages as static shared memory from heap\n",
                            psize >> 10);
                     return -EINVAL;
                 }
@@ -408,7 +429,7 @@ int __init process_shm(struct domain *d, struct kernel_info *kinfo,
             {
                 /* shm_id identified bank is already allocated */
                 const struct membank *end_bank =
-                        &shm_heap_banks.bank[shm_heap_banks.common.nr_banks];
+                    &shm_heap_banks.bank[shm_heap_banks.common.nr_banks];
                 paddr_t gbase_bank = gbase;
 
                 /*
@@ -424,7 +445,10 @@ int __init process_shm(struct domain *d, struct kernel_info *kinfo,
                     if ( strcmp(shm_id, alloc_bank->shmem_extra->shm_id) != 0 )
                         break;
 
-                    ret = handle_shared_mem_bank(d, gbase_bank, role_str, true,
+                    ret = handle_shared_mem_bank(d,
+                                                 gbase_bank,
+                                                 role_str,
+                                                 true,
                                                  alloc_bank);
                     if ( ret )
                         return ret;
@@ -490,10 +514,13 @@ int __init make_shm_resv_memory_node(const struct kernel_info *kinfo,
         if ( res )
             return res;
 
-        dt_dprintk("Shared memory bank %u: %#"PRIx64"->%#"PRIx64"\n",
-                   i, start, start + size);
+        dt_dprintk("Shared memory bank %u: %#" PRIx64 "->%#" PRIx64 "\n",
+                   i,
+                   start,
+                   start + size);
 
-        res = fdt_property_string(fdt, "xen,id",
+        res = fdt_property_string(fdt,
+                                  "xen,id",
                                   mem->bank[i].shmem_extra->shm_id);
         if ( res )
             return res;
@@ -532,7 +559,8 @@ int __init process_shm_node(const void *fdt, int node, uint32_t address_cells,
 
     if ( address_cells < 1 || size_cells < 1 )
     {
-        printk("fdt: invalid #address-cells or #size-cells for static shared memory node.\n");
+        printk(
+            "fdt: invalid #address-cells or #size-cells for static shared memory node.\n");
         return -EINVAL;
     }
 
@@ -546,8 +574,10 @@ int __init process_shm_node(const void *fdt, int node, uint32_t address_cells,
     shm_id = (const char *)prop_id->data;
     if ( strnlen(shm_id, MAX_SHM_ID_LENGTH) == MAX_SHM_ID_LENGTH )
     {
-        printk("fdt: invalid xen,shm-id %s, it must be limited to %u characters\n",
-               shm_id, MAX_SHM_ID_LENGTH);
+        printk(
+            "fdt: invalid xen,shm-id %s, it must be limited to %u characters\n",
+            shm_id,
+            MAX_SHM_ID_LENGTH);
         return -EINVAL;
     }
 
@@ -562,7 +592,8 @@ int __init process_shm_node(const void *fdt, int node, uint32_t address_cells,
             owner = true;
         else if ( strcmp(prop_role->data, "borrower") )
         {
-            printk("fdt: invalid `role` property for static shared memory node.\n");
+            printk(
+                "fdt: invalid `role` property for static shared memory node.\n");
             return -EINVAL;
         }
     }
@@ -581,8 +612,7 @@ int __init process_shm_node(const void *fdt, int node, uint32_t address_cells,
     if ( len != dt_cells_to_size(address_cells + size_cells + address_cells) )
     {
         if ( len == dt_cells_to_size(address_cells + size_cells) )
-            device_tree_get_reg(&cell, address_cells, size_cells, &gaddr,
-                                &size);
+            device_tree_get_reg(&cell, address_cells, size_cells, &gaddr, &size);
         else
         {
             printk("fdt: invalid `xen,shared-mem` property.\n");
@@ -591,14 +621,14 @@ int __init process_shm_node(const void *fdt, int node, uint32_t address_cells,
     }
     else
     {
-        device_tree_get_reg(&cell, address_cells, address_cells, &paddr,
-                            &gaddr);
+        device_tree_get_reg(&cell, address_cells, address_cells, &paddr, &gaddr);
         size = dt_next_cell(size_cells, &cell);
 
         if ( !IS_ALIGNED(paddr, PAGE_SIZE) )
         {
-            printk("fdt: physical address 0x%"PRIpaddr" is not suitably aligned.\n",
-                paddr);
+            printk("fdt: physical address 0x%" PRIpaddr
+                   " is not suitably aligned.\n",
+                   paddr);
             return -EINVAL;
         }
 
@@ -612,20 +642,21 @@ int __init process_shm_node(const void *fdt, int node, uint32_t address_cells,
 
     if ( !IS_ALIGNED(gaddr, PAGE_SIZE) )
     {
-        printk("fdt: guest address 0x%"PRIpaddr" is not suitably aligned.\n",
+        printk("fdt: guest address 0x%" PRIpaddr " is not suitably aligned.\n",
                gaddr);
         return -EINVAL;
     }
 
     if ( !size )
     {
-        printk("fdt: the size for static shared memory region can not be zero\n");
+        printk(
+            "fdt: the size for static shared memory region can not be zero\n");
         return -EINVAL;
     }
 
     if ( !IS_ALIGNED(size, PAGE_SIZE) )
     {
-        printk("fdt: size 0x%"PRIpaddr" is not suitably aligned\n", size);
+        printk("fdt: size 0x%" PRIpaddr " is not suitably aligned\n", size);
         return -EINVAL;
     }
 
@@ -656,15 +687,16 @@ int __init process_shm_node(const void *fdt, int node, uint32_t address_cells,
              *            region, there can't be two different regions with same
              *            shm_id)
              */
-            bool start_match = paddr_assigned ? (paddr == mem->bank[i].start) :
-                                                true;
+            bool start_match = paddr_assigned ? (paddr == mem->bank[i].start)
+                                              : true;
 
             if ( start_match && (size == mem->bank[i].size) )
                 break;
             else
             {
-                printk("fdt: different shared memory region could not share the same shm ID %s\n",
-                       shm_id);
+                printk(
+                    "fdt: different shared memory region could not share the same shm ID %s\n",
+                    shm_id);
                 return -EINVAL;
             }
         }
@@ -686,15 +718,16 @@ int __init process_shm_node(const void *fdt, int node, uint32_t address_cells,
             continue;
         else
         {
-            printk("fdt: xen,shm-id %s does not match for all the nodes using the same region\n",
-                   shm_id);
+            printk(
+                "fdt: xen,shm-id %s does not match for all the nodes using the same region\n",
+                shm_id);
             return -EINVAL;
         }
     }
 
     if ( i == mem->nr_banks )
     {
-        if (i < mem->max_banks)
+        if ( i < mem->max_banks )
         {
             if ( (paddr != INVALID_PADDR) &&
                  check_reserved_regions_overlap(paddr, size, false) )
@@ -771,9 +804,10 @@ void __init early_print_info_shmem(void)
 
     for ( bank = 0; bank < shmem->nr_banks; bank++, printed++ )
         if ( shmem->bank[bank].start != INVALID_PADDR )
-            printk(" SHMEM[%u]: %"PRIpaddr" - %"PRIpaddr"\n", printed,
-                shmem->bank[bank].start,
-                shmem->bank[bank].start + shmem->bank[bank].size - 1);
+            printk(" SHMEM[%u]: %" PRIpaddr " - %" PRIpaddr "\n",
+                   printed,
+                   shmem->bank[bank].start,
+                   shmem->bank[bank].start + shmem->bank[bank].size - 1);
 }
 
 void __init init_sharedmem_pages(void)
@@ -781,7 +815,7 @@ void __init init_sharedmem_pages(void)
     const struct membanks *shmem = bootinfo_get_shmem();
     unsigned int bank;
 
-    for ( bank = 0 ; bank < shmem->nr_banks; bank++ )
+    for ( bank = 0; bank < shmem->nr_banks; bank++ )
         if ( shmem->bank[bank].start != INVALID_PADDR )
             init_staticmem_bank(&shmem->bank[bank]);
 }
@@ -800,13 +834,15 @@ int __init remove_shm_from_rangeset(const struct kernel_info *kinfo,
 
         start = shm_mem->bank[i].start;
         end = shm_mem->bank[i].start + shm_mem->bank[i].size;
-        res = rangeset_remove_range(rangeset, PFN_DOWN(start),
-                                    PFN_DOWN(end - 1));
+        res =
+            rangeset_remove_range(rangeset, PFN_DOWN(start), PFN_DOWN(end - 1));
         if ( res )
         {
-            printk(XENLOG_ERR
-                   "Failed to remove: %#"PRIpaddr"->%#"PRIpaddr", error: %d\n",
-                   start, end, res);
+            printk(XENLOG_ERR "Failed to remove: %#" PRIpaddr "->%#" PRIpaddr
+                              ", error: %d\n",
+                   start,
+                   end,
+                   res);
             return -EINVAL;
         }
     }
@@ -828,7 +864,8 @@ int __init remove_shm_holes_for_domU(const struct kernel_info *kinfo,
     if ( shm_mem->nr_banks == 0 )
         return 0;
 
-    dt_dprintk("Remove static shared memory holes from extended regions of DomU\n");
+    dt_dprintk(
+        "Remove static shared memory holes from extended regions of DomU\n");
 
     guest_holes = rangeset_new(NULL, NULL, 0);
     if ( !guest_holes )
@@ -840,13 +877,15 @@ int __init remove_shm_holes_for_domU(const struct kernel_info *kinfo,
         start = ext_regions->bank[i].start;
         end = start + ext_regions->bank[i].size;
 
-        res = rangeset_add_range(guest_holes, PFN_DOWN(start),
-                                 PFN_DOWN(end - 1));
+        res =
+            rangeset_add_range(guest_holes, PFN_DOWN(start), PFN_DOWN(end - 1));
         if ( res )
         {
-            printk(XENLOG_ERR
-                   "Failed to add: %#"PRIpaddr"->%#"PRIpaddr", error: %d\n",
-                   start, end, res);
+            printk(XENLOG_ERR "Failed to add: %#" PRIpaddr "->%#" PRIpaddr
+                              ", error: %d\n",
+                   start,
+                   end,
+                   res);
             goto out;
         }
     }
@@ -866,14 +905,17 @@ int __init remove_shm_holes_for_domU(const struct kernel_info *kinfo,
 
     /* Reset original extended regions to hold new value */
     ext_regions->nr_banks = 0;
-    res = rangeset_report_ranges(guest_holes, PFN_DOWN(start), PFN_DOWN(end),
-                                 add_ext_regions, ext_regions);
+    res = rangeset_report_ranges(guest_holes,
+                                 PFN_DOWN(start),
+                                 PFN_DOWN(end),
+                                 add_ext_regions,
+                                 ext_regions);
     if ( res )
         ext_regions->nr_banks = 0;
     else if ( !ext_regions->nr_banks )
         res = -ENOENT;
 
- out:
+out:
     rangeset_destroy(guest_holes);
 
     return res;

@@ -272,7 +272,8 @@ static inline void __core2_vpmu_save(struct vcpu *v)
         rdmsrl(MSR_CORE_PERF_GLOBAL_STATUS, core2_vpmu_cxt->global_status);
     /* Save MSR to private context to make it fork-friendly */
     else if ( mem_sharing_enabled(v->domain) )
-        vmx_read_guest_msr(v, MSR_CORE_PERF_GLOBAL_CTRL,
+        vmx_read_guest_msr(v,
+                           MSR_CORE_PERF_GLOBAL_CTRL,
                            &core2_vpmu_cxt->global_ctrl);
 }
 
@@ -297,7 +298,8 @@ static int cf_check core2_vpmu_save(struct vcpu *v, bool to_guest)
     {
         ASSERT(!has_vlapic(v->domain));
         memcpy((void *)(&vpmu->xenpmu_data->pmu.c.intel) + regs_off,
-               vpmu->context + regs_off, regs_sz);
+               vpmu->context + regs_off,
+               regs_sz);
     }
 
     return 1;
@@ -336,7 +338,8 @@ static inline void __core2_vpmu_load(struct vcpu *v)
     }
     /* Restore MSR from context when used with a fork */
     else if ( mem_sharing_is_fork(v->domain) )
-        vmx_write_guest_msr(v, MSR_CORE_PERF_GLOBAL_CTRL,
+        vmx_write_guest_msr(v,
+                            MSR_CORE_PERF_GLOBAL_CTRL,
                             core2_vpmu_cxt->global_ctrl);
 }
 
@@ -383,9 +386,8 @@ static int core2_vpmu_verify(struct vcpu *v)
     }
 
     if ( vpmu_is_set(vpmu, VPMU_CPU_HAS_DS) &&
-         !(is_vmx_vcpu(v)
-           ? is_canonical_address(core2_vpmu_cxt->ds_area)
-           : __addr_ok(core2_vpmu_cxt->ds_area)) )
+         !(is_vmx_vcpu(v) ? is_canonical_address(core2_vpmu_cxt->ds_area)
+                          : __addr_ok(core2_vpmu_cxt->ds_area)) )
         return -EINVAL;
 
     if ( (core2_vpmu_cxt->global_ctrl & enabled_cntrs) ||
@@ -493,7 +495,8 @@ out_err:
     xfree(p);
 
     printk("Failed to allocate VPMU resources for domain %u vcpu %u\n",
-           v->vcpu_id, v->domain->domain_id);
+           v->vcpu_id,
+           v->domain->domain_id);
 
     return 0;
 }
@@ -548,12 +551,13 @@ static int cf_check core2_vpmu_do_wrmsr(unsigned int msr, uint64_t msr_content)
         wrmsrl(MSR_CORE_PERF_GLOBAL_OVF_CTRL, msr_content);
         return 0;
     case MSR_CORE_PERF_GLOBAL_STATUS:
-        gdprintk(XENLOG_INFO, "Can not write readonly MSR: "
-                 "MSR_PERF_GLOBAL_STATUS(0x38E)!\n");
+        gdprintk(
+            XENLOG_INFO,
+            "Can not write readonly MSR: " "MSR_PERF_GLOBAL_STATUS(0x38E)!\n");
         return -EINVAL;
     case MSR_IA32_PEBS_ENABLE:
-        if ( vpmu_features & (XENPMU_FEATURE_IPC_ONLY |
-                              XENPMU_FEATURE_ARCH_ONLY) )
+        if ( vpmu_features &
+             (XENPMU_FEATURE_IPC_ONLY | XENPMU_FEATURE_ARCH_ONLY) )
             return -EINVAL;
         if ( msr_content )
             /* PEBS is reported as unavailable in MSR_IA32_MISC_ENABLE */
@@ -587,7 +591,8 @@ static int cf_check core2_vpmu_do_wrmsr(unsigned int msr, uint64_t msr_content)
             return -EINVAL;
 
         if ( is_vmx_vcpu(v) )
-            vmx_read_guest_msr(v, MSR_CORE_PERF_GLOBAL_CTRL,
+            vmx_read_guest_msr(v,
+                               MSR_CORE_PERF_GLOBAL_CTRL,
                                &core2_vpmu_cxt->global_ctrl);
         else
             rdmsrl(MSR_CORE_PERF_GLOBAL_CTRL, core2_vpmu_cxt->global_ctrl);
@@ -618,8 +623,8 @@ static int cf_check core2_vpmu_do_wrmsr(unsigned int msr, uint64_t msr_content)
                 return -EINVAL;
 
             /* PMC filters */
-            if ( vpmu_features & (XENPMU_FEATURE_IPC_ONLY |
-                                  XENPMU_FEATURE_ARCH_ONLY) )
+            if ( vpmu_features &
+                 (XENPMU_FEATURE_IPC_ONLY | XENPMU_FEATURE_ARCH_ONLY) )
             {
                 blocked = 1;
                 switch ( umaskevent )
@@ -630,9 +635,9 @@ static int cf_check core2_vpmu_do_wrmsr(unsigned int msr, uint64_t msr_content)
                  * Developer's Manual, Volume 3B, System Programming Guide,
                  * Part 2.
                  */
-                case 0x003c:	/* UnHalted Core Cycles */
-                case 0x013c:	/* UnHalted Reference Cycles */
-                case 0x00c0:	/* Instructions Retired */
+                case 0x003c: /* UnHalted Core Cycles */
+                case 0x013c: /* UnHalted Reference Cycles */
+                case 0x00c0: /* Instructions Retired */
                     blocked = 0;
                     break;
                 }
@@ -643,20 +648,21 @@ static int cf_check core2_vpmu_do_wrmsr(unsigned int msr, uint64_t msr_content)
                 /* Additional counters beyond IPC only; blocked already set. */
                 switch ( umaskevent )
                 {
-                case 0x4f2e:	/* Last Level Cache References */
-                case 0x412e:	/* Last Level Cache Misses */
-                case 0x00c4:	/* Branch Instructions Retired */
-                case 0x00c5:	/* All Branch Mispredict Retired */
+                case 0x4f2e: /* Last Level Cache References */
+                case 0x412e: /* Last Level Cache Misses */
+                case 0x00c4: /* Branch Instructions Retired */
+                case 0x00c5: /* All Branch Mispredict Retired */
                     blocked = 0;
                     break;
-               }
+                }
             }
 
             if ( blocked )
                 return -EINVAL;
 
             if ( is_vmx_vcpu(v) )
-                vmx_read_guest_msr(v, MSR_CORE_PERF_GLOBAL_CTRL,
+                vmx_read_guest_msr(v,
+                                   MSR_CORE_PERF_GLOBAL_CTRL,
                                    &core2_vpmu_cxt->global_ctrl);
             else
                 rdmsrl(MSR_CORE_PERF_GLOBAL_CTRL, core2_vpmu_cxt->global_ctrl);
@@ -741,7 +747,7 @@ static void cf_check core2_vpmu_dump(const struct vcpu *v)
     struct xen_pmu_cntr_pair *cntr_pair;
 
     if ( !core2_vpmu_cxt || !vpmu_is_set(vpmu, VPMU_CONTEXT_ALLOCATED) )
-         return;
+        return;
 
     if ( !vpmu_is_set(vpmu, VPMU_RUNNING) )
     {
@@ -760,7 +766,9 @@ static void cf_check core2_vpmu_dump(const struct vcpu *v)
     /* Print the contents of the counter and its configuration msr. */
     for ( i = 0; i < arch_pmc_cnt; i++ )
         printk("      general_%d: 0x%016lx ctrl: 0x%016lx\n",
-            i, cntr_pair[i].counter, cntr_pair[i].control);
+               i,
+               cntr_pair[i].counter,
+               cntr_pair[i].control);
 
     /*
      * The configuration of the fixed counter is 4 bits each in the
@@ -770,7 +778,8 @@ static void cf_check core2_vpmu_dump(const struct vcpu *v)
     for ( i = 0; i < fixed_pmc_cnt; i++ )
     {
         printk("      fixed_%d:   0x%016lx ctrl: %#lx\n",
-               i, fixed_counters[i],
+               i,
+               fixed_counters[i],
                val & FIXED_CTR_CTRL_MASK);
         val >>= FIXED_CTR_CTRL_BITS;
     }
@@ -839,8 +848,9 @@ static int cf_check core2_vpmu_initialise(struct vcpu *v)
         if ( !boot_cpu_has(X86_FEATURE_DTES64) )
         {
             if ( !ds_warned )
-                printk(XENLOG_G_WARNING "CPU doesn't support 64-bit DS Area"
-                       " - Debug Store disabled for guests\n");
+                printk(
+                    XENLOG_G_WARNING
+                    "CPU doesn't support 64-bit DS Area" " - Debug Store disabled for guests\n");
             break;
         }
         vpmu_set(vpmu, VPMU_CPU_HAS_DS);
@@ -850,8 +860,9 @@ static int cf_check core2_vpmu_initialise(struct vcpu *v)
             /* If BTS_UNAVAIL is set reset the DS feature. */
             vpmu_reset(vpmu, VPMU_CPU_HAS_DS);
             if ( !ds_warned )
-                printk(XENLOG_G_WARNING "CPU has set BTS_UNAVAIL"
-                       " - Debug Store disabled for guests\n");
+                printk(
+                    XENLOG_G_WARNING
+                    "CPU has set BTS_UNAVAIL" " - Debug Store disabled for guests\n");
             break;
         }
 
@@ -873,7 +884,7 @@ static int cf_check core2_vpmu_initialise(struct vcpu *v)
         break;
     }
     ds_warned = 1;
- func_out:
+func_out:
 
     /* PV domains can allocate resources immediately */
     if ( is_pv_vcpu(v) && !core2_vpmu_alloc_resource(v) )
@@ -909,8 +920,10 @@ const struct arch_vpmu_ops *__init core2_vpmu_init(void)
     {
     case 4:
     case 5:
-        printk(XENLOG_INFO "VPMU: PMU version %u is not fully supported. "
-               "Emulating version 3\n", version);
+        printk(
+            XENLOG_INFO
+            "VPMU: PMU version %u is not fully supported. " "Emulating version 3\n",
+            version);
         /* FALLTHROUGH */
 
     case 2:
@@ -942,9 +955,9 @@ const struct arch_vpmu_ops *__init core2_vpmu_init(void)
 
     fixed_ctrl_mask = ~((1ull << (fixed_pmc_cnt * FIXED_CTR_CTRL_BITS)) - 1);
     /* mask .AnyThread bits for all fixed counters */
-    for( i = 0; i < fixed_pmc_cnt; i++ )
-       fixed_ctrl_mask |=
-           (FIXED_CTR_CTRL_ANYTHREAD_MASK << (FIXED_CTR_CTRL_BITS * i));
+    for ( i = 0; i < fixed_pmc_cnt; i++ )
+        fixed_ctrl_mask |= (FIXED_CTR_CTRL_ANYTHREAD_MASK
+                            << (FIXED_CTR_CTRL_BITS * i));
 
     fixed_counters_mask = ~((1ull << core2_get_bitwidth_fix_count()) - 1);
     global_ctrl_mask = ~((((1ULL << fixed_pmc_cnt) - 1) << 32) |
@@ -967,7 +980,8 @@ const struct arch_vpmu_ops *__init core2_vpmu_init(void)
     pmc_quirk = current_cpu_data.x86 == 6;
 
     if ( sizeof(struct xen_pmu_data) + sizeof(uint64_t) * fixed_pmc_cnt +
-         sizeof(struct xen_pmu_cntr_pair) * arch_pmc_cnt > PAGE_SIZE )
+             sizeof(struct xen_pmu_cntr_pair) * arch_pmc_cnt >
+         PAGE_SIZE )
     {
         printk(XENLOG_WARNING
                "VPMU: Register bank does not fit into VPMU share page\n");
@@ -977,4 +991,3 @@ const struct arch_vpmu_ops *__init core2_vpmu_init(void)
 
     return &core2_vpmu_ops;
 }
-

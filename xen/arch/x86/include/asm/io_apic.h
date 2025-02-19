@@ -36,6 +36,7 @@
  */
 union IO_APIC_reg_00 {
     uint32_t raw;
+
     struct {
         unsigned int __reserved_2:14;
         unsigned int LTS:1;
@@ -47,6 +48,7 @@ union IO_APIC_reg_00 {
 
 union IO_APIC_reg_01 {
     uint32_t raw;
+
     struct {
         unsigned int version:8;
         unsigned int __reserved_2:7;
@@ -58,6 +60,7 @@ union IO_APIC_reg_01 {
 
 union IO_APIC_reg_02 {
     uint32_t raw;
+
     struct {
         unsigned int __reserved_2:24;
         unsigned int arbitration:4;
@@ -67,6 +70,7 @@ union IO_APIC_reg_02 {
 
 union IO_APIC_reg_03 {
     uint32_t raw;
+
     struct {
         unsigned int boot_DT:1;
         unsigned int __reserved_1:31;
@@ -99,12 +103,12 @@ struct IO_APIC_route_entry {
                                            * 001: lowest prio
                                            * 111: ExtINT
                                            */
-            unsigned int dest_mode:1;     /* 0: physical, 1: logical */
+            unsigned int dest_mode:1; /* 0: physical, 1: logical */
             unsigned int delivery_status:1;
-            unsigned int polarity:1;      /* 0: high, 1: low */
+            unsigned int polarity:1; /* 0: high, 1: low */
             unsigned int irr:1;
-            unsigned int trigger:1;       /* 0: edge, 1: level */
-            unsigned int mask:1;          /* 0: enabled, 1: disabled */
+            unsigned int trigger:1; /* 0: edge, 1: level */
+            unsigned int mask:1; /* 0: enabled, 1: disabled */
             unsigned int __reserved_2:15;
 
             union {
@@ -118,9 +122,11 @@ struct IO_APIC_route_entry {
                     unsigned int __reserved_1:24;
                     unsigned int logical_dest:8;
                 } logical;
+
                 unsigned int dest32;
             } dest;
         };
+
         uint64_t raw;
     };
 };
@@ -153,7 +159,8 @@ static inline unsigned int io_apic_read(unsigned int apic, unsigned int reg)
     return __io_apic_read(apic, reg);
 }
 
-static inline void __io_apic_write(unsigned int apic, unsigned int reg, unsigned int value)
+static inline void __io_apic_write(unsigned int apic, unsigned int reg,
+                                   unsigned int value)
 {
     volatile uint32_t *regs = IO_APIC_BASE(apic);
 
@@ -161,7 +168,8 @@ static inline void __io_apic_write(unsigned int apic, unsigned int reg, unsigned
     regs[4] = value;
 }
 
-static inline void io_apic_write(unsigned int apic, unsigned int reg, unsigned int value)
+static inline void io_apic_write(unsigned int apic, unsigned int reg,
+                                 unsigned int value)
 {
     /* RTE writes must use ioapic_write_entry. */
     BUG_ON(reg >= 0x10);
@@ -172,7 +180,8 @@ static inline void io_apic_write(unsigned int apic, unsigned int reg, unsigned i
  * Re-write a value: to be used for read-modify-write
  * cycles where the read already set up the index register.
  */
-static inline void io_apic_modify(unsigned int apic, unsigned int reg, unsigned int value)
+static inline void io_apic_modify(unsigned int apic, unsigned int reg,
+                                  unsigned int value)
 {
     /* RTE writes must use ioapic_write_entry. */
     BUG_ON(reg >= 0x10);
@@ -184,10 +193,11 @@ extern bool skip_ioapic_setup;
 extern bool ioapic_ack_new;
 extern bool ioapic_ack_forced;
 
-extern int io_apic_get_unique_id (int ioapic, int apic_id);
-extern int io_apic_get_version (int ioapic);
-extern int io_apic_get_redir_entries (int ioapic);
-extern int io_apic_set_pci_routing (int ioapic, int pin, int irq, int edge_level, int active_high_low);
+extern int io_apic_get_unique_id(int ioapic, int apic_id);
+extern int io_apic_get_version(int ioapic);
+extern int io_apic_get_redir_entries(int ioapic);
+extern int io_apic_set_pci_routing(int ioapic, int pin, int irq, int edge_level,
+                                   int active_high_low);
 
 extern void ioapic_init(void);
 
@@ -196,11 +206,10 @@ extern void ioapic_resume(void);
 
 extern void dump_ioapic_irq_info(void);
 
-extern struct IO_APIC_route_entry __ioapic_read_entry(
-    unsigned int apic, unsigned int pin, bool raw);
-void __ioapic_write_entry(
-    unsigned int apic, unsigned int pin, bool raw,
-    struct IO_APIC_route_entry e);
+extern struct IO_APIC_route_entry
+__ioapic_read_entry(unsigned int apic, unsigned int pin, bool raw);
+void __ioapic_write_entry(unsigned int apic, unsigned int pin, bool raw,
+                          struct IO_APIC_route_entry e);
 
 extern struct IO_APIC_route_entry **alloc_ioapic_entries(void);
 extern void free_ioapic_entries(struct IO_APIC_route_entry **ioapic_entries);
@@ -211,7 +220,7 @@ extern int restore_IO_APIC_setup(struct IO_APIC_route_entry **ioapic_entries,
 
 unsigned highest_gsi(void);
 
-int ioapic_guest_read( unsigned long physbase, unsigned int reg, u32 *pval);
+int ioapic_guest_read(unsigned long physbase, unsigned int reg, u32 *pval);
 int ioapic_guest_write(unsigned long physbase, unsigned int reg, u32 val);
 int mp_find_ioapic(unsigned int gsi);
 int gsi_2_irq(unsigned int gsi);

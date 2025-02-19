@@ -7,7 +7,6 @@
 
 #define MVFR0_A_SIMD_MASK       (0xfU << 0)
 
-
 #define FPSID_IMPLEMENTER_BIT   (24)
 #define FPSID_IMPLEMENTER_MASK  (0xffU << FPSID_IMPLEMENTER_BIT)
 #define FPSID_ARCH_BIT          (16)
@@ -19,8 +18,7 @@
 #define FPSID_REV_BIT           (0)
 #define FPSID_REV_MASK          (0xfU << FPSID_REV_BIT)
 
-struct vfp_state
-{
+struct vfp_state {
     uint64_t fpregs1[16]; /* {d0-d15} */
     uint64_t fpregs2[16]; /* {d16-d31} */
     uint32_t fpexc;

@@ -125,7 +125,8 @@ int machine_kexec_load(struct kexec_image *image)
      * address as kexec_reloc.  This allows us to keep running after
      * these page tables are loaded in kexec_reloc.
      */
-    ret = machine_kexec_add_page(image, (unsigned long)kexec_reloc,
+    ret = machine_kexec_add_page(image,
+                                 (unsigned long)kexec_reloc,
                                  page_to_maddr(image->control_code_page));
     if ( ret < 0 )
         return ret;
@@ -192,22 +193,24 @@ void machine_kexec(struct kexec_image *image)
 
     kexec_reloc(page_to_maddr(image->control_code_page),
                 page_to_maddr(image->aux_page),
-                image->head, image->entry_maddr, reloc_flags);
+                image->head,
+                image->entry_maddr,
+                reloc_flags);
 }
 
 int machine_kexec_get(xen_kexec_range_t *range)
 {
-	if (range->range != KEXEC_RANGE_MA_XEN)
-		return -EINVAL;
-	return machine_kexec_get_xen(range);
+    if ( range->range != KEXEC_RANGE_MA_XEN )
+        return -EINVAL;
+    return machine_kexec_get_xen(range);
 }
 
 void arch_crash_save_vmcoreinfo(void)
 {
-	VMCOREINFO_SYMBOL(dom_xen);
-	VMCOREINFO_SYMBOL(dom_io);
+    VMCOREINFO_SYMBOL(dom_xen);
+    VMCOREINFO_SYMBOL(dom_io);
 
-	VMCOREINFO_SYMBOL_ALIAS(pgd_l4, idle_pg_table);
+    VMCOREINFO_SYMBOL_ALIAS(pgd_l4, idle_pg_table);
 }
 
 /*

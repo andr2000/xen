@@ -60,29 +60,30 @@ extern uint8_t iommu_quarantine;
 
 #ifdef CONFIG_X86
 extern enum __packed iommu_intremap {
-   iommu_intremap_off,
-   /*
+    iommu_intremap_off,
+    /*
     * Interrupt remapping enabled, but only able to generate interrupts
     * with an 8-bit APIC ID.
     */
-   iommu_intremap_restricted,
-   iommu_intremap_full,
+    iommu_intremap_restricted,
+    iommu_intremap_full,
 } iommu_intremap;
+
 extern bool iommu_igfx, iommu_qinval;
 #ifdef CONFIG_INTEL_IOMMU
 extern bool iommu_snoop;
 #else
-# define iommu_snoop true
+#define iommu_snoop true
 #endif /* CONFIG_INTEL_IOMMU */
 #else
-# define iommu_intremap false
-# define iommu_snoop false
+#define iommu_intremap false
+#define iommu_snoop false
 #endif
 
 #if defined(CONFIG_X86) && defined(CONFIG_HVM)
 extern bool iommu_intpost;
 #else
-# define iommu_intpost false
+#define iommu_intpost false
 #endif
 
 #if defined(CONFIG_IOMMU_FORCE_PT_SHARE)
@@ -143,12 +144,12 @@ void arch_iommu_hwdom_init(struct domain *d);
  * These flags are passed back from map/unmap operations and passed into
  * flush operations.
  */
-enum
-{
+enum {
     _IOMMU_FLUSHF_added,
     _IOMMU_FLUSHF_modified,
     _IOMMU_FLUSHF_all,
 };
+
 #define IOMMU_FLUSHF_added (1u << _IOMMU_FLUSHF_added)
 #define IOMMU_FLUSHF_modified (1u << _IOMMU_FLUSHF_modified)
 #define IOMMU_FLUSHF_all (1u << _IOMMU_FLUSHF_all)
@@ -167,8 +168,7 @@ long __must_check iommu_unmap(struct domain *d, dfn_t dfn0,
                               unsigned int *flush_flags);
 
 int __must_check iommu_legacy_map(struct domain *d, dfn_t dfn, mfn_t mfn,
-                                  unsigned long page_count,
-                                  unsigned int flags);
+                                  unsigned long page_count, unsigned int flags);
 int __must_check iommu_legacy_unmap(struct domain *d, dfn_t dfn,
                                     unsigned long page_count);
 
@@ -181,8 +181,7 @@ int __must_check iommu_iotlb_flush(struct domain *d, dfn_t dfn,
 int __must_check iommu_iotlb_flush_all(struct domain *d,
                                        unsigned int flush_flags);
 
-enum iommu_feature
-{
+enum iommu_feature {
     IOMMU_FEAT_COHERENT_WALK,
     IOMMU_FEAT_count
 };
@@ -260,8 +259,8 @@ struct iommu_ops {
     int (*remove_device)(uint8_t devfn, device_t *dev);
     int (*assign_device)(struct domain *d, uint8_t devfn, device_t *dev,
                          uint32_t flag);
-    int (*reassign_device)(struct domain *s, struct domain *t,
-                           uint8_t devfn, device_t *dev);
+    int (*reassign_device)(struct domain *s, struct domain *t, uint8_t devfn,
+                           device_t *dev);
 #ifdef CONFIG_HAS_PCI
     int (*get_device_group_id)(uint16_t seg, uint8_t bus, uint8_t devfn);
 #endif /* HAS_PCI */
@@ -273,8 +272,7 @@ struct iommu_ops {
      * other by the caller in order to have meaningful results.
      */
     int __must_check (*map_page)(struct domain *d, dfn_t dfn, mfn_t mfn,
-                                 unsigned int flags,
-                                 unsigned int *flush_flags);
+                                 unsigned int flags, unsigned int *flush_flags);
     int __must_check (*unmap_page)(struct domain *d, dfn_t dfn,
                                    unsigned int order,
                                    unsigned int *flush_flags);
@@ -339,8 +337,8 @@ extern int iommu_get_extra_reserved_device_memory(iommu_grdm_t *func,
 #endif
 
 #ifndef iommu_call
-# define iommu_call(ops, fn, args...) ((ops)->fn(args))
-# define iommu_vcall iommu_call
+#define iommu_call(ops, fn, args...) ((ops)->fn(args))
+#define iommu_vcall iommu_call
 #endif
 
 struct domain_iommu {
@@ -432,11 +430,12 @@ extern struct page_list_head iommu_pt_cleanup_list;
 bool arch_iommu_use_permitted(const struct domain *d);
 
 #ifdef CONFIG_X86
-static inline int iommu_update_ire_from_msi(
-    struct msi_desc *msi_desc, struct msi_msg *msg)
+static inline int iommu_update_ire_from_msi(struct msi_desc *msi_desc,
+                                            struct msi_msg *msg)
 {
     return iommu_intremap
-           ? iommu_call(&iommu_ops, update_ire_from_msi, msi_desc, msg) : 0;
+               ? iommu_call(&iommu_ops, update_ire_from_msi, msi_desc, msg)
+               : 0;
 }
 #endif
 

@@ -11,17 +11,14 @@
  */
 typedef const char *symbols_lookup_t(unsigned long addr,
                                      unsigned long *symbolsize,
-                                     unsigned long *offset,
-                                     char *namebuf);
+                                     unsigned long *offset, char *namebuf);
 
 /* Lookup an address. */
-const char *symbols_lookup(unsigned long addr,
-                           unsigned long *symbolsize,
-                           unsigned long *offset,
-                           char *namebuf);
+const char *symbols_lookup(unsigned long addr, unsigned long *symbolsize,
+                           unsigned long *offset, char *namebuf);
 
-int xensyms_read(uint32_t *symnum, char *type,
-                 unsigned long *address, char *name);
+int xensyms_read(uint32_t *symnum, char *type, unsigned long *address,
+                 char *name);
 
 unsigned long symbols_lookup_by_name(const char *symname);
 
@@ -31,6 +28,6 @@ unsigned long symbols_lookup_by_name(const char *symname);
  */
 struct symbol_offset {
     uint32_t stream; /* .. in the compressed stream.*/
-    uint32_t addr;   /* .. and in the fixed size address array. */
+    uint32_t addr; /* .. and in the fixed size address array. */
 };
 #endif /*_XEN_SYMBOLS_H*/

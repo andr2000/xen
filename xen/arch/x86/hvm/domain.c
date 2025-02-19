@@ -17,7 +17,6 @@
 
 static int check_segment(struct segment_register *reg, enum x86_segment seg)
 {
-
     if ( reg->pad != 0 )
     {
         gprintk(XENLOG_ERR, "Segment attribute bits 12-15 are not zero\n");
@@ -152,54 +151,63 @@ int arch_set_info_hvm_guest(struct vcpu *v, const struct vcpu_hvm_context *ctx)
             limit = (limit << 12) | 0xfff;
         if ( regs->eip > limit )
         {
-            gprintk(XENLOG_ERR, "EIP (%#08x) outside CS limit (%#08x)\n",
-                    regs->eip, limit);
+            gprintk(XENLOG_ERR,
+                    "EIP (%#08x) outside CS limit (%#08x)\n",
+                    regs->eip,
+                    limit);
             return -EINVAL;
         }
 
         if ( ss.dpl != cs.dpl )
         {
-            gprintk(XENLOG_ERR, "SS.DPL (%u) is different than CS.DPL (%u)\n",
-                    ss.dpl, cs.dpl);
+            gprintk(XENLOG_ERR,
+                    "SS.DPL (%u) is different than CS.DPL (%u)\n",
+                    ss.dpl,
+                    cs.dpl);
             return -EINVAL;
         }
 
         if ( ds.p && ds.dpl > cs.dpl )
         {
-            gprintk(XENLOG_ERR, "DS.DPL (%u) is greater than CS.DPL (%u)\n",
-                    ds.dpl, cs.dpl);
+            gprintk(XENLOG_ERR,
+                    "DS.DPL (%u) is greater than CS.DPL (%u)\n",
+                    ds.dpl,
+                    cs.dpl);
             return -EINVAL;
         }
 
         if ( es.p && es.dpl > cs.dpl )
         {
-            gprintk(XENLOG_ERR, "ES.DPL (%u) is greater than CS.DPL (%u)\n",
-                    es.dpl, cs.dpl);
+            gprintk(XENLOG_ERR,
+                    "ES.DPL (%u) is greater than CS.DPL (%u)\n",
+                    es.dpl,
+                    cs.dpl);
             return -EINVAL;
         }
 
         if ( (regs->efer & EFER_LMA) && !(regs->efer & EFER_LME) )
         {
-            gprintk(XENLOG_ERR, "EFER.LMA set without EFER.LME (%#016lx)\n",
+            gprintk(XENLOG_ERR,
+                    "EFER.LMA set without EFER.LME (%#016lx)\n",
                     regs->efer);
             return -EINVAL;
         }
 
-        uregs->rax    = regs->eax;
-        uregs->rcx    = regs->ecx;
-        uregs->rdx    = regs->edx;
-        uregs->rbx    = regs->ebx;
-        uregs->rsp    = regs->esp;
-        uregs->rbp    = regs->ebp;
-        uregs->rsi    = regs->esi;
-        uregs->rdi    = regs->edi;
-        uregs->rip    = regs->eip;
+        uregs->rax = regs->eax;
+        uregs->rcx = regs->ecx;
+        uregs->rdx = regs->edx;
+        uregs->rbx = regs->ebx;
+        uregs->rsp = regs->esp;
+        uregs->rbp = regs->ebp;
+        uregs->rsi = regs->esi;
+        uregs->rdi = regs->edi;
+        uregs->rip = regs->eip;
         uregs->rflags = regs->eflags;
 
         v->arch.hvm.guest_cr[0] = regs->cr0;
         v->arch.hvm.guest_cr[3] = regs->cr3;
         v->arch.hvm.guest_cr[4] = regs->cr4;
-        v->arch.hvm.guest_efer  = regs->efer;
+        v->arch.hvm.guest_efer = regs->efer;
     }
     break;
 
@@ -210,47 +218,51 @@ int arch_set_info_hvm_guest(struct vcpu *v, const struct vcpu_hvm_context *ctx)
         /* Basic sanity checks. */
         if ( !is_canonical_address(regs->rip) )
         {
-            gprintk(XENLOG_ERR, "RIP contains a non-canonical address (%#lx)\n",
+            gprintk(XENLOG_ERR,
+                    "RIP contains a non-canonical address (%#lx)\n",
                     regs->rip);
             return -EINVAL;
         }
 
         if ( !(regs->cr0 & X86_CR0_PG) )
         {
-            gprintk(XENLOG_ERR, "CR0 doesn't have paging enabled (%#016lx)\n",
+            gprintk(XENLOG_ERR,
+                    "CR0 doesn't have paging enabled (%#016lx)\n",
                     regs->cr0);
             return -EINVAL;
         }
 
         if ( !(regs->cr4 & X86_CR4_PAE) )
         {
-            gprintk(XENLOG_ERR, "CR4 doesn't have PAE enabled (%#016lx)\n",
+            gprintk(XENLOG_ERR,
+                    "CR4 doesn't have PAE enabled (%#016lx)\n",
                     regs->cr4);
             return -EINVAL;
         }
 
         if ( !(regs->efer & EFER_LME) )
         {
-            gprintk(XENLOG_ERR, "EFER doesn't have LME enabled (%#016lx)\n",
+            gprintk(XENLOG_ERR,
+                    "EFER doesn't have LME enabled (%#016lx)\n",
                     regs->efer);
             return -EINVAL;
         }
 
-        uregs->rax    = regs->rax;
-        uregs->rcx    = regs->rcx;
-        uregs->rdx    = regs->rdx;
-        uregs->rbx    = regs->rbx;
-        uregs->rsp    = regs->rsp;
-        uregs->rbp    = regs->rbp;
-        uregs->rsi    = regs->rsi;
-        uregs->rdi    = regs->rdi;
-        uregs->rip    = regs->rip;
+        uregs->rax = regs->rax;
+        uregs->rcx = regs->rcx;
+        uregs->rdx = regs->rdx;
+        uregs->rbx = regs->rbx;
+        uregs->rsp = regs->rsp;
+        uregs->rbp = regs->rbp;
+        uregs->rsi = regs->rsi;
+        uregs->rdi = regs->rdi;
+        uregs->rip = regs->rip;
         uregs->rflags = regs->rflags;
 
         v->arch.hvm.guest_cr[0] = regs->cr0;
         v->arch.hvm.guest_cr[3] = regs->cr3;
         v->arch.hvm.guest_cr[4] = regs->cr4;
-        v->arch.hvm.guest_efer  = regs->efer;
+        v->arch.hvm.guest_efer = regs->efer;
 
 #define SEG(l, a) (struct segment_register){ 0, { a }, l, 0 }
         cs = SEG(~0u, 0xa9b); /* 64bit code segment. */
@@ -259,7 +271,6 @@ int arch_set_info_hvm_guest(struct vcpu *v, const struct vcpu_hvm_context *ctx)
 #undef SEG
     }
     break;
-
     }
 
     if ( v->arch.hvm.guest_efer & EFER_LME )
@@ -268,8 +279,10 @@ int arch_set_info_hvm_guest(struct vcpu *v, const struct vcpu_hvm_context *ctx)
     valid = hvm_cr4_guest_valid_bits(d);
     if ( v->arch.hvm.guest_cr[4] & ~valid )
     {
-        gprintk(XENLOG_ERR, "Bad CR4 %#lx (valid %#lx, rejected %#lx)\n",
-                v->arch.hvm.guest_cr[4], valid,
+        gprintk(XENLOG_ERR,
+                "Bad CR4 %#lx (valid %#lx, rejected %#lx)\n",
+                v->arch.hvm.guest_cr[4],
+                valid,
                 v->arch.hvm.guest_cr[4] & ~valid);
         return -EINVAL;
     }
@@ -277,8 +290,10 @@ int arch_set_info_hvm_guest(struct vcpu *v, const struct vcpu_hvm_context *ctx)
     errstr = hvm_efer_valid(v, v->arch.hvm.guest_efer, -1);
     if ( errstr )
     {
-        gprintk(XENLOG_ERR, "Bad EFER value (%#016lx): %s\n",
-               v->arch.hvm.guest_efer, errstr);
+        gprintk(XENLOG_ERR,
+                "Bad EFER value (%#016lx): %s\n",
+                v->arch.hvm.guest_efer,
+                errstr);
         return -EINVAL;
     }
 
@@ -291,12 +306,13 @@ int arch_set_info_hvm_guest(struct vcpu *v, const struct vcpu_hvm_context *ctx)
     {
         /* Shadow-mode CR3 change. Check PDBR and update refcounts. */
         struct page_info *page = get_page_from_gfn(v->domain,
-                                 v->arch.hvm.guest_cr[3] >> PAGE_SHIFT,
-                                 NULL, P2M_ALLOC);
+                                                   v->arch.hvm.guest_cr[3] >>
+                                                       PAGE_SHIFT,
+                                                   NULL,
+                                                   P2M_ALLOC);
         if ( !page )
         {
-            gprintk(XENLOG_ERR, "Invalid CR3: %#lx\n",
-                    v->arch.hvm.guest_cr[3]);
+            gprintk(XENLOG_ERR, "Invalid CR3: %#lx\n", v->arch.hvm.guest_cr[3]);
             return -EINVAL;
         }
 
@@ -310,10 +326,8 @@ int arch_set_info_hvm_guest(struct vcpu *v, const struct vcpu_hvm_context *ctx)
     hvm_set_segment_register(v, x86_seg_tr, &tr);
 
     /* Sync AP's TSC with BSP's. */
-    v->arch.hvm.cache_tsc_offset =
-        d->vcpu[0]->arch.hvm.cache_tsc_offset;
-    hvm_set_tsc_offset(v, v->arch.hvm.cache_tsc_offset,
-                       d->arch.hvm.sync_tsc);
+    v->arch.hvm.cache_tsc_offset = d->vcpu[0]->arch.hvm.cache_tsc_offset;
+    hvm_set_tsc_offset(v, v->arch.hvm.cache_tsc_offset, d->arch.hvm.sync_tsc);
 
     paging_update_paging_modes(v);
 

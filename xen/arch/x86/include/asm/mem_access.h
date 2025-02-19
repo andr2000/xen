@@ -22,8 +22,7 @@
  * ring. Once having released get_gfn* locks caller must also xfree the
  * request.
  */
-bool p2m_mem_access_check(paddr_t gpa, unsigned long gla,
-                          struct npfec npfec,
+bool p2m_mem_access_check(paddr_t gpa, unsigned long gla, struct npfec npfec,
                           struct vm_event_st **req_ptr);
 
 /* Check for emulation and mark vcpu for skipping one instruction

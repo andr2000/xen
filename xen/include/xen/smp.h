@@ -31,19 +31,13 @@ extern void smp_cpus_done(void);
 /*
  * Call a function on all other processors
  */
-extern void smp_call_function(
-    void (*func) (void *info),
-    void *info,
-    int wait);
+extern void smp_call_function(void (*func)(void *info), void *info, int wait);
 
 /* 
  * Call a function on a selection of processors
  */
-extern void on_selected_cpus(
-    const cpumask_t *selected,
-    void (*func) (void *info),
-    void *info,
-    int wait);
+extern void on_selected_cpus(const cpumask_t *selected,
+                             void (*func)(void *info), void *info, int wait);
 
 /*
  * Mark the boot cpu "online" so that it can call console drivers in
@@ -54,10 +48,7 @@ void smp_prepare_boot_cpu(void);
 /*
  * Call a function on all processors
  */
-static inline void on_each_cpu(
-    void (*func) (void *info),
-    void *info,
-    int wait)
+static inline void on_each_cpu(void (*func)(void *info), void *info, int wait)
 {
     on_selected_cpus(&cpu_online_map, func, info, wait);
 }

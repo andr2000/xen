@@ -61,7 +61,7 @@ static struct omap_uart {
     char __iomem *regs;
     struct irqaction irqaction;
     struct vuart_info vuart;
-} omap_com = {0};
+} omap_com = { 0 };
 
 static void omap_uart_interrupt(int irq, void *data)
 {
@@ -73,12 +73,13 @@ static void omap_uart_interrupt(int irq, void *data)
     while ( !(omap_read(uart, UART_IIR) & UART_IIR_NOINT) )
     {
         lsr = omap_read(uart, UART_LSR) & 0xff;
-	if ( lsr & UART_LSR_THRE )
+        if ( lsr & UART_LSR_THRE )
             serial_tx_interrupt(port);
-	if ( lsr & UART_LSR_DR )
+        if ( lsr & UART_LSR_DR )
             serial_rx_interrupt(port);
 
-        if ( port->txbufc == port->txbufp ) {
+        if ( port->txbufc == port->txbufp )
+        {
             reg = omap_read(uart, UART_IER);
             omap_write(uart, UART_IER, reg & (~UART_IER_ETHREI));
         }
@@ -103,7 +104,7 @@ static void baud_protocol_setup(struct omap_uart *uart)
      * Enable access to the UART_IER[7:4] bit field.
      */
     efr = omap_read(uart, UART_OMAP_EFR);
-    omap_write(uart, UART_OMAP_EFR, efr|UART_OMAP_EFR_ECB);
+    omap_write(uart, UART_OMAP_EFR, efr | UART_OMAP_EFR_ECB);
     /*
      * Switch to register operation mode to access the UART_IER register.
      */
@@ -132,8 +133,10 @@ static void baud_protocol_setup(struct omap_uart *uart)
      * Load the new protocol formatting (parity, stop-bit, character length)
      * and switch to register operational mode.
      */
-    omap_write(uart, UART_LCR, (uart->data_bits - 5) |
-               ((uart->stop_bits - 1) << 2) | uart->parity);
+    omap_write(uart,
+               UART_LCR,
+               (uart->data_bits - 5) | ((uart->stop_bits - 1) << 2) |
+                   uart->parity);
 }
 
 static void fifo_setup(struct omap_uart *uart)
@@ -149,7 +152,7 @@ static void fifo_setup(struct omap_uart *uart)
      * Enable register submode TCR_TLR to access the UART_OMAP_TLR register.
      */
     efr = omap_read(uart, UART_OMAP_EFR);
-    omap_write(uart, UART_OMAP_EFR, efr|UART_OMAP_EFR_ECB);
+    omap_write(uart, UART_OMAP_EFR, efr | UART_OMAP_EFR_ECB);
     /*
      * Switch to register configuration mode A to access the UART_MCR
      * register.
@@ -159,12 +162,13 @@ static void fifo_setup(struct omap_uart *uart)
      * Enable register submode TCR_TLR to access the UART_OMAP_TLR register
      */
     mcr = omap_read(uart, UART_MCR);
-    omap_write(uart, UART_MCR, mcr|UART_MCR_TCRTLR);
+    omap_write(uart, UART_MCR, mcr | UART_MCR_TCRTLR);
     /*
      * Enable the FIFO; load the new FIFO trigger and the new DMA mode.
      */
-    omap_write(uart, UART_FCR, UART_FCR_R_TRIG_01|
-               UART_FCR_T_TRIG_10|UART_FCR_ENABLE);
+    omap_write(uart,
+               UART_FCR,
+               UART_FCR_R_TRIG_01 | UART_FCR_T_TRIG_10 | UART_FCR_ENABLE);
     /*
      * Switch to register configuration mode B to access the UART_EFR
      * register.
@@ -203,7 +207,7 @@ static void __init omap_uart_init_preirq(struct serial_port *port)
      * Clear the FIFO buffers.
      */
     omap_write(uart, UART_FCR, UART_FCR_ENABLE);
-    omap_write(uart, UART_FCR, UART_FCR_ENABLE|UART_FCR_CLRX|UART_FCR_CLTX);
+    omap_write(uart, UART_FCR, UART_FCR_ENABLE | UART_FCR_CLRX | UART_FCR_CLTX);
     omap_write(uart, UART_FCR, 0);
 
     /*
@@ -219,7 +223,7 @@ static void __init omap_uart_init_preirq(struct serial_port *port)
     fifo_setup(uart);
 
     /* No flow control */
-    omap_write(uart, UART_MCR, UART_MCR_DTR|UART_MCR_RTS);
+    omap_write(uart, UART_MCR, UART_MCR_DTR | UART_MCR_RTS);
 
     omap_write(uart, UART_OMAP_MDR1, UART_OMAP_MDR1_16X_MODE);
 
@@ -237,13 +241,16 @@ static void __init omap_uart_init_postirq(struct serial_port *port)
 
     if ( setup_irq(uart->irq, 0, &uart->irqaction) != 0 )
     {
-        dprintk(XENLOG_ERR, "Failed to allocated omap_uart IRQ %d\n",
+        dprintk(XENLOG_ERR,
+                "Failed to allocated omap_uart IRQ %d\n",
                 uart->irq);
         return;
     }
 
     /* Enable interrupts */
-    omap_write(uart, UART_IER, UART_IER_ERDAI|UART_IER_ETHREI|UART_IER_ELSI);
+    omap_write(uart,
+               UART_IER,
+               UART_IER_ERDAI | UART_IER_ETHREI | UART_IER_ELSI);
 }
 
 static int omap_uart_tx_ready(struct serial_port *port)
@@ -261,7 +268,7 @@ static int omap_uart_tx_ready(struct serial_port *port)
 
     /* Check number of data bytes stored in TX FIFO */
     cnt = omap_read(uart, UART_OMAP_TXFIFO_LVL);
-    ASSERT( cnt >= 0 && cnt <= uart->fifo_size );
+    ASSERT(cnt >= 0 && cnt <= uart->fifo_size);
 
     return (uart->fifo_size - cnt);
 }
@@ -278,7 +285,7 @@ static int omap_uart_getc(struct serial_port *port, char *pc)
     struct omap_uart *uart = port->uart;
 
     if ( !(omap_read(uart, UART_LSR) & UART_LSR_DR) )
-	return 0;
+        return 0;
 
     *pc = omap_read(uart, UART_RBR) & 0xff;
     return 1;
@@ -308,8 +315,7 @@ static struct uart_driver __read_mostly omap_uart_driver = {
     .vuart_info = omap_vuart_info,
 };
 
-static int __init omap_uart_init(struct dt_device_node *dev,
-                                 const void *data)
+static int __init omap_uart_init(struct dt_device_node *dev, const void *data)
 {
     const char *config = data;
     struct omap_uart *uart;
@@ -325,8 +331,9 @@ static int __init omap_uart_init(struct dt_device_node *dev,
     res = dt_property_read_u32(dev, "clock-frequency", &clkspec);
     if ( !res )
     {
-        printk("omap-uart: Unable to retrieve the clock frequency, defaulting to %uHz\n",
-               UART_OMAP_DEFAULT_CLK_SPEED);
+        printk(
+            "omap-uart: Unable to retrieve the clock frequency, defaulting to %uHz\n",
+            UART_OMAP_DEFAULT_CLK_SPEED);
         clkspec = UART_OMAP_DEFAULT_CLK_SPEED;
     }
 
@@ -339,8 +346,8 @@ static int __init omap_uart_init(struct dt_device_node *dev,
     res = dt_device_get_paddr(dev, 0, &addr, &size);
     if ( res )
     {
-        printk("omap-uart: Unable to retrieve the base"
-               " address of the UART\n");
+        printk(
+            "omap-uart: Unable to retrieve the base" " address of the UART\n");
         return res;
     }
 
@@ -359,7 +366,6 @@ static int __init omap_uart_init(struct dt_device_node *dev,
         return -ENOMEM;
     }
 
-
     uart->vuart.base_addr = addr;
     uart->vuart.size = size;
     uart->vuart.data_off = UART_THR;
@@ -374,16 +380,14 @@ static int __init omap_uart_init(struct dt_device_node *dev,
     return 0;
 }
 
-static const struct dt_device_match omap_uart_dt_match[] __initconst =
-{
+static const struct dt_device_match omap_uart_dt_match[] __initconst = {
     DT_MATCH_COMPATIBLE("ti,omap4-uart"),
     DT_MATCH_COMPATIBLE("ti,am654-uart"),
     { /* sentinel */ },
 };
 
 DT_DEVICE_START(omap_uart, "OMAP UART", DEVICE_SERIAL)
-    .dt_match = omap_uart_dt_match,
-    .init = omap_uart_init,
+    .dt_match = omap_uart_dt_match, .init = omap_uart_init,
 DT_DEVICE_END
 
 /*

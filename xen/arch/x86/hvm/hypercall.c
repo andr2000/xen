@@ -38,8 +38,8 @@ long hvm_memory_op(unsigned long cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
 }
 
 #ifdef CONFIG_GRANT_TABLE
-long hvm_grant_table_op(
-    unsigned int cmd, XEN_GUEST_HANDLE_PARAM(void) uop, unsigned int count)
+long hvm_grant_table_op(unsigned int cmd, XEN_GUEST_HANDLE_PARAM(void) uop,
+                        unsigned int count)
 {
     switch ( cmd )
     {
@@ -120,7 +120,7 @@ int hvm_hypercall(struct cpu_user_regs *regs)
         if ( currd->arch.monitor.guest_request_userspace_enabled &&
              eax == __HYPERVISOR_hvm_op &&
              (mode == X86_MODE_64BIT ? regs->rdi : regs->ebx) ==
-             HVMOP_guest_request_vm_event )
+                 HVMOP_guest_request_vm_event )
             break;
 
         if ( likely(!hvm_get_cpl(curr)) )
@@ -157,23 +157,45 @@ int hvm_hypercall(struct cpu_user_regs *regs)
 
     if ( mode == 8 )
     {
-        HVM_DBG_LOG(DBG_LEVEL_HCALL, "hcall%lu(%lx, %lx, %lx, %lx, %lx)",
-                    eax, regs->rdi, regs->rsi, regs->rdx, regs->r10, regs->r8);
+        HVM_DBG_LOG(DBG_LEVEL_HCALL,
+                    "hcall%lu(%lx, %lx, %lx, %lx, %lx)",
+                    eax,
+                    regs->rdi,
+                    regs->rsi,
+                    regs->rdx,
+                    regs->r10,
+                    regs->r8);
 
-        call_handlers_hvm64(eax, regs->rax, regs->rdi, regs->rsi, regs->rdx,
-                            regs->r10, regs->r8);
+        call_handlers_hvm64(eax,
+                            regs->rax,
+                            regs->rdi,
+                            regs->rsi,
+                            regs->rdx,
+                            regs->r10,
+                            regs->r8);
 
         if ( !curr->hcall_preempted && regs->rax != -ENOSYS )
             clobber_regs(regs, eax, hvm, 64);
     }
     else
     {
-        HVM_DBG_LOG(DBG_LEVEL_HCALL, "hcall%lu(%x, %x, %x, %x, %x)", eax,
-                    regs->ebx, regs->ecx, regs->edx, regs->esi, regs->edi);
+        HVM_DBG_LOG(DBG_LEVEL_HCALL,
+                    "hcall%lu(%x, %x, %x, %x, %x)",
+                    eax,
+                    regs->ebx,
+                    regs->ecx,
+                    regs->edx,
+                    regs->esi,
+                    regs->edi);
 
         curr->hcall_compat = true;
-        call_handlers_hvm32(eax, regs->eax, regs->ebx, regs->ecx, regs->edx,
-                            regs->esi, regs->edi);
+        call_handlers_hvm32(eax,
+                            regs->eax,
+                            regs->ebx,
+                            regs->ecx,
+                            regs->edx,
+                            regs->esi,
+                            regs->edi);
         curr->hcall_compat = false;
 
         if ( !curr->hcall_preempted && regs->eax != -ENOSYS )
@@ -203,15 +225,25 @@ enum mc_disposition hvm_do_multicall_call(struct mc_state *state)
     {
         struct multicall_entry *call = &state->call;
 
-        call_handlers_hvm64(call->op, call->result, call->args[0], call->args[1],
-                            call->args[2], call->args[3], call->args[4]);
+        call_handlers_hvm64(call->op,
+                            call->result,
+                            call->args[0],
+                            call->args[1],
+                            call->args[2],
+                            call->args[3],
+                            call->args[4]);
     }
     else
     {
         struct compat_multicall_entry *call = &state->compat_call;
 
-        call_handlers_hvm32(call->op, call->result, call->args[0], call->args[1],
-                            call->args[2], call->args[3], call->args[4]);
+        call_handlers_hvm32(call->op,
+                            call->result,
+                            call->args[0],
+                            call->args[1],
+                            call->args[2],
+                            call->args[3],
+                            call->args[4]);
     }
 
     return !hvm_get_cpl(curr) ? mc_continue : mc_preempt;

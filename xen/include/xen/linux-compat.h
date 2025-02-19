@@ -11,7 +11,7 @@
 
 #include <xen/types.h>
 
-typedef int8_t  s8, __s8;
+typedef int8_t s8, __s8;
 typedef uint8_t __u8;
 typedef int16_t s16, __s16;
 typedef uint16_t __u16;

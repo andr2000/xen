@@ -104,7 +104,7 @@ struct amd_iommu_dte {
     /* 0 - 63 */
     bool v:1;
     bool tv:1;
-    unsigned int :5;
+    unsigned int:5;
     unsigned int had:2;
 #define IOMMU_MAX_PT_LEVELS 6
     unsigned int paging_mode:3;
@@ -117,7 +117,7 @@ struct amd_iommu_dte {
     unsigned int gcr3_trp_14_12:3;
     bool ir:1;
     bool iw:1;
-    unsigned int :1;
+    unsigned int:1;
 
     /* 64 - 127 */
     unsigned int domain_id:16;
@@ -130,7 +130,7 @@ struct amd_iommu_dte {
     bool sd:1;
     bool ex:1;
     unsigned int sys_mgt:2;
-    unsigned int :1;
+    unsigned int:1;
     unsigned int gcr3_trp_51_31:21;
 
     /* 128 - 191 */
@@ -138,17 +138,17 @@ struct amd_iommu_dte {
     unsigned int int_tab_len:4;
     bool ig:1;
     uint64_t it_root:46;
-    unsigned int :4;
+    unsigned int:4;
     bool init_pass:1;
     bool ext_int_pass:1;
     bool nmi_pass:1;
-    unsigned int :1;
+    unsigned int:1;
     unsigned int int_ctl:2;
     bool lint0_pass:1;
     bool lint1_pass:1;
 
     /* 192 - 255 */
-    uint64_t :54;
+    uint64_t:54;
     bool attr_v:1;
     bool mode0_fc:1;
     unsigned int snoop_attr:8;
@@ -289,6 +289,7 @@ struct amd_iommu_dte {
 
 union amd_iommu_control {
     uint64_t raw;
+
     struct {
         bool iommu_en:1;
         bool ht_tun_en:1;
@@ -322,18 +323,18 @@ union amd_iommu_control {
         bool blk_stop_mrk_en:1;
         bool ppr_auto_rsp_aon:1;
         bool domain_id_pne:1;
-        unsigned int :1;
+        unsigned int:1;
         bool eph_en:1;
         unsigned int had_update:2;
         bool gd_update_dis:1;
-        unsigned int :1;
+        unsigned int:1;
         bool xt_en:1;
         bool int_cap_xt_en:1;
         bool vcmd_en:1;
         bool viommu_en:1;
         bool ga_update_dis:1;
         bool gappi_en:1;
-        unsigned int :8;
+        unsigned int:8;
     };
 };
 
@@ -360,6 +361,7 @@ union amd_iommu_control {
 
 union amd_iommu_ext_features {
     uint64_t raw;
+
     struct {
         unsigned int pref_sup:1;
         unsigned int ppr_sup:1;
@@ -378,9 +380,9 @@ union amd_iommu_ext_features {
         unsigned int smif_rc:3;
         unsigned int gam_sup:3;
         unsigned int dual_ppr_log_sup:2;
-        unsigned int :2;
+        unsigned int:2;
         unsigned int dual_event_log_sup:2;
-        unsigned int :1;
+        unsigned int:1;
         unsigned int sats_sup:1;
         unsigned int pas_max:5;
         unsigned int us_sup:1;
@@ -391,19 +393,19 @@ union amd_iommu_ext_features {
         unsigned int blk_stop_mrk_sup:1;
         unsigned int perf_opt_sup:1;
         unsigned int msi_cap_mmio_sup:1;
-        unsigned int :1;
+        unsigned int:1;
         unsigned int gio_sup:1;
         unsigned int ha_sup:1;
         unsigned int eph_sup:1;
         unsigned int attr_fw_sup:1;
         unsigned int hd_sup:1;
-        unsigned int :1;
+        unsigned int:1;
         unsigned int inv_iotlb_type_sup:1;
         unsigned int viommu_sup:1;
         unsigned int vm_guard_io_sup:1;
         unsigned int vm_table_size:4;
         unsigned int ga_update_dis_sup:1;
-        unsigned int :2;
+        unsigned int:2;
     } flds;
 };
 
@@ -414,14 +416,15 @@ union amd_iommu_ext_features {
 
 union amd_iommu_x2apic_control {
     uint64_t raw;
+
     struct {
-        unsigned int :2;
+        unsigned int:2;
         unsigned int dest_mode:1;
-        unsigned int :5;
+        unsigned int:5;
         unsigned int dest_lo:24;
         unsigned int vector:8;
         unsigned int int_type:1; /* DM in IOMMU spec 3.04 */
-        unsigned int :15;
+        unsigned int:15;
         unsigned int dest_hi:8;
     };
 };
@@ -450,6 +453,7 @@ union amd_iommu_x2apic_control {
 
 union amd_iommu_pte {
     uint64_t raw;
+
     struct {
         bool pr:1;
         unsigned int ign0:4; /* Covered by IOMMU_PTE_CONTIG_MASK. */
@@ -458,7 +462,7 @@ union amd_iommu_pte {
         unsigned int ign1:2;
         unsigned int next_level:3;
         uint64_t mfn:40;
-        unsigned int :7;
+        unsigned int:7;
         bool u:1;
         bool fc:1;
         bool ir:1;

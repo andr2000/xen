@@ -34,13 +34,13 @@
 #define __HSR_CPREG_6   6
 #define __HSR_CPREG_7   7
 
-#define _HSR_CPREG32(cp,op1,crn,crm,op2) \
+#define _HSR_CPREG32(cp, op1, crn, crm, op2) \
     ((__HSR_CPREG_##crn) << HSR_CP32_CRN_SHIFT) | \
     ((__HSR_CPREG_##crm) << HSR_CP32_CRM_SHIFT) | \
     ((__HSR_CPREG_##op1) << HSR_CP32_OP1_SHIFT) | \
     ((__HSR_CPREG_##op2) << HSR_CP32_OP2_SHIFT)
 
-#define _HSR_CPREG64(cp,op1,crm) \
+#define _HSR_CPREG64(cp, op1, crm) \
     ((__HSR_CPREG_##crm) << HSR_CP64_CRM_SHIFT) | \
     ((__HSR_CPREG_##op1) << HSR_CP64_OP1_SHIFT)
 
@@ -102,7 +102,6 @@
 #define DBGDSAR64       p14,0,c2        /* Debug Self Address Offset Register (64-bit access) */
 #define DBGDSAR         p14,0,c2,c0,0   /* Debug Self Address Offset Register (32-bit access) */
 #define JMCR            p14,7,c2,c0,0   /* Jazelle Main Configuration Register */
-
 
 /* Coprocessor 15 */
 

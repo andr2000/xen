@@ -39,15 +39,14 @@ static void __init find_xen_leaves(void)
 {
     uint32_t eax, ebx, ecx, edx, base;
 
-    for ( base = XEN_CPUID_FIRST_LEAF;
-          base < XEN_CPUID_FIRST_LEAF + 0x10000; base += 0x100 )
+    for ( base = XEN_CPUID_FIRST_LEAF; base < XEN_CPUID_FIRST_LEAF + 0x10000;
+          base += 0x100 )
     {
         cpuid(base, &eax, &ebx, &ecx, &edx);
 
         if ( (ebx == XEN_CPUID_SIGNATURE_EBX) &&
              (ecx == XEN_CPUID_SIGNATURE_ECX) &&
-             (edx == XEN_CPUID_SIGNATURE_EDX) &&
-             ((eax - base) >= 2) )
+             (edx == XEN_CPUID_SIGNATURE_EDX) && ((eax - base) >= 2) )
         {
             xen_cpuid_base = base;
             break;
@@ -143,18 +142,22 @@ static void __init init_memmap(void)
      * avoid the know MMIO hole below 4GiB. Note that this is subject to future
      * discussion and improvements.
      */
-    if ( rangeset_add_range(mem, 0, max_t(unsigned long, max_page - 1,
-                                          PFN_DOWN(GB(4) - 1))) )
+    if ( rangeset_add_range(
+             mem,
+             0,
+             max_t(unsigned long, max_page - 1, PFN_DOWN(GB(4) - 1))) )
         panic("unable to add RAM to in-use PFN rangeset\n");
 
     for ( i = 0; i < e820.nr_map; i++ )
     {
         struct e820entry *e = &e820.map[i];
 
-        if ( rangeset_add_range(mem, PFN_DOWN(e->addr),
+        if ( rangeset_add_range(mem,
+                                PFN_DOWN(e->addr),
                                 PFN_UP(e->addr + e->size - 1)) )
             panic("unable to add range [%#lx, %#lx] to in-use PFN rangeset\n",
-                  PFN_DOWN(e->addr), PFN_UP(e->addr + e->size - 1));
+                  PFN_DOWN(e->addr),
+                  PFN_UP(e->addr + e->size - 1));
     }
 }
 
@@ -312,8 +315,8 @@ static void __init cf_check e820_fixup(void)
         pv_shim_fixup_e820();
 }
 
-static int cf_check flush_tlb(
-    const cpumask_t *mask, const void *va, unsigned int flags)
+static int cf_check flush_tlb(const cpumask_t *mask, const void *va,
+                              unsigned int flags)
 {
     return xen_hypercall_hvm_op(HVMOP_flush_tlbs, NULL);
 }

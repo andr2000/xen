@@ -58,10 +58,12 @@ enum hvm_translation_result {
  * Returns HVMTRANS_okay, else HVMTRANS_bad_gfn_to_mfn if the given physical
  * address range does not map entirely onto ordinary machine memory.
  */
-enum hvm_translation_result hvm_copy_to_guest_phys(
-    paddr_t paddr, const void *buf, unsigned int size, struct vcpu *v);
-enum hvm_translation_result hvm_copy_from_guest_phys(
-    void *buf, paddr_t paddr, unsigned int size);
+enum hvm_translation_result hvm_copy_to_guest_phys(paddr_t paddr,
+                                                   const void *buf,
+                                                   unsigned int size,
+                                                   struct vcpu *v);
+enum hvm_translation_result hvm_copy_from_guest_phys(void *buf, paddr_t paddr,
+                                                     unsigned int size);
 
 /*
  * Copy to/from a guest linear address. @pfec should include PFEC_user_mode
@@ -78,21 +80,20 @@ enum hvm_translation_result hvm_copy_from_guest_phys(
  *                              The pagefault_info_t structure will be filled
  *                              in if provided.
  */
-typedef struct pagefault_info
-{
+typedef struct pagefault_info {
     unsigned long linear;
     int ec;
 } pagefault_info_t;
 
-enum hvm_translation_result hvm_copy_to_guest_linear(
-    unsigned long addr, const void *buf, unsigned int size, uint32_t pfec,
-    pagefault_info_t *pfinfo);
-enum hvm_translation_result hvm_copy_from_guest_linear(
-    void *buf, unsigned long addr, unsigned int size, uint32_t pfec,
-    pagefault_info_t *pfinfo);
-enum hvm_translation_result hvm_copy_from_vcpu_linear(
-    void *buf, unsigned long addr, unsigned int size, struct vcpu *v,
-    unsigned int pfec);
+enum hvm_translation_result
+hvm_copy_to_guest_linear(unsigned long addr, const void *buf, unsigned int size,
+                         uint32_t pfec, pagefault_info_t *pfinfo);
+enum hvm_translation_result
+hvm_copy_from_guest_linear(void *buf, unsigned long addr, unsigned int size,
+                           uint32_t pfec, pagefault_info_t *pfinfo);
+enum hvm_translation_result
+hvm_copy_from_vcpu_linear(void *buf, unsigned long addr, unsigned int size,
+                          struct vcpu *v, unsigned int pfec);
 
 /*
  * Get a reference on the page under an HVM physical or linear address.  If
@@ -100,10 +101,11 @@ enum hvm_translation_result hvm_copy_from_vcpu_linear(
  * pfinfo).
  * On success, returns HVMTRANS_okay with a reference taken on **_page.
  */
-enum hvm_translation_result hvm_translate_get_page(
-    struct vcpu *v, unsigned long addr, bool linear, uint32_t pfec,
-    pagefault_info_t *pfinfo, struct page_info **page_p,
-    gfn_t *gfn_p, p2m_type_t *p2mt_p);
+enum hvm_translation_result
+hvm_translate_get_page(struct vcpu *v, unsigned long addr, bool linear,
+                       uint32_t pfec, pagefault_info_t *pfinfo,
+                       struct page_info **page_p, gfn_t *gfn_p,
+                       p2m_type_t *p2mt_p);
 
 #define HVM_HCALL_completed  0 /* hypercall completed - no further action */
 #define HVM_HCALL_preempted  1 /* hypercall preempted - re-execute VMCALL */
@@ -141,10 +143,10 @@ void hvm_ud_intercept(struct cpu_user_regs *regs);
  * May return X86EMUL_EXCEPTION, at which point the caller is responsible for
  * injecting a #GP fault.  Used to support speculative reads.
  */
-int __must_check hvm_msr_read_intercept(
-    unsigned int msr, uint64_t *msr_content);
-int __must_check hvm_msr_write_intercept(
-    unsigned int msr, uint64_t msr_content, bool may_defer);
+int __must_check hvm_msr_read_intercept(unsigned int msr,
+                                        uint64_t *msr_content);
+int __must_check hvm_msr_write_intercept(unsigned int msr, uint64_t msr_content,
+                                         bool may_defer);
 
 #endif /* __ASM_X86_HVM_SUPPORT_H__ */
 

@@ -44,11 +44,11 @@
 #define __asmeq(x, y)  ".ifnc " x "," y " ; .err ; .endif\n\t"
 
 #if defined(CONFIG_ARM_32)
-# include <asm/arm32/system.h>
+#include <asm/arm32/system.h>
 #elif defined(CONFIG_ARM_64)
-# include <asm/arm64/system.h>
+#include <asm/arm64/system.h>
 #else
-# error "unknown ARM variant"
+#error "unknown ARM variant"
 #endif
 
 static inline int local_abort_is_enabled(void)

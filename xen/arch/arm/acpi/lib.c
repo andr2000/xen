@@ -56,7 +56,8 @@ char *__acpi_map_table(paddr_t phys, unsigned long size)
     mfn = maddr_to_mfn(phys);
     idx = FIX_ACPI_BEGIN;
 
-    do {
+    do
+    {
         set_fixmap(idx, mfn, PAGE_HYPERVISOR);
         size -= min(size, (unsigned long)PAGE_SIZE);
         mfn = mfn_add(mfn, 1);

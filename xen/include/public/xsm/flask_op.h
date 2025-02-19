@@ -65,6 +65,7 @@ struct xen_flask_userlist {
     /* IN: size of user string and output buffer
      * OUT: number of SIDs returned */
     uint32_t size;
+
     union {
         /* IN: user to enumerate SIDs */
         XEN_GUEST_HANDLE(char) user;
@@ -183,6 +184,7 @@ struct xen_flask_op {
 #define FLASK_RELABEL_DOMAIN    24
 #define FLASK_DEVICETREE_LABEL  25
     uint32_t interface_version; /* XEN_FLASK_INTERFACE_VERSION */
+
     union {
         xen_flask_load_t load;
         xen_flask_setenforce_t enforce;

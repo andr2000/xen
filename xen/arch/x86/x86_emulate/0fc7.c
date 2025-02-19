@@ -13,12 +13,9 @@
 /* Avoid namespace pollution. */
 #undef cmpxchg
 
-int x86emul_0fc7(struct x86_emulate_state *s,
-                 struct cpu_user_regs *regs,
-                 struct operand *dst,
-                 struct x86_emulate_ctxt *ctxt,
-                 const struct x86_emulate_ops *ops,
-                 mmval_t *mmvalp)
+int x86emul_0fc7(struct x86_emulate_state *s, struct cpu_user_regs *regs,
+                 struct operand *dst, struct x86_emulate_ctxt *ctxt,
+                 const struct x86_emulate_ops *ops, mmval_t *mmvalp)
 {
     int rc;
 
@@ -39,18 +36,18 @@ int x86emul_0fc7(struct x86_emulate_state *s,
             switch ( s->op_bytes )
             {
             case 2:
-                asm ( "rdrand %w0" ASM_FLAG_OUT(, "; setc %1")
-                      : "=r" (dst->val), ASM_FLAG_OUT("=@ccc", "=qm") (carry) );
+                asm("rdrand %w0" ASM_FLAG_OUT(, "; setc %1")
+                    : "=r"(dst->val), ASM_FLAG_OUT("=@ccc", "=qm")(carry));
                 break;
             default:
-# ifdef __x86_64__
-                asm ( "rdrand %k0" ASM_FLAG_OUT(, "; setc %1")
-                      : "=r" (dst->val), ASM_FLAG_OUT("=@ccc", "=qm") (carry) );
+#ifdef __x86_64__
+                asm("rdrand %k0" ASM_FLAG_OUT(, "; setc %1")
+                    : "=r"(dst->val), ASM_FLAG_OUT("=@ccc", "=qm")(carry));
                 break;
             case 8:
-# endif
-                asm ( "rdrand %0" ASM_FLAG_OUT(, "; setc %1")
-                      : "=r" (dst->val), ASM_FLAG_OUT("=@ccc", "=qm") (carry) );
+#endif
+                asm("rdrand %0" ASM_FLAG_OUT(, "; setc %1")
+                    : "=r"(dst->val), ASM_FLAG_OUT("=@ccc", "=qm")(carry));
                 break;
             }
             regs->eflags &= ~EFLAGS_MASK;
@@ -69,8 +66,8 @@ int x86emul_0fc7(struct x86_emulate_state *s,
                 generate_exception_if(s->ea.type != OP_REG, X86_EXC_UD);
                 vcpu_must_have(rdpid);
                 fail_if(!ops->read_msr);
-                if ( (rc = ops->read_msr(MSR_TSC_AUX, &msr_val,
-                                         ctxt)) != X86EMUL_OKAY )
+                if ( (rc = ops->read_msr(MSR_TSC_AUX, &msr_val, ctxt)) !=
+                     X86EMUL_OKAY )
                     goto done;
                 *dst = s->ea;
                 dst->val = msr_val;
@@ -84,18 +81,18 @@ int x86emul_0fc7(struct x86_emulate_state *s,
             switch ( s->op_bytes )
             {
             case 2:
-                asm ( "rdseed %w0" ASM_FLAG_OUT(, "; setc %1")
-                      : "=r" (dst->val), ASM_FLAG_OUT("=@ccc", "=qm") (carry) );
+                asm("rdseed %w0" ASM_FLAG_OUT(, "; setc %1")
+                    : "=r"(dst->val), ASM_FLAG_OUT("=@ccc", "=qm")(carry));
                 break;
             default:
-# ifdef __x86_64__
-                asm ( "rdseed %k0" ASM_FLAG_OUT(, "; setc %1")
-                      : "=r" (dst->val), ASM_FLAG_OUT("=@ccc", "=qm") (carry) );
+#ifdef __x86_64__
+                asm("rdseed %k0" ASM_FLAG_OUT(, "; setc %1")
+                    : "=r"(dst->val), ASM_FLAG_OUT("=@ccc", "=qm")(carry));
                 break;
             case 8:
-# endif
-                asm ( "rdseed %0" ASM_FLAG_OUT(, "; setc %1")
-                      : "=r" (dst->val), ASM_FLAG_OUT("=@ccc", "=qm") (carry) );
+#endif
+                asm("rdseed %0" ASM_FLAG_OUT(, "; setc %1")
+                    : "=r"(dst->val), ASM_FLAG_OUT("=@ccc", "=qm")(carry));
                 break;
             }
             regs->eflags &= ~EFLAGS_MASK;
@@ -118,9 +115,10 @@ int x86emul_0fc7(struct x86_emulate_state *s,
         if ( s->rex_prefix & REX_W )
         {
             host_and_vcpu_must_have(cx16);
-            generate_exception_if(!is_aligned(s->ea.mem.seg, s->ea.mem.off, 16,
-                                              ctxt, ops),
-                                  X86_EXC_GP, 0);
+            generate_exception_if(
+                !is_aligned(s->ea.mem.seg, s->ea.mem.off, 16, ctxt, ops),
+                X86_EXC_GP,
+                0);
             s->op_bytes = 16;
         }
         else
@@ -133,7 +131,10 @@ int x86emul_0fc7(struct x86_emulate_state *s,
         aux = container_of(&mmvalp->ymm[2], typeof(*aux), u64[0]);
 
         /* Get actual old value. */
-        if ( (rc = ops->read(s->ea.mem.seg, s->ea.mem.off, old, s->op_bytes,
+        if ( (rc = ops->read(s->ea.mem.seg,
+                             s->ea.mem.off,
+                             old,
+                             s->op_bytes,
                              ctxt)) != X86EMUL_OKAY )
             goto done;
 
@@ -174,8 +175,13 @@ int x86emul_0fc7(struct x86_emulate_state *s,
                 aux->u64[1] = regs->r(cx);
             }
 
-            switch ( rc = ops->cmpxchg(s->ea.mem.seg, s->ea.mem.off, old, aux,
-                                       s->op_bytes, s->lock_prefix, ctxt) )
+            switch ( rc = ops->cmpxchg(s->ea.mem.seg,
+                                       s->ea.mem.off,
+                                       old,
+                                       aux,
+                                       s->op_bytes,
+                                       s->lock_prefix,
+                                       ctxt) )
             {
             case X86EMUL_OKAY:
                 regs->eflags |= X86_EFLAGS_ZF;
@@ -193,6 +199,6 @@ int x86emul_0fc7(struct x86_emulate_state *s,
 
     rc = X86EMUL_OKAY;
 
- done:
+done:
     return rc;
 }

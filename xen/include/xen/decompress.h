@@ -2,8 +2,8 @@
 #define __XEN_GENERIC_H
 
 typedef int decompress_fn(unsigned char *inbuf, unsigned int len,
-                          int (*fill)(void*, unsigned int),
-                          int (*flush)(void*, unsigned int),
+                          int (*fill)(void *, unsigned int),
+                          int (*flush)(void *, unsigned int),
                           unsigned char *outbuf, unsigned int *posp,
                           void (*error)(const char *x));
 

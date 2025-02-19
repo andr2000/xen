@@ -73,17 +73,17 @@ DEFINE_XEN_GUEST_HANDLE(xenoprof_buf_t);
 #endif
 
 struct xenoprof_init {
-    int32_t  num_events;
-    int32_t  is_primary;
+    int32_t num_events;
+    int32_t is_primary;
     char cpu_type[XENOPROF_CPU_TYPE_SIZE];
 };
 typedef struct xenoprof_init xenoprof_init_t;
 DEFINE_XEN_GUEST_HANDLE(xenoprof_init_t);
 
 struct xenoprof_get_buffer {
-    int32_t  max_samples;
-    int32_t  nbuf;
-    int32_t  bufsize;
+    int32_t max_samples;
+    int32_t nbuf;
+    int32_t bufsize;
     uint64_t buf_gmaddr;
 };
 typedef struct xenoprof_get_buffer xenoprof_get_buffer_t;
@@ -104,11 +104,12 @@ DEFINE_XEN_GUEST_HANDLE(xenoprof_counter_t);
 
 typedef struct xenoprof_passive {
     uint16_t domain_id;
-    int32_t  max_samples;
-    int32_t  nbuf;
-    int32_t  bufsize;
+    int32_t max_samples;
+    int32_t nbuf;
+    int32_t bufsize;
     uint64_t buf_gmaddr;
 } xenoprof_passive_t;
+
 DEFINE_XEN_GUEST_HANDLE(xenoprof_passive_t);
 
 struct xenoprof_ibs_counter {

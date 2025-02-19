@@ -33,14 +33,17 @@ int ffa_handle_notification_bind(struct cpu_user_regs *regs)
     if ( (src_dst & 0xFFFFU) != ffa_get_vm_id(d) )
         return FFA_RET_INVALID_PARAMETERS;
 
-    if ( flags )    /* Only global notifications are supported */
+    if ( flags ) /* Only global notifications are supported */
         return FFA_RET_DENIED;
 
     /*
      * We only support notifications from SP so no need to check the sender
      * endpoint ID, the SPMC will take care of that for us.
      */
-    return ffa_simple_call(FFA_NOTIFICATION_BIND, src_dst, flags, bitmap_lo,
+    return ffa_simple_call(FFA_NOTIFICATION_BIND,
+                           src_dst,
+                           flags,
+                           bitmap_lo,
                            bitmap_hi);
 }
 
@@ -61,8 +64,11 @@ int ffa_handle_notification_unbind(struct cpu_user_regs *regs)
      * We only support notifications from SP so no need to check the
      * destination endpoint ID, the SPMC will take care of that for us.
      */
-    return  ffa_simple_call(FFA_NOTIFICATION_UNBIND, src_dst, 0, bitmap_lo,
-                            bitmap_hi);
+    return ffa_simple_call(FFA_NOTIFICATION_UNBIND,
+                           src_dst,
+                           0,
+                           bitmap_lo,
+                           bitmap_hi);
 }
 
 void ffa_handle_notification_info_get(struct cpu_user_regs *regs)
@@ -79,9 +85,15 @@ void ffa_handle_notification_info_get(struct cpu_user_regs *regs)
     if ( test_and_clear_bool(ctx->notif.secure_pending) )
     {
         /* A pending global notification for the guest */
-        ffa_set_regs(regs, FFA_SUCCESS_64, 0,
-                     1U << FFA_NOTIF_INFO_GET_ID_COUNT_SHIFT, ffa_get_vm_id(d),
-                     0, 0, 0, 0);
+        ffa_set_regs(regs,
+                     FFA_SUCCESS_64,
+                     0,
+                     1U << FFA_NOTIF_INFO_GET_ID_COUNT_SHIFT,
+                     ffa_get_vm_id(d),
+                     0,
+                     0,
+                     0,
+                     0);
     }
     else
     {
@@ -114,13 +126,13 @@ void ffa_handle_notification_get(struct cpu_user_regs *regs)
         return;
     }
 
-    if ( flags & ( FFA_NOTIF_FLAG_BITMAP_SP | FFA_NOTIF_FLAG_BITMAP_SPM ) )
+    if ( flags & (FFA_NOTIF_FLAG_BITMAP_SP | FFA_NOTIF_FLAG_BITMAP_SPM) )
     {
         struct arm_smccc_1_2_regs arg = {
             .a0 = FFA_NOTIFICATION_GET,
             .a1 = recv,
-            .a2 = flags & ( FFA_NOTIF_FLAG_BITMAP_SP |
-                            FFA_NOTIF_FLAG_BITMAP_SPM ),
+            .a2 = flags &
+                  (FFA_NOTIF_FLAG_BITMAP_SP | FFA_NOTIF_FLAG_BITMAP_SPM),
         };
         struct arm_smccc_1_2_regs resp;
         int32_t e;
@@ -130,12 +142,12 @@ void ffa_handle_notification_get(struct cpu_user_regs *regs)
          * FFA_NOTIF_FLAG_BITMAP_SPM are set since secure world can't have
          * any more pending notifications.
          */
-        if ( ( flags  & FFA_NOTIF_FLAG_BITMAP_SP ) &&
-             ( flags & FFA_NOTIF_FLAG_BITMAP_SPM ) )
+        if ( (flags & FFA_NOTIF_FLAG_BITMAP_SP) &&
+             (flags & FFA_NOTIF_FLAG_BITMAP_SPM) )
         {
-                struct ffa_ctx *ctx = d->arch.tee;
+            struct ffa_ctx *ctx = d->arch.tee;
 
-                ACCESS_ONCE(ctx->notif.secure_pending) = false;
+            ACCESS_ONCE(ctx->notif.secure_pending) = false;
         }
 
         arm_smccc_1_2_smc(&arg, &resp);
@@ -174,7 +186,10 @@ int ffa_handle_notification_set(struct cpu_user_regs *regs)
         return FFA_RET_INVALID_PARAMETERS;
 
     /* Let the SPMC check the destination of the notification */
-    return ffa_simple_call(FFA_NOTIFICATION_SET, src_dst, flags, bitmap_lo,
+    return ffa_simple_call(FFA_NOTIFICATION_SET,
+                           src_dst,
+                           flags,
+                           bitmap_lo,
                            bitmap_hi);
 }
 
@@ -198,7 +213,7 @@ static uint16_t get_id_from_resp(struct arm_smccc_1_2_regs *resp,
         ids_per_reg = 2;
 
     reg_idx = n / ids_per_reg + 3;
-    reg_shift = ( n % ids_per_reg ) * 16;
+    reg_shift = (n % ids_per_reg) * 16;
 
     switch ( reg_idx )
     {
@@ -271,8 +286,7 @@ static void notif_vm_pend_intr(uint16_t vm_id)
     {
         if ( is_vcpu_online(v) )
         {
-            vgic_inject_irq(d, v, GUEST_FFA_NOTIF_PEND_INTR_ID,
-                            true);
+            vgic_inject_irq(d, v, GUEST_FFA_NOTIF_PEND_INTR_ID, true);
             break;
         }
     }
@@ -295,19 +309,21 @@ static void notif_sri_action(void *unused)
     unsigned int n;
     int32_t res;
 
-    do {
+    do
+    {
         arm_smccc_1_2_smc(&arg, &resp);
         res = ffa_get_ret_code(&resp);
         if ( res )
         {
             if ( res != FFA_RET_NO_DATA )
-                printk(XENLOG_ERR "ffa: notification info get failed: error %d\n",
+                printk(XENLOG_ERR
+                       "ffa: notification info get failed: error %d\n",
                        res);
             return;
         }
 
         ids_count = resp.a2 >> FFA_NOTIF_INFO_GET_ID_LIST_SHIFT;
-        list_count = ( resp.a2 >> FFA_NOTIF_INFO_GET_ID_COUNT_SHIFT ) &
+        list_count = (resp.a2 >> FFA_NOTIF_INFO_GET_ID_COUNT_SHIFT) &
                      FFA_NOTIF_INFO_GET_ID_COUNT_MASK;
 
         id_pos = 0;
@@ -321,7 +337,7 @@ static void notif_sri_action(void *unused)
             id_pos += count;
         }
 
-    } while (resp.a2 & FFA_NOTIF_INFO_GET_MORE_FLAG);
+    } while ( resp.a2 & FFA_NOTIF_INFO_GET_MORE_FLAG );
 }
 
 static DECLARE_TASKLET(notif_sri_tasklet, notif_sri_action, NULL);
@@ -334,8 +350,11 @@ static void notif_irq_handler(int irq, void *data)
 static int32_t ffa_notification_bitmap_create(uint16_t vm_id,
                                               uint32_t vcpu_count)
 {
-    return ffa_simple_call(FFA_NOTIFICATION_BITMAP_CREATE, vm_id, vcpu_count,
-                           0, 0);
+    return ffa_simple_call(FFA_NOTIFICATION_BITMAP_CREATE,
+                           vm_id,
+                           vcpu_count,
+                           0,
+                           0);
 }
 
 static int32_t ffa_notification_bitmap_destroy(uint16_t vm_id)
@@ -359,11 +378,12 @@ void ffa_notif_init_interrupt(void)
          * pending, while the SPMC in the secure world will not notice that
          * the interrupt was lost.
          */
-        ret = request_irq(notif_sri_irq, 0, notif_irq_handler, "FF-A notif",
-                          NULL);
+        ret =
+            request_irq(notif_sri_irq, 0, notif_irq_handler, "FF-A notif", NULL);
         if ( ret )
             printk(XENLOG_ERR "ffa: request_irq irq %u failed: error %d\n",
-                   notif_sri_irq, ret);
+                   notif_sri_irq,
+                   ret);
     }
 }
 
@@ -396,7 +416,8 @@ void ffa_notif_init(void)
     if ( ret )
     {
         printk(XENLOG_ERR "ffa: request_irq irq %u failed: error %d\n",
-               irq, ret);
+               irq,
+               ret);
         return;
     }
 

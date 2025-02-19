@@ -25,25 +25,27 @@ int fdt_node_end_offset_(void *fdt, int nodeoffset);
 
 static inline const void *fdt_offset_ptr_(const void *fdt, int offset)
 {
-	return (const char *)fdt + fdt_off_dt_struct(fdt) + offset;
+    return (const char *)fdt + fdt_off_dt_struct(fdt) + offset;
 }
 
 static inline void *fdt_offset_ptr_w_(void *fdt, int offset)
 {
-	return (void *)(uintptr_t)fdt_offset_ptr_(fdt, offset);
+    return (void *)(uintptr_t)fdt_offset_ptr_(fdt, offset);
 }
 
-static inline const struct fdt_reserve_entry *fdt_mem_rsv_(const void *fdt, int n)
+static inline const struct fdt_reserve_entry *fdt_mem_rsv_(const void *fdt,
+                                                           int n)
 {
-	const struct fdt_reserve_entry *rsv_table =
-		(const struct fdt_reserve_entry *)
-		((const char *)fdt + fdt_off_mem_rsvmap(fdt));
+    const struct fdt_reserve_entry *rsv_table =
+        (const struct fdt_reserve_entry *)((const char *)fdt +
+                                           fdt_off_mem_rsvmap(fdt));
 
-	return rsv_table + n;
+    return rsv_table + n;
 }
+
 static inline struct fdt_reserve_entry *fdt_mem_rsv_w_(void *fdt, int n)
 {
-	return (void *)(uintptr_t)fdt_mem_rsv_(fdt, n);
+    return (void *)(uintptr_t)fdt_mem_rsv_(fdt, n);
 }
 
 /*
@@ -57,12 +59,12 @@ static inline struct fdt_reserve_entry *fdt_mem_rsv_w_(void *fdt, int n)
  */
 static inline uint32_t fdt32_ld_(const fdt32_t *p)
 {
-	return fdt32_to_cpu(*p);
+    return fdt32_to_cpu(*p);
 }
 
 static inline uint64_t fdt64_ld_(const fdt64_t *p)
 {
-	return fdt64_to_cpu(*p);
+    return fdt64_to_cpu(*p);
 }
 
 #define FDT_SW_MAGIC		(~FDT_MAGIC)
@@ -87,7 +89,7 @@ static inline uint64_t fdt64_ld_(const fdt64_t *p)
  * ASSUME_SANE.
  */
 enum {
-	/*
+    /*
 	 * This does essentially no checks. Only the latest device-tree
 	 * version is correctly handled. Inconsistencies or errors in the device
 	 * tree may cause undefined behaviour or crashes. Invalid parameters
@@ -102,9 +104,9 @@ enum {
 	 * Only use this if you have a fully validated device tree with
 	 * the latest supported version and wish to minimise code size.
 	 */
-	ASSUME_PERFECT		= 0xff,
+    ASSUME_PERFECT = 0xff,
 
-	/*
+    /*
 	 * This assumes that the device tree is sane. i.e. header metadata
 	 * and basic hierarchy are correct.
 	 *
@@ -118,9 +120,9 @@ enum {
 	 * (not the parameters passed to libfdt) are disabled by this
 	 * assumption. This includes checking headers, tags and the like.
 	 */
-	ASSUME_VALID_DTB	= 1 << 0,
+    ASSUME_VALID_DTB = 1 << 0,
 
-	/*
+    /*
 	 * This builds on ASSUME_VALID_DTB and further assumes that libfdt
 	 * functions are called with valid parameters, i.e. not trigger
 	 * FDT_ERR_BADOFFSET or offsets that are out of bounds. It disables any
@@ -130,27 +132,27 @@ enum {
 	 * It doesn't make sense to enable this assumption unless
 	 * ASSUME_VALID_DTB is also enabled.
 	 */
-	ASSUME_VALID_INPUT	= 1 << 1,
+    ASSUME_VALID_INPUT = 1 << 1,
 
-	/*
+    /*
 	 * This disables checks for device-tree version and removes all code
 	 * which handles older versions.
 	 *
 	 * Only enable this if you know you have a device tree with the latest
 	 * version.
 	 */
-	ASSUME_LATEST		= 1 << 2,
+    ASSUME_LATEST = 1 << 2,
 
-	/*
+    /*
 	 * This assumes that it is OK for a failed addition to the device tree,
 	 * due to lack of space or some other problem, to skip any rollback
 	 * steps (such as dropping the property name from the string table).
 	 * This is safe to enable in most circumstances, even though it may
 	 * leave the tree in a sub-optimal state.
 	 */
-	ASSUME_NO_ROLLBACK	= 1 << 3,
+    ASSUME_NO_ROLLBACK = 1 << 3,
 
-	/*
+    /*
 	 * This assumes that the device tree components appear in a 'convenient'
 	 * order, i.e. the memory reservation block first, then the structure
 	 * block and finally the string block.
@@ -163,16 +165,16 @@ enum {
 	 * ability to fix the problem there. This is safe if you know that the
 	 * device tree is correctly ordered. See fdt_blocks_misordered_().
 	 */
-	ASSUME_LIBFDT_ORDER	= 1 << 4,
+    ASSUME_LIBFDT_ORDER = 1 << 4,
 
-	/*
+    /*
 	 * This assumes that libfdt itself does not have any internal bugs. It
 	 * drops certain checks that should never be needed unless libfdt has an
 	 * undiscovered bug.
 	 *
 	 * This can generally be considered safe to enable.
 	 */
-	ASSUME_LIBFDT_FLAWLESS	= 1 << 5,
+    ASSUME_LIBFDT_FLAWLESS = 1 << 5,
 };
 
 /**
@@ -183,7 +185,7 @@ enum {
  */
 static inline bool can_assume_(int mask)
 {
-	return FDT_ASSUME_MASK & mask;
+    return FDT_ASSUME_MASK & mask;
 }
 
 /** helper macros for checking assumptions */

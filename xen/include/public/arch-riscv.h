@@ -8,7 +8,7 @@
 #define __XEN_PUBLIC_ARCH_RISCV_H__
 
 #if defined(__XEN__) || defined(__XEN_TOOLS__) || defined(__GNUC__)
-#define  int64_aligned_t  int64_t __attribute__((__aligned__(8)))
+#define int64_aligned_t  int64_t __attribute__((__aligned__(8)))
 #define uint64_aligned_t uint64_t __attribute__((__aligned__(8)))
 #endif
 
@@ -50,24 +50,20 @@ typedef uint64_t xen_ulong_t;
 
 #if defined(__XEN__) || defined(__XEN_TOOLS__)
 
-struct vcpu_guest_context {
-};
+struct vcpu_guest_context {};
 typedef struct vcpu_guest_context vcpu_guest_context_t;
 DEFINE_XEN_GUEST_HANDLE(vcpu_guest_context_t);
 
-struct xen_arch_domainconfig {
-};
+struct xen_arch_domainconfig {};
 
 #endif
 
 /* TODO:  add a placeholder entry if no real ones surface */
-struct arch_vcpu_info {
-};
+struct arch_vcpu_info {};
 typedef struct arch_vcpu_info arch_vcpu_info_t;
 
 /* TODO:  add a placeholder entry if no real ones surface */
-struct arch_shared_info {
-};
+struct arch_shared_info {};
 typedef struct arch_shared_info arch_shared_info_t;
 
 /*
@@ -77,7 +73,9 @@ typedef struct arch_shared_info arch_shared_info_t;
 #define XEN_LEGACY_MAX_VCPUS 1
 
 /* Stub definition of PMU structure */
-typedef struct xen_pmu_arch { uint8_t dummy; } xen_pmu_arch_t;
+typedef struct xen_pmu_arch {
+    uint8_t dummy;
+} xen_pmu_arch_t;
 #endif
 
 #endif /*  __XEN_PUBLIC_ARCH_RISCV_H__ */

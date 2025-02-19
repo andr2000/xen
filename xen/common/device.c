@@ -23,7 +23,7 @@ int __init device_init(struct dt_device_node *dev, enum device_class class,
     ASSERT(dev != NULL);
 
     if ( !dt_device_is_available(dev) || dt_device_for_passthrough(dev) )
-        return  -ENODEV;
+        return -ENODEV;
 
     for ( desc = _sdevice; desc != _edevice; desc++ )
     {
@@ -62,13 +62,14 @@ enum device_class device_get_class(const struct dt_device_node *dev)
 
 extern const struct acpi_device_desc _asdevice[], _aedevice[];
 
-int __init acpi_device_init(enum device_class class, const void *data, int class_type)
+int __init acpi_device_init(enum device_class class, const void *data,
+                            int class_type)
 {
     const struct acpi_device_desc *desc;
 
     for ( desc = _asdevice; desc != _aedevice; desc++ )
     {
-        if ( ( desc->class != class ) || ( desc->class_type != class_type ) )
+        if ( (desc->class != class) || (desc->class_type != class_type) )
             continue;
 
         ASSERT(desc->init != NULL);

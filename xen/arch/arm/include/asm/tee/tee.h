@@ -111,15 +111,11 @@ static inline uint16_t tee_get_type(void)
     return XEN_DOMCTL_CONFIG_TEE_NONE;
 }
 
-static inline void init_tee_secondary(void)
-{
-}
+static inline void init_tee_secondary(void) {}
 
-static inline void tee_free_domain_ctx(struct domain *d)
-{
-}
+static inline void tee_free_domain_ctx(struct domain *d) {}
 
-#endif  /* CONFIG_TEE */
+#endif /* CONFIG_TEE */
 
 #endif /* __ARCH_ARM_TEE_TEE_H__ */
 

@@ -17,12 +17,12 @@
 
 #define LOAD_IMM32(reg, val)                                                 \
     lis reg, (val) @h;                                                       \
-    ori reg, reg, (val) @l;                                                  \
+    ori reg, reg, (val) @l;
 
 /*
  * Load the address of a symbol from the TOC into the specified GPR.
  */
-#define LOAD_REG_ADDR(reg,name)                                              \
+#define LOAD_REG_ADDR(reg, name)                                              \
     addis reg, %r2, name@toc@ha;                                             \
     addi  reg, reg, name@toc@l
 
@@ -60,13 +60,9 @@ name:                                                                       \
     .long 0x2400004c  /* rfid                               */
 
 /* Taken from Linux kernel source (arch/powerpc/boot/crt0.S) */
-.macro OP_REGS op, width, start, end, base, offset
-	.Lreg=\start
-	.rept (\end - \start + 1)
-	\op	.Lreg,\offset+\width*.Lreg(\base)
-	.Lreg=.Lreg+1
-	.endr
-.endm
+.macro OP_REGS op, width, start, end, base,
+    offset.Lreg =\start.rept(\end - \start + 1)
+	\op.Lreg,\offset +\width *.Lreg(\base).Lreg =.Lreg + 1 .endr.endm
 
 #define SAVE_GPRS(start, end, base) OP_REGS std, 8, start, end, base, 0
 #define REST_GPRS(start, end, base) OP_REGS ld, 8, start, end, base, 0

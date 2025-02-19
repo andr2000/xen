@@ -70,24 +70,23 @@ const char *xen_deny(void)
     return "<denied>";
 }
 
-static const char build_info[] =
-    "debug="
+static const char build_info[] = "debug="
 #ifdef CONFIG_DEBUG
-    "y"
+                                 "y"
 #else
-    "n"
+                                 "n"
 #endif
 #ifdef CONFIG_COVERAGE
-# ifdef __clang__
-    " llvmcov=y"
-# else
-    " gcov=y"
-# endif
+#ifdef __clang__
+                                 " llvmcov=y"
+#else
+                                 " gcov=y"
+#endif
 #endif
 #ifdef CONFIG_UBSAN
-    " ubsan=y"
+                                 " ubsan=y"
 #endif
-    "";
+                                 "";
 
 const char *xen_build_info(void)
 {
@@ -112,8 +111,8 @@ int xen_build_id(const void **p, unsigned int *len)
 /* Defined in linker script. */
 extern const Elf_Note __note_gnu_build_id_start[], __note_gnu_build_id_end[];
 
-int xen_build_id_check(const Elf_Note *n, unsigned int n_sz,
-                       const void **p, unsigned int *len)
+int xen_build_id_check(const Elf_Note *n, unsigned int n_sz, const void **p,
+                       unsigned int *len)
 {
     /* Check if we really have a build-id. */
     ASSERT(n_sz > sizeof(*n));
@@ -124,7 +123,7 @@ int xen_build_id_check(const Elf_Note *n, unsigned int n_sz,
     if ( n->namesz + n->descsz < n->namesz )
         return -EINVAL;
 
-    if ( n->namesz < 4 /* GNU\0 */)
+    if ( n->namesz < 4 /* GNU\0 */ )
         return -EINVAL;
 
     if ( n->namesz + n->descsz > n_sz - sizeof(*n) )
@@ -142,8 +141,7 @@ int xen_build_id_check(const Elf_Note *n, unsigned int n_sz,
     return 0;
 }
 
-struct pe_external_debug_directory
-{
+struct pe_external_debug_directory {
     uint32_t characteristics;
     uint32_t time_stamp;
     uint16_t major_version;
@@ -155,8 +153,7 @@ struct pe_external_debug_directory
     uint32_t filepos_of_data;
 };
 
-struct cv_info_pdb70
-{
+struct cv_info_pdb70 {
 #define CVINFO_PDB70_CVSIGNATURE 0x53445352 /* "RSDS" */
     uint32_t cv_signature;
     unsigned char signature[16];

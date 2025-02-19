@@ -33,7 +33,7 @@ static LIST_HEAD(ats_dev_drhd_units);
 struct acpi_drhd_unit *find_ats_dev_drhd(struct vtd_iommu *iommu)
 {
     struct acpi_drhd_unit *drhd;
-    list_for_each_entry ( drhd, &ats_dev_drhd_units, list )
+    list_for_each_entry(drhd, &ats_dev_drhd_units, list)
     {
         if ( drhd->iommu == iommu )
             return drhd;
@@ -112,8 +112,8 @@ out:
     return found;
 }
 
-int dev_invalidate_iotlb(struct vtd_iommu *iommu, u16 did,
-    u64 addr, unsigned int size_order, u64 type)
+int dev_invalidate_iotlb(struct vtd_iommu *iommu, u16 did, u64 addr,
+                         unsigned int size_order, u64 type)
 {
     struct pci_dev *pdev, *temp;
     int ret = 0;
@@ -121,7 +121,7 @@ int dev_invalidate_iotlb(struct vtd_iommu *iommu, u16 did,
     if ( !ecap_dev_iotlb(iommu->ecap) )
         return ret;
 
-    list_for_each_entry_safe( pdev, temp, &iommu->ats_devices, ats.list )
+    list_for_each_entry_safe(pdev, temp, &iommu->ats_devices, ats.list)
     {
         bool sbit;
         int rc = 0;

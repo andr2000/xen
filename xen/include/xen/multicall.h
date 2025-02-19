@@ -11,8 +11,10 @@
 
 #define _MCSF_in_multicall   0
 #define MCSF_in_multicall    (1<<_MCSF_in_multicall)
+
 struct mc_state {
     unsigned long flags;
+
     union {
         struct multicall_entry call;
 #ifdef CONFIG_COMPAT

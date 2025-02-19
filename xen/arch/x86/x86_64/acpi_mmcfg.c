@@ -49,20 +49,21 @@ static int __init acpi_mcfg_check_entry(struct acpi_table_mcfg *mcfg,
 {
     int year;
 
-    if (cfg->address == (uint32_t)cfg->address)
+    if ( cfg->address == (uint32_t)cfg->address )
         return 0;
 
-    if (!strncmp(mcfg->header.oem_id, "SGI", 3))
+    if ( !strncmp(mcfg->header.oem_id, "SGI", 3) )
         return 0;
 
-    if (mcfg->header.revision >= 1 &&
-        dmi_get_date(DMI_BIOS_DATE, &year, NULL, NULL) &&
-        year >= 2010)
+    if ( mcfg->header.revision >= 1 &&
+         dmi_get_date(DMI_BIOS_DATE, &year, NULL, NULL) && year >= 2010 )
         return 0;
 
-    printk(KERN_ERR "MCFG region for %04x:%02x-%02x at %#"PRIx64
+    printk(KERN_ERR "MCFG region for %04x:%02x-%02x at %#" PRIx64
                     " (above 4GB) ignored\n",
-           cfg->pci_segment, cfg->start_bus_number, cfg->end_bus_number,
+           cfg->pci_segment,
+           cfg->start_bus_number,
+           cfg->end_bus_number,
            cfg->address);
     return -EINVAL;
 }
@@ -72,7 +73,7 @@ int __init cf_check acpi_parse_mcfg(struct acpi_table_header *header)
     struct acpi_table_mcfg *mcfg;
     unsigned long i;
 
-    if (!header)
+    if ( !header )
         return -EINVAL;
 
     mcfg = (struct acpi_table_mcfg *)header;
@@ -80,29 +81,34 @@ int __init cf_check acpi_parse_mcfg(struct acpi_table_header *header)
     /* how many config structures do we have */
     pci_mmcfg_config_num = 0;
     i = header->length - sizeof(struct acpi_table_mcfg);
-    while (i >= sizeof(struct acpi_mcfg_allocation)) {
+    while ( i >= sizeof(struct acpi_mcfg_allocation) )
+    {
         ++pci_mmcfg_config_num;
         i -= sizeof(struct acpi_mcfg_allocation);
     };
-    if (pci_mmcfg_config_num == 0) {
+    if ( pci_mmcfg_config_num == 0 )
+    {
         printk(KERN_ERR PREFIX "MMCONFIG has no entries\n");
         return -ENODEV;
     }
 
     pci_mmcfg_config = xmalloc_array(struct acpi_mcfg_allocation,
                                      pci_mmcfg_config_num);
-    if (!pci_mmcfg_config) {
-        printk(KERN_WARNING PREFIX
-               "No memory for MCFG config tables\n");
+    if ( !pci_mmcfg_config )
+    {
+        printk(KERN_WARNING PREFIX "No memory for MCFG config tables\n");
         pci_mmcfg_config_num = 0;
         return -ENOMEM;
     }
 
-    memcpy(pci_mmcfg_config, &mcfg[1],
+    memcpy(pci_mmcfg_config,
+           &mcfg[1],
            pci_mmcfg_config_num * sizeof(*pci_mmcfg_config));
 
-    for (i = 0; i < pci_mmcfg_config_num; ++i) {
-        if (acpi_mcfg_check_entry(mcfg, &pci_mmcfg_config[i])) {
+    for ( i = 0; i < pci_mmcfg_config_num; ++i )
+    {
+        if ( acpi_mcfg_check_entry(mcfg, &pci_mmcfg_config[i]) )
+        {
             xfree(pci_mmcfg_config);
             pci_mmcfg_config_num = 0;
             return -ENODEV;

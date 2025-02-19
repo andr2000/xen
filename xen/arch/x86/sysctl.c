@@ -55,7 +55,7 @@ static long cf_check smt_up_down_helper(void *data)
 
     opt_smt = up;
 
-    for_each_present_cpu ( cpu )
+    for_each_present_cpu(cpu)
     {
         /* Skip primary siblings (those whose thread id is 0). */
         if ( !(x86_cpu_to_apicid[cpu] & sibling_mask) )
@@ -64,8 +64,7 @@ static long cf_check smt_up_down_helper(void *data)
         if ( !up && core_parking_remove(cpu) )
             continue;
 
-        ret = up ? cpu_up_helper(_p(cpu))
-                 : cpu_down_helper(_p(cpu));
+        ret = up ? cpu_up_helper(_p(cpu)) : cpu_down_helper(_p(cpu));
 
         if ( ret && ret != -EEXIST )
             break;
@@ -86,14 +85,16 @@ static long cf_check smt_up_down_helper(void *data)
 
     if ( !ret )
         printk(XENLOG_INFO "SMT %s - online CPUs 0x%*pb\n",
-               up ? "enabled" : "disabled", CPUMASK_PR(&cpu_online_map));
+               up ? "enabled" : "disabled",
+               CPUMASK_PR(&cpu_online_map));
 
     return ret;
 }
 
 void arch_do_physinfo(struct xen_sysctl_physinfo *pi)
 {
-    memcpy(pi->hw_cap, boot_cpu_data.x86_capability,
+    memcpy(pi->hw_cap,
+           boot_cpu_data.x86_capability,
            min(sizeof(pi->hw_cap), sizeof(boot_cpu_data.x86_capability)));
     if ( hvm_enabled )
         pi->capabilities |= XEN_SYSCTL_PHYSCAP_hvm;
@@ -105,18 +106,17 @@ void arch_do_physinfo(struct xen_sysctl_physinfo *pi)
         pi->capabilities |= XEN_SYSCTL_PHYSCAP_shadow;
 }
 
-long arch_do_sysctl(
-    struct xen_sysctl *sysctl, XEN_GUEST_HANDLE_PARAM(xen_sysctl_t) u_sysctl)
+long arch_do_sysctl(struct xen_sysctl *sysctl,
+                    XEN_GUEST_HANDLE_PARAM(xen_sysctl_t) u_sysctl)
 {
     long ret = 0;
 
     switch ( sysctl->cmd )
     {
-
     case XEN_SYSCTL_cpu_hotplug:
     {
         unsigned int cpu = sysctl->u.cpu_hotplug.cpu;
-        unsigned int op  = sysctl->u.cpu_hotplug.op;
+        unsigned int op = sysctl->u.cpu_hotplug.op;
         bool plug;
         long (*fn)(void *data);
         void *hcpu;
@@ -225,23 +225,23 @@ long arch_do_sysctl(
 
     case XEN_SYSCTL_psr_alloc:
     {
-        uint32_t __maybe_unused data[PSR_INFO_ARRAY_SIZE] = { };
+        uint32_t __maybe_unused data[PSR_INFO_ARRAY_SIZE] = {};
 
         switch ( sysctl->u.psr_alloc.cmd )
         {
 #ifdef CONFIG_X86_PSR
         case XEN_SYSCTL_PSR_get_l3_info:
             ret = psr_get_info(sysctl->u.psr_alloc.target,
-                               PSR_TYPE_L3_CBM, data, ARRAY_SIZE(data));
+                               PSR_TYPE_L3_CBM,
+                               data,
+                               ARRAY_SIZE(data));
             if ( ret )
                 break;
 
-            sysctl->u.psr_alloc.u.cat_info.cos_max =
-                                      data[PSR_INFO_IDX_COS_MAX];
+            sysctl->u.psr_alloc.u.cat_info.cos_max = data[PSR_INFO_IDX_COS_MAX];
             sysctl->u.psr_alloc.u.cat_info.cbm_len =
-                                      data[PSR_INFO_IDX_CAT_CBM_LEN];
-            sysctl->u.psr_alloc.u.cat_info.flags =
-                                      data[PSR_INFO_IDX_CAT_FLAGS];
+                data[PSR_INFO_IDX_CAT_CBM_LEN];
+            sysctl->u.psr_alloc.u.cat_info.flags = data[PSR_INFO_IDX_CAT_FLAGS];
 
             if ( __copy_field_to_guest(u_sysctl, sysctl, u.psr_alloc) )
                 ret = -EFAULT;
@@ -249,16 +249,16 @@ long arch_do_sysctl(
 
         case XEN_SYSCTL_PSR_get_l2_info:
             ret = psr_get_info(sysctl->u.psr_alloc.target,
-                               PSR_TYPE_L2_CBM, data, ARRAY_SIZE(data));
+                               PSR_TYPE_L2_CBM,
+                               data,
+                               ARRAY_SIZE(data));
             if ( ret )
                 break;
 
-            sysctl->u.psr_alloc.u.cat_info.cos_max =
-                                      data[PSR_INFO_IDX_COS_MAX];
+            sysctl->u.psr_alloc.u.cat_info.cos_max = data[PSR_INFO_IDX_COS_MAX];
             sysctl->u.psr_alloc.u.cat_info.cbm_len =
-                                      data[PSR_INFO_IDX_CAT_CBM_LEN];
-            sysctl->u.psr_alloc.u.cat_info.flags =
-                                      data[PSR_INFO_IDX_CAT_FLAGS];
+                data[PSR_INFO_IDX_CAT_CBM_LEN];
+            sysctl->u.psr_alloc.u.cat_info.flags = data[PSR_INFO_IDX_CAT_FLAGS];
 
             if ( __copy_field_to_guest(u_sysctl, sysctl, u.psr_alloc) )
                 ret = -EFAULT;
@@ -266,16 +266,16 @@ long arch_do_sysctl(
 
         case XEN_SYSCTL_PSR_get_mba_info:
             ret = psr_get_info(sysctl->u.psr_alloc.target,
-                               PSR_TYPE_MBA_THRTL, data, ARRAY_SIZE(data));
+                               PSR_TYPE_MBA_THRTL,
+                               data,
+                               ARRAY_SIZE(data));
             if ( ret )
                 break;
 
-            sysctl->u.psr_alloc.u.mba_info.cos_max =
-                                      data[PSR_INFO_IDX_COS_MAX];
+            sysctl->u.psr_alloc.u.mba_info.cos_max = data[PSR_INFO_IDX_COS_MAX];
             sysctl->u.psr_alloc.u.mba_info.thrtl_max =
-                                      data[PSR_INFO_IDX_MBA_THRTL_MAX];
-            sysctl->u.psr_alloc.u.mba_info.flags =
-                                      data[PSR_INFO_IDX_MBA_FLAGS];
+                data[PSR_INFO_IDX_MBA_THRTL_MAX];
+            sysctl->u.psr_alloc.u.mba_info.flags = data[PSR_INFO_IDX_MBA_FLAGS];
 
             if ( __copy_field_to_guest(u_sysctl, sysctl, u.psr_alloc) )
                 ret = -EFAULT;
@@ -298,14 +298,14 @@ long arch_do_sysctl(
     case XEN_SYSCTL_get_cpu_featureset:
     {
         static const struct cpu_policy *const policy_table[6] = {
-            [XEN_SYSCTL_cpu_featureset_raw]     = &raw_cpu_policy,
-            [XEN_SYSCTL_cpu_featureset_host]    = &host_cpu_policy,
+            [XEN_SYSCTL_cpu_featureset_raw] = &raw_cpu_policy,
+            [XEN_SYSCTL_cpu_featureset_host] = &host_cpu_policy,
 #ifdef CONFIG_PV
-            [XEN_SYSCTL_cpu_featureset_pv]      = &pv_def_cpu_policy,
-            [XEN_SYSCTL_cpu_featureset_pv_max]  = &pv_max_cpu_policy,
+            [XEN_SYSCTL_cpu_featureset_pv] = &pv_def_cpu_policy,
+            [XEN_SYSCTL_cpu_featureset_pv_max] = &pv_max_cpu_policy,
 #endif
 #ifdef CONFIG_HVM
-            [XEN_SYSCTL_cpu_featureset_hvm]     = &hvm_def_cpu_policy,
+            [XEN_SYSCTL_cpu_featureset_hvm] = &hvm_def_cpu_policy,
             [XEN_SYSCTL_cpu_featureset_hvm_max] = &hvm_max_cpu_policy,
 #endif
         };
@@ -317,14 +317,16 @@ long arch_do_sysctl(
         if ( guest_handle_is_null(sysctl->u.cpu_featureset.features) )
         {
             sysctl->u.cpu_featureset.nr_features = FSCAPINTS;
-            if ( __copy_field_to_guest(u_sysctl, sysctl,
+            if ( __copy_field_to_guest(u_sysctl,
+                                       sysctl,
                                        u.cpu_featureset.nr_features) )
                 ret = -EFAULT;
             break;
         }
 
         /* Clip the number of entries. */
-        nr = min_t(unsigned int, sysctl->u.cpu_featureset.nr_features,
+        nr = min_t(unsigned int,
+                   sysctl->u.cpu_featureset.nr_features,
                    FSCAPINTS);
 
         /* Look up requested featureset. */
@@ -343,13 +345,14 @@ long arch_do_sysctl(
             x86_cpu_policy_to_featureset(p, featureset);
 
         /* Copy the requested featureset into place. */
-        if ( !ret && copy_to_guest(sysctl->u.cpu_featureset.features,
-                                   featureset, nr) )
+        if ( !ret &&
+             copy_to_guest(sysctl->u.cpu_featureset.features, featureset, nr) )
             ret = -EFAULT;
 
         /* Inform the caller of how many features we wrote. */
         sysctl->u.cpu_featureset.nr_features = nr;
-        if ( !ret && __copy_field_to_guest(u_sysctl, sysctl,
+        if ( !ret && __copy_field_to_guest(u_sysctl,
+                                           sysctl,
                                            u.cpu_featureset.nr_features) )
             ret = -EFAULT;
 
@@ -363,14 +366,14 @@ long arch_do_sysctl(
     case XEN_SYSCTL_get_cpu_policy:
     {
         static const struct cpu_policy *const system_policies[6] = {
-            [XEN_SYSCTL_cpu_policy_raw]         = &raw_cpu_policy,
-            [XEN_SYSCTL_cpu_policy_host]        = &host_cpu_policy,
+            [XEN_SYSCTL_cpu_policy_raw] = &raw_cpu_policy,
+            [XEN_SYSCTL_cpu_policy_host] = &host_cpu_policy,
 #ifdef CONFIG_PV
-            [XEN_SYSCTL_cpu_policy_pv_max]      = &pv_max_cpu_policy,
-            [XEN_SYSCTL_cpu_policy_pv_default]  = &pv_def_cpu_policy,
+            [XEN_SYSCTL_cpu_policy_pv_max] = &pv_max_cpu_policy,
+            [XEN_SYSCTL_cpu_policy_pv_default] = &pv_def_cpu_policy,
 #endif
 #ifdef CONFIG_HVM
-            [XEN_SYSCTL_cpu_policy_hvm_max]     = &hvm_max_cpu_policy,
+            [XEN_SYSCTL_cpu_policy_hvm_max] = &hvm_max_cpu_policy,
             [XEN_SYSCTL_cpu_policy_hvm_default] = &hvm_def_cpu_policy,
 #endif
         };
@@ -383,9 +386,9 @@ long arch_do_sysctl(
             ret = -EINVAL;
             break;
         }
-        policy = system_policies[
-            array_index_nospec(sysctl->u.cpu_policy.index,
-                               ARRAY_SIZE(system_policies))];
+        policy =
+            system_policies[array_index_nospec(sysctl->u.cpu_policy.index,
+                                               ARRAY_SIZE(system_policies))];
 
         if ( !policy )
         {
@@ -396,14 +399,13 @@ long arch_do_sysctl(
         /* Process the CPUID leaves. */
         if ( guest_handle_is_null(sysctl->u.cpu_policy.leaves) )
             sysctl->u.cpu_policy.nr_leaves = CPUID_MAX_SERIALISED_LEAVES;
-        else if ( (ret = x86_cpuid_copy_to_buffer(
-                       policy,
-                       sysctl->u.cpu_policy.leaves,
-                       &sysctl->u.cpu_policy.nr_leaves)) )
+        else if (
+            (ret = x86_cpuid_copy_to_buffer(policy,
+                                            sysctl->u.cpu_policy.leaves,
+                                            &sysctl->u.cpu_policy.nr_leaves)) )
             break;
 
-        if ( __copy_field_to_guest(u_sysctl, sysctl,
-                                   u.cpu_policy.nr_leaves) )
+        if ( __copy_field_to_guest(u_sysctl, sysctl, u.cpu_policy.nr_leaves) )
         {
             ret = -EFAULT;
             break;
@@ -412,14 +414,12 @@ long arch_do_sysctl(
         /* Process the MSR entries. */
         if ( guest_handle_is_null(sysctl->u.cpu_policy.msrs) )
             sysctl->u.cpu_policy.nr_msrs = MSR_MAX_SERIALISED_ENTRIES;
-        else if ( (ret = x86_msr_copy_to_buffer(
-                       policy,
-                       sysctl->u.cpu_policy.msrs,
-                       &sysctl->u.cpu_policy.nr_msrs)) )
+        else if ( (ret = x86_msr_copy_to_buffer(policy,
+                                                sysctl->u.cpu_policy.msrs,
+                                                &sysctl->u.cpu_policy.nr_msrs)) )
             break;
 
-        if ( __copy_field_to_guest(u_sysctl, sysctl,
-                                   u.cpu_policy.nr_msrs)  )
+        if ( __copy_field_to_guest(u_sysctl, sysctl, u.cpu_policy.nr_msrs) )
             ret = -EFAULT;
 
         break;

@@ -37,18 +37,11 @@
 struct IO_APIC_route_remap_entry {
     union {
         u64 val;
+
         struct {
-            u64 vector:8,
-            delivery_mode:3,
-            index_15:1,
-            delivery_status:1,
-            polarity:1,
-            irr:1,
-            trigger:1,
-            mask:1,
-            reserved:31,
-            format:1,
-            index_0_14:15;
+            u64 vector:8, delivery_mode:3, index_15:1, delivery_status:1,
+                polarity:1, irr:1, trigger:1, mask:1, reserved:31, format:1,
+                index_0_14:15;
         };
     };
 };
@@ -56,19 +49,16 @@ struct IO_APIC_route_remap_entry {
 struct msi_msg_remap_entry {
     union {
         u32 val;
+
         struct {
-            u32 dontcare:2,
-                index_15:1,
-                SHV:1,
-                format:1,
-                index_0_14:15,
+            u32 dontcare:2, index_15:1, SHV:1, format:1, index_0_14:15,
                 addr_id_val:12; /* Interrupt address identifier value,
                                    must be 0FEEh */
         };
-    } address_lo;   /* low 32 bits of msi message address */
+    } address_lo; /* low 32 bits of msi message address */
 
-    u32	address_hi;	/* high 32 bits of msi message address */
-    u32	data;		/* msi message data */
+    u32 address_hi; /* high 32 bits of msi message address */
+    u32 data; /* msi message data */
 };
 
 #endif // DRIVERS__PASSTHROUGH__VTD__VTD_H

@@ -87,8 +87,8 @@ int evtchn_unmask(unsigned int port);
 void evtchn_move_pirqs(struct vcpu *v);
 
 /* Allocate/free a Xen-attached event channel port. */
-typedef void (*xen_event_channel_notification_t)(
-    struct vcpu *v, unsigned int port);
+typedef void (*xen_event_channel_notification_t)(struct vcpu *v,
+                                                 unsigned int port);
 int alloc_unbound_xen_event_channel(
     struct domain *ld, unsigned int lvcpu, domid_t remote_domid,
     xen_event_channel_notification_t notification_fn);

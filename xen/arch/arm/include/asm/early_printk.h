@@ -28,11 +28,11 @@
  * User-defined EARLY_UART_BASE_ADDRESS and EARLY_UART_SIZE must be aligned to
  * minimum size of MPU region.
  */
-#if (CONFIG_EARLY_UART_BASE_ADDRESS % MPU_REGION_ALIGN) != 0
+#if ( CONFIG_EARLY_UART_BASE_ADDRESS % MPU_REGION_ALIGN ) != 0
 #error "EARLY_UART_BASE_ADDRESS must be aligned to minimum MPU region size"
 #endif
 
-#if (CONFIG_EARLY_UART_SIZE % MPU_REGION_ALIGN) != 0
+#if ( CONFIG_EARLY_UART_SIZE % MPU_REGION_ALIGN ) != 0
 #error "EARLY_UART_SIZE must be aligned to minimum MPU region size"
 #endif
 

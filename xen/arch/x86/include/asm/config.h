@@ -138,7 +138,6 @@
  *    Unused / Reserved for future use.
  */
 
-
 #define ROOT_PAGETABLE_FIRST_XEN_SLOT 256
 #define ROOT_PAGETABLE_LAST_XEN_SLOT  271
 #define ROOT_PAGETABLE_XEN_SLOTS \

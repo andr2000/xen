@@ -6,7 +6,7 @@
 #include <asm/asm_defns.h>
 #include <asm/efi.h>
 
-const char * asmlinkage __init
+const char *asmlinkage __init
 efi_multiboot2_prelude(uint32_t magic, const multiboot2_fixed_t *mbi)
 {
     const multiboot2_tag_t *tag;
@@ -23,11 +23,10 @@ efi_multiboot2_prelude(uint32_t magic, const multiboot2_fixed_t *mbi)
     tag = _p(ROUNDUP((unsigned long)(mbi + 1), MULTIBOOT2_TAG_ALIGN));
 
     for ( ; (const void *)(tag + 1) - mbi_raw <= mbi->total_size &&
-            tag->type != MULTIBOOT2_TAG_TYPE_END &&
-            tag->size >= sizeof(*tag) &&
+            tag->type != MULTIBOOT2_TAG_TYPE_END && tag->size >= sizeof(*tag) &&
             (const void *)tag + tag->size - mbi_raw <= mbi->total_size;
           tag = _p(ROUNDUP((unsigned long)tag + tag->size,
-                   MULTIBOOT2_TAG_ALIGN)) )
+                           MULTIBOOT2_TAG_ALIGN)) )
     {
         switch ( tag->type )
         {

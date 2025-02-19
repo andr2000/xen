@@ -19,16 +19,13 @@
 
 static void usage(const char *cmd, int rc)
 {
-    fprintf(rc ? stderr : stdout,
-            "Usage: %s <image1> <image2>\n",
-            cmd);
+    fprintf(rc ? stderr : stdout, "Usage: %s <image1> <image2>\n", cmd);
     exit(rc);
 }
 
 static unsigned int load(const char *name, int *handle,
                          struct section_header **sections,
-                         uint_fast64_t *image_base,
-                         uint32_t *image_size,
+                         uint_fast64_t *image_base, uint32_t *image_size,
                          unsigned int *width)
 {
     int in = open(name, O_RDONLY);
@@ -37,16 +34,14 @@ static unsigned int load(const char *name, int *handle,
     struct pe32_opt_hdr pe32_opt_hdr;
     uint32_t base;
 
-    if ( in < 0 ||
-         read(in, &mz_hdr, sizeof(mz_hdr)) != sizeof(mz_hdr) )
+    if ( in < 0 || read(in, &mz_hdr, sizeof(mz_hdr)) != sizeof(mz_hdr) )
     {
         perror(name);
         exit(2);
     }
 
     if ( mz_hdr.magic != MZ_MAGIC ||
-         mz_hdr.reloc_table_offset < sizeof(mz_hdr) ||
-         !mz_hdr.peaddr )
+         mz_hdr.reloc_table_offset < sizeof(mz_hdr) || !mz_hdr.peaddr )
     {
         fprintf(stderr, "%s: Wrong DOS file format\n", name);
         exit(2);
@@ -54,7 +49,8 @@ static unsigned int load(const char *name, int *handle,
 
     if ( lseek(in, mz_hdr.peaddr, SEEK_SET) < 0 ||
          read(in, &pe_hdr, sizeof(pe_hdr)) != sizeof(pe_hdr) ||
-         read(in, &pe32_opt_hdr, sizeof(pe32_opt_hdr)) != sizeof(pe32_opt_hdr) ||
+         read(in, &pe32_opt_hdr, sizeof(pe32_opt_hdr)) !=
+             sizeof(pe32_opt_hdr) ||
          read(in, &base, sizeof(base)) != sizeof(base) ||
          /*
           * Luckily the image size field lives at the
@@ -69,7 +65,7 @@ static unsigned int load(const char *name, int *handle,
 
     switch ( (pe_hdr.magic == PE_MAGIC &&
               pe_hdr.opt_hdr_size > sizeof(pe32_opt_hdr)) *
-              pe32_opt_hdr.magic )
+             pe32_opt_hdr.magic )
     {
     case PE_OPT_MAGIC_PE32:
         *width = 32;
@@ -91,7 +87,8 @@ static unsigned int load(const char *name, int *handle,
         exit(4);
     }
 
-    if ( lseek(in, mz_hdr.peaddr + sizeof(pe_hdr) + pe_hdr.opt_hdr_size,
+    if ( lseek(in,
+               mz_hdr.peaddr + sizeof(pe_hdr) + pe_hdr.opt_hdr_size,
                SEEK_SET) < 0 ||
          read(in, *sections, pe_hdr.sections * sizeof(**sections)) !=
              pe_hdr.sections * sizeof(**sections) )
@@ -117,7 +114,11 @@ static const void *map_section(const struct section_header *sec, int in,
         page_size = sysconf(_SC_PAGESIZE);
     offs = sec->data_addr & (page_size - 1);
 
-    ptr = mmap(0, offs + sec->raw_data_size, PROT_READ, MAP_PRIVATE, in,
+    ptr = mmap(0,
+               offs + sec->raw_data_size,
+               PROT_READ,
+               MAP_PRIVATE,
+               in,
                sec->data_addr - offs);
     if ( ptr == MAP_FAILED )
     {
@@ -136,9 +137,9 @@ static void unmap_section(const void *ptr, const struct section_header *sec)
 }
 
 static void diff_sections(const unsigned char *ptr1, const unsigned char *ptr2,
-                          const struct section_header *sec,
-                          int_fast64_t diff, unsigned int width,
-                          uint_fast64_t base, uint_fast64_t end)
+                          const struct section_header *sec, int_fast64_t diff,
+                          unsigned int width, uint_fast64_t base,
+                          uint_fast64_t end)
 {
     static uint_fast32_t cur_rva, reloc_size;
     unsigned int disp = 0;
@@ -148,9 +149,10 @@ static void diff_sections(const unsigned char *ptr1, const unsigned char *ptr2,
     {
         reloc_size += reloc_size & 2;
         if ( reloc_size )
-            printf("\t.balign 4\n"
-                   "\t.equ rva_%08" PRIxFAST32 "_relocs, %#08" PRIxFAST32 "\n",
-                   cur_rva, reloc_size);
+            printf("\t.balign 4\n" "\t.equ rva_%08" PRIxFAST32
+                   "_relocs, %#08" PRIxFAST32 "\n",
+                   cur_rva,
+                   reloc_size);
         return;
     }
 
@@ -160,13 +162,15 @@ static void diff_sections(const unsigned char *ptr1, const unsigned char *ptr2,
     for ( i = 0; i < sec->raw_data_size; ++i )
     {
         uint_fast32_t rva;
+
         union {
             uint32_t u32;
             uint64_t u64;
         } val1, val2;
+
         int_fast64_t delta;
-        unsigned int reloc = (width == 4 ? PE_BASE_RELOC_HIGHLOW :
-                                           PE_BASE_RELOC_DIR64);
+        unsigned int reloc = (width == 4 ? PE_BASE_RELOC_HIGHLOW
+                                         : PE_BASE_RELOC_DIR64);
 
         if ( ptr1[i] == ptr2[i] )
             continue;
@@ -175,7 +179,8 @@ static void diff_sections(const unsigned char *ptr1, const unsigned char *ptr2,
         {
             fprintf(stderr,
                     "Bogus difference at %.8s:%08" PRIxFAST32 "\n",
-                    sec->name, i);
+                    sec->name,
+                    i);
             exit(3);
         }
 
@@ -187,7 +192,10 @@ static void diff_sections(const unsigned char *ptr1, const unsigned char *ptr2,
             fprintf(stderr,
                     "Difference at %.8s:%08" PRIxFAST32 " is %#" PRIxFAST64
                     " (expected %#" PRIxFAST64 ")\n",
-                    sec->name, i - disp, delta, diff);
+                    sec->name,
+                    i - disp,
+                    delta,
+                    diff);
             continue;
         }
         if ( width == 8 && (val1.u64 < base || val1.u64 > end) )
@@ -198,31 +206,37 @@ static void diff_sections(const unsigned char *ptr1, const unsigned char *ptr2,
         {
             reloc_size += reloc_size & 2;
             if ( reloc_size )
-                printf("\t.equ rva_%08" PRIxFAST32 "_relocs,"
-                       " %#08" PRIxFAST32 "\n",
-                       cur_rva, reloc_size);
-            printf("\t.balign 4\n"
-                   "\t.long %#08" PRIxFAST32 ","
-                   " rva_%08" PRIxFAST32 "_relocs\n",
-                   rva, rva);
+                printf("\t.equ rva_%08" PRIxFAST32 "_relocs," " %#08" PRIxFAST32
+                       "\n",
+                       cur_rva,
+                       reloc_size);
+            printf("\t.balign 4\n" "\t.long %#08" PRIxFAST32
+                   "," " rva_%08" PRIxFAST32 "_relocs\n",
+                   rva,
+                   rva);
             cur_rva = rva;
             reloc_size = 8;
         }
         else if ( rva != cur_rva )
         {
             fprintf(stderr,
-                    "Cannot handle decreasing RVA (at %.8s:%08" PRIxFAST32 ")\n",
-                    sec->name, i - disp);
+                    "Cannot handle decreasing RVA (at %.8s:%08" PRIxFAST32
+                    ")\n",
+                    sec->name,
+                    i - disp);
             exit(3);
         }
 
         if ( !(sec->flags & IMAGE_SCN_MEM_WRITE) )
             fprintf(stderr,
-                    "Warning: relocation to r/o section %.8s:%08" PRIxFAST32 "\n",
-                    sec->name, i - disp);
+                    "Warning: relocation to r/o section %.8s:%08" PRIxFAST32
+                    "\n",
+                    sec->name,
+                    i - disp);
 
         printf("\t.word (%u << 12) | 0x%03" PRIxFAST32 "\n",
-               reloc, sec->rva + i - disp - rva);
+               reloc,
+               sec->rva + i - disp - rva);
         reloc_size += 2;
         i += width - disp - 1;
     }
@@ -236,9 +250,7 @@ int main(int argc, char *argv[])
     uint32_t size1, size2;
     struct section_header *sec1, *sec2;
 
-    if ( argc == 1 ||
-         !strcmp(argv[1], "-?") ||
-         !strcmp(argv[1], "-h") ||
+    if ( argc == 1 || !strcmp(argv[1], "-?") || !strcmp(argv[1], "-h") ||
          !strcmp(argv[1], "--help") )
         usage(*argv, argc == 1);
 
@@ -268,8 +280,7 @@ int main(int argc, char *argv[])
         return 5;
     }
 
-    puts("\t.section .reloc, \"a\", @progbits\n"
-         "\t.balign 4");
+    puts("\t.section .reloc, \"a\", @progbits\n" "\t.balign 4");
 
     for ( i = 0; i < nsec; ++i )
     {
@@ -286,7 +297,8 @@ int main(int argc, char *argv[])
         }
 
         if ( !sec1[i].virtual_size ||
-             (sec1[i].flags & (IMAGE_SCN_MEM_DISCARDABLE | IMAGE_SCN_CNT_UNINITIALIZED_DATA)) )
+             (sec1[i].flags &
+              (IMAGE_SCN_MEM_DISCARDABLE | IMAGE_SCN_CNT_UNINITIALIZED_DATA)) )
             continue;
 
         /*
@@ -311,8 +323,13 @@ int main(int argc, char *argv[])
         ptr1 = map_section(sec1 + i, in1, argv[1]);
         ptr2 = map_section(sec2 + i, in2, argv[2]);
 
-        diff_sections(ptr1, ptr2, sec1 + i, base2 - base1, width1,
-                      base1, base1 + size1);
+        diff_sections(ptr1,
+                      ptr2,
+                      sec1 + i,
+                      base2 - base1,
+                      width1,
+                      base1,
+                      base1 + size1);
 
         unmap_section(ptr1, sec1 + i);
         unmap_section(ptr2, sec2 + i);

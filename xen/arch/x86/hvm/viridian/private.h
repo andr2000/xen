@@ -11,8 +11,7 @@ int viridian_synic_wrmsr(struct vcpu *v, uint32_t idx, uint64_t val);
 int viridian_synic_rdmsr(const struct vcpu *v, uint32_t idx, uint64_t *val);
 
 bool viridian_synic_deliver_timer_msg(struct vcpu *v, unsigned int sintx,
-                                      unsigned int index,
-                                      uint64_t expiration,
+                                      unsigned int index, uint64_t expiration,
                                       uint64_t delivery);
 
 int viridian_synic_vcpu_init(const struct vcpu *v);
@@ -26,8 +25,8 @@ void viridian_synic_save_vcpu_ctxt(const struct vcpu *v,
 void viridian_synic_load_vcpu_ctxt(
     struct vcpu *v, const struct hvm_viridian_vcpu_context *ctxt);
 
-void viridian_synic_save_domain_ctxt(
-    const struct domain *d, struct hvm_viridian_domain_context *ctxt);
+void viridian_synic_save_domain_ctxt(const struct domain *d,
+                                     struct hvm_viridian_domain_context *ctxt);
 void viridian_synic_load_domain_ctxt(
     struct domain *d, const struct hvm_viridian_domain_context *ctxt);
 
@@ -42,13 +41,13 @@ int viridian_time_domain_init(const struct domain *d);
 void viridian_time_vcpu_deinit(const struct vcpu *v);
 void viridian_time_domain_deinit(const struct domain *d);
 
-void viridian_time_save_vcpu_ctxt(
-    const struct vcpu *v, struct hvm_viridian_vcpu_context *ctxt);
-void viridian_time_load_vcpu_ctxt(
-    struct vcpu *v, const struct hvm_viridian_vcpu_context *ctxt);
+void viridian_time_save_vcpu_ctxt(const struct vcpu *v,
+                                  struct hvm_viridian_vcpu_context *ctxt);
+void viridian_time_load_vcpu_ctxt(struct vcpu *v,
+                                  const struct hvm_viridian_vcpu_context *ctxt);
 
-void viridian_time_save_domain_ctxt(
-    const struct domain *d, struct hvm_viridian_domain_context *ctxt);
+void viridian_time_save_domain_ctxt(const struct domain *d,
+                                    struct hvm_viridian_domain_context *ctxt);
 void viridian_time_load_domain_ctxt(
     struct domain *d, const struct hvm_viridian_domain_context *ctxt);
 

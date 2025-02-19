@@ -13,7 +13,7 @@ typedef u64 paddr_t;
 typedef u32 register_t;
 #define PRIregister "x"
 
-#elif defined (CONFIG_RISCV_64)
+#elif defined(CONFIG_RISCV_64)
 
 typedef u64 vaddr_t;
 #define PRIvaddr PRIx64

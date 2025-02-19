@@ -43,8 +43,8 @@ static void sh_emulate_unmap_dest(struct vcpu *v, void *addr,
  * Callers which pass a known in-range x86_segment can rely on the return
  * pointer being valid.  Other callers must explicitly check for errors.
  */
-static struct segment_register *hvm_get_seg_reg(
-    enum x86_segment seg, struct sh_emulate_ctxt *sh_ctxt)
+static struct segment_register *hvm_get_seg_reg(enum x86_segment seg,
+                                                struct sh_emulate_ctxt *sh_ctxt)
 {
     unsigned int idx = seg;
     struct segment_register *seg_reg;
@@ -58,13 +58,11 @@ static struct segment_register *hvm_get_seg_reg(
     return seg_reg;
 }
 
-static int hvm_translate_virtual_addr(
-    enum x86_segment seg,
-    unsigned long offset,
-    unsigned int bytes,
-    enum hvm_access_type access_type,
-    struct sh_emulate_ctxt *sh_ctxt,
-    unsigned long *linear)
+static int hvm_translate_virtual_addr(enum x86_segment seg,
+                                      unsigned long offset, unsigned int bytes,
+                                      enum hvm_access_type access_type,
+                                      struct sh_emulate_ctxt *sh_ctxt,
+                                      unsigned long *linear)
 {
     const struct segment_register *reg;
     int okay;
@@ -73,9 +71,13 @@ static int hvm_translate_virtual_addr(
     if ( IS_ERR(reg) )
         return -PTR_ERR(reg);
 
-    okay = hvm_virtual_to_linear_addr(
-        seg, reg, offset, bytes, access_type,
-        hvm_get_seg_reg(x86_seg_cs, sh_ctxt), linear);
+    okay = hvm_virtual_to_linear_addr(seg,
+                                      reg,
+                                      offset,
+                                      bytes,
+                                      access_type,
+                                      hvm_get_seg_reg(x86_seg_cs, sh_ctxt),
+                                      linear);
 
     if ( !okay )
     {
@@ -85,35 +87,38 @@ static int hvm_translate_virtual_addr(
          * determine the kind of exception (#GP or #TS) in that case.
          */
         if ( is_x86_user_segment(seg) )
-            x86_emul_hw_exception(
-                (seg == x86_seg_ss) ? X86_EXC_SS : X86_EXC_GP,
-                0, &sh_ctxt->ctxt);
+            x86_emul_hw_exception((seg == x86_seg_ss) ? X86_EXC_SS : X86_EXC_GP,
+                                  0,
+                                  &sh_ctxt->ctxt);
         return X86EMUL_EXCEPTION;
     }
 
     return 0;
 }
 
-static int
-hvm_read(enum x86_segment seg,
-         unsigned long offset,
-         void *p_data,
-         unsigned int bytes,
-         enum hvm_access_type access_type,
-         struct sh_emulate_ctxt *sh_ctxt)
+static int hvm_read(enum x86_segment seg, unsigned long offset, void *p_data,
+                    unsigned int bytes, enum hvm_access_type access_type,
+                    struct sh_emulate_ctxt *sh_ctxt)
 {
     pagefault_info_t pfinfo;
     unsigned long addr;
     int rc;
 
-    rc = hvm_translate_virtual_addr(
-        seg, offset, bytes, access_type, sh_ctxt, &addr);
+    rc = hvm_translate_virtual_addr(seg,
+                                    offset,
+                                    bytes,
+                                    access_type,
+                                    sh_ctxt,
+                                    &addr);
     if ( rc || !bytes )
         return rc;
 
-    rc = hvm_copy_from_guest_linear(p_data, addr, bytes,
+    rc = hvm_copy_from_guest_linear(p_data,
+                                    addr,
+                                    bytes,
                                     (access_type == hvm_access_insn_fetch
-                                     ? PFEC_insn_fetch : 0),
+                                         ? PFEC_insn_fetch
+                                         : 0),
                                     &pfinfo);
 
     switch ( rc )
@@ -136,24 +141,23 @@ hvm_read(enum x86_segment seg,
     return X86EMUL_UNHANDLEABLE;
 }
 
-static int cf_check
-hvm_emulate_read(enum x86_segment seg,
-                 unsigned long offset,
-                 void *p_data,
-                 unsigned int bytes,
-                 struct x86_emulate_ctxt *ctxt)
+static int cf_check hvm_emulate_read(enum x86_segment seg, unsigned long offset,
+                                     void *p_data, unsigned int bytes,
+                                     struct x86_emulate_ctxt *ctxt)
 {
     if ( !is_x86_user_segment(seg) )
         return X86EMUL_UNHANDLEABLE;
-    return hvm_read(seg, offset, p_data, bytes, hvm_access_read,
+    return hvm_read(seg,
+                    offset,
+                    p_data,
+                    bytes,
+                    hvm_access_read,
                     container_of(ctxt, struct sh_emulate_ctxt, ctxt));
 }
 
-static int cf_check
-hvm_emulate_insn_fetch(unsigned long offset,
-                       void *p_data,
-                       unsigned int bytes,
-                       struct x86_emulate_ctxt *ctxt)
+static int cf_check hvm_emulate_insn_fetch(unsigned long offset, void *p_data,
+                                           unsigned int bytes,
+                                           struct x86_emulate_ctxt *ctxt)
 {
     struct sh_emulate_ctxt *sh_ctxt =
         container_of(ctxt, struct sh_emulate_ctxt, ctxt);
@@ -161,20 +165,22 @@ hvm_emulate_insn_fetch(unsigned long offset,
 
     /* Fall back if requested bytes are not in the prefetch cache. */
     if ( unlikely((insn_off + bytes) > sh_ctxt->insn_buf_bytes) )
-        return hvm_read(x86_seg_cs, offset, p_data, bytes,
-                        hvm_access_insn_fetch, sh_ctxt);
+        return hvm_read(x86_seg_cs,
+                        offset,
+                        p_data,
+                        bytes,
+                        hvm_access_insn_fetch,
+                        sh_ctxt);
 
     /* Hit the cache. Simple memcpy. */
     memcpy(p_data, &sh_ctxt->insn_buf[insn_off], bytes);
     return X86EMUL_OKAY;
 }
 
-static int cf_check
-hvm_emulate_write(enum x86_segment seg,
-                  unsigned long offset,
-                  void *p_data,
-                  unsigned int bytes,
-                  struct x86_emulate_ctxt *ctxt)
+static int cf_check hvm_emulate_write(enum x86_segment seg,
+                                      unsigned long offset, void *p_data,
+                                      unsigned int bytes,
+                                      struct x86_emulate_ctxt *ctxt)
 {
     struct sh_emulate_ctxt *sh_ctxt =
         container_of(ctxt, struct sh_emulate_ctxt, ctxt);
@@ -187,13 +193,17 @@ hvm_emulate_write(enum x86_segment seg,
     if ( seg == x86_seg_ss )
         perfc_incr(shadow_fault_emulate_stack);
 
-    rc = hvm_translate_virtual_addr(
-        seg, offset, bytes, hvm_access_write, sh_ctxt, &addr);
+    rc = hvm_translate_virtual_addr(seg,
+                                    offset,
+                                    bytes,
+                                    hvm_access_write,
+                                    sh_ctxt,
+                                    &addr);
     if ( rc || !bytes )
         return rc;
 
     /* Unaligned writes are only acceptable on HVM */
-    if ( (addr & (bytes - 1)) && !is_hvm_vcpu(v)  )
+    if ( (addr & (bytes - 1)) && !is_hvm_vcpu(v) )
         return X86EMUL_UNHANDLEABLE;
 
     ptr = sh_emulate_map_dest(v, addr, bytes, sh_ctxt);
@@ -205,15 +215,25 @@ hvm_emulate_write(enum x86_segment seg,
     /* Where possible use single (and hence generally atomic) MOV insns. */
     switch ( bytes )
     {
-    case 2: write_u16_atomic(ptr, *(uint16_t *)p_data); break;
-    case 4: write_u32_atomic(ptr, *(uint32_t *)p_data); break;
-    case 8: write_u64_atomic(ptr, *(uint64_t *)p_data); break;
-    default: memcpy(ptr, p_data, bytes);                break;
+    case 2:
+        write_u16_atomic(ptr, *(uint16_t *)p_data);
+        break;
+    case 4:
+        write_u32_atomic(ptr, *(uint32_t *)p_data);
+        break;
+    case 8:
+        write_u64_atomic(ptr, *(uint64_t *)p_data);
+        break;
+    default:
+        memcpy(ptr, p_data, bytes);
+        break;
     }
 
     if ( tb_init_done )
-        v->arch.paging.mode->shadow.trace_emul_write_val(ptr, addr,
-                                                         p_data, bytes);
+        v->arch.paging.mode->shadow.trace_emul_write_val(ptr,
+                                                         addr,
+                                                         p_data,
+                                                         bytes);
 
     sh_emulate_unmap_dest(v, ptr, bytes, sh_ctxt);
     shadow_audit_tables(v);
@@ -222,14 +242,11 @@ hvm_emulate_write(enum x86_segment seg,
     return X86EMUL_OKAY;
 }
 
-static int cf_check
-hvm_emulate_cmpxchg(enum x86_segment seg,
-                    unsigned long offset,
-                    void *p_old,
-                    void *p_new,
-                    unsigned int bytes,
-                    bool lock,
-                    struct x86_emulate_ctxt *ctxt)
+static int cf_check hvm_emulate_cmpxchg(enum x86_segment seg,
+                                        unsigned long offset, void *p_old,
+                                        void *p_new, unsigned int bytes,
+                                        bool lock,
+                                        struct x86_emulate_ctxt *ctxt)
 {
     struct sh_emulate_ctxt *sh_ctxt =
         container_of(ctxt, struct sh_emulate_ctxt, ctxt);
@@ -241,13 +258,17 @@ hvm_emulate_cmpxchg(enum x86_segment seg,
     if ( bytes > sizeof(long) )
         return X86EMUL_UNHANDLEABLE;
 
-    rc = hvm_translate_virtual_addr(
-        seg, offset, bytes, hvm_access_write, sh_ctxt, &addr);
+    rc = hvm_translate_virtual_addr(seg,
+                                    offset,
+                                    bytes,
+                                    hvm_access_write,
+                                    sh_ctxt,
+                                    &addr);
     if ( rc )
         return rc;
 
     /* Unaligned writes are only acceptable on HVM */
-    if ( (addr & (bytes - 1)) && !is_hvm_vcpu(v)  )
+    if ( (addr & (bytes - 1)) && !is_hvm_vcpu(v) )
         return X86EMUL_UNHANDLEABLE;
 
     ptr = sh_emulate_map_dest(v, addr, bytes, sh_ctxt);
@@ -261,10 +282,18 @@ hvm_emulate_cmpxchg(enum x86_segment seg,
     paging_lock(v->domain);
     switch ( bytes )
     {
-    case 1: prev = cmpxchg((uint8_t  *)ptr, old, new); break;
-    case 2: prev = cmpxchg((uint16_t *)ptr, old, new); break;
-    case 4: prev = cmpxchg((uint32_t *)ptr, old, new); break;
-    case 8: prev = cmpxchg((uint64_t *)ptr, old, new); break;
+    case 1:
+        prev = cmpxchg((uint8_t *)ptr, old, new);
+        break;
+    case 2:
+        prev = cmpxchg((uint16_t *)ptr, old, new);
+        break;
+    case 4:
+        prev = cmpxchg((uint32_t *)ptr, old, new);
+        break;
+    case 8:
+        prev = cmpxchg((uint64_t *)ptr, old, new);
+        break;
     default:
         SHADOW_PRINTK("cmpxchg size %u is not supported\n", bytes);
         prev = ~old;
@@ -276,9 +305,15 @@ hvm_emulate_cmpxchg(enum x86_segment seg,
         rc = X86EMUL_CMPXCHG_FAILED;
     }
 
-    SHADOW_DEBUG(EMULATE,
-                 "va %#lx was %#lx expected %#lx wanted %#lx now %#lx bytes %u\n",
-                 addr, prev, old, new, *(unsigned long *)ptr, bytes);
+    SHADOW_DEBUG(
+        EMULATE,
+        "va %#lx was %#lx expected %#lx wanted %#lx now %#lx bytes %u\n",
+        addr,
+        prev,
+        old,
+        new,
+        *(unsigned long *)ptr,
+        bytes);
 
     sh_emulate_unmap_dest(v, ptr, bytes, sh_ctxt);
     shadow_audit_tables(v);
@@ -287,10 +322,9 @@ hvm_emulate_cmpxchg(enum x86_segment seg,
     return rc;
 }
 
-static int cf_check
-hvm_emulate_read_segment(enum x86_segment seg,
-                         struct segment_register *reg,
-                         struct x86_emulate_ctxt *ctxt)
+static int cf_check hvm_emulate_read_segment(enum x86_segment seg,
+                                             struct segment_register *reg,
+                                             struct x86_emulate_ctxt *ctxt)
 {
     struct sh_emulate_ctxt *sh_ctxt =
         container_of(ctxt, struct sh_emulate_ctxt, ctxt);
@@ -305,16 +339,16 @@ hvm_emulate_read_segment(enum x86_segment seg,
 }
 
 static const struct x86_emulate_ops hvm_shadow_emulator_ops = {
-    .read       = hvm_emulate_read,
+    .read = hvm_emulate_read,
     .insn_fetch = hvm_emulate_insn_fetch,
-    .write      = hvm_emulate_write,
-    .cmpxchg    = hvm_emulate_cmpxchg,
+    .write = hvm_emulate_write,
+    .cmpxchg = hvm_emulate_cmpxchg,
     .read_segment = hvm_emulate_read_segment,
 };
 
-const struct x86_emulate_ops *shadow_init_emulation(
-    struct sh_emulate_ctxt *sh_ctxt, struct cpu_user_regs *regs,
-    unsigned int pte_size)
+const struct x86_emulate_ops *
+shadow_init_emulation(struct sh_emulate_ctxt *sh_ctxt,
+                      struct cpu_user_regs *regs, unsigned int pte_size)
 {
     struct segment_register *creg, *sreg;
     const struct vcpu *curr = current;
@@ -338,7 +372,7 @@ const struct x86_emulate_ops *shadow_init_emulation(
     {
         sreg = hvm_get_seg_reg(x86_seg_ss, sh_ctxt);
         sh_ctxt->ctxt.addr_size = creg->db ? 32 : 16;
-        sh_ctxt->ctxt.sp_size   = sreg->db ? 32 : 16;
+        sh_ctxt->ctxt.sp_size = sreg->db ? 32 : 16;
     }
 
     sh_ctxt->pte_size = pte_size;
@@ -346,13 +380,19 @@ const struct x86_emulate_ops *shadow_init_emulation(
     /* Attempt to prefetch whole instruction. */
     sh_ctxt->insn_buf_eip = regs->rip;
     sh_ctxt->insn_buf_bytes =
-        (!hvm_translate_virtual_addr(
-            x86_seg_cs, regs->rip, sizeof(sh_ctxt->insn_buf),
-            hvm_access_insn_fetch, sh_ctxt, &addr) &&
-         !hvm_copy_from_guest_linear(
-             sh_ctxt->insn_buf, addr, sizeof(sh_ctxt->insn_buf),
-             PFEC_insn_fetch, NULL))
-        ? sizeof(sh_ctxt->insn_buf) : 0;
+        (!hvm_translate_virtual_addr(x86_seg_cs,
+                                     regs->rip,
+                                     sizeof(sh_ctxt->insn_buf),
+                                     hvm_access_insn_fetch,
+                                     sh_ctxt,
+                                     &addr) &&
+         !hvm_copy_from_guest_linear(sh_ctxt->insn_buf,
+                                     addr,
+                                     sizeof(sh_ctxt->insn_buf),
+                                     PFEC_insn_fetch,
+                                     NULL))
+            ? sizeof(sh_ctxt->insn_buf)
+            : 0;
 
     return &hvm_shadow_emulator_ops;
 }
@@ -377,13 +417,19 @@ void shadow_continue_emulation(struct sh_emulate_ctxt *sh_ctxt,
     {
         /* Prefetch more bytes. */
         sh_ctxt->insn_buf_bytes =
-            (!hvm_translate_virtual_addr(
-                x86_seg_cs, regs->rip, sizeof(sh_ctxt->insn_buf),
-                hvm_access_insn_fetch, sh_ctxt, &addr) &&
-             !hvm_copy_from_guest_linear(
-                 sh_ctxt->insn_buf, addr, sizeof(sh_ctxt->insn_buf),
-                 PFEC_insn_fetch, NULL))
-            ? sizeof(sh_ctxt->insn_buf) : 0;
+            (!hvm_translate_virtual_addr(x86_seg_cs,
+                                         regs->rip,
+                                         sizeof(sh_ctxt->insn_buf),
+                                         hvm_access_insn_fetch,
+                                         sh_ctxt,
+                                         &addr) &&
+             !hvm_copy_from_guest_linear(sh_ctxt->insn_buf,
+                                         addr,
+                                         sizeof(sh_ctxt->insn_buf),
+                                         PFEC_insn_fetch,
+                                         NULL))
+                ? sizeof(sh_ctxt->insn_buf)
+                : 0;
         sh_ctxt->insn_buf_eip = regs->rip;
     }
 }
@@ -398,6 +444,7 @@ void shadow_continue_emulation(struct sh_emulate_ctxt *sh_ctxt,
 #define BAD_GVA_TO_GFN (~0UL)
 #define BAD_GFN_TO_MFN (~1UL)
 #define READONLY_GFN   (~2UL)
+
 static mfn_t emulate_gva_to_mfn(struct vcpu *v, unsigned long vaddr,
                                 struct sh_emulate_ctxt *sh_ctxt)
 {
@@ -466,8 +513,9 @@ static void *sh_emulate_map_dest(struct vcpu *v, unsigned long vaddr,
     if ( is_hvm_domain(d) ? hvm_get_cpl(v) == 3
                           : !guest_kernel_mode(v, guest_cpu_user_regs()) )
     {
-        gdprintk(XENLOG_DEBUG, "User-mode write to pagetable reached "
-                 "emulate_map_dest(). This should never happen!\n");
+        gdprintk(
+            XENLOG_DEBUG,
+            "User-mode write to pagetable reached " "emulate_map_dest(). This should never happen!\n");
         return MAPPING_UNHANDLEABLE;
     }
 #endif
@@ -477,15 +525,18 @@ static void *sh_emulate_map_dest(struct vcpu *v, unsigned long vaddr,
     {
         switch ( mfn_x(sh_ctxt->mfn[0]) )
         {
-        case BAD_GVA_TO_GFN: return MAPPING_EXCEPTION;
-        case READONLY_GFN:   return MAPPING_SILENT_FAIL;
-        default:             return MAPPING_UNHANDLEABLE;
+        case BAD_GVA_TO_GFN:
+            return MAPPING_EXCEPTION;
+        case READONLY_GFN:
+            return MAPPING_SILENT_FAIL;
+        default:
+            return MAPPING_UNHANDLEABLE;
         }
     }
 
     /* Unaligned writes mean probably this isn't a pagetable. */
     if ( vaddr & (bytes - 1) )
-        sh_remove_shadows(d, sh_ctxt->mfn[0], 0, 0 /* Slow, can fail. */ );
+        sh_remove_shadows(d, sh_ctxt->mfn[0], 0, 0 /* Slow, can fail. */);
 
     if ( likely(((vaddr + bytes - 1) & PAGE_MASK) == (vaddr & PAGE_MASK)) )
     {
@@ -505,21 +556,24 @@ static void *sh_emulate_map_dest(struct vcpu *v, unsigned long vaddr,
     else
     {
         /* This write crosses a page boundary. Translate the second page. */
-        sh_ctxt->mfn[1] = emulate_gva_to_mfn(
-            v, (vaddr + bytes - 1) & PAGE_MASK, sh_ctxt);
+        sh_ctxt->mfn[1] =
+            emulate_gva_to_mfn(v, (vaddr + bytes - 1) & PAGE_MASK, sh_ctxt);
         if ( !mfn_valid(sh_ctxt->mfn[1]) )
         {
             put_page(mfn_to_page(sh_ctxt->mfn[0]));
             switch ( mfn_x(sh_ctxt->mfn[1]) )
             {
-            case BAD_GVA_TO_GFN: return MAPPING_EXCEPTION;
-            case READONLY_GFN:   return MAPPING_SILENT_FAIL;
-            default:             return MAPPING_UNHANDLEABLE;
+            case BAD_GVA_TO_GFN:
+                return MAPPING_EXCEPTION;
+            case READONLY_GFN:
+                return MAPPING_SILENT_FAIL;
+            default:
+                return MAPPING_UNHANDLEABLE;
             }
         }
 
         /* Cross-page writes mean probably not a pagetable. */
-        sh_remove_shadows(d, sh_ctxt->mfn[1], 0, 0 /* Slow, can fail. */ );
+        sh_remove_shadows(d, sh_ctxt->mfn[1], 0, 0 /* Slow, can fail. */);
 
         map = vmap(sh_ctxt->mfn, 2);
         if ( !map )
@@ -531,7 +585,7 @@ static void *sh_emulate_map_dest(struct vcpu *v, unsigned long vaddr,
         map += (vaddr & ~PAGE_MASK);
     }
 
-#if (SHADOW_OPTIMIZATIONS & SHOPT_SKIP_VERIFY)
+#if ( SHADOW_OPTIMIZATIONS & SHOPT_SKIP_VERIFY )
     /*
      * Remember if the bottom bit was clear, so we can choose not to run
      * the change through the verify code if it's still clear afterwards.
@@ -565,16 +619,17 @@ static inline void check_for_early_unshadow(struct vcpu *v, mfn_t gmfn)
      *
      * Don't bother trying to unshadow if it's not a PT, or if it's > l1.
      */
-    if ( ( v->arch.paging.shadow.pagetable_dying
-           || ( !d->arch.paging.shadow.pagetable_dying_op
-                && v->arch.paging.shadow.last_emulated_mfn_for_unshadow == mfn_x(gmfn) ) )
-         && sh_mfn_is_a_page_table(gmfn)
-         && (!d->arch.paging.shadow.pagetable_dying_op ||
-             !(mfn_to_page(gmfn)->shadow_flags
-               & (SHF_L2_32|SHF_L2_PAE|SHF_L4_64))) )
+    if ( (v->arch.paging.shadow.pagetable_dying ||
+          (!d->arch.paging.shadow.pagetable_dying_op &&
+           v->arch.paging.shadow.last_emulated_mfn_for_unshadow ==
+               mfn_x(gmfn))) &&
+         sh_mfn_is_a_page_table(gmfn) &&
+         (!d->arch.paging.shadow.pagetable_dying_op ||
+          !(mfn_to_page(gmfn)->shadow_flags &
+            (SHF_L2_32 | SHF_L2_PAE | SHF_L4_64))) )
     {
         perfc_incr(shadow_early_unshadow);
-        sh_remove_shadows(d, gmfn, 1, 0 /* Fast, can fail to unshadow */ );
+        sh_remove_shadows(d, gmfn, 1, 0 /* Fast, can fail to unshadow */);
         TRACE_SHADOW_PATH_FLAG(TRCE_SFLAG_EARLY_UNSHADOW);
     }
     v->arch.paging.shadow.last_emulated_mfn_for_unshadow = mfn_x(gmfn);
@@ -582,8 +637,8 @@ static inline void check_for_early_unshadow(struct vcpu *v, mfn_t gmfn)
 }
 
 /* This is the entry point for emulated writes to pagetables in HVM guests */
-static void validate_guest_pt_write(struct vcpu *v, mfn_t gmfn,
-                                    void *entry, unsigned int size)
+static void validate_guest_pt_write(struct vcpu *v, mfn_t gmfn, void *entry,
+                                    unsigned int size)
 {
     struct domain *d = v->domain;
     int rc;
@@ -641,24 +696,20 @@ static void sh_emulate_unmap_dest(struct vcpu *v, void *addr,
      *  - _PAGE_PRESENT was clear before and after the write.
      */
     shflags = mfn_to_page(sh_ctxt->mfn[0])->shadow_flags;
-#if (SHADOW_OPTIMIZATIONS & SHOPT_SKIP_VERIFY)
-    if ( sh_ctxt->low_bit_was_clear
-         && !(*(u8 *)addr & _PAGE_PRESENT)
-         && ((!(shflags & SHF_32)
-              /*
+#if ( SHADOW_OPTIMIZATIONS & SHOPT_SKIP_VERIFY )
+    if ( sh_ctxt->low_bit_was_clear && !(*(u8 *)addr & _PAGE_PRESENT) &&
+         ((!(shflags & SHF_32)
+           /*
                * Not shadowed 32-bit: aligned 64-bit writes that leave
                * the present bit unset are safe to ignore.
                */
-              && ((unsigned long)addr & 7) == 0
-              && bytes <= 8)
-             ||
-             (!(shflags & (SHF_PAE|SHF_64))
-              /*
+           && ((unsigned long)addr & 7) == 0 && bytes <= 8) ||
+          (!(shflags & (SHF_PAE | SHF_64))
+           /*
                * Not shadowed PAE/64-bit: aligned 32-bit writes that
                * leave the present bit unset are safe to ignore.
                */
-              && ((unsigned long)addr & 3) == 0
-              && bytes <= 4)) )
+           && ((unsigned long)addr & 3) == 0 && bytes <= 4)) )
     {
         /* Writes with this alignment constraint can't possibly cross pages. */
         ASSERT(!mfn_valid(sh_ctxt->mfn[1]));
@@ -713,12 +764,12 @@ bool cf_check shadow_flush_tlb(const unsigned long *vcpu_bitmap)
         return false;
 
     /* Pause all other vcpus. */
-    for_each_vcpu ( d, v )
+    for_each_vcpu(d, v)
         if ( v != curr && flush_vcpu(v, vcpu_bitmap) )
             vcpu_pause_nosync(v);
 
     /* Now that all VCPUs are signalled to deschedule, we wait... */
-    for_each_vcpu ( d, v )
+    for_each_vcpu(d, v)
         if ( v != curr && flush_vcpu(v, vcpu_bitmap) )
             while ( !vcpu_runnable(v) && v->is_running )
                 cpu_relax();
@@ -729,7 +780,7 @@ bool cf_check shadow_flush_tlb(const unsigned long *vcpu_bitmap)
     cpumask_clear(mask);
 
     /* Flush paging-mode soft state (e.g., va->gfn cache; PAE PDPE cache). */
-    for_each_vcpu ( d, v )
+    for_each_vcpu(d, v)
     {
         unsigned int cpu;
 
@@ -747,7 +798,7 @@ bool cf_check shadow_flush_tlb(const unsigned long *vcpu_bitmap)
     guest_flush_tlb_mask(d, mask);
 
     /* Done. */
-    for_each_vcpu ( d, v )
+    for_each_vcpu(d, v)
         if ( v != curr && flush_vcpu(v, vcpu_bitmap) )
             vcpu_unpause(v);
 
@@ -790,8 +841,8 @@ mfn_t sh_make_monitor_table(const struct vcpu *v, unsigned int shadow_levels)
          */
         m3mfn = shadow_alloc(d, SH_type_monitor_table, 0);
         mfn_to_page(m3mfn)->shadow_flags = 3;
-        l4e[l4_table_offset(SH_LINEAR_PT_VIRT_START)]
-            = l4e_from_mfn(m3mfn, __PAGE_HYPERVISOR_RW);
+        l4e[l4_table_offset(SH_LINEAR_PT_VIRT_START)] =
+            l4e_from_mfn(m3mfn, __PAGE_HYPERVISOR_RW);
 
         m2mfn = shadow_alloc(d, SH_type_monitor_table, 0);
         mfn_to_page(m2mfn)->shadow_flags = 2;
@@ -846,8 +897,7 @@ void sh_destroy_monitor_table(const struct vcpu *v, mfn_t mmfn,
  * shadow processing jobs.
  */
 
-static void
-sh_remove_all_shadows_and_parents(struct domain *d, mfn_t gmfn)
+static void sh_remove_all_shadows_and_parents(struct domain *d, mfn_t gmfn)
 /* Even harsher: this is a HVM page that we thing is no longer a pagetable.
  * Unshadow it, and recursively unshadow pages that reference it. */
 {
@@ -862,9 +912,11 @@ sh_remove_all_shadows_and_parents(struct domain *d, mfn_t gmfn)
      * It means extra emulated writes and slows down removal of mappings. */
 }
 
-static void cf_check sh_unshadow_for_p2m_change(
-    struct domain *d, unsigned long gfn, l1_pgentry_t old, l1_pgentry_t new,
-    unsigned int level)
+static void cf_check sh_unshadow_for_p2m_change(struct domain *d,
+                                                unsigned long gfn,
+                                                l1_pgentry_t old,
+                                                l1_pgentry_t new,
+                                                unsigned int level)
 {
     mfn_t omfn = l1e_get_mfn(old);
     unsigned int oflags = l1e_get_flags(old);
@@ -880,8 +932,7 @@ static void cf_check sh_unshadow_for_p2m_change(
 
     /* Only previously present / valid entries need processing. */
     if ( !(oflags & _PAGE_PRESENT) ||
-         (!p2m_is_valid(p2mt) && !p2m_is_grant(p2mt)) ||
-         !mfn_valid(omfn) )
+         (!p2m_is_valid(p2mt) && !p2m_is_grant(p2mt)) || !mfn_valid(omfn) )
         return;
 
     switch ( level )
@@ -913,77 +964,77 @@ static void cf_check sh_unshadow_for_p2m_change(
      * scheme, that's OK, but otherwise they must be unshadowed.
      */
     case 2:
+    {
+        unsigned int i;
+        mfn_t nmfn = l1e_get_mfn(new);
+        unsigned int nflags = l1e_get_flags(new);
+        l1_pgentry_t *npte = NULL, *opte = NULL;
+
+        BUILD_BUG_ON(_PAGE_PAT != _PAGE_PSE);
+
+        if ( !(nflags & _PAGE_PRESENT) )
+            nmfn = INVALID_MFN;
+        /* If we're replacing a superpage with a normal L1 page, map it */
+        else if ( !(nflags & _PAGE_PSE) )
+            npte = map_domain_page(nmfn);
+        else if ( !(mfn_x(nmfn) & (_PAGE_PSE_PAT >> PAGE_SHIFT)) )
+            nflags &= ~_PAGE_PSE;
+        else
+            nmfn = mfn_add(nmfn, -(long)(_PAGE_PSE_PAT >> PAGE_SHIFT));
+
+        /* If we're replacing a normal L1 page, map it as well. */
+        if ( !(oflags & _PAGE_PSE) )
+            opte = map_domain_page(omfn);
+        else if ( !(mfn_x(omfn) & (_PAGE_PSE_PAT >> PAGE_SHIFT)) )
+            oflags &= ~_PAGE_PSE;
+        else
+            omfn = mfn_add(omfn, -(long)(_PAGE_PSE_PAT >> PAGE_SHIFT));
+
+        gfn &= ~(L1_PAGETABLE_ENTRIES - 1);
+
+        for ( i = 0; i < L1_PAGETABLE_ENTRIES; i++ )
         {
-            unsigned int i;
-            mfn_t nmfn = l1e_get_mfn(new);
-            unsigned int nflags = l1e_get_flags(new);
-            l1_pgentry_t *npte = NULL, *opte = NULL;
-
-            BUILD_BUG_ON(_PAGE_PAT != _PAGE_PSE);
-
-            if ( !(nflags & _PAGE_PRESENT) )
-                nmfn = INVALID_MFN;
-            /* If we're replacing a superpage with a normal L1 page, map it */
-            else if ( !(nflags & _PAGE_PSE) )
-                npte = map_domain_page(nmfn);
-            else if ( !(mfn_x(nmfn) & (_PAGE_PSE_PAT >> PAGE_SHIFT)) )
-                nflags &= ~_PAGE_PSE;
-            else
-                nmfn = mfn_add(nmfn, -(long)(_PAGE_PSE_PAT >> PAGE_SHIFT));
-
-            /* If we're replacing a normal L1 page, map it as well. */
-            if ( !(oflags & _PAGE_PSE) )
-                opte = map_domain_page(omfn);
-            else if ( !(mfn_x(omfn) & (_PAGE_PSE_PAT >> PAGE_SHIFT)) )
-                oflags &= ~_PAGE_PSE;
-            else
-                omfn = mfn_add(omfn, -(long)(_PAGE_PSE_PAT >> PAGE_SHIFT));
-
-            gfn &= ~(L1_PAGETABLE_ENTRIES - 1);
-
-            for ( i = 0; i < L1_PAGETABLE_ENTRIES; i++ )
+            if ( opte )
             {
-                if ( opte )
-                {
-                    oflags = l1e_get_flags(opte[i]);
-                    if ( !(oflags & _PAGE_PRESENT) )
-                        continue;
-                    omfn = l1e_get_mfn(opte[i]);
-                }
-
-                if ( npte )
-                {
-                    nflags = l1e_get_flags(npte[i]);
-                    nmfn = nflags & _PAGE_PRESENT
-                           ? l1e_get_mfn(npte[i]) : INVALID_MFN;
-                }
-
-                if ( !mfn_eq(nmfn, omfn) || nflags != oflags )
-                {
-                    /* This GFN->MFN mapping has gone away */
-                    sh_remove_all_shadows_and_parents(d, omfn);
-                    if ( sh_remove_all_mappings(d, omfn, _gfn(gfn + i)) )
-                        flush = true;
-                }
-
-                omfn = mfn_add(omfn, 1);
-                nmfn = mfn_add(nmfn, !mfn_eq(nmfn, INVALID_MFN));
+                oflags = l1e_get_flags(opte[i]);
+                if ( !(oflags & _PAGE_PRESENT) )
+                    continue;
+                omfn = l1e_get_mfn(opte[i]);
             }
 
-            unmap_domain_page(opte);
-            unmap_domain_page(npte);
+            if ( npte )
+            {
+                nflags = l1e_get_flags(npte[i]);
+                nmfn = nflags & _PAGE_PRESENT ? l1e_get_mfn(npte[i])
+                                              : INVALID_MFN;
+            }
+
+            if ( !mfn_eq(nmfn, omfn) || nflags != oflags )
+            {
+                /* This GFN->MFN mapping has gone away */
+                sh_remove_all_shadows_and_parents(d, omfn);
+                if ( sh_remove_all_mappings(d, omfn, _gfn(gfn + i)) )
+                    flush = true;
+            }
+
+            omfn = mfn_add(omfn, 1);
+            nmfn = mfn_add(nmfn, !mfn_eq(nmfn, INVALID_MFN));
         }
 
-        break;
+        unmap_domain_page(opte);
+        unmap_domain_page(npte);
+    }
+
+    break;
     }
 
     if ( flush )
         guest_flush_tlb_mask(d, d->dirty_cpumask);
 }
 
-#if (SHADOW_OPTIMIZATIONS & SHOPT_FAST_FAULT_PATH)
-static void cf_check
-sh_write_p2m_entry_post(struct p2m_domain *p2m, unsigned int oflags)
+#if ( SHADOW_OPTIMIZATIONS & SHOPT_FAST_FAULT_PATH )
+static void cf_check sh_write_p2m_entry_post(struct p2m_domain *p2m,
+                                             unsigned int oflags)
 {
     struct domain *d = p2m->domain;
 
@@ -1000,19 +1051,18 @@ sh_write_p2m_entry_post(struct p2m_domain *p2m, unsigned int oflags)
     }
 }
 #else
-# define sh_write_p2m_entry_post NULL
+#define sh_write_p2m_entry_post NULL
 #endif
 
 void shadow_p2m_init(struct p2m_domain *p2m)
 {
-    p2m->write_p2m_entry_pre  = sh_unshadow_for_p2m_change;
+    p2m->write_p2m_entry_pre = sh_unshadow_for_p2m_change;
     p2m->write_p2m_entry_post = sh_write_p2m_entry_post;
 }
 
 /**************************************************************************/
 /* VRAM dirty tracking support */
-int shadow_track_dirty_vram(struct domain *d,
-                            unsigned long begin_pfn,
+int shadow_track_dirty_vram(struct domain *d, unsigned long begin_pfn,
                             unsigned int nr_frames,
                             XEN_GUEST_HANDLE(void) guest_dirty_bitmap)
 {
@@ -1035,12 +1085,14 @@ int shadow_track_dirty_vram(struct domain *d,
 
     dirty_vram = d->arch.hvm.dirty_vram;
 
-    if ( dirty_vram && (!nr_frames ||
-             ( begin_pfn != dirty_vram->begin_pfn
-            || end_pfn   != dirty_vram->end_pfn )) )
+    if ( dirty_vram && (!nr_frames || (begin_pfn != dirty_vram->begin_pfn ||
+                                       end_pfn != dirty_vram->end_pfn)) )
     {
         /* Different tracking, tear the previous down. */
-        gdprintk(XENLOG_INFO, "stopping tracking VRAM %lx - %lx\n", dirty_vram->begin_pfn, dirty_vram->end_pfn);
+        gdprintk(XENLOG_INFO,
+                 "stopping tracking VRAM %lx - %lx\n",
+                 dirty_vram->begin_pfn,
+                 dirty_vram->end_pfn);
         xfree(dirty_vram->sl1ma);
         xfree(dirty_vram->dirty_bitmap);
         xfree(dirty_vram);
@@ -1081,7 +1133,8 @@ int shadow_track_dirty_vram(struct domain *d,
             goto out_dirty_vram;
         memset(dirty_vram->sl1ma, ~0, sizeof(paddr_t) * nr_frames);
 
-        if ( (dirty_vram->dirty_bitmap = xzalloc_array(uint8_t, dirty_size)) == NULL )
+        if ( (dirty_vram->dirty_bitmap = xzalloc_array(uint8_t, dirty_size)) ==
+             NULL )
             goto out_sl1ma;
 
         dirty_vram->last_dirty = NOW();
@@ -1126,8 +1179,8 @@ int shadow_track_dirty_vram(struct domain *d,
                          * TODO: Heuristics for finding the single mapping of
                          * this gmfn
                          */
-                        flush_tlb |= sh_remove_all_mappings(d, mfn,
-                                                            _gfn(begin_pfn + i));
+                        flush_tlb |=
+                            sh_remove_all_mappings(d, mfn, _gfn(begin_pfn + i));
                     }
                     else
                     {
@@ -1199,13 +1252,13 @@ int shadow_track_dirty_vram(struct domain *d,
         guest_flush_tlb_mask(d, d->dirty_cpumask);
     goto out;
 
- out_sl1ma:
+out_sl1ma:
     xfree(dirty_vram->sl1ma);
- out_dirty_vram:
+out_dirty_vram:
     xfree(dirty_vram);
     dirty_vram = d->arch.hvm.dirty_vram = NULL;
 
- out:
+out:
     paging_unlock(d);
     if ( rc == 0 && dirty_bitmap != NULL &&
          copy_to_guest(guest_dirty_bitmap, dirty_bitmap, dirty_size) )
@@ -1221,9 +1274,8 @@ int shadow_track_dirty_vram(struct domain *d,
     return rc;
 }
 
-void shadow_vram_get_mfn(mfn_t mfn, unsigned int l1f,
-                         mfn_t sl1mfn, const void *sl1e,
-                         const struct domain *d)
+void shadow_vram_get_mfn(mfn_t mfn, unsigned int l1f, mfn_t sl1mfn,
+                         const void *sl1e, const struct domain *d)
 {
     unsigned long gfn;
     struct sh_dirty_vram *dirty_vram = d->arch.hvm.dirty_vram;
@@ -1232,7 +1284,7 @@ void shadow_vram_get_mfn(mfn_t mfn, unsigned int l1f,
 
     if ( !dirty_vram /* tracking disabled? */ ||
          !(l1f & _PAGE_RW) /* read-only mapping? */ ||
-         !mfn_valid(mfn) /* mfn can be invalid in mmio_direct */)
+         !mfn_valid(mfn) /* mfn can be invalid in mmio_direct */ )
         return;
 
     gfn = gfn_x(mfn_to_gfn(d, mfn));
@@ -1246,14 +1298,12 @@ void shadow_vram_get_mfn(mfn_t mfn, unsigned int l1f,
 
         if ( (page->u.inuse.type_info & PGT_count_mask) == 1 )
             /* Initial guest reference, record it */
-            dirty_vram->sl1ma[i] = mfn_to_maddr(sl1mfn) |
-                                   PAGE_OFFSET(sl1e);
+            dirty_vram->sl1ma[i] = mfn_to_maddr(sl1mfn) | PAGE_OFFSET(sl1e);
     }
 }
 
-void shadow_vram_put_mfn(mfn_t mfn, unsigned int l1f,
-                         mfn_t sl1mfn, const void *sl1e,
-                         const struct domain *d)
+void shadow_vram_put_mfn(mfn_t mfn, unsigned int l1f, mfn_t sl1mfn,
+                         const void *sl1e, const struct domain *d)
 {
     unsigned long gfn;
     struct sh_dirty_vram *dirty_vram = d->arch.hvm.dirty_vram;
@@ -1262,7 +1312,7 @@ void shadow_vram_put_mfn(mfn_t mfn, unsigned int l1f,
 
     if ( !dirty_vram /* tracking disabled? */ ||
          !(l1f & _PAGE_RW) /* read-only mapping? */ ||
-         !mfn_valid(mfn) /* mfn can be invalid in mmio_direct */)
+         !mfn_valid(mfn) /* mfn can be invalid in mmio_direct */ )
         return;
 
     gfn = gfn_x(mfn_to_gfn(d, mfn));

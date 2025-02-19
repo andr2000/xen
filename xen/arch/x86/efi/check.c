@@ -9,7 +9,7 @@ int __attribute__((__ms_abi__)) test(int i)
  * emitting base relocations for absolute symbols.
  */
 extern const unsigned char __image_base__[], __file_alignment__[],
-                           __section_alignment__[];
+    __section_alignment__[];
 const void *const data[] = {
     __image_base__,
     __file_alignment__,

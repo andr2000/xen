@@ -2,8 +2,8 @@
 
 #include <xen/lib/x86/cpu-policy.h>
 
-static void zero_leaves(struct cpuid_leaf *l,
-                        unsigned int first, unsigned int last)
+static void zero_leaves(struct cpuid_leaf *l, unsigned int first,
+                        unsigned int last)
 {
     if ( first <= last )
         memset(&l[first], 0, sizeof(*l) * (last - first + 1));
@@ -14,32 +14,27 @@ unsigned int x86_cpuid_lookup_vendor(uint32_t ebx, uint32_t ecx, uint32_t edx)
     switch ( ebx )
     {
     case X86_VENDOR_INTEL_EBX:
-        if ( ecx == X86_VENDOR_INTEL_ECX &&
-             edx == X86_VENDOR_INTEL_EDX )
+        if ( ecx == X86_VENDOR_INTEL_ECX && edx == X86_VENDOR_INTEL_EDX )
             return X86_VENDOR_INTEL;
         break;
 
     case X86_VENDOR_AMD_EBX:
-        if ( ecx == X86_VENDOR_AMD_ECX &&
-             edx == X86_VENDOR_AMD_EDX )
+        if ( ecx == X86_VENDOR_AMD_ECX && edx == X86_VENDOR_AMD_EDX )
             return X86_VENDOR_AMD;
         break;
 
     case X86_VENDOR_CENTAUR_EBX:
-        if ( ecx == X86_VENDOR_CENTAUR_ECX &&
-             edx == X86_VENDOR_CENTAUR_EDX )
+        if ( ecx == X86_VENDOR_CENTAUR_ECX && edx == X86_VENDOR_CENTAUR_EDX )
             return X86_VENDOR_CENTAUR;
         break;
 
     case X86_VENDOR_SHANGHAI_EBX:
-        if ( ecx == X86_VENDOR_SHANGHAI_ECX &&
-             edx == X86_VENDOR_SHANGHAI_EDX )
+        if ( ecx == X86_VENDOR_SHANGHAI_ECX && edx == X86_VENDOR_SHANGHAI_EDX )
             return X86_VENDOR_SHANGHAI;
         break;
 
     case X86_VENDOR_HYGON_EBX:
-        if ( ecx == X86_VENDOR_HYGON_ECX &&
-             edx == X86_VENDOR_HYGON_EDX )
+        if ( ecx == X86_VENDOR_HYGON_ECX && edx == X86_VENDOR_HYGON_EDX )
             return X86_VENDOR_HYGON;
         break;
     }
@@ -51,65 +46,72 @@ const char *x86_cpuid_vendor_to_str(unsigned int vendor)
 {
     switch ( vendor )
     {
-    case X86_VENDOR_INTEL:    return "Intel";
-    case X86_VENDOR_AMD:      return "AMD";
-    case X86_VENDOR_CENTAUR:  return "Centaur";
-    case X86_VENDOR_SHANGHAI: return "Shanghai";
-    case X86_VENDOR_HYGON:    return "Hygon";
-    default:                  return "Unknown";
+    case X86_VENDOR_INTEL:
+        return "Intel";
+    case X86_VENDOR_AMD:
+        return "AMD";
+    case X86_VENDOR_CENTAUR:
+        return "Centaur";
+    case X86_VENDOR_SHANGHAI:
+        return "Shanghai";
+    case X86_VENDOR_HYGON:
+        return "Hygon";
+    default:
+        return "Unknown";
     }
 }
 
-void x86_cpu_policy_to_featureset(
-    const struct cpu_policy *p, uint32_t fs[FEATURESET_NR_ENTRIES])
+void x86_cpu_policy_to_featureset(const struct cpu_policy *p,
+                                  uint32_t fs[FEATURESET_NR_ENTRIES])
 {
-    fs[FEATURESET_1d]        = p->basic._1d;
-    fs[FEATURESET_1c]        = p->basic._1c;
-    fs[FEATURESET_e1d]       = p->extd.e1d;
-    fs[FEATURESET_e1c]       = p->extd.e1c;
-    fs[FEATURESET_Da1]       = p->xstate.Da1;
-    fs[FEATURESET_7b0]       = p->feat._7b0;
-    fs[FEATURESET_7c0]       = p->feat._7c0;
-    fs[FEATURESET_e7d]       = p->extd.e7d;
-    fs[FEATURESET_e8b]       = p->extd.e8b;
-    fs[FEATURESET_7d0]       = p->feat._7d0;
-    fs[FEATURESET_7a1]       = p->feat._7a1;
-    fs[FEATURESET_e21a]      = p->extd.e21a;
-    fs[FEATURESET_7b1]       = p->feat._7b1;
-    fs[FEATURESET_7d2]       = p->feat._7d2;
-    fs[FEATURESET_7c1]       = p->feat._7c1;
-    fs[FEATURESET_7d1]       = p->feat._7d1;
-    fs[FEATURESET_m10Al]     = p->arch_caps.lo;
-    fs[FEATURESET_m10Ah]     = p->arch_caps.hi;
+    fs[FEATURESET_1d] = p->basic._1d;
+    fs[FEATURESET_1c] = p->basic._1c;
+    fs[FEATURESET_e1d] = p->extd.e1d;
+    fs[FEATURESET_e1c] = p->extd.e1c;
+    fs[FEATURESET_Da1] = p->xstate.Da1;
+    fs[FEATURESET_7b0] = p->feat._7b0;
+    fs[FEATURESET_7c0] = p->feat._7c0;
+    fs[FEATURESET_e7d] = p->extd.e7d;
+    fs[FEATURESET_e8b] = p->extd.e8b;
+    fs[FEATURESET_7d0] = p->feat._7d0;
+    fs[FEATURESET_7a1] = p->feat._7a1;
+    fs[FEATURESET_e21a] = p->extd.e21a;
+    fs[FEATURESET_7b1] = p->feat._7b1;
+    fs[FEATURESET_7d2] = p->feat._7d2;
+    fs[FEATURESET_7c1] = p->feat._7c1;
+    fs[FEATURESET_7d1] = p->feat._7d1;
+    fs[FEATURESET_m10Al] = p->arch_caps.lo;
+    fs[FEATURESET_m10Ah] = p->arch_caps.hi;
 }
 
-void x86_cpu_featureset_to_policy(
-    const uint32_t fs[FEATURESET_NR_ENTRIES], struct cpu_policy *p)
+void x86_cpu_featureset_to_policy(const uint32_t fs[FEATURESET_NR_ENTRIES],
+                                  struct cpu_policy *p)
 {
-    p->basic._1d             = fs[FEATURESET_1d];
-    p->basic._1c             = fs[FEATURESET_1c];
-    p->extd.e1d              = fs[FEATURESET_e1d];
-    p->extd.e1c              = fs[FEATURESET_e1c];
-    p->xstate.Da1            = fs[FEATURESET_Da1];
-    p->feat._7b0             = fs[FEATURESET_7b0];
-    p->feat._7c0             = fs[FEATURESET_7c0];
-    p->extd.e7d              = fs[FEATURESET_e7d];
-    p->extd.e8b              = fs[FEATURESET_e8b];
-    p->feat._7d0             = fs[FEATURESET_7d0];
-    p->feat._7a1             = fs[FEATURESET_7a1];
-    p->extd.e21a             = fs[FEATURESET_e21a];
-    p->feat._7b1             = fs[FEATURESET_7b1];
-    p->feat._7d2             = fs[FEATURESET_7d2];
-    p->feat._7c1             = fs[FEATURESET_7c1];
-    p->feat._7d1             = fs[FEATURESET_7d1];
-    p->arch_caps.lo          = fs[FEATURESET_m10Al];
-    p->arch_caps.hi          = fs[FEATURESET_m10Ah];
+    p->basic._1d = fs[FEATURESET_1d];
+    p->basic._1c = fs[FEATURESET_1c];
+    p->extd.e1d = fs[FEATURESET_e1d];
+    p->extd.e1c = fs[FEATURESET_e1c];
+    p->xstate.Da1 = fs[FEATURESET_Da1];
+    p->feat._7b0 = fs[FEATURESET_7b0];
+    p->feat._7c0 = fs[FEATURESET_7c0];
+    p->extd.e7d = fs[FEATURESET_e7d];
+    p->extd.e8b = fs[FEATURESET_e8b];
+    p->feat._7d0 = fs[FEATURESET_7d0];
+    p->feat._7a1 = fs[FEATURESET_7a1];
+    p->extd.e21a = fs[FEATURESET_e21a];
+    p->feat._7b1 = fs[FEATURESET_7b1];
+    p->feat._7d2 = fs[FEATURESET_7d2];
+    p->feat._7c1 = fs[FEATURESET_7c1];
+    p->feat._7d1 = fs[FEATURESET_7d1];
+    p->arch_caps.lo = fs[FEATURESET_m10Al];
+    p->arch_caps.hi = fs[FEATURESET_m10Ah];
 }
 
 void x86_cpu_policy_recalc_synth(struct cpu_policy *p)
 {
-    p->x86_vendor = x86_cpuid_lookup_vendor(
-        p->basic.vendor_ebx, p->basic.vendor_ecx, p->basic.vendor_edx);
+    p->x86_vendor = x86_cpuid_lookup_vendor(p->basic.vendor_ebx,
+                                            p->basic.vendor_ecx,
+                                            p->basic.vendor_edx);
 }
 
 void x86_cpu_policy_fill_native(struct cpu_policy *p)
@@ -117,12 +119,15 @@ void x86_cpu_policy_fill_native(struct cpu_policy *p)
     unsigned int i;
 
     cpuid_leaf(0, &p->basic.raw[0]);
-    for ( i = 1; i <= MIN(p->basic.max_leaf,
-                          ARRAY_SIZE(p->basic.raw) - 1); ++i )
+    for ( i = 1; i <= MIN(p->basic.max_leaf, ARRAY_SIZE(p->basic.raw) - 1);
+          ++i )
     {
         switch ( i )
         {
-        case 0x4: case 0x7: case 0xb: case 0xd:
+        case 0x4:
+        case 0x7:
+        case 0xb:
+        case 0xd:
             /* Multi-invocation leaves.  Deferred. */
             continue;
         }
@@ -162,8 +167,8 @@ void x86_cpu_policy_fill_native(struct cpu_policy *p)
     {
         cpuid_count_leaf(7, 0, &p->feat.raw[0]);
 
-        for ( i = 1; i <= MIN(p->feat.max_subleaf,
-                              ARRAY_SIZE(p->feat.raw) - 1); ++i )
+        for ( i = 1; i <= MIN(p->feat.max_subleaf, ARRAY_SIZE(p->feat.raw) - 1);
+              ++i )
             cpuid_count_leaf(7, i, &p->feat.raw[i]);
     }
 
@@ -208,8 +213,8 @@ void x86_cpu_policy_fill_native(struct cpu_policy *p)
         /* This logic will probably need adjusting when XCR0[63] gets used. */
         BUILD_BUG_ON(ARRAY_SIZE(p->xstate.raw) > 63);
 
-        for ( i = 2; i < min_t(unsigned int, 63,
-                               ARRAY_SIZE(p->xstate.raw)); ++i )
+        for ( i = 2; i < min_t(unsigned int, 63, ARRAY_SIZE(p->xstate.raw));
+              ++i )
         {
             if ( xstates & (1ULL << i) )
                 cpuid_count_leaf(0xd, i, &p->xstate.raw[i]);
@@ -218,8 +223,9 @@ void x86_cpu_policy_fill_native(struct cpu_policy *p)
 
     /* Extended leaves. */
     cpuid_leaf(0x80000000U, &p->extd.raw[0]);
-    for ( i = 1; i <= MIN(p->extd.max_leaf & 0xffffU,
-                          ARRAY_SIZE(p->extd.raw) - 1); ++i )
+    for ( i = 1;
+          i <= MIN(p->extd.max_leaf & 0xffffU, ARRAY_SIZE(p->extd.raw) - 1);
+          ++i )
         cpuid_leaf(0x80000000U + i, &p->extd.raw[i]);
 
     /* Don't report leaves from possible lower level hypervisor, for now. */
@@ -240,15 +246,16 @@ void x86_cpu_policy_clear_out_of_range_leaves(struct cpu_policy *p)
 {
     unsigned int i;
 
-    zero_leaves(p->basic.raw, p->basic.max_leaf + 1,
+    zero_leaves(p->basic.raw,
+                p->basic.max_leaf + 1,
                 ARRAY_SIZE(p->basic.raw) - 1);
 
     if ( p->basic.max_leaf < 4 )
         memset(p->cache.raw, 0, sizeof(p->cache.raw));
     else
     {
-        for ( i = 0; (i < ARRAY_SIZE(p->cache.raw) &&
-                      p->cache.subleaf[i].type); ++i )
+        for ( i = 0; (i < ARRAY_SIZE(p->cache.raw) && p->cache.subleaf[i].type);
+              ++i )
             ;
 
         zero_leaves(p->cache.raw, i, ARRAY_SIZE(p->cache.raw) - 1);
@@ -257,15 +264,16 @@ void x86_cpu_policy_clear_out_of_range_leaves(struct cpu_policy *p)
     if ( p->basic.max_leaf < 7 )
         memset(p->feat.raw, 0, sizeof(p->feat.raw));
     else
-        zero_leaves(p->feat.raw, p->feat.max_subleaf + 1,
+        zero_leaves(p->feat.raw,
+                    p->feat.max_subleaf + 1,
                     ARRAY_SIZE(p->feat.raw) - 1);
 
     if ( p->basic.max_leaf < 0xb )
         memset(p->topo.raw, 0, sizeof(p->topo.raw));
     else
     {
-        for ( i = 0; (i < ARRAY_SIZE(p->topo.raw) &&
-                      p->topo.subleaf[i].type); ++i )
+        for ( i = 0; (i < ARRAY_SIZE(p->topo.raw) && p->topo.subleaf[i].type);
+              ++i )
             ;
 
         zero_leaves(p->topo.raw, i, ARRAY_SIZE(p->topo.raw) - 1);
@@ -281,21 +289,23 @@ void x86_cpu_policy_clear_out_of_range_leaves(struct cpu_policy *p)
         /* First two leaves always valid.  Rest depend on xstates. */
         i = max(2, 64 - __builtin_clzll(cpu_policy_xstates(p)));
 
-        zero_leaves(p->xstate.raw, i,
-                    ARRAY_SIZE(p->xstate.raw) - 1);
+        zero_leaves(p->xstate.raw, i, ARRAY_SIZE(p->xstate.raw) - 1);
     }
 
-    zero_leaves(p->extd.raw, (p->extd.max_leaf & 0xffff) + 1,
+    zero_leaves(p->extd.raw,
+                (p->extd.max_leaf & 0xffff) + 1,
                 ARRAY_SIZE(p->extd.raw) - 1);
 }
 
 const uint32_t *x86_cpu_policy_lookup_deep_deps(uint32_t feature)
 {
     static const uint32_t deep_features[] = INIT_DEEP_FEATURES;
+
     static const struct {
         uint32_t feature;
         uint32_t fs[FEATURESET_NR_ENTRIES];
     } deep_deps[] = INIT_DEEP_DEPS;
+
     unsigned int start = 0, end = ARRAY_SIZE(deep_deps);
 
     BUILD_BUG_ON(ARRAY_SIZE(deep_deps) != NR_DEEP_DEPS);
@@ -326,8 +336,8 @@ const uint32_t *x86_cpu_policy_lookup_deep_deps(uint32_t feature)
  */
 static int copy_leaf_to_buffer(uint32_t leaf, uint32_t subleaf,
                                const struct cpuid_leaf *data,
-                               cpuid_leaf_buffer_t leaves,
-                               uint32_t *curr_entry, const uint32_t nr_entries)
+                               cpuid_leaf_buffer_t leaves, uint32_t *curr_entry,
+                               const uint32_t nr_entries)
 {
     const xen_cpuid_leaf_t val = {
         leaf, subleaf, data->a, data->b, data->c, data->d,
@@ -360,8 +370,9 @@ int x86_cpuid_copy_to_buffer(const struct cpu_policy *p,
     })
 
     /* Basic leaves. */
-    for ( leaf = 0; leaf <= MIN(p->basic.max_leaf,
-                                ARRAY_SIZE(p->basic.raw) - 1); ++leaf )
+    for ( leaf = 0;
+          leaf <= MIN(p->basic.max_leaf, ARRAY_SIZE(p->basic.raw) - 1);
+          ++leaf )
     {
         switch ( leaf )
         {
@@ -376,9 +387,9 @@ int x86_cpuid_copy_to_buffer(const struct cpu_policy *p,
             break;
 
         case 0x7:
-            for ( subleaf = 0;
-                  subleaf <= MIN(p->feat.max_subleaf,
-                                 ARRAY_SIZE(p->feat.raw) - 1); ++subleaf )
+            for ( subleaf = 0; subleaf <= MIN(p->feat.max_subleaf,
+                                              ARRAY_SIZE(p->feat.raw) - 1);
+                  ++subleaf )
                 COPY_LEAF(leaf, subleaf, &p->feat.raw[subleaf]);
             break;
 
@@ -413,14 +424,17 @@ int x86_cpuid_copy_to_buffer(const struct cpu_policy *p,
     }
 
     /* TODO: Port Xen and Viridian leaves to the new CPUID infrastructure. */
-    COPY_LEAF(0x40000000, XEN_CPUID_NO_SUBLEAF,
+    COPY_LEAF(0x40000000,
+              XEN_CPUID_NO_SUBLEAF,
               &(struct cpuid_leaf){ p->hv_limit });
-    COPY_LEAF(0x40000100, XEN_CPUID_NO_SUBLEAF,
+    COPY_LEAF(0x40000100,
+              XEN_CPUID_NO_SUBLEAF,
               &(struct cpuid_leaf){ p->hv2_limit });
 
     /* Extended leaves. */
-    for ( leaf = 0; leaf <= MIN(p->extd.max_leaf & 0xffffUL,
-                                ARRAY_SIZE(p->extd.raw) - 1); ++leaf )
+    for ( leaf = 0;
+          leaf <= MIN(p->extd.max_leaf & 0xffffUL, ARRAY_SIZE(p->extd.raw) - 1);
+          ++leaf )
         COPY_LEAF(0x80000000U | leaf, XEN_CPUID_NO_SUBLEAF, &p->extd.raw[leaf]);
 
 #undef COPY_LEAF
@@ -537,7 +551,7 @@ int x86_cpuid_copy_from_buffer(struct cpu_policy *p,
 
     return 0;
 
- out_of_range:
+out_of_range:
     if ( err_leaf )
         *err_leaf = data.leaf;
     if ( err_subleaf )

@@ -8,11 +8,11 @@
 #define __ARM_CONFIG_H__
 
 #if defined(CONFIG_ARM_64)
-# define LONG_BYTEORDER 3
-# define ELFSIZE 64
+#define LONG_BYTEORDER 3
+#define ELFSIZE 64
 #else
-# define LONG_BYTEORDER 2
-# define ELFSIZE 32
+#define LONG_BYTEORDER 2
+#define ELFSIZE 32
 #endif
 
 #define BYTES_PER_LONG (1 << LONG_BYTEORDER)
@@ -74,7 +74,7 @@
 #elif defined(CONFIG_MPU)
 #include <asm/mpu/layout.h>
 #else
-# error "Unknown memory management layout"
+#error "Unknown memory management layout"
 #endif
 
 #define NR_hypercalls 64

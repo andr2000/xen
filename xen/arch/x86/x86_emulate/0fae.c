@@ -7,16 +7,14 @@
 
 #include "private.h"
 
-#if defined(__XEN__) && \
-    (!defined(X86EMUL_NO_FPU) || !defined(X86EMUL_NO_MMX) || \
+#if defined(__XEN__) &&                                                        \
+    (!defined(X86EMUL_NO_FPU) || !defined(X86EMUL_NO_MMX) ||                   \
      !defined(X86EMUL_NO_SIMD))
-# include <asm/xstate.h>
+#include <asm/xstate.h>
 #endif
 
-int x86emul_0fae(struct x86_emulate_state *s,
-                 struct cpu_user_regs *regs,
-                 struct operand *dst,
-                 const struct operand *src,
+int x86emul_0fae(struct x86_emulate_state *s, struct cpu_user_regs *regs,
+                 struct operand *dst, const struct operand *src,
                  struct x86_emulate_ctxt *ctxt,
                  const struct x86_emulate_ops *ops,
                  enum x86_emulate_fpu_type *fpu_type)
@@ -29,22 +27,23 @@ int x86emul_0fae(struct x86_emulate_state *s,
     {
         switch ( s->modrm_reg & 7 )
         {
-#if !defined(X86EMUL_NO_FPU) || !defined(X86EMUL_NO_MMX) || \
+#if !defined(X86EMUL_NO_FPU) || !defined(X86EMUL_NO_MMX) ||                    \
     !defined(X86EMUL_NO_SIMD)
         case 0: /* fxsave */
         case 1: /* fxrstor */
             generate_exception_if(s->vex.pfx, X86_EXC_UD);
             vcpu_must_have(fxsr);
             generate_exception_if(s->ea.type != OP_MEM, X86_EXC_UD);
-            generate_exception_if(!is_aligned(s->ea.mem.seg, s->ea.mem.off, 16,
-                                              ctxt, ops),
-                                  X86_EXC_GP, 0);
+            generate_exception_if(
+                !is_aligned(s->ea.mem.seg, s->ea.mem.off, 16, ctxt, ops),
+                X86_EXC_GP,
+                0);
             fail_if(!ops->blk);
             s->op_bytes =
 #ifdef __x86_64__
                 !mode_64bit() ? offsetof(struct x86_fxsr, xmm[8]) :
 #endif
-                sizeof(struct x86_fxsr);
+                              sizeof(struct x86_fxsr);
             if ( amd_like(ctxt) )
             {
                 uint64_t msr_val;
@@ -70,9 +69,13 @@ int x86emul_0fae(struct x86_emulate_state *s,
             get_fpu(X86EMUL_FPU_fpu);
             s->fpu_ctrl = true;
             s->blk = s->modrm_reg & 1 ? blk_fxrstor : blk_fxsave;
-            if ( (rc = ops->blk(s->ea.mem.seg, s->ea.mem.off, NULL,
-                                sizeof(struct x86_fxsr), &regs->eflags,
-                                s, ctxt)) != X86EMUL_OKAY )
+            if ( (rc = ops->blk(s->ea.mem.seg,
+                                s->ea.mem.off,
+                                NULL,
+                                sizeof(struct x86_fxsr),
+                                &regs->eflags,
+                                s,
+                                ctxt)) != X86EMUL_OKAY )
                 goto done;
             break;
 #endif /* X86EMUL_NO_{FPU,MMX,SIMD} */
@@ -85,7 +88,7 @@ int x86emul_0fae(struct x86_emulate_state *s,
             generate_exception_if(src->type != OP_MEM, X86_EXC_UD);
             get_fpu(s->vex.opcx ? X86EMUL_FPU_ymm : X86EMUL_FPU_xmm);
             generate_exception_if(src->val & ~mxcsr_mask, X86_EXC_GP, 0);
-            asm volatile ( "ldmxcsr %0" :: "m" (src->val) );
+            asm volatile("ldmxcsr %0" ::"m"(src->val));
             break;
 
         case 3: /* stmxcsr */
@@ -94,7 +97,7 @@ int x86emul_0fae(struct x86_emulate_state *s,
         stmxcsr:
             generate_exception_if(dst->type != OP_MEM, X86_EXC_UD);
             get_fpu(s->vex.opcx ? X86EMUL_FPU_ymm : X86EMUL_FPU_xmm);
-            asm volatile ( "stmxcsr %0" : "=m" (dst->val) );
+            asm volatile("stmxcsr %0" : "=m"(dst->val));
             break;
 #endif /* X86EMUL_NO_SIMD */
 
@@ -102,21 +105,23 @@ int x86emul_0fae(struct x86_emulate_state *s,
             fail_if(s->modrm_mod != 3);
             generate_exception_if(s->vex.pfx, X86_EXC_UD);
             vcpu_must_have(sse2);
-            asm volatile ( "lfence" ::: "memory" );
+            asm volatile("lfence" ::: "memory");
             break;
         case 6:
             if ( s->modrm_mod == 3 ) /* mfence */
             {
                 generate_exception_if(s->vex.pfx, X86_EXC_UD);
                 vcpu_must_have(sse2);
-                asm volatile ( "mfence" ::: "memory" );
+                asm volatile("mfence" ::: "memory");
                 break;
             }
             /* else clwb */
             fail_if(!s->vex.pfx);
             vcpu_must_have(clwb);
             fail_if(!ops->cache_op);
-            if ( (rc = ops->cache_op(x86emul_clwb, s->ea.mem.seg, s->ea.mem.off,
+            if ( (rc = ops->cache_op(x86emul_clwb,
+                                     s->ea.mem.seg,
+                                     s->ea.mem.off,
                                      ctxt)) != X86EMUL_OKAY )
                 goto done;
             break;
@@ -125,7 +130,7 @@ int x86emul_0fae(struct x86_emulate_state *s,
             {
                 generate_exception_if(s->vex.pfx, X86_EXC_UD);
                 vcpu_must_have(mmxext);
-                asm volatile ( "sfence" ::: "memory" );
+                asm volatile("sfence" ::: "memory");
                 break;
             }
             /* else clflush{,opt} */
@@ -136,7 +141,8 @@ int x86emul_0fae(struct x86_emulate_state *s,
             fail_if(!ops->cache_op);
             if ( (rc = ops->cache_op(s->vex.pfx ? x86emul_clflushopt
                                                 : x86emul_clflush,
-                                     s->ea.mem.seg, s->ea.mem.off,
+                                     s->ea.mem.seg,
+                                     s->ea.mem.off,
                                      ctxt)) != X86EMUL_OKAY )
                 goto done;
             break;
@@ -191,7 +197,8 @@ int x86emul_0fae(struct x86_emulate_state *s,
             {
                 sreg.base = *dst->reg;
                 generate_exception_if(!is_canonical_address(sreg.base),
-                                      X86_EXC_GP, 0);
+                                      X86_EXC_GP,
+                                      0);
             }
             else
                 sreg.base = (uint32_t)*dst->reg;
@@ -208,6 +215,6 @@ int x86emul_0fae(struct x86_emulate_state *s,
 
     rc = X86EMUL_OKAY;
 
- done:
+done:
     return rc;
 }

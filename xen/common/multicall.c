@@ -33,13 +33,13 @@ static void trace_multicall_call(multicall_entry_t *call)
     __trace_multicall_call(call);
 }
 
-ret_t do_multicall(
-    XEN_GUEST_HANDLE_PARAM(multicall_entry_t) call_list, unsigned long nr_calls)
+ret_t do_multicall(XEN_GUEST_HANDLE_PARAM(multicall_entry_t) call_list,
+                   unsigned long nr_calls)
 {
     struct vcpu *curr = current;
     struct mc_state *mcs = &curr->mc_state;
-    unsigned long    i;
-    int              rc = 0;
+    unsigned long i;
+    int rc = 0;
     enum mc_disposition disp = mc_continue;
 
     if ( unlikely(__test_and_set_bit(_MCSF_in_multicall, &mcs->flags)) )
@@ -91,8 +91,8 @@ ret_t do_multicall(
                 /* nothing, best effort only */;
             rc = mcs->call.result;
         }
-        else if ( unlikely(__copy_field_to_guest(call_list, &mcs->call,
-                                                 result)) )
+        else if (
+            unlikely(__copy_field_to_guest(call_list, &mcs->call, result)) )
             rc = -EFAULT;
         else if ( curr->hcall_preempted )
         {
@@ -117,11 +117,13 @@ ret_t do_multicall(
     mcs->flags = 0;
     return rc;
 
- preempted:
+preempted:
     perfc_add(calls_from_multicall, i);
     mcs->flags = 0;
-    return hypercall_create_continuation(
-        __HYPERVISOR_multicall, "hi", call_list, nr_calls-i);
+    return hypercall_create_continuation(__HYPERVISOR_multicall,
+                                         "hi",
+                                         call_list,
+                                         nr_calls - i);
 }
 
 /*

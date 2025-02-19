@@ -128,14 +128,12 @@ struct host_its {
     unsigned int flags;
 };
 
-
 #ifdef CONFIG_HAS_ITS
 
 extern struct list_head host_its_list;
 
 #ifdef CONFIG_ACPI
-unsigned long gicv3_its_make_hwdom_madt(const struct domain *d,
-                                        void *base_ptr);
+unsigned long gicv3_its_make_hwdom_madt(const struct domain *d, void *base_ptr);
 #endif
 
 /* Deny iomem access for its */
@@ -147,7 +145,7 @@ unsigned int vgic_v3_its_count(const struct domain *d);
 
 void gicv3_do_LPI(unsigned int lpi);
 
-int gicv3_lpi_init_rdist(void __iomem * rdist_base);
+int gicv3_lpi_init_rdist(void __iomem *rdist_base);
 
 /* Initialize the host structures for LPIs and the host ITSes. */
 int gicv3_lpi_init_host_lpis(unsigned int host_lpi_bits);
@@ -166,18 +164,17 @@ void vgic_v3_its_free_domain(struct domain *d);
 
 /* Create the appropriate DT nodes for a hardware domain. */
 int gicv3_its_make_hwdom_dt_nodes(const struct domain *d,
-                                  const struct dt_device_node *gic,
-                                  void *fdt);
+                                  const struct dt_device_node *gic, void *fdt);
 
 /*
  * Map a device on the host by allocating an ITT on the host (ITS).
  * "nr_event" specifies how many events (interrupts) this device will need.
  * Setting "valid" to false deallocates the device.
  */
-int gicv3_its_map_guest_device(struct domain *d,
-                               paddr_t host_doorbell, uint32_t host_devid,
-                               paddr_t guest_doorbell, uint32_t guest_devid,
-                               uint64_t nr_events, bool valid);
+int gicv3_its_map_guest_device(struct domain *d, paddr_t host_doorbell,
+                               uint32_t host_devid, paddr_t guest_doorbell,
+                               uint32_t guest_devid, uint64_t nr_events,
+                               bool valid);
 
 int gicv3_allocate_host_lpi_block(struct domain *d, uint32_t *first_lpi);
 void gicv3_free_host_lpi_block(uint32_t first_lpi);
@@ -189,7 +186,7 @@ struct pending_irq *gicv3_its_get_event_pending_irq(struct domain *d,
                                                     uint32_t vdevid,
                                                     uint32_t eventid);
 int gicv3_remove_guest_event(struct domain *d, paddr_t vdoorbell_address,
-                                     uint32_t vdevid, uint32_t eventid);
+                             uint32_t vdevid, uint32_t eventid);
 struct pending_irq *gicv3_assign_guest_event(struct domain *d,
                                              paddr_t vdoorbell_address,
                                              uint32_t vdevid, uint32_t eventid,
@@ -228,7 +225,7 @@ static inline void gicv3_do_LPI(unsigned int lpi)
     BUG();
 }
 
-static inline int gicv3_lpi_init_rdist(void __iomem * rdist_base)
+static inline int gicv3_lpi_init_rdist(void __iomem *rdist_base)
 {
     return -ENODEV;
 }
@@ -245,8 +242,7 @@ static inline int gicv3_its_init(void)
 
 static inline void gicv3_set_redist_address(paddr_t address,
                                             unsigned int redist_id)
-{
-}
+{}
 
 static inline int gicv3_its_setup_collection(unsigned int cpu)
 {
@@ -259,13 +255,11 @@ static inline int vgic_v3_its_init_domain(struct domain *d)
     return 0;
 }
 
-static inline void vgic_v3_its_free_domain(struct domain *d)
-{
-}
+static inline void vgic_v3_its_free_domain(struct domain *d) {}
 
-static inline int gicv3_its_make_hwdom_dt_nodes(const struct domain *d,
-                                                const struct dt_device_node *gic,
-                                                void *fdt)
+static inline int
+gicv3_its_make_hwdom_dt_nodes(const struct domain *d,
+                              const struct dt_device_node *gic, void *fdt)
 {
     return 0;
 }

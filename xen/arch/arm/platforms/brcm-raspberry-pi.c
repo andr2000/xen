@@ -23,14 +23,10 @@
 #include <asm/io.h>
 #include <asm/platform.h>
 
-static const char *const rpi4_dt_compat[] __initconst =
-{
-    "brcm,bcm2711",
-    NULL
-};
+static const char *const rpi4_dt_compat[]
+    __initconst = { "brcm,bcm2711", NULL };
 
-static const struct dt_device_match rpi4_blacklist_dev[] __initconst =
-{
+static const struct dt_device_match rpi4_blacklist_dev[] __initconst = {
     /*
      * The aux SPIs share an IRQ and a page with the aux UART.
      * If the same page gets mapped to dom0 and Xen, there is risk of
@@ -45,7 +41,6 @@ static const struct dt_device_match rpi4_blacklist_dev[] __initconst =
     DT_MATCH_COMPATIBLE("brcm,bcm2835-pm"),
     { /* sentinel */ },
 };
-
 
 #define PM_PASSWORD                 0x5a000000
 #define PM_RSTC                     0x1c
@@ -101,10 +96,8 @@ static void rpi4_reset(void)
 }
 
 PLATFORM_START(rpi4, "Raspberry Pi 4")
-    .compatible     = rpi4_dt_compat,
-    .blacklist_dev  = rpi4_blacklist_dev,
-    .reset = rpi4_reset,
-    .dma_bitsize    = 30,
+    .compatible = rpi4_dt_compat, .blacklist_dev = rpi4_blacklist_dev,
+    .reset = rpi4_reset, .dma_bitsize = 30,
 PLATFORM_END
 
 /*

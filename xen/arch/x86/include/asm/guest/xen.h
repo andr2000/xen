@@ -34,7 +34,10 @@ DECLARE_PER_CPU(struct vcpu_info *, vcpu_info);
 #define xen_guest 0
 #define pv_console 0
 
-static inline const struct hypervisor_ops *xg_probe(void) { return NULL; }
+static inline const struct hypervisor_ops *xg_probe(void)
+{
+    return NULL;
+}
 
 #endif /* CONFIG_XEN_GUEST */
 #endif /* __X86_GUEST_XEN_H__ */

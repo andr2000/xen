@@ -44,7 +44,6 @@
 #endif
 
 struct xen_memory_reservation {
-
     /*
      * XENMEM_increase_reservation:
      *   OUT: MFN (*not* GMFN) bases of extents that were allocated
@@ -60,21 +59,21 @@ struct xen_memory_reservation {
     XEN_GUEST_HANDLE(xen_pfn_t) extent_start;
 
     /* Number of extents, and size/alignment of each (2^extent_order pages). */
-    xen_ulong_t    nr_extents;
-    unsigned int   extent_order;
+    xen_ulong_t nr_extents;
+    unsigned int extent_order;
 
 #if __XEN_INTERFACE_VERSION__ >= 0x00030209
     /* XENMEMF flags. */
-    unsigned int   mem_flags;
+    unsigned int mem_flags;
 #else
-    unsigned int   address_bits;
+    unsigned int address_bits;
 #endif
 
     /*
      * Domain whose reservation is being changed.
      * Unprivileged domains can specify only DOMID_SELF.
      */
-    domid_t        domid;
+    domid_t domid;
 };
 typedef struct xen_memory_reservation xen_memory_reservation_t;
 DEFINE_XEN_GUEST_HANDLE(xen_memory_reservation_t);
@@ -89,6 +88,7 @@ DEFINE_XEN_GUEST_HANDLE(xen_memory_reservation_t);
  * Note that only PV guests can use this operation.
  */
 #define XENMEM_exchange             11
+
 struct xen_memory_exchange {
     /*
      * [IN] Details of memory extents to be exchanged (GMFN bases).
@@ -158,6 +158,7 @@ struct xen_memory_domain {
  * arg == addr of xen_machphys_mfn_list_t.
  */
 #define XENMEM_machphys_mfn_list    5
+
 struct xen_machphys_mfn_list {
     /*
      * Size of the 'extent_start' array. Fewer entries will be filled if the
@@ -197,9 +198,10 @@ DEFINE_XEN_GUEST_HANDLE(xen_machphys_mfn_list_t);
  * arg == addr of xen_machphys_mapping_t.
  */
 #define XENMEM_machphys_mapping     12
+
 struct xen_machphys_mapping {
     xen_ulong_t v_start, v_end; /* Start and end virtual addresses.   */
-    xen_ulong_t max_mfn;        /* Maximum MFN that can be looked up. */
+    xen_ulong_t max_mfn; /* Maximum MFN that can be looked up. */
 };
 typedef struct xen_machphys_mapping xen_machphys_mapping_t;
 DEFINE_XEN_GUEST_HANDLE(xen_machphys_mapping_t);
@@ -225,12 +227,13 @@ DEFINE_XEN_GUEST_HANDLE(xen_machphys_mapping_t);
  * arg == addr of xen_add_to_physmap_t.
  */
 #define XENMEM_add_to_physmap      7
+
 struct xen_add_to_physmap {
     /* Which domain to change the mapping for. */
     domid_t domid;
 
     /* Number of pages to go through for gmfn_range */
-    uint16_t    size;
+    uint16_t size;
 
     unsigned int space; /* => enum phys_map_space */
 
@@ -240,13 +243,14 @@ struct xen_add_to_physmap {
     xen_ulong_t idx;
 
     /* GPFN in domid where the source mapping page should appear. */
-    xen_pfn_t     gpfn;
+    xen_pfn_t gpfn;
 };
 typedef struct xen_add_to_physmap xen_add_to_physmap_t;
 DEFINE_XEN_GUEST_HANDLE(xen_add_to_physmap_t);
 
 /* A batched version of add_to_physmap. */
 #define XENMEM_add_to_physmap_batch 23
+
 struct xen_add_to_physmap_batch {
     /* IN */
     /* Which domain to change the mapping for. */
@@ -261,7 +265,7 @@ struct xen_add_to_physmap_batch {
 #else
     union xen_add_to_physmap_batch_extra {
         domid_t foreign_domid; /* gmfn_foreign */
-        uint16_t res0;  /* All the other spaces. Should be 0 */
+        uint16_t res0; /* All the other spaces. Should be 0 */
     } u;
 #endif
 
@@ -292,12 +296,13 @@ DEFINE_XEN_GUEST_HANDLE(xen_add_to_physmap_range_t);
  * arg == addr of xen_remove_from_physmap_t.
  */
 #define XENMEM_remove_from_physmap      15
+
 struct xen_remove_from_physmap {
     /* Which domain to change the mapping for. */
     domid_t domid;
 
     /* GPFN of the current mapping of the page. */
-    xen_pfn_t     gpfn;
+    xen_pfn_t gpfn;
 };
 typedef struct xen_remove_from_physmap xen_remove_from_physmap_t;
 DEFINE_XEN_GUEST_HANDLE(xen_remove_from_physmap_t);
@@ -311,6 +316,7 @@ DEFINE_XEN_GUEST_HANDLE(xen_remove_from_physmap_t);
  * arg == addr of xen_memory_map_t.
  */
 #define XENMEM_memory_map           9
+
 struct xen_memory_map {
     /*
      * On call the number of entries which can be stored in buffer. On
@@ -343,6 +349,7 @@ DEFINE_XEN_GUEST_HANDLE(xen_memory_map_t);
  * arg == addr of xen_foreign_memory_map_t.
  */
 #define XENMEM_set_memory_map       13
+
 struct xen_foreign_memory_map {
     domid_t domid;
     struct xen_memory_map map;
@@ -352,6 +359,7 @@ DEFINE_XEN_GUEST_HANDLE(xen_foreign_memory_map_t);
 
 #define XENMEM_set_pod_target       16
 #define XENMEM_get_pod_target       17
+
 struct xen_pod_target {
     /* IN */
     uint64_t target_pages;
@@ -383,13 +391,13 @@ typedef struct xen_pod_target xen_pod_target_t;
 #define XENMEM_paging_op_prep               2
 
 struct xen_mem_paging_op {
-    uint8_t     op;         /* XENMEM_paging_op_* */
-    domid_t     domain;
+    uint8_t op; /* XENMEM_paging_op_* */
+    domid_t domain;
 
     /* IN: (XENMEM_paging_op_prep) buffer to immediately fill page from */
     XEN_GUEST_HANDLE_64(const_uint8) buffer;
     /* IN:  gfn of page being operated on */
-    uint64_aligned_t    gfn;
+    uint64_aligned_t gfn;
 };
 typedef struct xen_mem_paging_op xen_mem_paging_op_t;
 DEFINE_XEN_GUEST_HANDLE(xen_mem_paging_op_t);
@@ -501,48 +509,55 @@ DEFINE_XEN_GUEST_HANDLE(xen_mem_access_op_t);
     ((field) & (~XENMEM_SHARING_OP_FIELD_IS_GREF_FLAG))
 
 struct xen_mem_sharing_op {
-    uint8_t     op;     /* XENMEM_sharing_op_* */
-    domid_t     domain;
+    uint8_t op; /* XENMEM_sharing_op_* */
+    domid_t domain;
 
     union {
-        struct mem_sharing_op_nominate {  /* OP_NOMINATE_xxx           */
+        struct mem_sharing_op_nominate { /* OP_NOMINATE_xxx           */
+
             union {
-                uint64_aligned_t gfn;     /* IN: gfn to nominate       */
-                uint32_t      grant_ref;  /* IN: grant ref to nominate */
+                uint64_aligned_t gfn; /* IN: gfn to nominate       */
+                uint32_t grant_ref; /* IN: grant ref to nominate */
             } u;
-            uint64_aligned_t  handle;     /* OUT: the handle           */
+
+            uint64_aligned_t handle; /* OUT: the handle           */
         } nominate;
-        struct mem_sharing_op_share {     /* OP_SHARE/ADD_PHYSMAP */
-            uint64_aligned_t source_gfn;    /* IN: the gfn of the source page */
+
+        struct mem_sharing_op_share { /* OP_SHARE/ADD_PHYSMAP */
+            uint64_aligned_t source_gfn; /* IN: the gfn of the source page */
             uint64_aligned_t source_handle; /* IN: handle to the source page */
-            uint64_aligned_t client_gfn;    /* IN: the client gfn */
+            uint64_aligned_t client_gfn; /* IN: the client gfn */
             uint64_aligned_t client_handle; /* IN: handle to the client page */
-            domid_t  client_domain; /* IN: the client domain id */
+            domid_t client_domain; /* IN: the client domain id */
         } share;
-        struct mem_sharing_op_range {         /* OP_RANGE_SHARE */
-            uint64_aligned_t first_gfn;      /* IN: the first gfn */
-            uint64_aligned_t last_gfn;       /* IN: the last gfn */
-            uint64_aligned_t opaque;         /* Must be set to 0 */
-            domid_t client_domain;           /* IN: the client domain id */
-            uint16_t _pad[3];                /* Must be set to 0 */
+
+        struct mem_sharing_op_range { /* OP_RANGE_SHARE */
+            uint64_aligned_t first_gfn; /* IN: the first gfn */
+            uint64_aligned_t last_gfn; /* IN: the last gfn */
+            uint64_aligned_t opaque; /* Must be set to 0 */
+            domid_t client_domain; /* IN: the client domain id */
+            uint16_t _pad[3]; /* Must be set to 0 */
         } range;
-        struct mem_sharing_op_debug {     /* OP_DEBUG_xxx */
+
+        struct mem_sharing_op_debug { /* OP_DEBUG_xxx */
+
             union {
-                uint64_aligned_t gfn;      /* IN: gfn to debug          */
-                uint64_aligned_t mfn;      /* IN: mfn to debug          */
-                uint32_t gref;     /* IN: gref to debug         */
+                uint64_aligned_t gfn; /* IN: gfn to debug          */
+                uint64_aligned_t mfn; /* IN: mfn to debug          */
+                uint32_t gref; /* IN: gref to debug         */
             } u;
         } debug;
-        struct mem_sharing_op_fork {      /* OP_FORK{,_RESET} */
-            domid_t parent_domain;        /* IN: parent's domain id */
+
+        struct mem_sharing_op_fork { /* OP_FORK{,_RESET} */
+            domid_t parent_domain; /* IN: parent's domain id */
 /* Only makes sense for short-lived forks */
 #define XENMEM_FORK_WITH_IOMMU_ALLOWED (1u << 0)
 /* Only makes sense for short-lived forks */
 #define XENMEM_FORK_BLOCK_INTERRUPTS   (1u << 1)
 #define XENMEM_FORK_RESET_STATE        (1u << 2)
 #define XENMEM_FORK_RESET_MEMORY       (1u << 3)
-            uint16_t flags;               /* IN: optional settings */
-            uint32_t pad;                 /* Must be set to 0 */
+            uint16_t flags; /* IN: optional settings */
+            uint32_t pad; /* Must be set to 0 */
         } fork;
     } u;
 };
@@ -583,6 +598,7 @@ DEFINE_XEN_GUEST_HANDLE(xen_mem_sharing_op_t);
  * enumerates those regions so the toolstack can avoid using them.
  */
 #define XENMEM_reserved_device_memory_map   27
+
 struct xen_reserved_device_memory {
     xen_pfn_t start_pfn;
     xen_ulong_t nr_pages;
@@ -603,6 +619,7 @@ struct xen_reserved_device_memory_map {
     unsigned int nr_entries;
     /* OUT */
     XEN_GUEST_HANDLE(xen_reserved_device_memory_t) buffer;
+
     /* IN */
     union {
         physdev_pci_device_t pci;
@@ -618,6 +635,7 @@ DEFINE_XEN_GUEST_HANDLE(xen_reserved_device_memory_map_t);
  * mapped directly by a tools domain.
  */
 #define XENMEM_acquire_resource 28
+
 struct xen_mem_acquire_resource {
     /* IN - The domain whose resource is to be mapped */
     domid_t domid;
@@ -723,15 +741,18 @@ struct xen_vnuma_topology_info {
     unsigned int nr_vnodes;
     unsigned int nr_vcpus;
     unsigned int nr_vmemranges;
+
     /* OUT */
     union {
         XEN_GUEST_HANDLE(uint) h;
         uint64_t pad;
     } vdistance;
+
     union {
         XEN_GUEST_HANDLE(uint) h;
         uint64_t pad;
     } vcpu_to_vnode;
+
     union {
         XEN_GUEST_HANDLE(xen_vmemrange_t) h;
         uint64_t pad;

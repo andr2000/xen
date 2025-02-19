@@ -58,8 +58,8 @@ void __init boot_opal_init(const void *fdt)
     opal_entry = fdt_getprop(fdt, opal_node, "opal-entry-address", NULL);
     if ( !opal_base || !opal_entry )
     {
-        early_printk("Failed to get opal-base-address/opal-entry-address "
-                     "property from DT!\n");
+        early_printk(
+            "Failed to get opal-base-address/opal-entry-address " "property from DT!\n");
         die();
     }
 

@@ -100,7 +100,7 @@ int compat_arch_memory_op(unsigned long cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
         struct domain *d = current->domain;
         struct compat_machphys_mapping mapping = {
             .v_start = MACH2PHYS_COMPAT_VIRT_START(d),
-            .v_end   = MACH2PHYS_COMPAT_VIRT_END,
+            .v_end = MACH2PHYS_COMPAT_VIRT_END,
             .max_mfn = MACH2PHYS_COMPAT_NR_ENTRIES(d) - 1
         };
 
@@ -177,9 +177,9 @@ int compat_arch_memory_op(unsigned long cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
 #ifdef CONFIG_PV
 DEFINE_XEN_GUEST_HANDLE(mmuext_op_compat_t);
 
-int compat_mmuext_op(
-    XEN_GUEST_HANDLE_PARAM(void) arg, unsigned int count,
-    XEN_GUEST_HANDLE_PARAM(uint) pdone, unsigned int foreigndom)
+int compat_mmuext_op(XEN_GUEST_HANDLE_PARAM(void) arg, unsigned int count,
+                     XEN_GUEST_HANDLE_PARAM(uint) pdone,
+                     unsigned int foreigndom)
 {
     unsigned int i, preempt_mask;
     int rc = 0;
@@ -288,8 +288,8 @@ int compat_mmuext_op(
                 struct cpu_user_regs *regs = guest_cpu_user_regs();
                 struct mc_state *mcs = &current->mc_state;
                 unsigned int arg1 = !(mcs->flags & MCSF_in_multicall)
-                                    ? regs->ecx
-                                    : mcs->call.args[1];
+                                        ? regs->ecx
+                                        : mcs->call.args[1];
                 unsigned int left = arg1 & ~MMU_UPDATE_PREEMPTED;
 
                 BUG_ON(left == arg1 && left != i);
@@ -299,7 +299,10 @@ int compat_mmuext_op(
                 left = 1;
                 if ( arg1 != MMU_UPDATE_PREEMPTED )
                 {
-                    BUG_ON(!hypercall_xlat_continuation(&left, 4, 0x01, nat_ops,
+                    BUG_ON(!hypercall_xlat_continuation(&left,
+                                                        4,
+                                                        0x01,
+                                                        nat_ops,
                                                         cmp_uops));
                     if ( !(mcs->flags & MCSF_in_multicall) )
                         regs->ecx += count - i;

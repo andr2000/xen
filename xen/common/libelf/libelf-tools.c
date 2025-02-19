@@ -31,8 +31,8 @@ const char *elf_check_broken(const struct elf_binary *elf)
 }
 
 static bool elf_ptrval_in_range(elf_ptrval ptrval, uint64_t size,
-                               const void *region, uint64_t regionsize)
-    /*
+                                const void *region, uint64_t regionsize)
+/*
      * Returns true if the putative memory area [ptrval,ptrval+size>
      * is completely inside the region [region,region+regionsize>.
      *
@@ -44,16 +44,14 @@ static bool elf_ptrval_in_range(elf_ptrval ptrval, uint64_t size,
 {
     elf_ptrval regionp = (elf_ptrval)region;
 
-    if ( (region == NULL) ||
-         (ptrval < regionp) ||              /* start is before region */
+    if ( (region == NULL) || (ptrval < regionp) || /* start is before region */
          (ptrval > regionp + regionsize) || /* start is after region */
          (size > regionsize - (ptrval - regionp)) ) /* too big */
         return 0;
     return 1;
 }
 
-bool elf_access_ok(struct elf_binary * elf,
-                  uint64_t ptrval, size_t size)
+bool elf_access_ok(struct elf_binary *elf, uint64_t ptrval, size_t size)
 {
     if ( elf_ptrval_in_range(ptrval, size, elf->image_base, elf->size) )
         return 1;
@@ -65,11 +63,10 @@ bool elf_access_ok(struct elf_binary * elf,
     return 0;
 }
 
-void elf_memcpy_safe(struct elf_binary *elf, elf_ptrval dst,
-                     elf_ptrval src, size_t size)
+void elf_memcpy_safe(struct elf_binary *elf, elf_ptrval dst, elf_ptrval src,
+                     size_t size)
 {
-    if ( elf_access_ok(elf, dst, size) &&
-         elf_access_ok(elf, src, size) )
+    if ( elf_access_ok(elf, dst, size) && elf_access_ok(elf, src, size) )
     {
         /* use memmove because these checks do not prove that the
          * regions don't overlap and overlapping regions grant
@@ -86,7 +83,7 @@ void elf_memset_safe(struct elf_binary *elf, elf_ptrval dst, int c, size_t size)
     }
 }
 
-uint64_t elf_access_unsigned(struct elf_binary * elf, elf_ptrval base,
+uint64_t elf_access_unsigned(struct elf_binary *elf, elf_ptrval base,
                              uint64_t moreoffset, size_t size)
 {
     elf_ptrval ptrval = base + moreoffset;
@@ -147,7 +144,8 @@ unsigned elf_phdr_count(struct elf_binary *elf)
     return elf_uval(elf, elf->ehdr, e_phnum);
 }
 
-ELF_HANDLE_DECL(elf_shdr) elf_shdr_by_name(struct elf_binary *elf, const char *name)
+ELF_HANDLE_DECL(elf_shdr) elf_shdr_by_name(struct elf_binary *elf,
+                                           const char *name)
 {
     unsigned i, count = elf_shdr_count(elf);
     ELF_HANDLE_DECL(elf_shdr) shdr;
@@ -166,7 +164,8 @@ ELF_HANDLE_DECL(elf_shdr) elf_shdr_by_name(struct elf_binary *elf, const char *n
     return ELF_INVALID_HANDLE(elf_shdr);
 }
 
-ELF_HANDLE_DECL(elf_shdr) elf_shdr_by_index(struct elf_binary *elf, unsigned index)
+ELF_HANDLE_DECL(elf_shdr) elf_shdr_by_index(struct elf_binary *elf,
+                                            unsigned index)
 {
     unsigned count = elf_shdr_count(elf);
     elf_ptrval ptr;
@@ -174,13 +173,13 @@ ELF_HANDLE_DECL(elf_shdr) elf_shdr_by_index(struct elf_binary *elf, unsigned ind
     if ( index >= count )
         return ELF_INVALID_HANDLE(elf_shdr);
 
-    ptr = (ELF_IMAGE_BASE(elf)
-           + elf_uval(elf, elf->ehdr, e_shoff)
-           + elf_uval(elf, elf->ehdr, e_shentsize) * index);
+    ptr = (ELF_IMAGE_BASE(elf) + elf_uval(elf, elf->ehdr, e_shoff) +
+           elf_uval(elf, elf->ehdr, e_shentsize) * index);
     return ELF_MAKE_HANDLE(elf_shdr, ptr);
 }
 
-ELF_HANDLE_DECL(elf_phdr) elf_phdr_by_index(struct elf_binary *elf, unsigned index)
+ELF_HANDLE_DECL(elf_phdr) elf_phdr_by_index(struct elf_binary *elf,
+                                            unsigned index)
 {
     unsigned count = elf_phdr_count(elf);
     elf_ptrval ptr;
@@ -188,12 +187,10 @@ ELF_HANDLE_DECL(elf_phdr) elf_phdr_by_index(struct elf_binary *elf, unsigned ind
     if ( index >= count )
         return ELF_INVALID_HANDLE(elf_phdr);
 
-    ptr = (ELF_IMAGE_BASE(elf)
-           + elf_uval(elf, elf->ehdr, e_phoff)
-           + elf_uval(elf, elf->ehdr, e_phentsize) * index);
+    ptr = (ELF_IMAGE_BASE(elf) + elf_uval(elf, elf->ehdr, e_phoff) +
+           elf_uval(elf, elf->ehdr, e_phentsize) * index);
     return ELF_MAKE_HANDLE(elf_phdr, ptr);
 }
-
 
 const char *elf_section_name(struct elf_binary *elf,
                              ELF_HANDLE_DECL(elf_shdr) shdr)
@@ -208,7 +205,8 @@ const char *elf_strval(struct elf_binary *elf, elf_ptrval start)
 {
     uint64_t length;
 
-    for ( length = 0; ; length++ ) {
+    for ( length = 0;; length++ )
+    {
         if ( !elf_access_ok(elf, start + length, 1) )
             return NULL;
         if ( !elf_access_unsigned(elf, start, length, 1) )
@@ -231,30 +229,34 @@ const char *elf_strfmt(struct elf_binary *elf, elf_ptrval start)
     return str;
 }
 
-elf_ptrval elf_section_start(struct elf_binary *elf, ELF_HANDLE_DECL(elf_shdr) shdr)
+elf_ptrval elf_section_start(struct elf_binary *elf,
+                             ELF_HANDLE_DECL(elf_shdr) shdr)
 {
     return ELF_IMAGE_BASE(elf) + elf_uval(elf, shdr, sh_offset);
 }
 
-elf_ptrval elf_section_end(struct elf_binary *elf, ELF_HANDLE_DECL(elf_shdr) shdr)
+elf_ptrval elf_section_end(struct elf_binary *elf,
+                           ELF_HANDLE_DECL(elf_shdr) shdr)
 {
-    return ELF_IMAGE_BASE(elf)
-        + elf_uval(elf, shdr, sh_offset) + elf_uval(elf, shdr, sh_size);
+    return ELF_IMAGE_BASE(elf) + elf_uval(elf, shdr, sh_offset) +
+           elf_uval(elf, shdr, sh_size);
 }
 
-elf_ptrval elf_segment_start(struct elf_binary *elf, ELF_HANDLE_DECL(elf_phdr) phdr)
+elf_ptrval elf_segment_start(struct elf_binary *elf,
+                             ELF_HANDLE_DECL(elf_phdr) phdr)
 {
-    return ELF_IMAGE_BASE(elf)
-        + elf_uval(elf, phdr, p_offset);
+    return ELF_IMAGE_BASE(elf) + elf_uval(elf, phdr, p_offset);
 }
 
-elf_ptrval elf_segment_end(struct elf_binary *elf, ELF_HANDLE_DECL(elf_phdr) phdr)
+elf_ptrval elf_segment_end(struct elf_binary *elf,
+                           ELF_HANDLE_DECL(elf_phdr) phdr)
 {
-    return ELF_IMAGE_BASE(elf)
-        + elf_uval(elf, phdr, p_offset) + elf_uval(elf, phdr, p_filesz);
+    return ELF_IMAGE_BASE(elf) + elf_uval(elf, phdr, p_offset) +
+           elf_uval(elf, phdr, p_filesz);
 }
 
-ELF_HANDLE_DECL(elf_sym) elf_sym_by_name(struct elf_binary *elf, const char *symbol)
+ELF_HANDLE_DECL(elf_sym) elf_sym_by_name(struct elf_binary *elf,
+                                         const char *symbol)
 {
     elf_ptrval ptr = elf_section_start(elf, elf->sym_tab);
     elf_ptrval end = elf_section_end(elf, elf->sym_tab);
@@ -279,7 +281,8 @@ ELF_HANDLE_DECL(elf_sym) elf_sym_by_name(struct elf_binary *elf, const char *sym
     return ELF_INVALID_HANDLE(elf_sym);
 }
 
-ELF_HANDLE_DECL(elf_sym) elf_sym_by_index(struct elf_binary *elf, unsigned index)
+ELF_HANDLE_DECL(elf_sym) elf_sym_by_index(struct elf_binary *elf,
+                                          unsigned index)
 {
     elf_ptrval ptr = elf_section_start(elf, elf->sym_tab);
     ELF_HANDLE_DECL(elf_sym) sym;
@@ -288,7 +291,8 @@ ELF_HANDLE_DECL(elf_sym) elf_sym_by_index(struct elf_binary *elf, unsigned index
     return sym;
 }
 
-const char *elf_note_name(struct elf_binary *elf, ELF_HANDLE_DECL(elf_note) note)
+const char *elf_note_name(struct elf_binary *elf,
+                          ELF_HANDLE_DECL(elf_note) note)
 {
     return elf_strval(elf, ELF_HANDLE_PTRVAL(note) + elf_size(elf, note));
 }
@@ -300,12 +304,13 @@ elf_ptrval elf_note_desc(struct elf_binary *elf, ELF_HANDLE_DECL(elf_note) note)
     return ELF_HANDLE_PTRVAL(note) + elf_size(elf, note) + namesz;
 }
 
-uint64_t elf_note_numeric(struct elf_binary *elf, ELF_HANDLE_DECL(elf_note) note)
+uint64_t elf_note_numeric(struct elf_binary *elf,
+                          ELF_HANDLE_DECL(elf_note) note)
 {
     elf_ptrval desc = elf_note_desc(elf, note);
     unsigned descsz = elf_uval(elf, note, descsz);
 
-    switch (descsz)
+    switch ( descsz )
     {
     case 1:
     case 2:
@@ -317,7 +322,8 @@ uint64_t elf_note_numeric(struct elf_binary *elf, ELF_HANDLE_DECL(elf_note) note
     }
 }
 
-uint64_t elf_note_numeric_array(struct elf_binary *elf, ELF_HANDLE_DECL(elf_note) note,
+uint64_t elf_note_numeric_array(struct elf_binary *elf,
+                                ELF_HANDLE_DECL(elf_note) note,
                                 unsigned int unitsz, unsigned int idx)
 {
     elf_ptrval desc = elf_note_desc(elf, note);
@@ -325,7 +331,7 @@ uint64_t elf_note_numeric_array(struct elf_binary *elf, ELF_HANDLE_DECL(elf_note
 
     if ( descsz % unitsz || idx >= descsz / unitsz )
         return 0;
-    switch (unitsz)
+    switch ( unitsz )
     {
     case 1:
     case 2:
@@ -337,16 +343,17 @@ uint64_t elf_note_numeric_array(struct elf_binary *elf, ELF_HANDLE_DECL(elf_note
     }
 }
 
-ELF_HANDLE_DECL(elf_note) elf_note_next(struct elf_binary *elf, ELF_HANDLE_DECL(elf_note) note)
+ELF_HANDLE_DECL(elf_note) elf_note_next(struct elf_binary *elf,
+                                        ELF_HANDLE_DECL(elf_note) note)
 {
     unsigned namesz = (elf_uval(elf, note, namesz) + 3) & ~3;
     unsigned descsz = (elf_uval(elf, note, descsz) + 3) & ~3;
 
-    elf_ptrval ptrval = ELF_HANDLE_PTRVAL(note)
-        + elf_size(elf, note) + namesz + descsz;
+    elf_ptrval ptrval = ELF_HANDLE_PTRVAL(note) + elf_size(elf, note) + namesz +
+                        descsz;
 
-    if ( ( ptrval <= ELF_HANDLE_PTRVAL(note) || /* wrapped or stuck */
-           !elf_access_ok(elf, ELF_HANDLE_PTRVAL(note), 1) ) )
+    if ( (ptrval <= ELF_HANDLE_PTRVAL(note) || /* wrapped or stuck */
+          !elf_access_ok(elf, ELF_HANDLE_PTRVAL(note), 1)) )
         ptrval = ELF_MAX_PTRVAL; /* terminate caller's loop */
 
     return ELF_MAKE_HANDLE(elf_note, ptrval);
@@ -364,7 +371,8 @@ bool elf_is_elfbinary(const void *image_start, size_t image_size)
     return IS_ELF(*ehdr);
 }
 
-bool elf_phdr_is_loadable(struct elf_binary *elf, ELF_HANDLE_DECL(elf_phdr) phdr)
+bool elf_phdr_is_loadable(struct elf_binary *elf,
+                          ELF_HANDLE_DECL(elf_phdr) phdr)
 {
     uint64_t p_type = elf_uval(elf, phdr, p_type);
     uint64_t p_flags = elf_uval(elf, phdr, p_flags);

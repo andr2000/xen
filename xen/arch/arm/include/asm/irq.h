@@ -12,7 +12,7 @@
 #define IRQ_TYPE_NONE           DT_IRQ_TYPE_NONE
 #define IRQ_TYPE_EDGE_RISING    DT_IRQ_TYPE_EDGE_RISING
 #define IRQ_TYPE_EDGE_FALLING   DT_IRQ_TYPE_EDGE_FALLING
-#define IRQ_TYPE_EDGE_BOTH      DT_IRQ_TYPE_EDGE_BOTH 
+#define IRQ_TYPE_EDGE_BOTH      DT_IRQ_TYPE_EDGE_BOTH
 #define IRQ_TYPE_LEVEL_HIGH     DT_IRQ_TYPE_LEVEL_HIGH
 #define IRQ_TYPE_LEVEL_LOW      DT_IRQ_TYPE_LEVEL_LOW
 #define IRQ_TYPE_LEVEL_MASK     DT_IRQ_TYPE_LEVEL_MASK
@@ -22,12 +22,10 @@
 #define NR_VECTORS 256 /* XXX */
 
 typedef struct {
-    DECLARE_BITMAP(_bits,NR_VECTORS);
+    DECLARE_BITMAP(_bits, NR_VECTORS);
 } vmask_t;
 
-struct arch_pirq
-{
-};
+struct arch_pirq {};
 
 struct arch_irq_desc {
     unsigned int type;
@@ -73,8 +71,8 @@ bool is_assignable_irq(unsigned int irq);
 
 void init_IRQ(void);
 
-int route_irq_to_guest(struct domain *d, unsigned int virq,
-                       unsigned int irq, const char *devname);
+int route_irq_to_guest(struct domain *d, unsigned int virq, unsigned int irq,
+                       const char *devname);
 int release_guest_irq(struct domain *d, unsigned int virq);
 
 void arch_move_irqs(struct vcpu *v);

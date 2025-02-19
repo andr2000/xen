@@ -62,61 +62,63 @@ ACPI_MODULE_NAME("utmisc")
  ******************************************************************************/
 const char *__init acpi_ut_validate_exception(acpi_status status)
 {
-	acpi_status sub_status;
-	const char *exception = NULL;
+    acpi_status sub_status;
+    const char *exception = NULL;
 
-	ACPI_FUNCTION_ENTRY();
+    ACPI_FUNCTION_ENTRY();
 
-	/*
+    /*
 	 * Status is composed of two parts, a "type" and an actual code
 	 */
-	sub_status = (status & ~AE_CODE_MASK);
+    sub_status = (status & ~AE_CODE_MASK);
 
-	switch (status & AE_CODE_MASK) {
-	case AE_CODE_ENVIRONMENTAL:
+    switch ( status & AE_CODE_MASK )
+    {
+    case AE_CODE_ENVIRONMENTAL:
 
-		if (sub_status <= AE_CODE_ENV_MAX) {
-			exception = acpi_gbl_exception_names_env[sub_status];
-		}
-		break;
+        if ( sub_status <= AE_CODE_ENV_MAX )
+        {
+            exception = acpi_gbl_exception_names_env[sub_status];
+        }
+        break;
 
-	case AE_CODE_PROGRAMMER:
+    case AE_CODE_PROGRAMMER:
 
-		if (sub_status <= AE_CODE_PGM_MAX) {
-			exception =
-			    acpi_gbl_exception_names_pgm[sub_status - 1];
-		}
-		break;
+        if ( sub_status <= AE_CODE_PGM_MAX )
+        {
+            exception = acpi_gbl_exception_names_pgm[sub_status - 1];
+        }
+        break;
 
-	case AE_CODE_ACPI_TABLES:
+    case AE_CODE_ACPI_TABLES:
 
-		if (sub_status <= AE_CODE_TBL_MAX) {
-			exception =
-			    acpi_gbl_exception_names_tbl[sub_status - 1];
-		}
-		break;
+        if ( sub_status <= AE_CODE_TBL_MAX )
+        {
+            exception = acpi_gbl_exception_names_tbl[sub_status - 1];
+        }
+        break;
 
-	case AE_CODE_AML:
+    case AE_CODE_AML:
 
-		if (sub_status <= AE_CODE_AML_MAX) {
-			exception =
-			    acpi_gbl_exception_names_aml[sub_status - 1];
-		}
-		break;
+        if ( sub_status <= AE_CODE_AML_MAX )
+        {
+            exception = acpi_gbl_exception_names_aml[sub_status - 1];
+        }
+        break;
 
-	case AE_CODE_CONTROL:
+    case AE_CODE_CONTROL:
 
-		if (sub_status <= AE_CODE_CTRL_MAX) {
-			exception =
-			    acpi_gbl_exception_names_ctrl[sub_status - 1];
-		}
-		break;
+        if ( sub_status <= AE_CODE_CTRL_MAX )
+        {
+            exception = acpi_gbl_exception_names_ctrl[sub_status - 1];
+        }
+        break;
 
-	default:
-		break;
-	}
+    default:
+        break;
+    }
 
-	return (ACPI_CAST_PTR(const char, exception));
+    return (ACPI_CAST_PTR(const char, exception));
 }
 
 /*******************************************************************************
@@ -136,43 +138,44 @@ const char *__init acpi_ut_validate_exception(acpi_status status)
 void ACPI_INTERNAL_VAR_XFACE __init
 acpi_ut_error(const char *module_name, u32 line_number, const char *format, ...)
 {
-	va_list args;
+    va_list args;
 
-	acpi_os_printf("ACPI Error (%s-%04d): ", module_name, line_number);
+    acpi_os_printf("ACPI Error (%s-%04d): ", module_name, line_number);
 
-	va_start(args, format);
-	acpi_os_vprintf(format, args);
-	acpi_os_printf(" [%X]\n", ACPI_CA_VERSION);
-	va_end(args);
+    va_start(args, format);
+    acpi_os_vprintf(format, args);
+    acpi_os_printf(" [%X]\n", ACPI_CA_VERSION);
+    va_end(args);
 }
 
-void ACPI_INTERNAL_VAR_XFACE __init
-acpi_ut_warning(const char *module_name, u32 line_number, const char *format, ...)
+void ACPI_INTERNAL_VAR_XFACE __init acpi_ut_warning(const char *module_name,
+                                                    u32 line_number,
+                                                    const char *format, ...)
 {
-	va_list args;
+    va_list args;
 
-	acpi_os_printf("ACPI Warning (%s-%04d): ", module_name, line_number);
+    acpi_os_printf("ACPI Warning (%s-%04d): ", module_name, line_number);
 
-	va_start(args, format);
-	acpi_os_vprintf(format, args);
-	acpi_os_printf(" [%X]\n", ACPI_CA_VERSION);
-	va_end(args);
-	va_end(args);
+    va_start(args, format);
+    acpi_os_vprintf(format, args);
+    acpi_os_printf(" [%X]\n", ACPI_CA_VERSION);
+    va_end(args);
+    va_end(args);
 }
 
 void ACPI_INTERNAL_VAR_XFACE __init
 acpi_ut_info(const char *module_name, u32 line_number, const char *format, ...)
 {
-	va_list args;
+    va_list args;
 
-	/*
+    /*
 	 * Removed module_name, line_number, and acpica version, not needed
 	 * for info output
 	 */
-	acpi_os_printf("ACPI: ");
+    acpi_os_printf("ACPI: ");
 
-	va_start(args, format);
-	acpi_os_vprintf(format, args);
-	acpi_os_printf("\n");
-	va_end(args);
+    va_start(args, format);
+    acpi_os_vprintf(format, args);
+    acpi_os_printf("\n");
+    va_end(args);
 }

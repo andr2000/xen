@@ -30,9 +30,11 @@
 
 struct priv_op_ctxt {
     struct x86_emulate_ctxt ctxt;
+
     struct {
         unsigned long base, limit;
     } cs;
+
     char *io_emul_stub;
     unsigned int bpmatch;
 };
@@ -58,25 +60,25 @@ static io_emul_stub_t *io_emul_stub_setup(struct priv_op_ctxt *ctxt, u8 opcode,
      * performing the real I/O.
      */
     static const char prologue[] = {
-        0x53,       /* push %rbx */
-        0x55,       /* push %rbp */
+        0x53, /* push %rbx */
+        0x55, /* push %rbp */
         0x41, 0x54, /* push %r12 */
         0x41, 0x55, /* push %r13 */
         0x41, 0x56, /* push %r14 */
         0x41, 0x57, /* push %r15 */
-        0x57,       /* push %rdi (param for save_guest_gprs) */
-    };              /* call load_guest_gprs */
-                    /* <I/O stub> */
-                    /* call save_guest_gprs */
+        0x57, /* push %rdi (param for save_guest_gprs) */
+    }; /* call load_guest_gprs */
+    /* <I/O stub> */
+    /* call save_guest_gprs */
     static const char epilogue[] = {
-        0x5f,       /* pop %rdi  */
+        0x5f, /* pop %rdi  */
         0x41, 0x5f, /* pop %r15  */
         0x41, 0x5e, /* pop %r14  */
         0x41, 0x5d, /* pop %r13  */
         0x41, 0x5c, /* pop %r12  */
-        0x5d,       /* pop %rbp  */
-        0x5b,       /* pop %rbx  */
-        0xc3,       /* ret       */
+        0x5d, /* pop %rbp  */
+        0x5b, /* pop %rbx  */
+        0xc3, /* ret       */
     };
 
     const struct stubs *this_stubs = &this_cpu(stubs);
@@ -95,8 +97,8 @@ static io_emul_stub_t *io_emul_stub_setup(struct priv_op_ctxt *ctxt, u8 opcode,
     })
 
     if ( !ctxt->io_emul_stub )
-        ctxt->io_emul_stub =
-            map_domain_page(_mfn(this_stubs->mfn)) + PAGE_OFFSET(stub_va);
+        ctxt->io_emul_stub = map_domain_page(_mfn(this_stubs->mfn)) +
+                             PAGE_OFFSET(stub_va);
 
     p = ctxt->io_emul_stub;
 
@@ -119,8 +121,8 @@ static io_emul_stub_t *io_emul_stub_setup(struct priv_op_ctxt *ctxt, u8 opcode,
     /* Default I/O stub. */
     if ( likely(!quirk_bytes) )
     {
-        *p++ = (bytes != 2) ? 0x90 : 0x66;  /* data16 or nop */
-        *p++ = opcode;                      /* <opcode>      */
+        *p++ = (bytes != 2) ? 0x90 : 0x66; /* data16 or nop */
+        *p++ = opcode; /* <opcode>      */
         *p++ = !(opcode & 8) ? port : 0x90; /* imm8 or nop   */
     }
 
@@ -143,12 +145,12 @@ static io_emul_stub_t *io_emul_stub_setup(struct priv_op_ctxt *ctxt, u8 opcode,
 #undef APPEND_BUFF
 }
 
-
 /* Perform IOPL check between the vcpu's shadowed IOPL, and the assumed cpl. */
 static bool iopl_ok(const struct vcpu *v, const struct cpu_user_regs *regs)
 {
-    unsigned int cpl = guest_kernel_mode(v, regs) ?
-        (VM_ASSIST(v->domain, architectural_iopl) ? 0 : 1) : 3;
+    unsigned int cpl = guest_kernel_mode(v, regs)
+                           ? (VM_ASSIST(v->domain, architectural_iopl) ? 0 : 1)
+                           : 3;
 
     ASSERT((v->arch.pv.iopl & ~X86_EFLAGS_IOPL) == 0);
 
@@ -252,10 +254,15 @@ static bool pci_cfg_ok(struct domain *currd, unsigned int start,
             start |= CF8_ADDR_HI(currd->arch.pci_cf8);
     }
 
-    return !write ?
-           xsm_pci_config_permission(XSM_HOOK, currd, machine_bdf,
-                                     start, start + size - 1, 0) == 0 :
-           pci_conf_write_intercept(0, machine_bdf, start, size, write) >= 0;
+    return !write
+               ? xsm_pci_config_permission(XSM_HOOK,
+                                           currd,
+                                           machine_bdf,
+                                           start,
+                                           start + size - 1,
+                                           0) == 0
+               : pci_conf_write_intercept(0, machine_bdf, start, size, write) >=
+                     0;
 }
 
 static uint32_t guest_io_read(unsigned int port, unsigned int bytes,
@@ -268,9 +275,12 @@ static uint32_t guest_io_read(unsigned int port, unsigned int bytes,
     {
         switch ( bytes )
         {
-        case 1: return inb(port);
-        case 2: return inw(port);
-        case 4: return inl(port);
+        case 1:
+            return inb(port);
+        case 2:
+            return inw(port);
+        case 4:
+            return inl(port);
         }
     }
 
@@ -324,8 +334,7 @@ static uint32_t guest_io_read(unsigned int port, unsigned int bytes,
     return data;
 }
 
-static unsigned int check_guest_io_breakpoint(struct vcpu *v,
-                                              unsigned int port,
+static unsigned int check_guest_io_breakpoint(struct vcpu *v, unsigned int port,
                                               unsigned int len)
 {
     unsigned int i, match = 0;
@@ -351,9 +360,8 @@ static unsigned int check_guest_io_breakpoint(struct vcpu *v,
     return match;
 }
 
-static int cf_check read_io(
-    unsigned int port, unsigned int bytes, unsigned long *val,
-    struct x86_emulate_ctxt *ctxt)
+static int cf_check read_io(unsigned int port, unsigned int bytes,
+                            unsigned long *val, struct x86_emulate_ctxt *ctxt)
 {
     struct priv_op_ctxt *poc = container_of(ctxt, struct priv_op_ctxt, ctxt);
     struct vcpu *curr = current;
@@ -407,8 +415,8 @@ static void _guest_io_write(unsigned int port, unsigned int bytes,
     }
 }
 
-static void guest_io_write(unsigned int port, unsigned int bytes,
-                           uint32_t data, struct domain *currd)
+static void guest_io_write(unsigned int port, unsigned int bytes, uint32_t data,
+                           struct domain *currd)
 {
     if ( admin_io_okay(port, bytes, currd) )
     {
@@ -458,9 +466,8 @@ static void guest_io_write(unsigned int port, unsigned int bytes,
     }
 }
 
-static int cf_check write_io(
-    unsigned int port, unsigned int bytes, unsigned long val,
-    struct x86_emulate_ctxt *ctxt)
+static int cf_check write_io(unsigned int port, unsigned int bytes,
+                             unsigned long val, struct x86_emulate_ctxt *ctxt)
 {
     struct priv_op_ctxt *poc = container_of(ctxt, struct priv_op_ctxt, ctxt);
     struct vcpu *curr = current;
@@ -492,9 +499,9 @@ static int cf_check write_io(
     return X86EMUL_OKAY;
 }
 
-static int cf_check read_segment(
-    enum x86_segment seg, struct segment_register *reg,
-    struct x86_emulate_ctxt *ctxt)
+static int cf_check read_segment(enum x86_segment seg,
+                                 struct segment_register *reg,
+                                 struct x86_emulate_ctxt *ctxt)
 {
     /* Check if this is an attempt to access the I/O bitmap. */
     if ( seg == x86_seg_tr )
@@ -516,17 +523,29 @@ static int cf_check read_segment(
 
         switch ( seg )
         {
-        case x86_seg_cs: sel = ctxt->regs->cs; break;
-        case x86_seg_ds: sel = read_sreg(ds);  break;
-        case x86_seg_es: sel = read_sreg(es);  break;
-        case x86_seg_fs: sel = read_sreg(fs);  break;
-        case x86_seg_gs: sel = read_sreg(gs);  break;
-        case x86_seg_ss: sel = ctxt->regs->ss; break;
-        default: return X86EMUL_UNHANDLEABLE;
+        case x86_seg_cs:
+            sel = ctxt->regs->cs;
+            break;
+        case x86_seg_ds:
+            sel = read_sreg(ds);
+            break;
+        case x86_seg_es:
+            sel = read_sreg(es);
+            break;
+        case x86_seg_fs:
+            sel = read_sreg(fs);
+            break;
+        case x86_seg_gs:
+            sel = read_sreg(gs);
+            break;
+        case x86_seg_ss:
+            sel = ctxt->regs->ss;
+            break;
+        default:
+            return X86EMUL_UNHANDLEABLE;
         }
 
-        if ( !pv_emul_read_descriptor(sel, current, &reg->base,
-                                      &limit, &ar, 0) )
+        if ( !pv_emul_read_descriptor(sel, current, &reg->base, &limit, &ar, 0) )
             return X86EMUL_UNHANDLEABLE;
 
         reg->limit = limit;
@@ -560,10 +579,10 @@ static int cf_check read_segment(
         }
         else
             reg->db = 1;
-        reg->s   = 1;
+        reg->s = 1;
         reg->dpl = 3;
-        reg->p   = 1;
-        reg->g   = 1;
+        reg->p = 1;
+        reg->g = 1;
     }
 
     /*
@@ -571,8 +590,7 @@ static int cf_check read_segment(
      * Also do this for consistency for non-conforming code segments.
      */
     if ( (seg == x86_seg_ss ||
-          (seg == x86_seg_cs &&
-           !(reg->type & (_SEGMENT_EC >> 8)))) &&
+          (seg == x86_seg_cs && !(reg->type & (_SEGMENT_EC >> 8)))) &&
          guest_kernel_mode(current, ctxt->regs) )
         reg->dpl = 0;
 
@@ -600,15 +618,15 @@ static int pv_emul_virt_to_linear(unsigned long base, unsigned long offset,
 
     if ( unlikely(rc == X86EMUL_EXCEPTION) )
         x86_emul_hw_exception(seg != x86_seg_ss ? X86_EXC_GP : X86_EXC_SS,
-                              0, ctxt);
+                              0,
+                              ctxt);
 
     return rc;
 }
 
-static int cf_check rep_ins(
-    uint16_t port, enum x86_segment seg, unsigned long offset,
-    unsigned int bytes_per_rep, unsigned long *reps,
-    struct x86_emulate_ctxt *ctxt)
+static int cf_check rep_ins(uint16_t port, enum x86_segment seg,
+                            unsigned long offset, unsigned int bytes_per_rep,
+                            unsigned long *reps, struct x86_emulate_ctxt *ctxt)
 {
     struct priv_op_ctxt *poc = container_of(ctxt, struct priv_op_ctxt, ctxt);
     struct vcpu *curr = current;
@@ -631,8 +649,7 @@ static int cf_check rep_ins(
 
     if ( !sreg.p )
         return X86EMUL_UNHANDLEABLE;
-    if ( !sreg.s ||
-         (sreg.type & (_SEGMENT_CODE >> 8)) ||
+    if ( !sreg.s || (sreg.type & (_SEGMENT_CODE >> 8)) ||
          !(sreg.type & (_SEGMENT_WR >> 8)) )
     {
         x86_emul_hw_exception(X86_EXC_GP, 0, ctxt);
@@ -646,16 +663,23 @@ static int cf_check rep_ins(
         unsigned int data = guest_io_read(port, bytes_per_rep, currd);
         unsigned long addr;
 
-        rc = pv_emul_virt_to_linear(sreg.base, offset, bytes_per_rep,
-                                    sreg.limit, x86_seg_es, ctxt, &addr);
+        rc = pv_emul_virt_to_linear(sreg.base,
+                                    offset,
+                                    bytes_per_rep,
+                                    sreg.limit,
+                                    x86_seg_es,
+                                    ctxt,
+                                    &addr);
         if ( rc != X86EMUL_OKAY )
             return rc;
 
-        if ( (rc = __copy_to_guest_pv((void __user *)addr, &data,
+        if ( (rc = __copy_to_guest_pv((void __user *)addr,
+                                      &data,
                                       bytes_per_rep)) != 0 )
         {
             x86_emul_pagefault(PFEC_write_access,
-                               addr + bytes_per_rep - rc, ctxt);
+                               addr + bytes_per_rep - rc,
+                               ctxt);
             return X86EMUL_EXCEPTION;
         }
 
@@ -674,10 +698,9 @@ static int cf_check rep_ins(
     return X86EMUL_OKAY;
 }
 
-static int cf_check rep_outs(
-    enum x86_segment seg, unsigned long offset, uint16_t port,
-    unsigned int bytes_per_rep, unsigned long *reps,
-    struct x86_emulate_ctxt *ctxt)
+static int cf_check rep_outs(enum x86_segment seg, unsigned long offset,
+                             uint16_t port, unsigned int bytes_per_rep,
+                             unsigned long *reps, struct x86_emulate_ctxt *ctxt)
 {
     struct priv_op_ctxt *poc = container_of(ctxt, struct priv_op_ctxt, ctxt);
     struct vcpu *curr = current;
@@ -698,12 +721,12 @@ static int cf_check rep_outs(
 
     if ( !sreg.p )
         return X86EMUL_UNHANDLEABLE;
-    if ( !sreg.s ||
-         ((sreg.type & (_SEGMENT_CODE >> 8)) &&
-          !(sreg.type & (_SEGMENT_WR >> 8))) )
+    if ( !sreg.s || ((sreg.type & (_SEGMENT_CODE >> 8)) &&
+                     !(sreg.type & (_SEGMENT_WR >> 8))) )
     {
         x86_emul_hw_exception(seg != x86_seg_ss ? X86_EXC_GP : X86_EXC_SS,
-                              0, ctxt);
+                              0,
+                              ctxt);
         return X86EMUL_EXCEPTION;
     }
 
@@ -714,12 +737,18 @@ static int cf_check rep_outs(
         unsigned int data = 0;
         unsigned long addr;
 
-        rc = pv_emul_virt_to_linear(sreg.base, offset, bytes_per_rep,
-                                    sreg.limit, seg, ctxt, &addr);
+        rc = pv_emul_virt_to_linear(sreg.base,
+                                    offset,
+                                    bytes_per_rep,
+                                    sreg.limit,
+                                    seg,
+                                    ctxt,
+                                    &addr);
         if ( rc != X86EMUL_OKAY )
             return rc;
 
-        if ( (rc = __copy_from_guest_pv(&data, (void __user *)addr,
+        if ( (rc = __copy_from_guest_pv(&data,
+                                        (void __user *)addr,
                                         bytes_per_rep)) != 0 )
         {
             x86_emul_pagefault(0, addr + bytes_per_rep - rc, ctxt);
@@ -743,8 +772,8 @@ static int cf_check rep_outs(
     return X86EMUL_OKAY;
 }
 
-static int cf_check read_cr(
-    unsigned int reg, unsigned long *val, struct x86_emulate_ctxt *ctxt)
+static int cf_check read_cr(unsigned int reg, unsigned long *val,
+                            struct x86_emulate_ctxt *ctxt)
 {
     const struct vcpu *curr = current;
 
@@ -786,8 +815,8 @@ static int cf_check read_cr(
     return X86EMUL_UNHANDLEABLE;
 }
 
-static int cf_check write_cr(
-    unsigned int reg, unsigned long val, struct x86_emulate_ctxt *ctxt)
+static int cf_check write_cr(unsigned int reg, unsigned long val,
+                             struct x86_emulate_ctxt *ctxt)
 {
     struct vcpu *curr = current;
 
@@ -815,8 +844,8 @@ static int cf_check write_cr(
         struct page_info *page;
         int rc;
 
-        gfn = !is_pv_32bit_domain(currd)
-              ? xen_cr3_to_pfn(val) : compat_cr3_to_pfn(val);
+        gfn = !is_pv_32bit_domain(currd) ? xen_cr3_to_pfn(val)
+                                         : compat_cr3_to_pfn(val);
         page = get_page_from_gfn(currd, gfn, NULL, P2M_ALLOC);
         if ( !page )
             break;
@@ -865,13 +894,12 @@ static uint64_t guest_efer(const struct domain *d)
      */
     if ( is_pv_32bit_domain(d) )
         val &= ~(EFER_LME | EFER_LMA |
-                 (boot_cpu_data.x86_vendor == X86_VENDOR_INTEL
-                  ? EFER_SCE : 0));
+                 (boot_cpu_data.x86_vendor == X86_VENDOR_INTEL ? EFER_SCE : 0));
     return val;
 }
 
-static int cf_check read_msr(
-    unsigned int reg, uint64_t *val, struct x86_emulate_ctxt *ctxt)
+static int cf_check read_msr(unsigned int reg, uint64_t *val,
+                             struct x86_emulate_ctxt *ctxt)
 {
     struct vcpu *curr = current;
     const struct domain *currd = curr->domain;
@@ -969,16 +997,16 @@ static int cf_check read_msr(
         *val = 0;
         return X86EMUL_OKAY;
 
-    case MSR_P6_PERFCTR(0) ... MSR_P6_PERFCTR(7):
-    case MSR_P6_EVNTSEL(0) ... MSR_P6_EVNTSEL(3):
+    case MSR_P6_PERFCTR(0)... MSR_P6_PERFCTR(7):
+    case MSR_P6_EVNTSEL(0)... MSR_P6_EVNTSEL(3):
     case MSR_CORE_PERF_FIXED_CTR0 ... MSR_CORE_PERF_FIXED_CTR2:
     case MSR_CORE_PERF_FIXED_CTR_CTRL ... MSR_CORE_PERF_GLOBAL_OVF_CTRL:
         if ( boot_cpu_data.x86_vendor == X86_VENDOR_INTEL )
         {
             vpmu_msr = true;
             /* fall through */
-    case MSR_AMD_FAM15H_EVNTSEL0 ... MSR_AMD_FAM15H_PERFCTR5:
-    case MSR_K7_EVNTSEL0 ... MSR_K7_PERFCTR3:
+        case MSR_AMD_FAM15H_EVNTSEL0 ... MSR_AMD_FAM15H_PERFCTR5:
+        case MSR_K7_EVNTSEL0 ... MSR_K7_PERFCTR3:
             if ( vpmu_msr || (boot_cpu_data.x86_vendor &
                               (X86_VENDOR_AMD | X86_VENDOR_HYGON)) )
             {
@@ -1004,7 +1032,7 @@ static int cf_check read_msr(
         return X86EMUL_OKAY;
     }
 
- done:
+done:
     if ( ret != X86EMUL_OKAY && !curr->arch.pv.trap_ctxt[X86_EXC_GP].address &&
          (reg >> 16) != 0x4000 && !rdmsr_safe(reg, tmp) )
     {
@@ -1019,8 +1047,8 @@ static int cf_check read_msr(
     return ret;
 }
 
-static int cf_check write_msr(
-    unsigned int reg, uint64_t val, struct x86_emulate_ctxt *ctxt)
+static int cf_check write_msr(unsigned int reg, uint64_t val,
+                              struct x86_emulate_ctxt *ctxt)
 {
     struct vcpu *curr = current;
     const struct domain *currd = curr->domain;
@@ -1082,8 +1110,7 @@ static int cf_check write_msr(
     case MSR_K8_PSTATE6:
     case MSR_K8_PSTATE7:
     case MSR_K8_HWCR:
-        if ( !(boot_cpu_data.x86_vendor &
-               (X86_VENDOR_AMD | X86_VENDOR_HYGON)) )
+        if ( !(boot_cpu_data.x86_vendor & (X86_VENDOR_AMD | X86_VENDOR_HYGON)) )
             break;
         if ( likely(!is_cpufreq_controller(currd)) ||
              wrmsr_safe(reg, val) == 0 )
@@ -1108,14 +1135,13 @@ static int cf_check write_msr(
             return X86EMUL_OKAY;
         if ( rdmsr_safe(MSR_FAM10H_MMIO_CONF_BASE, temp) != 0 )
             break;
-        if ( (pci_probe & PCI_PROBE_MASK) == PCI_PROBE_MMCONF ?
-             temp != val :
-             ((temp ^ val) &
-              ~(FAM10H_MMIO_CONF_ENABLE |
-                (FAM10H_MMIO_CONF_BUSRANGE_MASK <<
-                 FAM10H_MMIO_CONF_BUSRANGE_SHIFT) |
-                ((u64)FAM10H_MMIO_CONF_BASE_MASK <<
-                 FAM10H_MMIO_CONF_BASE_SHIFT))) )
+        if ( (pci_probe & PCI_PROBE_MASK) == PCI_PROBE_MMCONF
+                 ? temp != val
+                 : ((temp ^ val) & ~(FAM10H_MMIO_CONF_ENABLE |
+                                     (FAM10H_MMIO_CONF_BUSRANGE_MASK
+                                      << FAM10H_MMIO_CONF_BUSRANGE_SHIFT) |
+                                     ((u64)FAM10H_MMIO_CONF_BASE_MASK
+                                      << FAM10H_MMIO_CONF_BASE_SHIFT))) )
             goto invalid;
         if ( wrmsr_safe(MSR_FAM10H_MMIO_CONF_BASE, val) == 0 )
             return X86EMUL_OKAY;
@@ -1146,15 +1172,15 @@ static int cf_check write_msr(
             return X86EMUL_OKAY;
         break;
 
-    case MSR_P6_PERFCTR(0) ... MSR_P6_PERFCTR(7):
-    case MSR_P6_EVNTSEL(0) ... MSR_P6_EVNTSEL(3):
+    case MSR_P6_PERFCTR(0)... MSR_P6_PERFCTR(7):
+    case MSR_P6_EVNTSEL(0)... MSR_P6_EVNTSEL(3):
     case MSR_CORE_PERF_FIXED_CTR0 ... MSR_CORE_PERF_FIXED_CTR2:
     case MSR_CORE_PERF_FIXED_CTR_CTRL ... MSR_CORE_PERF_GLOBAL_OVF_CTRL:
         if ( boot_cpu_data.x86_vendor == X86_VENDOR_INTEL )
         {
             vpmu_msr = true;
-    case MSR_AMD_FAM15H_EVNTSEL0 ... MSR_AMD_FAM15H_PERFCTR5:
-    case MSR_K7_EVNTSEL0 ... MSR_K7_PERFCTR3:
+        case MSR_AMD_FAM15H_EVNTSEL0 ... MSR_AMD_FAM15H_PERFCTR5:
+        case MSR_K7_EVNTSEL0 ... MSR_K7_PERFCTR3:
             if ( vpmu_msr || (boot_cpu_data.x86_vendor &
                               (X86_VENDOR_AMD | X86_VENDOR_HYGON)) )
             {
@@ -1173,23 +1199,27 @@ static int cf_check write_msr(
             return X86EMUL_OKAY;
 
         gdprintk(XENLOG_WARNING,
-                 "WRMSR 0x%08x val 0x%016"PRIx64" unimplemented\n",
-                 reg, val);
+                 "WRMSR 0x%08x val 0x%016" PRIx64 " unimplemented\n",
+                 reg,
+                 val);
         break;
 
     invalid:
         gdprintk(XENLOG_WARNING,
-                 "Domain attempted WRMSR 0x%08x from 0x%016"PRIx64" to 0x%016"PRIx64"\n",
-                 reg, temp, val);
+                 "Domain attempted WRMSR 0x%08x from 0x%016" PRIx64
+                 " to 0x%016" PRIx64 "\n",
+                 reg,
+                 temp,
+                 val);
         return X86EMUL_OKAY;
     }
 
     return X86EMUL_UNHANDLEABLE;
 }
 
-static int cf_check cache_op(
-    enum x86emul_cache_op op, enum x86_segment seg,
-    unsigned long offset, struct x86_emulate_ctxt *ctxt)
+static int cf_check cache_op(enum x86emul_cache_op op, enum x86_segment seg,
+                             unsigned long offset,
+                             struct x86_emulate_ctxt *ctxt)
 {
     ASSERT(op == x86emul_wbinvd || op == x86emul_wbnoinvd);
 
@@ -1208,8 +1238,8 @@ static int cf_check cache_op(
     return X86EMUL_OKAY;
 }
 
-static int cf_check validate(
-    const struct x86_emulate_state *state, struct x86_emulate_ctxt *ctxt)
+static int cf_check validate(const struct x86_emulate_state *state,
+                             struct x86_emulate_ctxt *ctxt)
 {
     switch ( ctxt->opcode )
     {
@@ -1218,15 +1248,16 @@ static int cf_check validate(
     case 0xec ... 0xef: /* in / out (port in %dx) */
     case X86EMUL_OPC(0x0f, 0x06): /* clts */
     case X86EMUL_OPC(0x0f, 0x09): /* wbinvd */
-    case X86EMUL_OPC(0x0f, 0x20) ...
-         X86EMUL_OPC(0x0f, 0x23): /* mov to/from cr/dr */
+    case X86EMUL_OPC(0x0f, 0x20)... X86EMUL_OPC(0x0f,
+                                                0x23): /* mov to/from cr/dr */
     case X86EMUL_OPC(0x0f, 0x30): /* wrmsr */
     case X86EMUL_OPC(0x0f, 0x31): /* rdtsc */
     case X86EMUL_OPC(0x0f, 0x32): /* rdmsr */
     case X86EMUL_OPC(0x0f, 0xa2): /* cpuid */
         return X86EMUL_OKAY;
 
-    case 0xfa: case 0xfb: /* cli / sti */
+    case 0xfa:
+    case 0xfb: /* cli / sti */
         if ( !iopl_ok(current, ctxt->regs) )
             break;
         /*
@@ -1258,9 +1289,9 @@ static int cf_check validate(
     return X86EMUL_UNHANDLEABLE;
 }
 
-static int cf_check insn_fetch(
-    unsigned long offset, void *p_data, unsigned int bytes,
-    struct x86_emulate_ctxt *ctxt)
+static int cf_check insn_fetch(unsigned long offset, void *p_data,
+                               unsigned int bytes,
+                               struct x86_emulate_ctxt *ctxt)
 {
     const struct priv_op_ctxt *poc =
         container_of(ctxt, struct priv_op_ctxt, ctxt);
@@ -1271,8 +1302,13 @@ static int cf_check insn_fetch(
     if ( !bytes )
         return X86EMUL_UNHANDLEABLE;
 
-    rc = pv_emul_virt_to_linear(poc->cs.base, offset, bytes, poc->cs.limit,
-                                x86_seg_cs, ctxt, &addr);
+    rc = pv_emul_virt_to_linear(poc->cs.base,
+                                offset,
+                                bytes,
+                                poc->cs.limit,
+                                x86_seg_cs,
+                                ctxt,
+                                &addr);
     if ( rc != X86EMUL_OKAY )
         return rc;
 
@@ -1290,25 +1326,24 @@ static int cf_check insn_fetch(
     return X86EMUL_OKAY;
 }
 
-
 static const struct x86_emulate_ops priv_op_ops = {
-    .insn_fetch          = insn_fetch,
-    .read                = x86emul_unhandleable_rw,
-    .validate            = validate,
-    .read_io             = read_io,
-    .write_io            = write_io,
-    .rep_ins             = rep_ins,
-    .rep_outs            = rep_outs,
-    .read_segment        = read_segment,
-    .read_cr             = read_cr,
-    .write_cr            = write_cr,
-    .read_dr             = x86emul_read_dr,
-    .write_dr            = x86emul_write_dr,
-    .write_xcr           = x86emul_write_xcr,
-    .read_msr            = read_msr,
-    .write_msr           = write_msr,
-    .cpuid               = x86emul_cpuid,
-    .cache_op            = cache_op,
+    .insn_fetch = insn_fetch,
+    .read = x86emul_unhandleable_rw,
+    .validate = validate,
+    .read_io = read_io,
+    .write_io = write_io,
+    .rep_ins = rep_ins,
+    .rep_outs = rep_outs,
+    .read_segment = read_segment,
+    .read_cr = read_cr,
+    .write_cr = write_cr,
+    .read_dr = x86emul_read_dr,
+    .write_dr = x86emul_write_dr,
+    .write_xcr = x86emul_write_xcr,
+    .read_msr = read_msr,
+    .write_msr = write_msr,
+    .cpuid = x86emul_cpuid,
+    .cache_op = cache_op,
 };
 
 int pv_emulate_privileged_op(struct cpu_user_regs *regs)
@@ -1325,11 +1360,13 @@ int pv_emulate_privileged_op(struct cpu_user_regs *regs)
     /* Not part of the initializer, for old gcc to cope. */
     ctxt.ctxt.cpu_policy = currd->arch.cpu_policy;
 
-    if ( !pv_emul_read_descriptor(regs->cs, curr, &ctxt.cs.base,
-                                  &ctxt.cs.limit, &ar, 1) ||
-         !(ar & _SEGMENT_S) ||
-         !(ar & _SEGMENT_P) ||
-         !(ar & _SEGMENT_CODE) )
+    if ( !pv_emul_read_descriptor(regs->cs,
+                                  curr,
+                                  &ctxt.cs.base,
+                                  &ctxt.cs.limit,
+                                  &ar,
+                                  1) ||
+         !(ar & _SEGMENT_S) || !(ar & _SEGMENT_P) || !(ar & _SEGMENT_CODE) )
         return 0;
 
     /* Mirror virtualized state into EFLAGS. */

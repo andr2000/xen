@@ -23,14 +23,16 @@ void vfp_save_state(struct vcpu *v)
 
     /* Save {d0-d15} */
     asm volatile("stc p11, cr0, [%1], #32*4"
-                 : "=Q" (*v->arch.vfp.fpregs1) : "r" (v->arch.vfp.fpregs1));
+                 : "=Q"(*v->arch.vfp.fpregs1)
+                 : "r"(v->arch.vfp.fpregs1));
 
     /* 32 x 64 bits registers? */
     if ( (READ_CP32(MVFR0) & MVFR0_A_SIMD_MASK) == 2 )
     {
         /* Save {d16-d31} */
         asm volatile("stcl p11, cr0, [%1], #32*4"
-                     : "=Q" (*v->arch.vfp.fpregs2) : "r" (v->arch.vfp.fpregs2));
+                     : "=Q"(*v->arch.vfp.fpregs2)
+                     : "r"(v->arch.vfp.fpregs2));
     }
 
     WRITE_CP32(v->arch.vfp.fpexc & ~(FPEXC_EN), FPEXC);
@@ -43,13 +45,16 @@ void vfp_restore_state(struct vcpu *v)
 
     /* Restore {d0-d15} */
     asm volatile("ldc p11, cr0, [%1], #32*4"
-                 : : "Q" (*v->arch.vfp.fpregs1), "r" (v->arch.vfp.fpregs1));
+                 :
+                 : "Q"(*v->arch.vfp.fpregs1), "r"(v->arch.vfp.fpregs1));
 
     /* 32 x 64 bits registers? */
-    if ( (READ_CP32(MVFR0) & MVFR0_A_SIMD_MASK) == 2 ) /* 32 x 64 bits registers */
+    if ( (READ_CP32(MVFR0) & MVFR0_A_SIMD_MASK) ==
+         2 ) /* 32 x 64 bits registers */
         /* Restore {d16-d31} */
         asm volatile("ldcl p11, cr0, [%1], #32*4"
-                     : : "Q" (*v->arch.vfp.fpregs2), "r" (v->arch.vfp.fpregs2));
+                     :
+                     : "Q"(*v->arch.vfp.fpregs2), "r"(v->arch.vfp.fpregs2));
 
     if ( v->arch.vfp.fpexc & FPEXC_EX )
     {
@@ -70,13 +75,13 @@ static __init int vfp_init(void)
 
     vfpsid = READ_CP32(FPSID);
 
-    printk("VFP implementer 0x%02x architecture %d part 0x%02x variant 0x%x "
-           "rev 0x%x\n",
-           (vfpsid & FPSID_IMPLEMENTER_MASK) >> FPSID_IMPLEMENTER_BIT,
-           (vfpsid & FPSID_ARCH_MASK) >> FPSID_ARCH_BIT,
-           (vfpsid & FPSID_PART_MASK) >> FPSID_PART_BIT,
-           (vfpsid & FPSID_VARIANT_MASK) >> FPSID_VARIANT_BIT,
-           (vfpsid & FPSID_REV_MASK) >> FPSID_REV_BIT);
+    printk(
+        "VFP implementer 0x%02x architecture %d part 0x%02x variant 0x%x " "rev 0x%x\n",
+        (vfpsid & FPSID_IMPLEMENTER_MASK) >> FPSID_IMPLEMENTER_BIT,
+        (vfpsid & FPSID_ARCH_MASK) >> FPSID_ARCH_BIT,
+        (vfpsid & FPSID_PART_MASK) >> FPSID_PART_BIT,
+        (vfpsid & FPSID_VARIANT_MASK) >> FPSID_VARIANT_BIT,
+        (vfpsid & FPSID_REV_MASK) >> FPSID_REV_BIT);
 
     vfparch = (vfpsid & FPSID_ARCH_MASK) >> FPSID_ARCH_BIT;
     if ( vfparch < 2 )
@@ -84,6 +89,7 @@ static __init int vfp_init(void)
 
     return 0;
 }
+
 presmp_initcall(vfp_init);
 
 /*

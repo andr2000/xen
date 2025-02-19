@@ -17,7 +17,7 @@
 #include <xen/pdx.h>
 #include <xen/pfn.h>
 #if EFI_PAGE_SIZE != PAGE_SIZE
-# error Cannot use xen/pfn.h here!
+#error Cannot use xen/pfn.h here!
 #endif
 #include <xen/string.h>
 #include <xen/stringify.h>
@@ -61,10 +61,8 @@ typedef struct {
     EFI_SYSTEM_RESOURCE_ENTRY Entries[];
 } EFI_SYSTEM_RESOURCE_TABLE;
 
-typedef EFI_STATUS
-(/* _not_ EFIAPI */ *EFI_SHIM_LOCK_VERIFY) (
-    IN const VOID *Buffer,
-    IN UINT32 Size);
+typedef EFI_STATUS(/* _not_ EFIAPI */ *EFI_SHIM_LOCK_VERIFY)(
+    IN const VOID *Buffer, IN UINT32 Size);
 
 typedef struct {
     EFI_SHIM_LOCK_VERIFY Verify;
@@ -72,32 +70,20 @@ typedef struct {
 
 struct _EFI_APPLE_PROPERTIES;
 
-typedef EFI_STATUS
-(EFIAPI *EFI_APPLE_PROPERTIES_GET) (
-    IN struct _EFI_APPLE_PROPERTIES *This,
-    IN const EFI_DEVICE_PATH *Device,
-    IN const CHAR16 *PropertyName,
-    OUT VOID *Buffer,
-    IN OUT UINT32 *BufferSize);
+typedef EFI_STATUS(EFIAPI *EFI_APPLE_PROPERTIES_GET)(
+    IN struct _EFI_APPLE_PROPERTIES *This, IN const EFI_DEVICE_PATH *Device,
+    IN const CHAR16 *PropertyName, OUT VOID *Buffer, IN OUT UINT32 *BufferSize);
 
-typedef EFI_STATUS
-(EFIAPI *EFI_APPLE_PROPERTIES_SET) (
-    IN struct _EFI_APPLE_PROPERTIES *This,
-    IN const EFI_DEVICE_PATH *Device,
-    IN const CHAR16 *PropertyName,
-    IN const VOID *Value,
-    IN UINT32 ValueLen);
+typedef EFI_STATUS(EFIAPI *EFI_APPLE_PROPERTIES_SET)(
+    IN struct _EFI_APPLE_PROPERTIES *This, IN const EFI_DEVICE_PATH *Device,
+    IN const CHAR16 *PropertyName, IN const VOID *Value, IN UINT32 ValueLen);
 
-typedef EFI_STATUS
-(EFIAPI *EFI_APPLE_PROPERTIES_DELETE) (
-    IN struct _EFI_APPLE_PROPERTIES *This,
-    IN const EFI_DEVICE_PATH *Device,
+typedef EFI_STATUS(EFIAPI *EFI_APPLE_PROPERTIES_DELETE)(
+    IN struct _EFI_APPLE_PROPERTIES *This, IN const EFI_DEVICE_PATH *Device,
     IN const CHAR16 *PropertyName);
 
-typedef EFI_STATUS
-(EFIAPI *EFI_APPLE_PROPERTIES_GETALL) (
-    IN struct _EFI_APPLE_PROPERTIES *This,
-    OUT VOID *Buffer,
+typedef EFI_STATUS(EFIAPI *EFI_APPLE_PROPERTIES_GETALL)(
+    IN struct _EFI_APPLE_PROPERTIES *This, OUT VOID *Buffer,
     IN OUT UINT32 *BufferSize);
 
 typedef struct _EFI_APPLE_PROPERTIES {
@@ -125,6 +111,7 @@ union string {
 struct file {
     UINTN size;
     bool need_to_free;
+
     union {
         EFI_PHYSICAL_ADDRESS addr;
         char *str;
@@ -140,13 +127,14 @@ static bool read_section(const EFI_LOADED_IMAGE *image, const CHAR16 *name,
 static void efi_init(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable);
 static void efi_console_set_mode(void);
 static EFI_GRAPHICS_OUTPUT_PROTOCOL *efi_get_gop(EFI_HANDLE *gop_handle);
-static UINTN efi_find_gop_mode(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop,
-                               UINTN cols, UINTN rows, UINTN depth);
+static UINTN efi_find_gop_mode(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop, UINTN cols,
+                               UINTN rows, UINTN depth);
 static void efi_tables(void);
 static void setup_efi_pci(void);
 static void efi_variables(void);
 static void efi_set_gop_mode(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop, UINTN gop_mode);
-static void efi_exit_boot(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable);
+static void efi_exit_boot(EFI_HANDLE ImageHandle,
+                          EFI_SYSTEM_TABLE *SystemTable);
 
 static const EFI_BOOT_SERVICES *__initdata efi_bs;
 static UINT32 __initdata efi_bs_revision;
@@ -166,12 +154,12 @@ static const CHAR16 __initconst newline[] = L"\r\n";
 
 static void __init PrintStr(const CHAR16 *s)
 {
-    StdOut->OutputString(StdOut, (CHAR16 *)s );
+    StdOut->OutputString(StdOut, (CHAR16 *)s);
 }
 
 static void __init PrintErr(const CHAR16 *s)
 {
-    StdErr->OutputString(StdErr, (CHAR16 *)s );
+    StdErr->OutputString(StdErr, (CHAR16 *)s);
 }
 
 static CHAR16 *__init FormatDec(UINT64 Val, CHAR16 *Buffer)
@@ -194,7 +182,7 @@ static void __init DisplayUint(UINT64 Val, INTN Width)
 {
     CHAR16 PrintString[32], *end;
 
-    if (Width < 0)
+    if ( Width < 0 )
         end = FormatDec(Val, PrintString);
     else
     {
@@ -250,12 +238,14 @@ static CHAR16 *__init s2w(union string *str)
     CHAR16 *w;
     void *ptr;
 
-    if ( efi_bs->AllocatePool(EfiLoaderData, (strlen(s) + 1) * sizeof(*w),
+    if ( efi_bs->AllocatePool(EfiLoaderData,
+                              (strlen(s) + 1) * sizeof(*w),
                               &ptr) != EFI_SUCCESS )
         return NULL;
 
     w = str->w = ptr;
-    do {
+    do
+    {
         *w = *s++;
     } while ( *w++ );
 
@@ -267,7 +257,8 @@ static char *__init w2s(const union string *str)
     const CHAR16 *w = str->w;
     char *s = str->s;
 
-    do {
+    do
+    {
         if ( *w > 0x007f )
             return NULL;
         *s = *w++;
@@ -278,8 +269,7 @@ static char *__init w2s(const union string *str)
 
 static bool __init match_guid(const EFI_GUID *guid1, const EFI_GUID *guid2)
 {
-    return guid1->Data1 == guid2->Data1 &&
-           guid1->Data2 == guid2->Data2 &&
+    return guid1->Data1 == guid2->Data1 && guid1->Data2 == guid2->Data2 &&
            guid1->Data3 == guid2->Data3 &&
            !memcmp(guid1->Data4, guid2->Data4, sizeof(guid1->Data4));
 }
@@ -287,19 +277,19 @@ static bool __init match_guid(const EFI_GUID *guid1, const EFI_GUID *guid2)
 /* generic routine for printing error messages */
 static void __init PrintErrMesg(const CHAR16 *mesg, EFI_STATUS ErrCode)
 {
-    static const CHAR16* const ErrCodeToStr[] __initconstrel = {
-        [~EFI_ERROR_MASK & EFI_NOT_FOUND]           = L"Not found",
-        [~EFI_ERROR_MASK & EFI_NO_MEDIA]            = L"The device has no media",
-        [~EFI_ERROR_MASK & EFI_MEDIA_CHANGED]       = L"Media changed",
-        [~EFI_ERROR_MASK & EFI_DEVICE_ERROR]        = L"Device error",
-        [~EFI_ERROR_MASK & EFI_VOLUME_CORRUPTED]    = L"Volume corrupted",
-        [~EFI_ERROR_MASK & EFI_ACCESS_DENIED]       = L"Access denied",
-        [~EFI_ERROR_MASK & EFI_OUT_OF_RESOURCES]    = L"Out of resources",
-        [~EFI_ERROR_MASK & EFI_VOLUME_FULL]         = L"Volume is full",
-        [~EFI_ERROR_MASK & EFI_SECURITY_VIOLATION]  = L"Security violation",
-        [~EFI_ERROR_MASK & EFI_CRC_ERROR]           = L"CRC error",
-        [~EFI_ERROR_MASK & EFI_COMPROMISED_DATA]    = L"Compromised data",
-        [~EFI_ERROR_MASK & EFI_BUFFER_TOO_SMALL]    = L"Buffer too small",
+    static const CHAR16 *const ErrCodeToStr[] __initconstrel = {
+        [~EFI_ERROR_MASK & EFI_NOT_FOUND] = L"Not found",
+        [~EFI_ERROR_MASK & EFI_NO_MEDIA] = L"The device has no media",
+        [~EFI_ERROR_MASK & EFI_MEDIA_CHANGED] = L"Media changed",
+        [~EFI_ERROR_MASK & EFI_DEVICE_ERROR] = L"Device error",
+        [~EFI_ERROR_MASK & EFI_VOLUME_CORRUPTED] = L"Volume corrupted",
+        [~EFI_ERROR_MASK & EFI_ACCESS_DENIED] = L"Access denied",
+        [~EFI_ERROR_MASK & EFI_OUT_OF_RESOURCES] = L"Out of resources",
+        [~EFI_ERROR_MASK & EFI_VOLUME_FULL] = L"Volume is full",
+        [~EFI_ERROR_MASK & EFI_SECURITY_VIOLATION] = L"Security violation",
+        [~EFI_ERROR_MASK & EFI_CRC_ERROR] = L"CRC error",
+        [~EFI_ERROR_MASK & EFI_COMPROMISED_DATA] = L"Compromised data",
+        [~EFI_ERROR_MASK & EFI_BUFFER_TOO_SMALL] = L"Buffer too small",
     };
     EFI_STATUS ErrIdx = ErrCode & ~EFI_ERROR_MASK;
 
@@ -307,7 +297,7 @@ static void __init PrintErrMesg(const CHAR16 *mesg, EFI_STATUS ErrCode)
     PrintErr(mesg);
     PrintErr(L": ");
 
-    if( (ErrIdx < ARRAY_SIZE(ErrCodeToStr)) && ErrCodeToStr[ErrIdx] )
+    if ( (ErrIdx < ARRAY_SIZE(ErrCodeToStr)) && ErrCodeToStr[ErrIdx] )
         mesg = ErrCodeToStr[ErrIdx];
     else
     {
@@ -351,8 +341,8 @@ static unsigned int __init get_argv(unsigned int argc, CHAR16 **argv,
              !((size - elo_min) % sizeof(*cmdline)) )
         {
             const CHAR16 *desc = elo->Description;
-            const CHAR16 *end = wmemchr(desc, 0,
-                                        (size - elo_min) / sizeof(*desc) + 1);
+            const CHAR16 *end =
+                wmemchr(desc, 0, (size - elo_min) / sizeof(*desc) + 1);
 
             if ( end )
             {
@@ -371,7 +361,7 @@ static unsigned int __init get_argv(unsigned int argc, CHAR16 **argv,
         return 0;
 
     for ( ; size > sizeof(*cmdline) && *cmdline;
-            size -= sizeof(*cmdline), ++cmdline )
+          size -= sizeof(*cmdline), ++cmdline )
     {
         bool cur_sep = *cmdline == L' ' || *cmdline == L'\t';
 
@@ -410,8 +400,8 @@ static unsigned int __init get_argv(unsigned int argc, CHAR16 **argv,
     return argc;
 }
 
-static EFI_FILE_HANDLE __init get_parent_handle(const EFI_LOADED_IMAGE *loaded_image,
-                                                CHAR16 **leaf)
+static EFI_FILE_HANDLE __init
+get_parent_handle(const EFI_LOADED_IMAGE *loaded_image, CHAR16 **leaf)
 {
     static EFI_GUID __initdata fs_protocol = SIMPLE_FILE_SYSTEM_PROTOCOL;
     static CHAR16 __initdata buffer[512];
@@ -420,12 +410,14 @@ static EFI_FILE_HANDLE __init get_parent_handle(const EFI_LOADED_IMAGE *loaded_i
     CHAR16 *pathend, *ptr;
     EFI_STATUS ret;
 
-    do {
+    do
+    {
         EFI_FILE_IO_INTERFACE *fio;
 
         /* Get the file system interface. */
         ret = efi_bs->HandleProtocol(loaded_image->DeviceHandle,
-                                     &fs_protocol, (void **)&fio);
+                                     &fs_protocol,
+                                     (void **)&fio);
         if ( EFI_ERROR(ret) )
             PrintErrMesg(L"Couldn't obtain the File System Protocol Interface",
                          ret);
@@ -449,8 +441,11 @@ static EFI_FILE_HANDLE __init get_parent_handle(const EFI_LOADED_IMAGE *loaded_i
         {
             EFI_FILE_HANDLE new_handle;
 
-            ret = dir_handle->Open(dir_handle, &new_handle, buffer,
-                                   EFI_FILE_MODE_READ, 0);
+            ret = dir_handle->Open(dir_handle,
+                                   &new_handle,
+                                   buffer,
+                                   EFI_FILE_MODE_READ,
+                                   0);
             if ( ret != EFI_SUCCESS )
             {
                 PrintErr(L"Open failed for ");
@@ -460,8 +455,8 @@ static EFI_FILE_HANDLE __init get_parent_handle(const EFI_LOADED_IMAGE *loaded_i
             dir_handle = new_handle;
         }
         fp = (void *)dp;
-        if ( BUFFERSIZE < DevicePathNodeLength(dp) -
-                          sizeof(*dp) + sizeof(*buffer) )
+        if ( BUFFERSIZE <
+             DevicePathNodeLength(dp) - sizeof(*dp) + sizeof(*buffer) )
             blexit(L"Increase BUFFERSIZE");
         memcpy(buffer, fp->PathName, DevicePathNodeLength(dp) - sizeof(*dp));
         buffer[(DevicePathNodeLength(dp) - sizeof(*dp)) / sizeof(*buffer)] = 0;
@@ -477,9 +472,13 @@ static EFI_FILE_HANDLE __init get_parent_handle(const EFI_LOADED_IMAGE *loaded_i
         {
             EFI_FILE_HANDLE new_handle;
 
-            ret = dir_handle->Open(dir_handle, &new_handle, buffer,
-                                   EFI_FILE_MODE_READ, 0);
-            if ( ret != EFI_SUCCESS ) {
+            ret = dir_handle->Open(dir_handle,
+                                   &new_handle,
+                                   buffer,
+                                   EFI_FILE_MODE_READ,
+                                   0);
+            if ( ret != EFI_SUCCESS )
+            {
                 PrintErr(L"Open failed for ");
                 PrintErrMesg(buffer, ret);
             }
@@ -499,7 +498,7 @@ static CHAR16 *__init point_tail(CHAR16 *fn)
 {
     CHAR16 *tail = NULL;
 
-    for ( ; ; ++fn )
+    for ( ;; ++fn )
         switch ( *fn )
         {
         case 0:
@@ -517,7 +516,7 @@ static CHAR16 *__init point_tail(CHAR16 *fn)
  * to remainder of string, if any/ NULL returned if
  * no remainder after space.
  */
-static char * __init split_string(char *s)
+static char *__init split_string(char *s)
 {
     while ( *s && !isspace(*s) )
         ++s;
@@ -565,20 +564,20 @@ static char *__init get_value(const struct file *file, const char *section,
     return NULL;
 }
 
-static int __init __maybe_unused set_color(uint32_t mask, int bpp,
-                                           uint8_t *pos, uint8_t *sz)
+static int __init __maybe_unused set_color(uint32_t mask, int bpp, uint8_t *pos,
+                                           uint8_t *sz)
 {
-   if ( bpp < 0 )
-       return bpp;
-   if ( !mask )
-       return -EINVAL;
-   for ( *pos = 0; !(mask & 1); ++*pos )
-       mask >>= 1;
-   for ( *sz = 0; mask & 1; ++*sz)
-       mask >>= 1;
-   if ( mask )
-       return -EINVAL;
-   return max(*pos + *sz, bpp);
+    if ( bpp < 0 )
+        return bpp;
+    if ( !mask )
+        return -EINVAL;
+    for ( *pos = 0; !(mask & 1); ++*pos )
+        mask >>= 1;
+    for ( *sz = 0; mask & 1; ++*sz )
+        mask >>= 1;
+    if ( mask )
+        return -EINVAL;
+    return max(*pos + *sz, bpp);
 }
 
 #ifndef CONFIG_HAS_DEVICE_TREE
@@ -620,7 +619,8 @@ static size_t __init get_esrt_size(const EFI_MEMORY_DESCRIPTOR *desc)
           EFI_SYSTEM_RESOURCE_TABLE_FIRMWARE_RESOURCE_VERSION) ||
          !esrt_ptr->FwResourceCount )
         return 0;
-    if ( esrt_ptr->FwResourceCount > available_len / sizeof(esrt_ptr->Entries[0]) )
+    if ( esrt_ptr->FwResourceCount >
+         available_len / sizeof(esrt_ptr->Entries[0]) )
         return 0;
 
     return esrt_ptr->FwResourceCount * sizeof(esrt_ptr->Entries[0]);
@@ -636,10 +636,13 @@ static void __init efi_relocate_esrt(EFI_SYSTEM_TABLE *SystemTable)
     UINT32 ver;
     unsigned int i;
 
-    for ( ; ; )
+    for ( ;; )
     {
-        status = efi_bs->GetMemoryMap(&info_size, memory_map, &map_key,
-                                      &mdesc_size, &ver);
+        status = efi_bs->GetMemoryMap(&info_size,
+                                      memory_map,
+                                      &map_key,
+                                      &mdesc_size,
+                                      &ver);
         if ( status == EFI_SUCCESS && memory_map != NULL )
             break;
         if ( status == EFI_BUFFER_TOO_SMALL || memory_map == NULL )
@@ -648,7 +651,8 @@ static void __init efi_relocate_esrt(EFI_SYSTEM_TABLE *SystemTable)
             if ( memory_map != NULL )
                 efi_bs->FreePool(memory_map);
             memory_map = NULL;
-            status = efi_bs->AllocatePool(EfiLoaderData, info_size, &memory_map);
+            status =
+                efi_bs->AllocatePool(EfiLoaderData, info_size, &memory_map);
             if ( status == EFI_SUCCESS )
                 continue;
             PrintErr(L"Cannot allocate memory to relocate ESRT\r\n");
@@ -674,8 +678,8 @@ static void __init efi_relocate_esrt(EFI_SYSTEM_TABLE *SystemTable)
         if ( desc->Type == EfiRuntimeServicesData ||
              desc->Type == EfiACPIReclaimMemory )
             break; /* ESRT already safe from reuse */
-        status = efi_bs->AllocatePool(EfiACPIReclaimMemory, esrt_size,
-                                      &new_esrt);
+        status =
+            efi_bs->AllocatePool(EfiACPIReclaimMemory, esrt_size, &new_esrt);
         if ( status == EFI_SUCCESS && new_esrt )
         {
             memcpy(new_esrt, (void *)esrt, esrt_size);
@@ -724,8 +728,8 @@ void __init noreturn blexit(const CHAR16 *str)
     unreachable(); /* not reached */
 }
 
-static void __init handle_file_info(const CHAR16 *name,
-                                    const struct file *file, const char *options)
+static void __init handle_file_info(const CHAR16 *name, const struct file *file,
+                                    const char *options)
 {
     if ( file == &cfg )
         return;
@@ -750,8 +754,8 @@ static bool __init read_file(EFI_FILE_HANDLE dir_handle, CHAR16 *name,
 
     if ( !name )
         PrintErrMesg(L"No filename", EFI_OUT_OF_RESOURCES);
-    ret = dir_handle->Open(dir_handle, &FileHandle, name,
-                           EFI_FILE_MODE_READ, 0);
+    ret =
+        dir_handle->Open(dir_handle, &FileHandle, name, EFI_FILE_MODE_READ, 0);
     if ( file == &cfg && ret == EFI_NOT_FOUND )
         return false;
     if ( EFI_ERROR(ret) )
@@ -772,8 +776,10 @@ static bool __init read_file(EFI_FILE_HANDLE dir_handle, CHAR16 *name,
     {
         file->addr = min(1UL << (32 + PAGE_SHIFT),
                          HYPERVISOR_VIRT_END - DIRECTMAP_VIRT_START);
-        ret = efi_bs->AllocatePages(AllocateMaxAddress, EfiLoaderData,
-                                    PFN_UP(size), &file->addr);
+        ret = efi_bs->AllocatePages(AllocateMaxAddress,
+                                    EfiLoaderData,
+                                    PFN_UP(size),
+                                    &file->addr);
     }
     if ( EFI_ERROR(ret) )
         what = what ?: L"Allocation";
@@ -809,8 +815,8 @@ static bool __init read_section(const EFI_LOADED_IMAGE *image,
                                 const CHAR16 *name, struct file *file,
                                 const char *options)
 {
-    const void *ptr = pe_find_section(image->ImageBase, image->ImageSize,
-                                      name, &file->size);
+    const void *ptr =
+        pe_find_section(image->ImageBase, image->ImageSize, name, &file->size);
 
     if ( !ptr )
         return false;
@@ -846,11 +852,12 @@ static void __init pre_parse(const struct file *file)
             start = 0;
     }
     if ( file->size && end[-1] )
-         PrintStr(L"No newline at end of config file,"
-                   " last line will be ignored.\r\n");
+        PrintStr(
+            L"No newline at end of config file," " last line will be ignored.\r\n");
 }
 
-static void __init efi_init(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
+static void __init efi_init(EFI_HANDLE ImageHandle,
+                            EFI_SYSTEM_TABLE *SystemTable)
 {
     efi_ih = ImageHandle;
     efi_bs = SystemTable->BootServices;
@@ -871,8 +878,8 @@ static void __init efi_console_set_mode(void)
     UINTN cols, rows, size;
     unsigned int best, i;
 
-    for ( i = 0, size = 0, best = StdOut->Mode->Mode;
-          i < StdOut->Mode->MaxMode; ++i )
+    for ( i = 0, size = 0, best = StdOut->Mode->Mode; i < StdOut->Mode->MaxMode;
+          ++i )
     {
         if ( StdOut->QueryMode(StdOut, i, &cols, &rows) == EFI_SUCCESS &&
              cols * rows > size )
@@ -899,8 +906,8 @@ static EFI_GRAPHICS_OUTPUT_PROTOCOL __init *efi_get_gop(EFI_HANDLE *gop_handle)
     if ( status == EFI_BUFFER_TOO_SMALL )
         status = efi_bs->AllocatePool(EfiLoaderData, size, (void **)&handles);
     if ( !EFI_ERROR(status) )
-        status = efi_bs->LocateHandle(ByProtocol, &gop_guid, NULL, &size,
-                                      handles);
+        status =
+            efi_bs->LocateHandle(ByProtocol, &gop_guid, NULL, &size, handles);
     if ( EFI_ERROR(status) )
         size = 0;
     for ( i = 0; i < size / sizeof(*handles); ++i )
@@ -953,15 +960,15 @@ static UINTN __init efi_find_gop_mode(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop,
             continue;
         }
         if ( cols == mode_info->HorizontalResolution &&
-             rows == mode_info->VerticalResolution &&
-             (!depth || bpp == depth) )
+             rows == mode_info->VerticalResolution && (!depth || bpp == depth) )
         {
             gop_mode = i;
             break;
         }
         if ( !cols && !rows &&
              (UINTN)mode_info->HorizontalResolution *
-             mode_info->VerticalResolution > size )
+                     mode_info->VerticalResolution >
+                 size )
         {
             size = (UINTN)mode_info->HorizontalResolution *
                    mode_info->VerticalResolution;
@@ -1001,9 +1008,11 @@ static void __init efi_tables(void)
 
 #ifndef CONFIG_ARM /* TODO - disabled until implemented on ARM */
     dmi_efi_get_table(efi.smbios != EFI_INVALID_TABLE_ADDR
-                      ? (void *)(long)efi.smbios : NULL,
+                          ? (void *)(long)efi.smbios
+                          : NULL,
                       efi.smbios3 != EFI_INVALID_TABLE_ADDR
-                      ? (void *)(long)efi.smbios3 : NULL);
+                          ? (void *)(long)efi.smbios3
+                          : NULL);
 #endif
 }
 
@@ -1037,12 +1046,12 @@ static void __init setup_efi_pci(void)
         if ( EFI_ERROR(status) || !pci || !pci->RomImage || !pci->RomSize )
             continue;
 
-        status = pci->Attributes(pci, EfiPciIoAttributeOperationGet, 0,
-                                 &attributes);
+        status =
+            pci->Attributes(pci, EfiPciIoAttributeOperationGet, 0, &attributes);
         if ( EFI_ERROR(status) ||
              !(attributes & EFI_PCI_IO_ATTRIBUTE_EMBEDDED_ROM) ||
-             EFI_ERROR(pci->GetLocation(pci, &segment, &bus, &device,
-                       &function)) )
+             EFI_ERROR(
+                 pci->GetLocation(pci, &segment, &bus, &device, &function)) )
             continue;
 
         DisplayUint(segment, 4);
@@ -1059,18 +1068,24 @@ static void __init setup_efi_pci(void)
         PrintStr(newline);
 
         size = pci->RomSize + sizeof(*rom);
-        status = efi_bs->AllocatePool(EfiRuntimeServicesData, size,
-                                      (void **)&rom);
+        status =
+            efi_bs->AllocatePool(EfiRuntimeServicesData, size, (void **)&rom);
         if ( EFI_ERROR(status) )
             continue;
 
         rom->next = NULL;
         rom->size = pci->RomSize;
 
-        status = pci->Pci.Read(pci, EfiPciIoWidthUint16, PCI_VENDOR_ID, 1,
+        status = pci->Pci.Read(pci,
+                               EfiPciIoWidthUint16,
+                               PCI_VENDOR_ID,
+                               1,
                                &rom->vendor);
         if ( !EFI_ERROR(status) )
-            status = pci->Pci.Read(pci, EfiPciIoWidthUint16, PCI_DEVICE_ID, 1,
+            status = pci->Pci.Read(pci,
+                                   EfiPciIoWidthUint16,
+                                   PCI_DEVICE_ID,
+                                   1,
                                    &rom->devid);
         if ( EFI_ERROR(status) )
         {
@@ -1098,14 +1113,15 @@ static void __init efi_variables(void)
 {
     EFI_STATUS status;
 
-    status = (efi_rs->Hdr.Revision >> 16) >= 2 ?
-             efi_rs->QueryVariableInfo(EFI_VARIABLE_NON_VOLATILE |
-                                       EFI_VARIABLE_BOOTSERVICE_ACCESS |
-                                       EFI_VARIABLE_RUNTIME_ACCESS,
-                                       &efi_boot_max_var_store_size,
-                                       &efi_boot_remain_var_store_size,
-                                       &efi_boot_max_var_size) :
-             EFI_INCOMPATIBLE_VERSION;
+    status =
+        (efi_rs->Hdr.Revision >> 16) >= 2
+            ? efi_rs->QueryVariableInfo(EFI_VARIABLE_NON_VOLATILE |
+                                            EFI_VARIABLE_BOOTSERVICE_ACCESS |
+                                            EFI_VARIABLE_RUNTIME_ACCESS,
+                                        &efi_boot_max_var_store_size,
+                                        &efi_boot_remain_var_store_size,
+                                        &efi_boot_max_var_size)
+            : EFI_INCOMPATIBLE_VERSION;
     if ( EFI_ERROR(status) )
     {
         efi_boot_max_var_store_size = 0;
@@ -1125,8 +1141,8 @@ static void __init efi_get_apple_properties(void)
     VOID *data;
     EFI_STATUS status;
 
-    if ( efi_bs->LocateProtocol(&props_guid, NULL,
-                                (void **)&props) != EFI_SUCCESS )
+    if ( efi_bs->LocateProtocol(&props_guid, NULL, (void **)&props) !=
+         EFI_SUCCESS )
         return;
     if ( props->Version != 0x10000 )
     {
@@ -1137,9 +1153,8 @@ static void __init efi_get_apple_properties(void)
     }
 
     props->GetAll(props, NULL, &size);
-    if ( !size ||
-         efi_bs->AllocatePool(EfiRuntimeServicesData, size,
-                              &data) != EFI_SUCCESS )
+    if ( !size || efi_bs->AllocatePool(EfiRuntimeServicesData, size, &data) !=
+                      EFI_SUCCESS )
         return;
 
     status = props->GetAll(props, data, &size);
@@ -1157,7 +1172,8 @@ static void __init efi_get_apple_properties(void)
     }
 }
 
-static void __init efi_set_gop_mode(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop, UINTN gop_mode)
+static void __init efi_set_gop_mode(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop,
+                                    UINTN gop_mode)
 {
     EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *mode_info;
     EFI_STATUS status;
@@ -1180,7 +1196,8 @@ static void __init efi_set_gop_mode(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop, UINTN gop
 #define INVALID_VIRTUAL_ADDRESS (0xBAAADUL << \
                                  (EFI_PAGE_SHIFT + BITS_PER_LONG - 32))
 
-static void __init efi_exit_boot(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
+static void __init efi_exit_boot(EFI_HANDLE ImageHandle,
+                                 EFI_SYSTEM_TABLE *SystemTable)
 {
     EFI_STATUS status;
     UINTN info_size = 0, map_key;
@@ -1189,25 +1206,32 @@ static void __init efi_exit_boot(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *Syste
     unsigned int i;
 #endif
 
-    efi_bs->GetMemoryMap(&info_size, NULL, &map_key,
-                         &efi_mdesc_size, &mdesc_ver);
+    efi_bs->GetMemoryMap(&info_size,
+                         NULL,
+                         &map_key,
+                         &efi_mdesc_size,
+                         &mdesc_ver);
     info_size += 8 * efi_mdesc_size;
     efi_memmap = efi_arch_allocate_mmap_buffer(info_size);
     if ( !efi_memmap )
         blexit(L"Unable to allocate memory for EFI memory map");
 
-    for ( retry = false; ; retry = true )
+    for ( retry = false;; retry = true )
     {
         efi_memmap_size = info_size;
         status = SystemTable->BootServices->GetMemoryMap(&efi_memmap_size,
-                                                         efi_memmap, &map_key,
+                                                         efi_memmap,
+                                                         &map_key,
                                                          &efi_mdesc_size,
                                                          &mdesc_ver);
         if ( EFI_ERROR(status) )
             PrintErrMesg(L"Cannot obtain memory map", status);
 
-        efi_arch_process_memory_map(SystemTable, efi_memmap, efi_memmap_size,
-                                    efi_mdesc_size, mdesc_ver);
+        efi_arch_process_memory_map(SystemTable,
+                                    efi_memmap,
+                                    efi_memmap_size,
+                                    efi_mdesc_size,
+                                    mdesc_ver);
 
         efi_arch_pre_exit_boot();
 
@@ -1237,12 +1261,16 @@ static void __init efi_exit_boot(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *Syste
         else
             desc->VirtualStart = INVALID_VIRTUAL_ADDRESS;
     }
-    status = efi_rs->SetVirtualAddressMap(efi_memmap_size, efi_mdesc_size,
-                                          mdesc_ver, efi_memmap);
+    status = efi_rs->SetVirtualAddressMap(efi_memmap_size,
+                                          efi_mdesc_size,
+                                          mdesc_ver,
+                                          efi_memmap);
     if ( status != EFI_SUCCESS )
     {
-        printk(XENLOG_ERR "EFI: SetVirtualAddressMap() failed (%#lx), disabling runtime services\n",
-               status);
+        printk(
+            XENLOG_ERR
+            "EFI: SetVirtualAddressMap() failed (%#lx), disabling runtime services\n",
+            status);
         __clear_bit(EFI_RS, &efi_flags);
     }
 #endif
@@ -1284,7 +1312,8 @@ void EFIAPI __init noreturn efi_start(EFI_HANDLE ImageHandle,
 
     use_cfg_file = efi_arch_use_config_file(SystemTable);
 
-    status = efi_bs->HandleProtocol(ImageHandle, &loaded_image_guid,
+    status = efi_bs->HandleProtocol(ImageHandle,
+                                    &loaded_image_guid,
                                     (void **)&loaded_image);
     if ( status != EFI_SUCCESS )
         PrintErrMesg(L"No Loaded Image Protocol", status);
@@ -1295,15 +1324,22 @@ void EFIAPI __init noreturn efi_start(EFI_HANDLE ImageHandle,
     {
         UINTN offset = 0;
 
-        argc = get_argv(0, NULL, loaded_image->LoadOptions,
-                        loaded_image->LoadOptionsSize, &offset, NULL);
-        if ( argc > 0 &&
-             efi_bs->AllocatePool(EfiLoaderData,
-                                  (argc + 1) * sizeof(*argv) +
-                                      loaded_image->LoadOptionsSize,
-                                  (void **)&argv) == EFI_SUCCESS )
-            get_argv(argc, argv, loaded_image->LoadOptions,
-                     loaded_image->LoadOptionsSize, &offset, &options);
+        argc = get_argv(0,
+                        NULL,
+                        loaded_image->LoadOptions,
+                        loaded_image->LoadOptionsSize,
+                        &offset,
+                        NULL);
+        if ( argc > 0 && efi_bs->AllocatePool(EfiLoaderData,
+                                              (argc + 1) * sizeof(*argv) +
+                                                  loaded_image->LoadOptionsSize,
+                                              (void **)&argv) == EFI_SUCCESS )
+            get_argv(argc,
+                     argv,
+                     loaded_image->LoadOptions,
+                     loaded_image->LoadOptionsSize,
+                     &offset,
+                     &options);
         else
             argc = 0;
         for ( i = 1; i < argc; ++i )
@@ -1356,8 +1392,8 @@ void EFIAPI __init noreturn efi_start(EFI_HANDLE ImageHandle,
         argv = NULL;
     }
 
-    PrintStr(L"Xen " XEN_VERSION_STRING XEN_EXTRAVERSION
-	     " (c/s " XEN_CHANGESET ") EFI loader\r\n");
+    PrintStr(L"Xen " XEN_VERSION_STRING XEN_EXTRAVERSION " (c/s " XEN_CHANGESET
+             ") EFI loader\r\n");
 
     efi_arch_relocate_image(0);
 
@@ -1369,8 +1405,8 @@ void EFIAPI __init noreturn efi_start(EFI_HANDLE ImageHandle,
 
         cols = rows = depth = 0;
 
-        if ( StdOut->QueryMode(StdOut, StdOut->Mode->Mode,
-                               &cols, &rows) == EFI_SUCCESS )
+        if ( StdOut->QueryMode(StdOut, StdOut->Mode->Mode, &cols, &rows) ==
+             EFI_SUCCESS )
             efi_arch_console_init(cols, rows);
 
         gop = efi_get_gop(&gop_handle);
@@ -1407,7 +1443,7 @@ void EFIAPI __init noreturn efi_start(EFI_HANDLE ImageHandle,
         else
             section.s = get_value(&cfg, "global", "default");
 
-        for ( ; ; )
+        for ( ;; )
         {
             name.s = get_value(&cfg, section.s, "kernel");
             if ( name.s )
@@ -1514,7 +1550,8 @@ void EFIAPI __init noreturn efi_start(EFI_HANDLE ImageHandle,
      * verify it.
      */
     if ( kernel.ptr &&
-         !EFI_ERROR(efi_bs->LocateProtocol(&shim_lock_guid, NULL,
+         !EFI_ERROR(efi_bs->LocateProtocol(&shim_lock_guid,
+                                           NULL,
                                            (void **)&shim_lock)) &&
          (status = shim_lock->Verify(kernel.ptr, kernel.size)) != EFI_SUCCESS )
         PrintErrMesg(L"Dom0 kernel image could not be verified", status);
@@ -1557,7 +1594,8 @@ static int __init cf_check parse_efi_param(const char *s)
     const char *ss;
     int rc = 0, val;
 
-    do {
+    do
+    {
         ss = strchr(s, ',');
         if ( !ss )
             ss = strchr(s, '\0');
@@ -1586,6 +1624,7 @@ static int __init cf_check parse_efi_param(const char *s)
 
     return rc;
 }
+
 custom_param("efi", parse_efi_param);
 
 static __init void copy_mapping(unsigned long mfn, unsigned long end,
@@ -1632,27 +1671,30 @@ static __init void copy_mapping(unsigned long mfn, unsigned long end,
     unmap_domain_page(l3dst);
 }
 
-static bool __init cf_check ram_range_valid(unsigned long smfn, unsigned long emfn)
+static bool __init cf_check ram_range_valid(unsigned long smfn,
+                                            unsigned long emfn)
 {
     paddr_t ram_base = pfn_to_paddr(smfn);
     unsigned long ram_npages = emfn - smfn;
     unsigned long sz = pfn_to_pdx(emfn - 1) / PDX_GROUP_COUNT + 1;
 
     return pdx_is_region_compressible(ram_base, ram_npages) &&
-           find_next_bit(pdx_group_valid, sz,
+           find_next_bit(pdx_group_valid,
+                         sz,
                          pfn_to_pdx(smfn) / PDX_GROUP_COUNT) < sz;
 }
 
-static bool __init cf_check rt_range_valid(unsigned long smfn, unsigned long emfn)
+static bool __init cf_check rt_range_valid(unsigned long smfn,
+                                           unsigned long emfn)
 {
     return true;
 }
-
 
 void __init efi_init_memory(void)
 {
     unsigned int i;
     l4_pgentry_t *efi_l4t;
+
     struct rt_extra {
         struct rt_extra *next;
         unsigned long smfn, emfn;
@@ -1677,8 +1719,10 @@ void __init efi_init_memory(void)
 
         printk(XENLOG_DEBUG " %013" PRIx64 "-%013" PRIx64
                             " type=%u attr=%016" PRIx64 "\n",
-               desc->PhysicalStart, desc->PhysicalStart + len - 1,
-               desc->Type, desc->Attribute);
+               desc->PhysicalStart,
+               desc->PhysicalStart + len - 1,
+               desc->Type,
+               desc->Attribute);
 
         if ( (desc->Attribute & (EFI_MEMORY_WB | EFI_MEMORY_WT)) ||
              (efi_bs_revision >= EFI_REVISION(2, 5) &&
@@ -1707,8 +1751,10 @@ void __init efi_init_memory(void)
             case EfiRuntimeServicesCode:
             case EfiRuntimeServicesData:
                 printk(XENLOG_WARNING
-                       "Setting RUNTIME attribute for %013" PRIx64 "-%013" PRIx64 "\n",
-                       desc->PhysicalStart, desc->PhysicalStart + len - 1);
+                       "Setting RUNTIME attribute for %013" PRIx64
+                       "-%013" PRIx64 "\n",
+                       desc->PhysicalStart,
+                       desc->PhysicalStart + len - 1);
                 desc->Attribute |= EFI_MEMORY_RUNTIME;
                 break;
 
@@ -1742,14 +1788,17 @@ void __init efi_init_memory(void)
         else
         {
             printk(XENLOG_ERR "Unknown cachability for MFNs %#lx-%#lx%s\n",
-                   smfn, emfn - 1, efi_map_uc ? ", assuming UC" : "");
+                   smfn,
+                   emfn - 1,
+                   efi_map_uc ? ", assuming UC" : "");
             if ( !efi_map_uc )
                 continue;
             prot |= _PAGE_UC | MAP_SMALL_PAGES;
         }
 
-        if ( desc->Attribute & (efi_bs_revision < EFI_REVISION(2, 5)
-                                ? EFI_MEMORY_WP : EFI_MEMORY_RO) )
+        if ( desc->Attribute &
+             (efi_bs_revision < EFI_REVISION(2, 5) ? EFI_MEMORY_WP
+                                                   : EFI_MEMORY_RO) )
             prot &= ~(_PAGE_DIRTY | _PAGE_RW);
         if ( desc->Attribute & EFI_MEMORY_XP )
             prot |= _PAGE_NX;
@@ -1760,12 +1809,15 @@ void __init efi_init_memory(void)
             if ( (unsigned long)mfn_to_virt(emfn - 1) >= HYPERVISOR_VIRT_END )
                 prot &= ~_PAGE_GLOBAL;
             if ( map_pages_to_xen((unsigned long)mfn_to_virt(smfn),
-                                  _mfn(smfn), emfn - smfn, prot) == 0 )
+                                  _mfn(smfn),
+                                  emfn - smfn,
+                                  prot) == 0 )
                 desc->VirtualStart =
                     (unsigned long)maddr_to_virt(desc->PhysicalStart);
             else
                 printk(XENLOG_ERR "Could not map MFNs %#lx-%#lx\n",
-                       smfn, emfn - 1);
+                       smfn,
+                       emfn - 1);
         }
         else if ( !((desc->PhysicalStart + len - 1) >> (VADDR_BITS - 1)) &&
                   (extra = xmalloc(struct rt_extra)) != NULL )
@@ -1780,7 +1832,8 @@ void __init efi_init_memory(void)
         else
         {
             printk(XENLOG_ERR "No mapping for MFNs %#lx-%#lx\n",
-                   smfn, emfn - 1);
+                   smfn,
+                   emfn - 1);
         }
     }
 
@@ -1805,15 +1858,15 @@ void __init efi_init_memory(void)
         const EFI_MEMORY_DESCRIPTOR *desc = efi_memmap + i;
 
         if ( ((desc->Attribute & EFI_MEMORY_RUNTIME) ||
-              (map_bs &&
-               (desc->Type == EfiBootServicesCode ||
-                desc->Type == EfiBootServicesData))) &&
+              (map_bs && (desc->Type == EfiBootServicesCode ||
+                          desc->Type == EfiBootServicesData))) &&
              desc->VirtualStart != INVALID_VIRTUAL_ADDRESS &&
              desc->VirtualStart != desc->PhysicalStart )
             copy_mapping(PFN_DOWN(desc->PhysicalStart),
                          PFN_UP(desc->PhysicalStart +
                                 (desc->NumberOfPages << EFI_PAGE_SHIFT)),
-                         rt_range_valid, efi_l4t);
+                         rt_range_valid,
+                         efi_l4t);
     }
 
     /* Insert non-RAM runtime mappings outside of the direct map. */
@@ -1831,8 +1884,8 @@ void __init efi_init_memory(void)
 
             pl3e = alloc_mapped_pagetable(&l3mfn);
             BUG_ON(!pl3e);
-            efi_l4t[l4_table_offset(addr)] =
-                l4e_from_mfn(l3mfn, __PAGE_HYPERVISOR);
+            efi_l4t[l4_table_offset(addr)] = l4e_from_mfn(l3mfn,
+                                                          __PAGE_HYPERVISOR);
         }
         else
             pl3e = map_l3t_from_l4e(l4e);
@@ -1881,7 +1934,8 @@ void __init efi_init_memory(void)
 
     /* Insert Xen mappings. */
     for ( i = l4_table_offset(HYPERVISOR_VIRT_START);
-          i < l4_table_offset(DIRECTMAP_VIRT_END); ++i )
+          i < l4_table_offset(DIRECTMAP_VIRT_END);
+          ++i )
         efi_l4t[i] = idle_pg_table[i];
 
     unmap_domain_page(efi_l4t);

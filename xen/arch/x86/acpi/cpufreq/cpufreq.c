@@ -40,9 +40,11 @@ struct perf_pair {
             uint32_t lo;
             uint32_t hi;
         } split;
+
         uint64_t whole;
     } aperf, mperf;
 };
+
 static DEFINE_PER_CPU(struct perf_pair, gov_perf_pair);
 static DEFINE_PER_CPU(struct perf_pair, usr_perf_pair);
 
@@ -73,14 +75,14 @@ unsigned int get_measured_perf(unsigned int cpu, unsigned int flag)
     struct perf_pair readin, cur, *saved;
     unsigned int perf_percent;
 
-    if (!cpu_online(cpu))
+    if ( !cpu_online(cpu) )
         return 0;
 
     policy = per_cpu(cpufreq_cpu_policy, cpu);
     if ( !policy || !cpu_has_aperfmperf )
         return 0;
 
-    switch (flag)
+    switch ( flag )
     {
     case GOV_GETAVG:
     {
@@ -96,11 +98,13 @@ unsigned int get_measured_perf(unsigned int cpu, unsigned int flag)
         return 0;
     }
 
-    if (cpu == smp_processor_id()) {
+    if ( cpu == smp_processor_id() )
+    {
         read_measured_perf_ctrs((void *)&readin);
-    } else {
-        on_selected_cpus(cpumask_of(cpu), read_measured_perf_ctrs,
-                        &readin, 1);
+    }
+    else
+    {
+        on_selected_cpus(cpumask_of(cpu), read_measured_perf_ctrs, &readin, 1);
     }
 
     cur.aperf.whole = readin.aperf.whole - saved->aperf.whole;
@@ -108,13 +112,14 @@ unsigned int get_measured_perf(unsigned int cpu, unsigned int flag)
     saved->aperf.whole = readin.aperf.whole;
     saved->mperf.whole = readin.mperf.whole;
 
-    if (unlikely(((unsigned long)(-1) / 100) < cur.aperf.whole)) {
+    if ( unlikely(((unsigned long)(-1) / 100) < cur.aperf.whole) )
+    {
         int shift_count = 7;
         cur.aperf.whole >>= shift_count;
         cur.mperf.whole >>= shift_count;
     }
 
-    if (cur.aperf.whole && cur.mperf.whole)
+    if ( cur.aperf.whole && cur.mperf.whole )
         perf_percent = (cur.aperf.whole * 100) / cur.mperf.whole;
     else
         perf_percent = 0;
@@ -138,12 +143,12 @@ static int __init cf_check cpufreq_driver_init(void)
                 switch ( cpufreq_xen_opts[i] )
                 {
                 case CPUFREQ_xen:
-                    ret = IS_ENABLED(CONFIG_INTEL) ?
-                          acpi_cpufreq_register() : -ENODEV;
+                    ret = IS_ENABLED(CONFIG_INTEL) ? acpi_cpufreq_register()
+                                                   : -ENODEV;
                     break;
                 case CPUFREQ_hwp:
-                    ret = IS_ENABLED(CONFIG_INTEL) ?
-                          hwp_register_driver() : -ENODEV;
+                    ret = IS_ENABLED(CONFIG_INTEL) ? hwp_register_driver()
+                                                   : -ENODEV;
                     break;
                 case CPUFREQ_none:
                     ret = 0;
@@ -164,6 +169,7 @@ static int __init cf_check cpufreq_driver_init(void)
 
     return ret;
 }
+
 presmp_initcall(cpufreq_driver_init);
 
 static int __init cf_check cpufreq_driver_late_init(void)
@@ -177,6 +183,7 @@ static int __init cf_check cpufreq_driver_late_init(void)
     cpufreq_driver.get = NULL;
     return 0;
 }
+
 __initcall(cpufreq_driver_late_init);
 
 int cpufreq_cpu_init(unsigned int cpu)

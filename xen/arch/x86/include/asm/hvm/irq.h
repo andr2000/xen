@@ -39,6 +39,7 @@ struct hvm_irq {
 
     /* Virtual interrupt and via-link for paravirtual platform driver. */
     uint32_t callback_via_asserted;
+
     union {
         enum {
             HVMIRQ_callback_none,
@@ -47,9 +48,14 @@ struct hvm_irq {
             HVMIRQ_callback_vector
         } callback_via_type;
     };
+
     union {
         uint32_t gsi;
-        struct { uint8_t dev, intx; } pci;
+
+        struct {
+            uint8_t dev, intx;
+        } pci;
+
         uint32_t vector;
     } callback_via;
 
@@ -163,8 +169,8 @@ struct hvm_pirq_dpci {
 void pt_pirq_init(struct domain *d, struct hvm_pirq_dpci *dpci);
 bool pt_pirq_cleanup_check(struct hvm_pirq_dpci *dpci);
 int pt_pirq_iterate(struct domain *d,
-                    int (*cb)(struct domain *d,
-                              struct hvm_pirq_dpci *dpci, void *arg),
+                    int (*cb)(struct domain *d, struct hvm_pirq_dpci *dpci,
+                              void *arg),
                     void *arg);
 
 #ifdef CONFIG_HVM

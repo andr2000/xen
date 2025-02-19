@@ -45,7 +45,7 @@
  * Check at compile time that something is of a particular type.
  * Always evaluates to 1 so you may use it easily in comparisons.
  */
-#define typecheck(type,x)                       \
+#define typecheck(type, x)                       \
 ({	type __dummy;                           \
 	typeof(x) __dummy2;                     \
 	(void)(&__dummy == &__dummy2);          \
@@ -101,4 +101,3 @@ void cf_check show_execution_state(const struct cpu_user_regs *regs);
 void vcpu_show_execution_state(struct vcpu *v);
 
 #endif /* _LINUX_KERNEL_H */
-

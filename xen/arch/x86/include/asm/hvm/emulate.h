@@ -61,31 +61,25 @@ enum emul_kind {
     EMUL_KIND_SET_CONTEXT_INSN
 };
 
-bool __nonnull(1, 2) hvm_emulate_one_insn(
-    hvm_emulate_validate_t *validate,
-    const char *descr);
-int hvm_emulate_one(
-    struct hvm_emulate_ctxt *hvmemul_ctxt,
-    enum vio_completion completion);
-void hvm_emulate_one_vm_event(enum emul_kind kind,
-    unsigned int trapnr,
-    unsigned int errcode);
+bool __nonnull(1, 2)
+    hvm_emulate_one_insn(hvm_emulate_validate_t *validate, const char *descr);
+int hvm_emulate_one(struct hvm_emulate_ctxt *hvmemul_ctxt,
+                    enum vio_completion completion);
+void hvm_emulate_one_vm_event(enum emul_kind kind, unsigned int trapnr,
+                              unsigned int errcode);
 /* Must be called once to set up hvmemul state. */
-void hvm_emulate_init_once(
-    struct hvm_emulate_ctxt *hvmemul_ctxt,
-    hvm_emulate_validate_t *validate,
-    struct cpu_user_regs *regs);
+void hvm_emulate_init_once(struct hvm_emulate_ctxt *hvmemul_ctxt,
+                           hvm_emulate_validate_t *validate,
+                           struct cpu_user_regs *regs);
 /* Must be called once before each instruction emulated. */
-void hvm_emulate_init_per_insn(
-    struct hvm_emulate_ctxt *hvmemul_ctxt,
-    const unsigned char *insn_buf,
-    unsigned int insn_bytes);
-void hvm_emulate_writeback(
-    struct hvm_emulate_ctxt *hvmemul_ctxt);
+void hvm_emulate_init_per_insn(struct hvm_emulate_ctxt *hvmemul_ctxt,
+                               const unsigned char *insn_buf,
+                               unsigned int insn_bytes);
+void hvm_emulate_writeback(struct hvm_emulate_ctxt *hvmemul_ctxt);
 void hvmemul_cancel(struct vcpu *v);
-struct segment_register *hvmemul_get_seg_reg(
-    enum x86_segment seg,
-    struct hvm_emulate_ctxt *hvmemul_ctxt);
+struct segment_register *
+hvmemul_get_seg_reg(enum x86_segment seg,
+                    struct hvm_emulate_ctxt *hvmemul_ctxt);
 int hvm_emulate_one_mmio(unsigned long mfn, unsigned long gla);
 
 static inline bool handle_mmio(void)
@@ -93,13 +87,11 @@ static inline bool handle_mmio(void)
     return hvm_emulate_one_insn(x86_insn_is_mem_access, "MMIO");
 }
 
-int cf_check hvmemul_insn_fetch(
-    unsigned long offset, void *p_data, unsigned int bytes,
-    struct x86_emulate_ctxt *ctxt);
+int cf_check hvmemul_insn_fetch(unsigned long offset, void *p_data,
+                                unsigned int bytes,
+                                struct x86_emulate_ctxt *ctxt);
 
-int hvmemul_do_pio_buffer(uint16_t port,
-                          unsigned int size,
-                          uint8_t dir,
+int hvmemul_do_pio_buffer(uint16_t port, unsigned int size, uint8_t dir,
                           void *buffer);
 
 #ifdef CONFIG_HVM
@@ -118,6 +110,7 @@ int hvmemul_do_pio_buffer(uint16_t port,
  *   further re-execution.
  */
 int __must_check hvmemul_cache_init(struct vcpu *v);
+
 static inline void hvmemul_cache_destroy(struct vcpu *v)
 {
     unsigned int i;
@@ -126,12 +119,14 @@ static inline void hvmemul_cache_destroy(struct vcpu *v)
         XFREE(v->arch.hvm.hvm_io.mmio_cache[i]);
     XVFREE(v->arch.hvm.hvm_io.cache);
 }
-bool hvmemul_read_cache(const struct vcpu *v, paddr_t gpa,
-                        void *buffer, unsigned int size);
-void hvmemul_write_cache(const struct vcpu *v, paddr_t gpa,
-                         const void *buffer, unsigned int size);
+
+bool hvmemul_read_cache(const struct vcpu *v, paddr_t gpa, void *buffer,
+                        unsigned int size);
+void hvmemul_write_cache(const struct vcpu *v, paddr_t gpa, const void *buffer,
+                         unsigned int size);
 unsigned int hvmemul_cache_disable(struct vcpu *v);
 void hvmemul_cache_restore(struct vcpu *v, unsigned int token);
+
 /* For use in ASSERT()s only: */
 static inline bool hvmemul_cache_disabled(struct vcpu *v)
 {
@@ -139,10 +134,14 @@ static inline bool hvmemul_cache_disabled(struct vcpu *v)
 }
 #else
 static inline bool hvmemul_read_cache(const struct vcpu *v, paddr_t gpa,
-                                      void *buf,
-                                      unsigned int size) { return false; }
+                                      void *buf, unsigned int size)
+{
+    return false;
+}
+
 static inline void hvmemul_write_cache(const struct vcpu *v, paddr_t gpa,
-                                       const void *buf, unsigned int size) {}
+                                       const void *buf, unsigned int size)
+{}
 #endif
 
 void hvm_dump_emulation_state(const char *loglvl, const char *prefix,

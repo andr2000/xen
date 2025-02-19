@@ -7,8 +7,8 @@
  * boundary check against the buffer size.
  */
 static int copy_msr_to_buffer(uint32_t idx, uint64_t val,
-                              msr_entry_buffer_t msrs,
-                              uint32_t *curr_entry, const uint32_t nr_entries)
+                              msr_entry_buffer_t msrs, uint32_t *curr_entry,
+                              const uint32_t nr_entries)
 {
     const xen_msr_entry_t ent = { .idx = idx, .val = val };
 
@@ -23,8 +23,8 @@ static int copy_msr_to_buffer(uint32_t idx, uint64_t val,
     return 0;
 }
 
-int x86_msr_copy_to_buffer(const struct cpu_policy *p,
-                           msr_entry_buffer_t msrs, uint32_t *nr_entries_p)
+int x86_msr_copy_to_buffer(const struct cpu_policy *p, msr_entry_buffer_t msrs,
+                           uint32_t *nr_entries_p)
 {
     const uint32_t nr_entries = *nr_entries_p;
     uint32_t curr_entry = 0;
@@ -39,7 +39,7 @@ int x86_msr_copy_to_buffer(const struct cpu_policy *p,
     })
 
     COPY_MSR(MSR_INTEL_PLATFORM_INFO, p->platform_info.raw);
-    COPY_MSR(MSR_ARCH_CAPABILITIES,   p->arch_caps.raw);
+    COPY_MSR(MSR_ARCH_CAPABILITIES, p->arch_caps.raw);
 
 #undef COPY_MSR
 
@@ -99,8 +99,12 @@ int x86_msr_copy_from_buffer(struct cpu_policy *p,
     p->field = data.val;                          \
 })
 
-        case MSR_INTEL_PLATFORM_INFO: ASSIGN(platform_info.raw); break;
-        case MSR_ARCH_CAPABILITIES:   ASSIGN(arch_caps.raw);     break;
+        case MSR_INTEL_PLATFORM_INFO:
+            ASSIGN(platform_info.raw);
+            break;
+        case MSR_ARCH_CAPABILITIES:
+            ASSIGN(arch_caps.raw);
+            break;
 
 #undef ASSIGN
 
@@ -112,7 +116,7 @@ int x86_msr_copy_from_buffer(struct cpu_policy *p,
 
     return 0;
 
- err:
+err:
     if ( err_msr )
         *err_msr = data.idx;
 

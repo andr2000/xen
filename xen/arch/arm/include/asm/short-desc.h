@@ -28,21 +28,21 @@
  * a section.
  */
 typedef struct __packed {
-    bool pxn:1;                 /* Privileged Execute Never */
-    bool sec:1;                 /* == 1 if section or supersection */
-    bool b:1;                   /* Bufferable */
-    bool c:1;                   /* Cacheable */
-    bool xn:1;                  /* Execute Never */
-    unsigned int dom:4;         /* Domain field */
-    bool impl:1;                /* Implementation defined */
-    unsigned int ap:2;          /* AP[1:0] */
-    unsigned int tex:3;         /* TEX[2:0] */
-    bool ro:1;                  /* AP[2] */
-    bool s:1;                   /* Shareable */
-    bool ng:1;                  /* Non-global */
-    bool supersec:1;            /* Must be 0 for sections */
-    bool ns:1;                  /* Non-secure */
-    unsigned int base:12;       /* Section base address */
+    bool pxn:1; /* Privileged Execute Never */
+    bool sec:1; /* == 1 if section or supersection */
+    bool b:1; /* Bufferable */
+    bool c:1; /* Cacheable */
+    bool xn:1; /* Execute Never */
+    unsigned int dom:4; /* Domain field */
+    bool impl:1; /* Implementation defined */
+    unsigned int ap:2; /* AP[1:0] */
+    unsigned int tex:3; /* TEX[2:0] */
+    bool ro:1; /* AP[2] */
+    bool s:1; /* Shareable */
+    bool ng:1; /* Non-global */
+    bool supersec:1; /* Must be 0 for sections */
+    bool ns:1; /* Non-secure */
+    unsigned int base:12; /* Section base address */
 } short_desc_l1_sec_t;
 
 /*
@@ -50,22 +50,22 @@ typedef struct __packed {
  * a supersection.
  */
 typedef struct __packed {
-    bool pxn:1;                 /* Privileged Execute Never */
-    bool sec:1;                 /* == 1 if section or supersection */
-    bool b:1;                   /* Bufferable */
-    bool c:1;                   /* Cacheable */
-    bool xn:1;                  /* Execute Never */
-    unsigned int extbase2:4;    /* Extended base address, PA[39:36] */
-    bool impl:1;                /* Implementation defined */
-    unsigned int ap:2;          /* AP[1:0] */
-    unsigned int tex:3;         /* TEX[2:0] */
-    bool ro:1;                  /* AP[2] */
-    bool s:1;                   /* Shareable */
-    bool ng:1;                  /* Non-global */
-    bool supersec:1;            /* Must be 0 for sections */
-    bool ns:1;                  /* Non-secure */
-    unsigned int extbase1:4;    /* Extended base address, PA[35:32] */
-    unsigned int base:8;        /* Supersection base address */
+    bool pxn:1; /* Privileged Execute Never */
+    bool sec:1; /* == 1 if section or supersection */
+    bool b:1; /* Bufferable */
+    bool c:1; /* Cacheable */
+    bool xn:1; /* Execute Never */
+    unsigned int extbase2:4; /* Extended base address, PA[39:36] */
+    bool impl:1; /* Implementation defined */
+    unsigned int ap:2; /* AP[1:0] */
+    unsigned int tex:3; /* TEX[2:0] */
+    bool ro:1; /* AP[2] */
+    bool s:1; /* Shareable */
+    bool ng:1; /* Non-global */
+    bool supersec:1; /* Must be 0 for sections */
+    bool ns:1; /* Non-secure */
+    unsigned int extbase1:4; /* Extended base address, PA[35:32] */
+    unsigned int base:8; /* Supersection base address */
 } short_desc_l1_supersec_t;
 
 /*
@@ -73,16 +73,16 @@ typedef struct __packed {
  * a small page.
  */
 typedef struct __packed {
-    bool xn:1;                  /* Execute Never */
-    bool page:1;                /* ==1 if small page */
-    bool b:1;                   /* Bufferable */
-    bool c:1;                   /* Cacheable */
-    unsigned int ap:2;          /* AP[1:0] */
-    unsigned int tex:3;         /* TEX[2:0] */
-    bool ro:1;                  /* AP[2] */
-    bool s:1;                   /* Shareable */
-    bool ng:1;                  /* Non-global */
-    unsigned int base:20;       /* Small page base address */
+    bool xn:1; /* Execute Never */
+    bool page:1; /* ==1 if small page */
+    bool b:1; /* Bufferable */
+    bool c:1; /* Cacheable */
+    unsigned int ap:2; /* AP[1:0] */
+    unsigned int tex:3; /* TEX[2:0] */
+    bool ro:1; /* AP[2] */
+    bool s:1; /* Shareable */
+    bool ng:1; /* Non-global */
+    unsigned int base:20; /* Small page base address */
 } short_desc_l2_page_t;
 
 /*
@@ -90,18 +90,18 @@ typedef struct __packed {
  * a large page.
  */
 typedef struct __packed {
-    bool lpage:1;               /* ==1 if large page */
-    bool page:1;                /* ==0 if large page */
-    bool b:1;                   /* Bufferable */
-    bool c:1;                   /* Cacheable */
-    unsigned int ap:2;          /* AP[1:0] */
-    unsigned int sbz:3;         /* Should be zero */
-    bool ro:1;                  /* AP[2] */
-    bool s:1;                   /* Shareable */
-    bool ng:1;                  /* Non-global */
-    unsigned int tex:3;         /* TEX[2:0] */
-    bool xn:1;                  /* Execute Never */
-    unsigned int base:16;       /* Large page base address */
+    bool lpage:1; /* ==1 if large page */
+    bool page:1; /* ==0 if large page */
+    bool b:1; /* Bufferable */
+    bool c:1; /* Cacheable */
+    unsigned int ap:2; /* AP[1:0] */
+    unsigned int sbz:3; /* Should be zero */
+    bool ro:1; /* AP[2] */
+    bool s:1; /* Shareable */
+    bool ng:1; /* Non-global */
+    unsigned int tex:3; /* TEX[2:0] */
+    bool xn:1; /* Execute Never */
+    unsigned int base:16; /* Large page base address */
 } short_desc_l2_lpage_t;
 
 /*
@@ -109,9 +109,9 @@ typedef struct __packed {
  * short-descriptor translation table format.
  */
 typedef struct __packed {
-    unsigned int dt:2;          /* Descriptor type */
+    unsigned int dt:2; /* Descriptor type */
     unsigned int pad1:8;
-    unsigned int base:22;       /* Base address of block or next table */
+    unsigned int base:22; /* Base address of block or next table */
 } short_desc_walk_t;
 
 /*

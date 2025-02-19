@@ -20,11 +20,8 @@
 #include <asm/platform.h>
 #include <asm/psci.h>
 
-static const char * const seattle_dt_compat[] __initconst =
-{
-    "amd,seattle",
-    NULL
-};
+static const char *const seattle_dt_compat[]
+    __initconst = { "amd,seattle", NULL };
 
 /* Seattle firmware only implements PSCI handler for
  * system off and system reset at this point.
@@ -42,9 +39,8 @@ static void seattle_system_off(void)
 }
 
 PLATFORM_START(seattle, "SEATTLE")
-    .compatible = seattle_dt_compat,
-    .reset      = seattle_system_reset,
-    .poweroff   = seattle_system_off,
+    .compatible = seattle_dt_compat, .reset = seattle_system_reset,
+    .poweroff = seattle_system_off,
 PLATFORM_END
 
 /*

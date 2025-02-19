@@ -23,8 +23,7 @@ static inline unsigned int hv_vp_index(unsigned int cpu)
     return per_cpu(hv_vp_index, cpu);
 }
 
-int hyperv_flush_tlb(const cpumask_t *mask, const void *va,
-                     unsigned int flags);
+int hyperv_flush_tlb(const cpumask_t *mask, const void *va, unsigned int flags);
 
 /* Returns number of banks, -ev if error */
 int cpumask_to_vpset(struct hv_vpset *vpset, const cpumask_t *mask);

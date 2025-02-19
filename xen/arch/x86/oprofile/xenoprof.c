@@ -25,11 +25,11 @@ int xenoprof_arch_counter(XEN_GUEST_HANDLE_PARAM(void) arg)
     if ( counter.ind >= OP_MAX_COUNTER )
         return -E2BIG;
 
-    counter_config[counter.ind].count     = counter.count;
-    counter_config[counter.ind].enabled   = counter.enabled;
-    counter_config[counter.ind].event     = counter.event;
-    counter_config[counter.ind].kernel    = counter.kernel;
-    counter_config[counter.ind].user      = counter.user;
+    counter_config[counter.ind].count = counter.count;
+    counter_config[counter.ind].enabled = counter.enabled;
+    counter_config[counter.ind].event = counter.event;
+    counter_config[counter.ind].kernel = counter.kernel;
+    counter_config[counter.ind].user = counter.user;
     counter_config[counter.ind].unit_mask = counter.unit_mask;
 
     return 0;
@@ -65,11 +65,11 @@ int compat_oprof_arch_counter(XEN_GUEST_HANDLE_PARAM(void) arg)
     if ( counter.ind >= OP_MAX_COUNTER )
         return -E2BIG;
 
-    counter_config[counter.ind].count     = counter.count;
-    counter_config[counter.ind].enabled   = counter.enabled;
-    counter_config[counter.ind].event     = counter.event;
-    counter_config[counter.ind].kernel    = counter.kernel;
-    counter_config[counter.ind].user      = counter.user;
+    counter_config[counter.ind].count = counter.count;
+    counter_config[counter.ind].enabled = counter.enabled;
+    counter_config[counter.ind].event = counter.event;
+    counter_config[counter.ind].kernel = counter.kernel;
+    counter_config[counter.ind].user = counter.user;
     counter_config[counter.ind].unit_mask = counter.unit_mask;
 
     return 0;

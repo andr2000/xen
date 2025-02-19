@@ -8,7 +8,7 @@ void mce_panic_check(void)
     if ( is_mc_panic )
     {
         local_irq_enable();
-        for ( ; ; )
+        for ( ;; )
             halt();
     }
 }

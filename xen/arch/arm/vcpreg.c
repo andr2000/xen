@@ -76,8 +76,8 @@ static bool func(struct cpu_user_regs *regs, type##sz##_t *r, bool read)    \
 #define TVM_REG64(regname, xreg) TVM_REG(64, vreg_emulate_##regname, xreg)
 
 #ifdef CONFIG_ARM_32
-#define TVM_REG32_COMBINED(lowreg, hireg, xreg)                     \
-    /* Use TVM_REG directly to workaround macro expansion. */       \
+#define TVM_REG32_COMBINED(lowreg, hireg, xreg)
+/* Use TVM_REG directly to workaround macro expansion. */       \
     TVM_REG(32, vreg_emulate_##lowreg, lowreg)                      \
     TVM_REG(32, vreg_emulate_##hireg, hireg)
 
@@ -235,30 +235,30 @@ void do_cp15_32(struct cpu_user_regs *regs, const union hsr hsr)
             p2m_set_way_flush(current, regs, hsr);
         break;
 
-    /*
+        /*
      * HCR_EL2.TVM
      *
      * ARMv8 (DDI 0487D.a): Table D1-38
      */
-    GENERATE_CASE(SCTLR, 32)
-    GENERATE_CASE(TTBR0_32, 32)
-    GENERATE_CASE(TTBR1_32, 32)
-    GENERATE_CASE(TTBCR, 32)
-    GENERATE_CASE(TTBCR2, 32)
-    GENERATE_CASE(DACR, 32)
-    GENERATE_CASE(DFSR, 32)
-    GENERATE_CASE(IFSR, 32)
-    GENERATE_CASE(DFAR, 32)
-    GENERATE_CASE(IFAR, 32)
-    GENERATE_CASE(ADFSR, 32)
-    GENERATE_CASE(AIFSR, 32)
-    /* AKA PRRR */
-    GENERATE_CASE(MAIR0, 32)
-    /* AKA NMRR */
-    GENERATE_CASE(MAIR1, 32)
-    GENERATE_CASE(AMAIR0, 32)
-    GENERATE_CASE(AMAIR1, 32)
-    GENERATE_CASE(CONTEXTIDR, 32)
+        GENERATE_CASE(SCTLR, 32)
+        GENERATE_CASE(TTBR0_32, 32)
+        GENERATE_CASE(TTBR1_32, 32)
+        GENERATE_CASE(TTBCR, 32)
+        GENERATE_CASE(TTBCR2, 32)
+        GENERATE_CASE(DACR, 32)
+        GENERATE_CASE(DFSR, 32)
+        GENERATE_CASE(IFSR, 32)
+        GENERATE_CASE(DFAR, 32)
+        GENERATE_CASE(IFAR, 32)
+        GENERATE_CASE(ADFSR, 32)
+        GENERATE_CASE(AIFSR, 32)
+        /* AKA PRRR */
+        GENERATE_CASE(MAIR0, 32)
+        /* AKA NMRR */
+        GENERATE_CASE(MAIR1, 32)
+        GENERATE_CASE(AMAIR0, 32)
+        GENERATE_CASE(AMAIR1, 32)
+        GENERATE_CASE(CONTEXTIDR, 32)
 
     /*
      * MDCR_EL2.TPM
@@ -314,31 +314,31 @@ void do_cp15_32(struct cpu_user_regs *regs, const union hsr hsr)
          */
         return handle_raz_wi(regs, regidx, cp32.read, hsr, 1);
 
-    /*
+        /*
      * HCR_EL2.TID3
      *
      * This is trapping most Identification registers used by a guest
      * to identify the processor features
      */
-    GENERATE_TID3_INFO(ID_PFR0, pfr32, 0)
-    GENERATE_TID3_INFO(ID_PFR1, pfr32, 1)
-    GENERATE_TID3_INFO(ID_PFR2, pfr32, 2)
-    GENERATE_TID3_INFO(ID_DFR0, dbg32, 0)
-    GENERATE_TID3_INFO(ID_DFR1, dbg32, 1)
-    GENERATE_TID3_INFO(ID_AFR0, aux32, 0)
-    GENERATE_TID3_INFO(ID_MMFR0, mm32, 0)
-    GENERATE_TID3_INFO(ID_MMFR1, mm32, 1)
-    GENERATE_TID3_INFO(ID_MMFR2, mm32, 2)
-    GENERATE_TID3_INFO(ID_MMFR3, mm32, 3)
-    GENERATE_TID3_INFO(ID_MMFR4, mm32, 4)
-    GENERATE_TID3_INFO(ID_MMFR5, mm32, 5)
-    GENERATE_TID3_INFO(ID_ISAR0, isa32, 0)
-    GENERATE_TID3_INFO(ID_ISAR1, isa32, 1)
-    GENERATE_TID3_INFO(ID_ISAR2, isa32, 2)
-    GENERATE_TID3_INFO(ID_ISAR3, isa32, 3)
-    GENERATE_TID3_INFO(ID_ISAR4, isa32, 4)
-    GENERATE_TID3_INFO(ID_ISAR5, isa32, 5)
-    GENERATE_TID3_INFO(ID_ISAR6, isa32, 6)
+        GENERATE_TID3_INFO(ID_PFR0, pfr32, 0)
+        GENERATE_TID3_INFO(ID_PFR1, pfr32, 1)
+        GENERATE_TID3_INFO(ID_PFR2, pfr32, 2)
+        GENERATE_TID3_INFO(ID_DFR0, dbg32, 0)
+        GENERATE_TID3_INFO(ID_DFR1, dbg32, 1)
+        GENERATE_TID3_INFO(ID_AFR0, aux32, 0)
+        GENERATE_TID3_INFO(ID_MMFR0, mm32, 0)
+        GENERATE_TID3_INFO(ID_MMFR1, mm32, 1)
+        GENERATE_TID3_INFO(ID_MMFR2, mm32, 2)
+        GENERATE_TID3_INFO(ID_MMFR3, mm32, 3)
+        GENERATE_TID3_INFO(ID_MMFR4, mm32, 4)
+        GENERATE_TID3_INFO(ID_MMFR5, mm32, 5)
+        GENERATE_TID3_INFO(ID_ISAR0, isa32, 0)
+        GENERATE_TID3_INFO(ID_ISAR1, isa32, 1)
+        GENERATE_TID3_INFO(ID_ISAR2, isa32, 2)
+        GENERATE_TID3_INFO(ID_ISAR3, isa32, 3)
+        GENERATE_TID3_INFO(ID_ISAR4, isa32, 4)
+        GENERATE_TID3_INFO(ID_ISAR5, isa32, 5)
+        GENERATE_TID3_INFO(ID_ISAR6, isa32, 6)
     /* MVFR registers are in cp10 not cp15 */
 
     /*
@@ -350,16 +350,16 @@ void do_cp15_32(struct cpu_user_regs *regs, const union hsr hsr)
      * Reference manual Armv8 (Chapter D12.3.2 of issue F.c) so handle them
      * as Read-only read as zero.
      */
-    case HSR_CPREG32(p15,0,c0,c3,0):
-    case HSR_CPREG32(p15,0,c0,c3,1):
-    case HSR_CPREG32(p15,0,c0,c3,2):
-    case HSR_CPREG32(p15,0,c0,c3,3):
-    case HSR_CPREG32(p15,0,c0,c3,7):
-    HSR_CPREG32_TID3_CASES(c4):
-    HSR_CPREG32_TID3_CASES(c5):
-    HSR_CPREG32_TID3_CASES(c6):
-    HSR_CPREG32_TID3_CASES(c7):
-        return handle_ro_raz(regs, regidx, cp32.read, hsr, 1);
+    case HSR_CPREG32(p15, 0, c0, c3, 0):
+    case HSR_CPREG32(p15, 0, c0, c3, 1):
+    case HSR_CPREG32(p15, 0, c0, c3, 2):
+    case HSR_CPREG32(p15, 0, c0, c3, 3):
+    case HSR_CPREG32(p15, 0, c0, c3, 7):
+        HSR_CPREG32_TID3_CASES(c4)
+            : HSR_CPREG32_TID3_CASES(c5)
+            : HSR_CPREG32_TID3_CASES(c6)
+            : HSR_CPREG32_TID3_CASES(c7)
+            : return handle_ro_raz(regs, regidx, cp32.read, hsr, 1);
 
     /*
      * HCR_EL2.TIDCP
@@ -392,10 +392,16 @@ void do_cp15_32(struct cpu_user_regs *regs, const union hsr hsr)
      */
     default:
         gdprintk(XENLOG_ERR,
-                 "%s p15, %d, r%d, cr%d, cr%d, %d @ 0x%"PRIregister"\n",
+                 "%s p15, %d, r%d, cr%d, cr%d, %d @ 0x%" PRIregister "\n",
                  cp32.read ? "mrc" : "mcr",
-                 cp32.op1, cp32.reg, cp32.crn, cp32.crm, cp32.op2, regs->pc);
-        gdprintk(XENLOG_ERR, "unhandled 32-bit CP15 access %#"PRIregister"\n",
+                 cp32.op1,
+                 cp32.reg,
+                 cp32.crn,
+                 cp32.crm,
+                 cp32.op2,
+                 regs->pc);
+        gdprintk(XENLOG_ERR,
+                 "unhandled 32-bit CP15 access %#" PRIregister "\n",
                  hsr.bits & HSR_CP32_REGS_MASK);
         inject_undef_exception(regs, hsr);
         return;
@@ -436,8 +442,8 @@ void do_cp15_64(struct cpu_user_regs *regs, const union hsr hsr)
             return inject_undef_exception(regs, hsr);
         break;
 
-    GENERATE_CASE(TTBR0, 64)
-    GENERATE_CASE(TTBR1, 64)
+        GENERATE_CASE(TTBR0, 64)
+        GENERATE_CASE(TTBR1, 64)
 
     /*
      * CPTR_EL2.T{0..9,12..13}
@@ -457,19 +463,23 @@ void do_cp15_64(struct cpu_user_regs *regs, const union hsr hsr)
      * And all other unknown registers.
      */
     default:
-        {
-            const struct hsr_cp64 cp64 = hsr.cp64;
+    {
+        const struct hsr_cp64 cp64 = hsr.cp64;
 
-            gdprintk(XENLOG_ERR,
-                     "%s p15, %d, r%d, r%d, cr%d @ 0x%"PRIregister"\n",
-                     cp64.read ? "mrrc" : "mcrr",
-                     cp64.op1, cp64.reg1, cp64.reg2, cp64.crm, regs->pc);
-            gdprintk(XENLOG_ERR,
-                     "unhandled 64-bit CP15 access %#"PRIregister"\n",
-                     hsr.bits & HSR_CP64_REGS_MASK);
-            inject_undef_exception(regs, hsr);
-            return;
-        }
+        gdprintk(XENLOG_ERR,
+                 "%s p15, %d, r%d, r%d, cr%d @ 0x%" PRIregister "\n",
+                 cp64.read ? "mrrc" : "mcrr",
+                 cp64.op1,
+                 cp64.reg1,
+                 cp64.reg2,
+                 cp64.crm,
+                 regs->pc);
+        gdprintk(XENLOG_ERR,
+                 "unhandled 64-bit CP15 access %#" PRIregister "\n",
+                 hsr.bits & HSR_CP64_REGS_MASK);
+        inject_undef_exception(regs, hsr);
+        return;
+    }
     }
     advance_pc(regs, hsr);
 }
@@ -542,7 +552,7 @@ void do_cp14_32(struct cpu_user_regs *regs, const union hsr hsr)
          */
         val = (1 << 24) | (5 << 16);
         val |= ((current_cpu_data.midr.bits >> 20) & 0xf) |
-                (current_cpu_data.midr.bits & 0xf);
+               (current_cpu_data.midr.bits & 0xf);
         set_user_reg(regs, regidx, val);
 
         break;
@@ -567,7 +577,11 @@ void do_cp14_32(struct cpu_user_regs *regs, const union hsr hsr)
          * Accessible at EL0 only if DBGDSCRext.UDCCdis is set to 0. We emulate
          * this as RAZ/WI in the next case. So RO at both EL0 and EL1.
          */
-        return handle_ro_read_val(regs, regidx, cp32.read, hsr, 0,
+        return handle_ro_read_val(regs,
+                                  regidx,
+                                  cp32.read,
+                                  hsr,
+                                  0,
                                   partial_emulation ? (1U << 29) : 0);
 
     case HSR_CPREG32(DBGDSCREXT):
@@ -624,12 +638,18 @@ void do_cp14_32(struct cpu_user_regs *regs, const union hsr hsr)
     advance_pc(regs, hsr);
     return;
 
- fail:
+fail:
     gdprintk(XENLOG_ERR,
-             "%s p14, %d, r%d, cr%d, cr%d, %d @ 0x%"PRIregister"\n",
+             "%s p14, %d, r%d, cr%d, cr%d, %d @ 0x%" PRIregister "\n",
              cp32.read ? "mrc" : "mcr",
-             cp32.op1, cp32.reg, cp32.crn, cp32.crm, cp32.op2, regs->pc);
-    gdprintk(XENLOG_ERR, "unhandled 32-bit cp14 access %#"PRIregister"\n",
+             cp32.op1,
+             cp32.reg,
+             cp32.crn,
+             cp32.crm,
+             cp32.op2,
+             regs->pc);
+    gdprintk(XENLOG_ERR,
+             "unhandled 32-bit cp14 access %#" PRIregister "\n",
              hsr.bits & HSR_CP32_REGS_MASK);
     inject_undef_exception(regs, hsr);
 }
@@ -664,10 +684,15 @@ void do_cp14_64(struct cpu_user_regs *regs, const union hsr hsr)
      * And all other unknown registers.
      */
     gdprintk(XENLOG_ERR,
-             "%s p14, %d, r%d, r%d, cr%d @ 0x%"PRIregister"\n",
+             "%s p14, %d, r%d, r%d, cr%d @ 0x%" PRIregister "\n",
              cp64.read ? "mrrc" : "mcrr",
-             cp64.op1, cp64.reg1, cp64.reg2, cp64.crm, regs->pc);
-    gdprintk(XENLOG_ERR, "unhandled 64-bit CP14 access %#"PRIregister"\n",
+             cp64.op1,
+             cp64.reg1,
+             cp64.reg2,
+             cp64.crm,
+             regs->pc);
+    gdprintk(XENLOG_ERR,
+             "unhandled 64-bit CP14 access %#" PRIregister "\n",
              hsr.bits & HSR_CP64_REGS_MASK);
     inject_undef_exception(regs, hsr);
 }
@@ -692,10 +717,15 @@ void do_cp14_dbg(struct cpu_user_regs *regs, const union hsr hsr)
      * All unknown registers.
      */
     gdprintk(XENLOG_ERR,
-             "%s p14, %d, r%d, r%d, cr%d @ 0x%"PRIregister"\n",
+             "%s p14, %d, r%d, r%d, cr%d @ 0x%" PRIregister "\n",
              cp64.read ? "mrrc" : "mcrr",
-             cp64.op1, cp64.reg1, cp64.reg2, cp64.crm, regs->pc);
-    gdprintk(XENLOG_ERR, "unhandled 64-bit CP14 DBG access %#"PRIregister"\n",
+             cp64.op1,
+             cp64.reg1,
+             cp64.reg2,
+             cp64.crm,
+             regs->pc);
+    gdprintk(XENLOG_ERR,
+             "unhandled 64-bit CP14 DBG access %#" PRIregister "\n",
              hsr.bits & HSR_CP64_REGS_MASK);
 
     inject_undef_exception(regs, hsr);
@@ -714,27 +744,33 @@ void do_cp10(struct cpu_user_regs *regs, const union hsr hsr)
 
     switch ( hsr.bits & HSR_CP32_REGS_MASK )
     {
-    /*
+        /*
      * HCR.TID3 is trapping access to MVFR register used to identify the
      * VFP/Simd using VMRS/VMSR instructions.
      * Exception encoding is using MRC/MCR standard with the reg field in Crn
      * as are declared MVFR0 and MVFR1 in cpregs.h
      */
-    GENERATE_TID3_INFO(MVFR0, mvfr, 0)
-    GENERATE_TID3_INFO(MVFR1, mvfr, 1)
-    GENERATE_TID3_INFO(MVFR2, mvfr, 2)
+        GENERATE_TID3_INFO(MVFR0, mvfr, 0)
+        GENERATE_TID3_INFO(MVFR1, mvfr, 1)
+        GENERATE_TID3_INFO(MVFR2, mvfr, 2)
 
     default:
         gdprintk(XENLOG_ERR,
-                 "%s p10, %d, r%d, cr%d, cr%d, %d @ 0x%"PRIregister"\n",
+                 "%s p10, %d, r%d, cr%d, cr%d, %d @ 0x%" PRIregister "\n",
                  cp32.read ? "mrc" : "mcr",
-                 cp32.op1, cp32.reg, cp32.crn, cp32.crm, cp32.op2, regs->pc);
-        gdprintk(XENLOG_ERR, "unhandled 32-bit CP10 access %#"PRIregister"\n",
+                 cp32.op1,
+                 cp32.reg,
+                 cp32.crn,
+                 cp32.crm,
+                 cp32.op2,
+                 regs->pc);
+        gdprintk(XENLOG_ERR,
+                 "unhandled 32-bit CP10 access %#" PRIregister "\n",
                  hsr.bits & HSR_CP32_REGS_MASK);
         inject_undef_exception(regs, hsr);
         return;
     }
-    
+
     /*
      * All the cases in the switch should return. If this is not the
      * case, then something went wrong and it is best to crash the

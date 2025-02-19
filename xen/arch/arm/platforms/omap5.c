@@ -24,14 +24,14 @@
 #include <asm/io.h>
 
 static uint16_t num_den[8][2] = {
-    {         0,          0 },  /* not used */
-    {  26 *  64,  26 *  125 },  /* 12.0 Mhz */
-    {   2 * 768,   2 * 1625 },  /* 13.0 Mhz */
-    {         0,          0 },  /* not used */
-    { 130 *   8, 130 *   25 },  /* 19.2 Mhz */
-    {   2 * 384,   2 * 1625 },  /* 26.0 Mhz */
-    {   3 * 256,   3 * 1125 },  /* 27.0 Mhz */
-    { 130 *   4, 130 *   25 },  /* 38.4 Mhz */
+    { 0,       0        }, /* not used */
+    { 26 * 64, 26 * 125 }, /* 12.0 Mhz */
+    { 2 * 768, 2 * 1625 }, /* 13.0 Mhz */
+    { 0,       0        }, /* not used */
+    { 130 * 8, 130 * 25 }, /* 19.2 Mhz */
+    { 2 * 384, 2 * 1625 }, /* 26.0 Mhz */
+    { 3 * 256, 3 * 1125 }, /* 27.0 Mhz */
+    { 130 * 4, 130 * 25 }, /* 38.4 Mhz */
 };
 
 /*
@@ -57,15 +57,16 @@ static int omap5_init_time(void)
         return -ENOMEM;
     }
 
-    sys_clksel = readl(ckgen_prm_base + OMAP5_CM_CLKSEL_SYS) &
-        ~SYS_CLKSEL_MASK;
+    sys_clksel = readl(ckgen_prm_base + OMAP5_CM_CLKSEL_SYS) & ~SYS_CLKSEL_MASK;
 
     iounmap(ckgen_prm_base);
 
     rt_ct_base = ioremap_nocache(REALTIME_COUNTER_BASE, 0x20);
     if ( !rt_ct_base )
     {
-        dprintk(XENLOG_ERR, "%s: REALTIME_COUNTER_BASE ioremap failed\n", __func__);
+        dprintk(XENLOG_ERR,
+                "%s: REALTIME_COUNTER_BASE ioremap failed\n",
+                __func__);
         return -ENOMEM;
     }
 
@@ -97,19 +98,27 @@ static int omap5_init_time(void)
 static int omap5_specific_mapping(struct domain *d)
 {
     /* Map the PRM module */
-    map_mmio_regions(d, gaddr_to_gfn(OMAP5_PRM_BASE), 2,
+    map_mmio_regions(d,
+                     gaddr_to_gfn(OMAP5_PRM_BASE),
+                     2,
                      maddr_to_mfn(OMAP5_PRM_BASE));
 
     /* Map the PRM_MPU */
-    map_mmio_regions(d, gaddr_to_gfn(OMAP5_PRCM_MPU_BASE), 1,
+    map_mmio_regions(d,
+                     gaddr_to_gfn(OMAP5_PRCM_MPU_BASE),
+                     1,
                      maddr_to_mfn(OMAP5_PRCM_MPU_BASE));
 
     /* Map the Wakeup Gen */
-    map_mmio_regions(d, gaddr_to_gfn(OMAP5_WKUPGEN_BASE), 1,
+    map_mmio_regions(d,
+                     gaddr_to_gfn(OMAP5_WKUPGEN_BASE),
+                     1,
                      maddr_to_mfn(OMAP5_WKUPGEN_BASE));
 
     /* Map the on-chip SRAM */
-    map_mmio_regions(d, gaddr_to_gfn(OMAP5_SRAM_PA), 32,
+    map_mmio_regions(d,
+                     gaddr_to_gfn(OMAP5_SRAM_PA),
+                     32,
                      maddr_to_mfn(OMAP5_SRAM_PA));
 
     return 0;
@@ -126,8 +135,9 @@ static int __init omap5_smp_init(void)
         return -EFAULT;
     }
 
-    printk("Set AuxCoreBoot1 to %"PRIpaddr" (%p)\n",
-           __pa(init_secondary), init_secondary);
+    printk("Set AuxCoreBoot1 to %" PRIpaddr " (%p)\n",
+           __pa(init_secondary),
+           init_secondary);
     writel(__pa(init_secondary), wugen_base + OMAP_AUX_CORE_BOOT_1_OFFSET);
 
     printk("Set AuxCoreBoot0 to 0x20\n");
@@ -138,31 +148,19 @@ static int __init omap5_smp_init(void)
     return 0;
 }
 
-static const char * const omap5_dt_compat[] __initconst =
-{
-    "ti,omap5",
-    NULL
-};
+static const char *const omap5_dt_compat[] __initconst = { "ti,omap5", NULL };
 
-static const char * const dra7_dt_compat[] __initconst =
-{
-    "ti,dra7",
-    NULL
-};
+static const char *const dra7_dt_compat[] __initconst = { "ti,dra7", NULL };
 
 PLATFORM_START(omap5, "TI OMAP5")
-    .compatible = omap5_dt_compat,
-    .init_time = omap5_init_time,
-    .specific_mapping = omap5_specific_mapping,
-    .smp_init = omap5_smp_init,
+    .compatible = omap5_dt_compat, .init_time = omap5_init_time,
+    .specific_mapping = omap5_specific_mapping, .smp_init = omap5_smp_init,
     .cpu_up = cpu_up_send_sgi,
 PLATFORM_END
 
 PLATFORM_START(dra7, "TI DRA7")
-    .compatible = dra7_dt_compat,
-    .init_time = omap5_init_time,
-    .cpu_up = cpu_up_send_sgi,
-    .smp_init = omap5_smp_init,
+    .compatible = dra7_dt_compat, .init_time = omap5_init_time,
+    .cpu_up = cpu_up_send_sgi, .smp_init = omap5_smp_init,
 PLATFORM_END
 
 /*

@@ -22,7 +22,9 @@
 #ifndef __XEN_ATOMIC_H__
 #define __XEN_ATOMIC_H__
 
-typedef struct { int counter; } atomic_t;
+typedef struct {
+    int counter;
+} atomic_t;
 
 #define ATOMIC_INIT(i) { (i) }
 

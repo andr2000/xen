@@ -75,6 +75,7 @@ static int __init cf_check parse_xsm_param(const char *s)
 
     return rc;
 }
+
 custom_param("xsm", parse_xsm_param);
 
 static int __init xsm_core_init(const void *policy_buffer, size_t policy_size)
@@ -131,8 +132,7 @@ static int __init xsm_core_init(const void *policy_buffer, size_t policy_size)
     if ( xsm_ops_registered != XSM_OPS_REGISTERED )
     {
         xsm_ops_registered = XSM_OPS_REG_FAILED;
-        printk(XENLOG_ERR
-               "Could not init XSM, xsm_ops register failed\n");
+        printk(XENLOG_ERR "Could not init XSM, xsm_ops register failed\n");
         return -EFAULT;
     }
 
@@ -208,8 +208,8 @@ bool __init has_xsm_magic(paddr_t start)
 
     if ( XSM_MAGIC )
     {
-        copy_from_paddr(&magic, start, sizeof(magic) );
-        return ( magic == XSM_MAGIC );
+        copy_from_paddr(&magic, start, sizeof(magic));
+        return (magic == XSM_MAGIC);
     }
 
     return false;

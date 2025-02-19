@@ -27,8 +27,7 @@ int do_bug_frame(const struct cpu_user_regs *regs, unsigned long pc)
     {
         const struct bug_frame *b;
 
-        for ( b = region->frame[id].start;
-              b < region->frame[id].stop; b++ )
+        for ( b = region->frame[id].start; b < region->frame[id].stop; b++ )
         {
             if ( bug_loc(b) == pc )
             {
@@ -38,7 +37,7 @@ int do_bug_frame(const struct cpu_user_regs *regs, unsigned long pc)
         }
     }
 
- found:
+found:
     if ( !bug )
         return -ENOENT;
 
@@ -83,10 +82,16 @@ int do_bug_frame(const struct cpu_user_regs *regs, unsigned long pc)
             predicate = "<unknown>";
 
         printk("Assertion '%s' failed at %s%s:%d\n",
-               predicate, prefix, filename, lineno);
+               predicate,
+               prefix,
+               filename,
+               lineno);
         show_execution_state(regs);
         panic("Assertion '%s' failed at %s%s:%d\n",
-              predicate, prefix, filename, lineno);
+              predicate,
+              prefix,
+              filename,
+              lineno);
     }
 
     return id;

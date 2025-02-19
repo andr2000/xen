@@ -133,7 +133,7 @@ static void __prepare_to_wait(struct waitqueue_vcpu *wqv)
         gdprintk(XENLOG_ERR, "Unable to set vcpu affinity\n");
         domain_crash(curr->domain);
 
-        for ( ; ; )
+        for ( ;; )
             do_softirq();
     }
 
@@ -150,33 +150,26 @@ static void __prepare_to_wait(struct waitqueue_vcpu *wqv)
      * to be suitable and %rsi/%rdi are swapped, so the rep movsb instead
      * copies in from wqv->stack over the active stack.
      */
-    asm volatile (
-        "push %%rbx; push %%rbp; push %%r12;"
-        "push %%r13; push %%r14; push %%r15;"
+    asm volatile(
+        "push %%rbx; push %%rbp; push %%r12;" "push %%r13; push %%r14; push %%r15;"
 
-        "sub %%esp,%%ecx;"
-        "cmp %[sz], %%ecx;"
-        "ja .L_skip;"       /* Bail if >4k */
+        "sub %%esp,%%ecx;" "cmp %[sz], %%ecx;" "ja .L_skip;" /* Bail if >4k */
         "mov %%rsp,%%rsi;"
 
         /* check_wakeup_from_wait() longjmp()'s to this point. */
-        ".L_wq_resume: rep movsb;"
-        "mov %%rsp,%%rsi;"
+        ".L_wq_resume: rep movsb;" "mov %%rsp,%%rsi;"
 
-        ".L_skip:"
-        "pop %%r15; pop %%r14; pop %%r13;"
-        "pop %%r12; pop %%rbp; pop %%rbx"
-        : "=&S" (wqv->esp), "=&c" (dummy), "=&D" (dummy)
-        : "0" (0), "1" (cpu_info), "2" (wqv->stack),
-          [sz] "i" (PAGE_SIZE)
-        : "memory", "rax", "rdx", "r8", "r9", "r10", "r11" );
+        ".L_skip:" "pop %%r15; pop %%r14; pop %%r13;" "pop %%r12; pop %%rbp; pop %%rbx"
+        : "=&S"(wqv->esp), "=&c"(dummy), "=&D"(dummy)
+        : "0"(0), "1"(cpu_info), "2"(wqv->stack), [sz] "i"(PAGE_SIZE)
+        : "memory", "rax", "rdx", "r8", "r9", "r10", "r11");
 
     if ( unlikely(wqv->esp == NULL) )
     {
         gdprintk(XENLOG_ERR, "Stack too large in %s\n", __func__);
         domain_crash(curr->domain);
 
-        for ( ; ; )
+        for ( ;; )
             do_softirq();
     }
 }
@@ -205,7 +198,7 @@ void check_wakeup_from_wait(void)
 
         /* Re-initiate scheduler and don't longjmp(). */
         raise_softirq(SCHEDULE_SOFTIRQ);
-        for ( ; ; )
+        for ( ;; )
             do_softirq();
     }
 
@@ -244,12 +237,12 @@ void check_wakeup_from_wait(void)
      * All other GPRs are available for use; They're restored from the stack,
      * or explicitly clobbered.
      */
-    asm volatile ( "mov %%rdi, %%rsp;"
-                   "jmp .L_wq_resume"
-                   :
-                   : "S" (wqv->stack), "D" (wqv->esp),
-                     "c" ((char *)get_cpu_info() - (char *)wqv->esp)
-                   : "memory" );
+    asm volatile("mov %%rdi, %%rsp;" "jmp .L_wq_resume"
+                 :
+                 : "S"(wqv->stack),
+                   "D"(wqv->esp),
+                   "c"((char *)get_cpu_info() - (char *)wqv->esp)
+                 : "memory");
     unreachable();
 }
 

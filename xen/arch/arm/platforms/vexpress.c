@@ -29,8 +29,8 @@
 #define POSITION_SHIFT 12
 #define DEVICE_SHIFT   0
 
-static inline int vexpress_ctrl_start(uint32_t *syscfg, int write,
-                                      int function, int device)
+static inline int vexpress_ctrl_start(uint32_t *syscfg, int write, int function,
+                                      int device)
 {
     int dcc = 0; /* DCC to access */
     int site = 0; /* motherboard */
@@ -38,15 +38,16 @@ static inline int vexpress_ctrl_start(uint32_t *syscfg, int write,
     uint32_t stat;
 
     /* set control register */
-    syscfg[V2M_SYS_CFGCTRL/4] = V2M_SYS_CFG_START |
-        (write ? V2M_SYS_CFG_WRITE : 0) |
+    syscfg[V2M_SYS_CFGCTRL / 4] =
+        V2M_SYS_CFG_START | (write ? V2M_SYS_CFG_WRITE : 0) |
         (dcc << DCC_SHIFT) | (function << FUNCTION_SHIFT) |
         (site << SITE_SHIFT) | (position << POSITION_SHIFT) |
         (device << DEVICE_SHIFT);
 
     /* wait for complete flag to be set */
-    do {
-        stat = syscfg[V2M_SYS_CFGSTAT/4];
+    do
+    {
+        stat = syscfg[V2M_SYS_CFGSTAT / 4];
         dsb(sy);
     } while ( !(stat & V2M_SYS_CFG_COMPLETE) );
 
@@ -78,10 +79,12 @@ static void vexpress_reset(void)
 
     /* switch to slow mode */
     writel(0x3, sp810);
-    dsb(sy); isb();
+    dsb(sy);
+    isb();
     /* writing any value to SCSYSSTAT reg will reset the system */
     writel(0x1, sp810 + 4);
-    dsb(sy); isb();
+    dsb(sy);
+    isb();
 
     iounmap(sp810);
 }
@@ -99,8 +102,9 @@ static int __init vexpress_smp_init(void)
         return -EFAULT;
     }
 
-    printk("Set SYS_FLAGS to %"PRIpaddr" (%p)\n",
-           __pa(init_secondary), init_secondary);
+    printk("Set SYS_FLAGS to %" PRIpaddr " (%p)\n",
+           __pa(init_secondary),
+           init_secondary);
     writel(~0, sysflags + V2M_SYS_FLAGSCLR);
     writel(__pa(init_secondary), sysflags + V2M_SYS_FLAGSSET);
 
@@ -111,14 +115,10 @@ static int __init vexpress_smp_init(void)
 
 #endif
 
-static const char * const vexpress_dt_compat[] __initconst =
-{
-    "arm,vexpress",
-    NULL
-};
+static const char *const vexpress_dt_compat[]
+    __initconst = { "arm,vexpress", NULL };
 
-static const struct dt_device_match vexpress_blacklist_dev[] __initconst =
-{
+static const struct dt_device_match vexpress_blacklist_dev[] __initconst = {
     /* Cache Coherent Interconnect */
     DT_MATCH_COMPATIBLE("arm,cci-400"),
     DT_MATCH_COMPATIBLE("arm,cci-400-pmu"),
@@ -136,11 +136,9 @@ static const struct dt_device_match vexpress_blacklist_dev[] __initconst =
 PLATFORM_START(vexpress, "VERSATILE EXPRESS")
     .compatible = vexpress_dt_compat,
 #ifdef CONFIG_ARM_32
-    .smp_init = vexpress_smp_init,
-    .cpu_up = cpu_up_send_sgi,
+    .smp_init = vexpress_smp_init, .cpu_up = cpu_up_send_sgi,
 #endif
-    .reset = vexpress_reset,
-    .blacklist_dev = vexpress_blacklist_dev,
+    .reset = vexpress_reset, .blacklist_dev = vexpress_blacklist_dev,
 PLATFORM_END
 
 /*

@@ -23,8 +23,7 @@
 #define FEATURESET_m10Al     16 /* 0x0000010a.eax      */
 #define FEATURESET_m10Ah     17 /* 0x0000010a.edx      */
 
-struct cpuid_leaf
-{
+struct cpuid_leaf {
     uint32_t a, b, c, d;
 };
 
@@ -39,35 +38,31 @@ struct cpuid_leaf
  * the asm() statement.
  */
 #if defined(__PIC__) && __GNUC__ < 5 && !defined(__clang__) && defined(__i386__)
-# define XCHG_BX "xchg %%ebx, %[bx];"
-# define BX_CON [bx] "=&r"
-#elif defined(__PIC__) && __GNUC__ < 5 && !defined(__clang__) && \
-    defined(__x86_64__) && (defined(__code_model_medium__) || \
-                            defined(__code_model_large__))
-# define XCHG_BX "xchg %%rbx, %q[bx];"
-# define BX_CON [bx] "=&r"
+#define XCHG_BX "xchg %%ebx, %[bx];"
+#define BX_CON [bx] "=&r"
+#elif defined(__PIC__) && __GNUC__ < 5 && !defined(__clang__) &&               \
+    defined(__x86_64__) &&                                                     \
+    (defined(__code_model_medium__) || defined(__code_model_large__))
+#define XCHG_BX "xchg %%rbx, %q[bx];"
+#define BX_CON [bx] "=&r"
 #else
-# define XCHG_BX ""
-# define BX_CON "=&b"
+#define XCHG_BX ""
+#define BX_CON "=&b"
 #endif
 
 static inline void cpuid_leaf(uint32_t leaf, struct cpuid_leaf *l)
 {
-    asm ( XCHG_BX
-          "cpuid;"
-          XCHG_BX
-          : "=a" (l->a), BX_CON (l->b), "=&c" (l->c), "=&d" (l->d)
-          : "a" (leaf) );
+    asm(XCHG_BX "cpuid;" XCHG_BX
+        : "=a"(l->a), BX_CON(l->b), "=&c"(l->c), "=&d"(l->d)
+        : "a"(leaf));
 }
 
-static inline void cpuid_count_leaf(
-    uint32_t leaf, uint32_t subleaf, struct cpuid_leaf *l)
+static inline void cpuid_count_leaf(uint32_t leaf, uint32_t subleaf,
+                                    struct cpuid_leaf *l)
 {
-    asm ( XCHG_BX
-          "cpuid;"
-          XCHG_BX
-          : "=a" (l->a), BX_CON (l->b), "=c" (l->c), "=&d" (l->d)
-          : "a" (leaf), "c" (subleaf) );
+    asm(XCHG_BX "cpuid;" XCHG_BX
+        : "=a"(l->a), BX_CON(l->b), "=c"(l->c), "=&d"(l->d)
+        : "a"(leaf), "c"(subleaf));
 }
 
 #undef BX_CON
@@ -112,8 +107,7 @@ const char *x86_cpuid_vendor_to_str(unsigned int vendor);
 /* Maximum number of MSRs written when serialising a cpu_policy. */
 #define MSR_MAX_SERIALISED_ENTRIES 2
 
-struct cpu_policy
-{
+struct cpu_policy {
 #define DECL_BITFIELD(word) _DECL_BITFIELD(FEATURESET_ ## word)
 #define _DECL_BITFIELD(x)   __DECL_BITFIELD(x)
 #define __DECL_BITFIELD(x)  CPUID_BITFIELD_ ## x
@@ -121,53 +115,63 @@ struct cpu_policy
     /* Basic leaves: 0x000000xx */
     union {
         struct cpuid_leaf raw[CPUID_GUEST_NR_BASIC];
+
         struct {
             /* Leaf 0x0 - Max and vendor. */
             uint32_t max_leaf, vendor_ebx, vendor_ecx, vendor_edx;
 
             /* Leaf 0x1 - Family/model/stepping and features. */
             uint32_t raw_fms;
-            uint8_t :8,       /* Brand ID. */
+            uint8_t:8, /* Brand ID. */
                 clflush_size, /* Number of 8-byte blocks per cache line. */
-                lppp,         /* Logical processors per package. */
-                apic_id;      /* Initial APIC ID. */
+                lppp, /* Logical processors per package. */
+                apic_id; /* Initial APIC ID. */
+
             union {
                 uint32_t _1c;
-                struct { DECL_BITFIELD(1c); };
+
+                struct {
+                    DECL_BITFIELD(1c);
+                };
             };
+
             union {
                 uint32_t _1d;
-                struct { DECL_BITFIELD(1d); };
+
+                struct {
+                    DECL_BITFIELD(1d);
+                };
             };
 
             /* Leaf 0x2 - TLB/Cache/Prefetch. */
             uint8_t l2_nr_queries; /* Documented as fixed to 1. */
             uint8_t l2_desc[15];
 
-            uint64_t :64, :64; /* Leaf 0x3 - PSN. */
-            uint64_t :64, :64; /* Leaf 0x4 - Structured Cache. */
-            uint64_t :64, :64; /* Leaf 0x5 - MONITOR. */
-            uint64_t :64, :64; /* Leaf 0x6 - Therm/Perf. */
-            uint64_t :64, :64; /* Leaf 0x7 - Structured Features. */
-            uint64_t :64, :64; /* Leaf 0x8 - rsvd */
-            uint64_t :64, :64; /* Leaf 0x9 - DCA */
+            uint64_t:64, :64; /* Leaf 0x3 - PSN. */
+            uint64_t:64, :64; /* Leaf 0x4 - Structured Cache. */
+            uint64_t:64, :64; /* Leaf 0x5 - MONITOR. */
+            uint64_t:64, :64; /* Leaf 0x6 - Therm/Perf. */
+            uint64_t:64, :64; /* Leaf 0x7 - Structured Features. */
+            uint64_t:64, :64; /* Leaf 0x8 - rsvd */
+            uint64_t:64, :64; /* Leaf 0x9 - DCA */
 
             /* Leaf 0xa - Intel PMU. */
             uint8_t pmu_version, _pmu[15];
 
-            uint64_t :64, :64; /* Leaf 0xb - Topology. */
-            uint64_t :64, :64; /* Leaf 0xc - rsvd */
-            uint64_t :64, :64; /* Leaf 0xd - XSTATE. */
+            uint64_t:64, :64; /* Leaf 0xb - Topology. */
+            uint64_t:64, :64; /* Leaf 0xc - rsvd */
+            uint64_t:64, :64; /* Leaf 0xd - XSTATE. */
         };
     } basic;
 
     /* Structured cache leaf: 0x00000004[xx] */
     union {
         struct cpuid_leaf raw[CPUID_GUEST_NR_CACHE];
+
         struct cpuid_cache_leaf {
             uint32_t /* a */ type:5, level:3;
             bool self_init:1, fully_assoc:1;
-            uint32_t :4, threads_per_cache:12, cores_per_package:6;
+            uint32_t:4, threads_per_cache:12, cores_per_package:6;
             uint32_t /* b */ line_size:12, partitions:10, ways:10;
             uint32_t /* c */ sets;
             bool /* d */ wbinvd:1, inclusive:1, complex:1;
@@ -177,45 +181,77 @@ struct cpu_policy
     /* Structured feature leaf: 0x00000007[xx] */
     union {
         struct cpuid_leaf raw[CPUID_GUEST_NR_FEAT];
+
         struct {
             /* Subleaf 0. */
             uint32_t max_subleaf;
+
             union {
                 uint32_t _7b0;
-                struct { DECL_BITFIELD(7b0); };
+
+                struct {
+                    DECL_BITFIELD(7b0);
+                };
             };
+
             union {
                 uint32_t _7c0;
-                struct { DECL_BITFIELD(7c0); };
+
+                struct {
+                    DECL_BITFIELD(7c0);
+                };
             };
+
             union {
                 uint32_t _7d0;
-                struct { DECL_BITFIELD(7d0); };
+
+                struct {
+                    DECL_BITFIELD(7d0);
+                };
             };
 
             /* Subleaf 1. */
             union {
                 uint32_t _7a1;
-                struct { DECL_BITFIELD(7a1); };
+
+                struct {
+                    DECL_BITFIELD(7a1);
+                };
             };
+
             union {
                 uint32_t _7b1;
-                struct { DECL_BITFIELD(7b1); };
+
+                struct {
+                    DECL_BITFIELD(7b1);
+                };
             };
+
             union {
                 uint32_t _7c1;
-                struct { DECL_BITFIELD(7c1); };
+
+                struct {
+                    DECL_BITFIELD(7c1);
+                };
             };
+
             union {
                 uint32_t _7d1;
-                struct { DECL_BITFIELD(7d1); };
+
+                struct {
+                    DECL_BITFIELD(7d1);
+                };
             };
 
             /* Subleaf 2. */
             uint32_t /* a */:32, /* b */:32, /* c */:32;
+
             union {
                 uint32_t _7d2;
-                struct { DECL_BITFIELD(7d2); };
+
+                struct {
+                    DECL_BITFIELD(7d2);
+                };
             };
         };
     } feat;
@@ -223,6 +259,7 @@ struct cpu_policy
     /* Extended topology enumeration: 0x0000000B[xx] */
     union {
         struct cpuid_leaf raw[CPUID_GUEST_NR_TOPO];
+
         struct cpuid_topo_leaf {
             uint32_t id_shift:5, :27;
             uint16_t nr_logical, :16;
@@ -242,8 +279,12 @@ struct cpu_policy
             /* Subleaf 1. */
             union {
                 uint32_t Da1;
-                struct { DECL_BITFIELD(Da1); };
+
+                struct {
+                    DECL_BITFIELD(Da1);
+                };
             };
+
             uint32_t /* b */:32, xss_low, xss_high;
         };
 
@@ -258,73 +299,95 @@ struct cpu_policy
     /* Extended leaves: 0x800000xx */
     union {
         struct cpuid_leaf raw[CPUID_GUEST_NR_EXTD];
+
         struct {
             /* Leaf 0x80000000 - Max and vendor. */
             uint32_t max_leaf, vendor_ebx, vendor_ecx, vendor_edx;
 
             /* Leaf 0x80000001 - Family/model/stepping and features. */
             uint32_t raw_fms, /* b */:32;
+
             union {
                 uint32_t e1c;
-                struct { DECL_BITFIELD(e1c); };
-            };
-            union {
-                uint32_t e1d;
-                struct { DECL_BITFIELD(e1d); };
+
+                struct {
+                    DECL_BITFIELD(e1c);
+                };
             };
 
-            uint64_t :64, :64; /* Brand string. */
-            uint64_t :64, :64; /* Brand string. */
-            uint64_t :64, :64; /* Brand string. */
-            uint64_t :64, :64; /* L1 cache/TLB. */
-            uint64_t :64, :64; /* L2/3 cache/TLB. */
+            union {
+                uint32_t e1d;
+
+                struct {
+                    DECL_BITFIELD(e1d);
+                };
+            };
+
+            uint64_t:64, :64; /* Brand string. */
+            uint64_t:64, :64; /* Brand string. */
+            uint64_t:64, :64; /* Brand string. */
+            uint64_t:64, :64; /* L1 cache/TLB. */
+            uint64_t:64, :64; /* L2/3 cache/TLB. */
 
             /* Leaf 0x80000007 - Advanced Power Management. */
             uint32_t /* a */:32, /* b */:32, /* c */:32;
+
             union {
                 uint32_t e7d;
-                struct { DECL_BITFIELD(e7d); };
+
+                struct {
+                    DECL_BITFIELD(e7d);
+                };
             };
 
             /* Leaf 0x80000008 - Misc addr/feature info. */
             uint8_t maxphysaddr, maxlinaddr, :8, :8;
+
             union {
                 uint32_t e8b;
-                struct { DECL_BITFIELD(e8b); };
+
+                struct {
+                    DECL_BITFIELD(e8b);
+                };
             };
+
             uint32_t nc:8, :4, apic_id_size:4, :16;
             uint32_t /* d */:32;
 
-            uint64_t :64, :64; /* Leaf 0x80000009. */
-            uint64_t :64, :64; /* Leaf 0x8000000a - SVM rev and features. */
-            uint64_t :64, :64; /* Leaf 0x8000000b. */
-            uint64_t :64, :64; /* Leaf 0x8000000c. */
-            uint64_t :64, :64; /* Leaf 0x8000000d. */
-            uint64_t :64, :64; /* Leaf 0x8000000e. */
-            uint64_t :64, :64; /* Leaf 0x8000000f. */
-            uint64_t :64, :64; /* Leaf 0x80000010. */
-            uint64_t :64, :64; /* Leaf 0x80000011. */
-            uint64_t :64, :64; /* Leaf 0x80000012. */
-            uint64_t :64, :64; /* Leaf 0x80000013. */
-            uint64_t :64, :64; /* Leaf 0x80000014. */
-            uint64_t :64, :64; /* Leaf 0x80000015. */
-            uint64_t :64, :64; /* Leaf 0x80000016. */
-            uint64_t :64, :64; /* Leaf 0x80000017. */
-            uint64_t :64, :64; /* Leaf 0x80000018. */
-            uint64_t :64, :64; /* Leaf 0x80000019 - TLB 1GB Identifiers. */
-            uint64_t :64, :64; /* Leaf 0x8000001a - Performance related info. */
-            uint64_t :64, :64; /* Leaf 0x8000001b - IBS feature information. */
-            uint64_t :64, :64; /* Leaf 0x8000001c. */
-            uint64_t :64, :64; /* Leaf 0x8000001d - Cache properties. */
-            uint64_t :64, :64; /* Leaf 0x8000001e - Extd APIC/Core/Node IDs. */
-            uint64_t :64, :64; /* Leaf 0x8000001f - AMD Secure Encryption. */
-            uint64_t :64, :64; /* Leaf 0x80000020 - Platform QoS. */
+            uint64_t:64, :64; /* Leaf 0x80000009. */
+            uint64_t:64, :64; /* Leaf 0x8000000a - SVM rev and features. */
+            uint64_t:64, :64; /* Leaf 0x8000000b. */
+            uint64_t:64, :64; /* Leaf 0x8000000c. */
+            uint64_t:64, :64; /* Leaf 0x8000000d. */
+            uint64_t:64, :64; /* Leaf 0x8000000e. */
+            uint64_t:64, :64; /* Leaf 0x8000000f. */
+            uint64_t:64, :64; /* Leaf 0x80000010. */
+            uint64_t:64, :64; /* Leaf 0x80000011. */
+            uint64_t:64, :64; /* Leaf 0x80000012. */
+            uint64_t:64, :64; /* Leaf 0x80000013. */
+            uint64_t:64, :64; /* Leaf 0x80000014. */
+            uint64_t:64, :64; /* Leaf 0x80000015. */
+            uint64_t:64, :64; /* Leaf 0x80000016. */
+            uint64_t:64, :64; /* Leaf 0x80000017. */
+            uint64_t:64, :64; /* Leaf 0x80000018. */
+            uint64_t:64, :64; /* Leaf 0x80000019 - TLB 1GB Identifiers. */
+            uint64_t:64, :64; /* Leaf 0x8000001a - Performance related info. */
+            uint64_t:64, :64; /* Leaf 0x8000001b - IBS feature information. */
+            uint64_t:64, :64; /* Leaf 0x8000001c. */
+            uint64_t:64, :64; /* Leaf 0x8000001d - Cache properties. */
+            uint64_t:64, :64; /* Leaf 0x8000001e - Extd APIC/Core/Node IDs. */
+            uint64_t:64, :64; /* Leaf 0x8000001f - AMD Secure Encryption. */
+            uint64_t:64, :64; /* Leaf 0x80000020 - Platform QoS. */
 
             /* Leaf 0x80000021 - Extended Feature 2 */
             union {
                 uint32_t e21a;
-                struct { DECL_BITFIELD(e21a); };
+
+                struct {
+                    DECL_BITFIELD(e21a);
+                };
             };
+
             uint32_t /* b */:32, /* c */:32, /* d */:32;
         };
     } extd;
@@ -339,8 +402,9 @@ struct cpu_policy
      */
     union {
         uint32_t raw;
+
         struct {
-            uint32_t :31;
+            uint32_t:31;
             bool cpuid_faulting:1;
         };
     } platform_info;
@@ -354,9 +418,11 @@ struct cpu_policy
      */
     union {
         uint64_t raw;
+
         struct {
             uint32_t lo, hi;
         };
+
         struct {
             DECL_BITFIELD(m10Al);
             DECL_BITFIELD(m10Ah);
@@ -374,8 +440,7 @@ struct cpu_policy
     uint8_t x86_vendor;
 };
 
-struct cpu_policy_errors
-{
+struct cpu_policy_errors {
     uint32_t leaf, subleaf;
     uint32_t msr;
 };
@@ -500,8 +565,8 @@ int x86_cpuid_copy_from_buffer(struct cpu_policy *p,
  * buffer array is too short.  On success, nr_entries is updated with the
  * actual number of msrs written.
  */
-int x86_msr_copy_to_buffer(const struct cpu_policy *p,
-                           msr_entry_buffer_t msrs, uint32_t *nr_entries_p);
+int x86_msr_copy_to_buffer(const struct cpu_policy *p, msr_entry_buffer_t msrs,
+                           uint32_t *nr_entries_p);
 
 /**
  * Unserialise the MSRs of a cpu_policy object from an array of msrs.

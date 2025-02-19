@@ -31,12 +31,14 @@ static void async_exception_cleanup(struct vcpu *curr)
     if ( !curr->arch.async_exception_mask )
         return;
 
-    if ( !(curr->arch.async_exception_mask & (curr->arch.async_exception_mask - 1)) )
+    if ( !(curr->arch.async_exception_mask &
+           (curr->arch.async_exception_mask - 1)) )
         trap = __scanbit(curr->arch.async_exception_mask, VCPU_TRAP_NONE);
     else
         for ( trap = VCPU_TRAP_NONE + 1; trap <= VCPU_TRAP_LAST; ++trap )
             if ( (curr->arch.async_exception_mask ^
-                  curr->arch.async_exception_state(trap).old_mask) == (1u << trap) )
+                  curr->arch.async_exception_state(trap).old_mask) ==
+                 (1u << trap) )
                 break;
     if ( unlikely(trap > VCPU_TRAP_LAST) )
     {
@@ -55,7 +57,8 @@ long do_iret(void)
     struct iret_context iret_saved;
     struct vcpu *v = current;
 
-    if ( unlikely(copy_from_guest_pv(&iret_saved, (void __user *)regs->rsp,
+    if ( unlikely(copy_from_guest_pv(&iret_saved,
+                                     (void __user *)regs->rsp,
                                      sizeof(iret_saved))) )
     {
         gprintk(XENLOG_ERR,
@@ -78,12 +81,12 @@ long do_iret(void)
     if ( VM_ASSIST(v->domain, architectural_iopl) )
         v->arch.pv.iopl = iret_saved.rflags & X86_EFLAGS_IOPL;
 
-    regs->rip    = iret_saved.rip;
-    regs->cs     = iret_saved.cs | 3; /* force guest privilege */
-    regs->rflags = ((iret_saved.rflags & ~(X86_EFLAGS_IOPL|X86_EFLAGS_VM))
-                    | X86_EFLAGS_IF);
-    regs->rsp    = iret_saved.rsp;
-    regs->ss     = iret_saved.ss | 3; /* force guest privilege */
+    regs->rip = iret_saved.rip;
+    regs->cs = iret_saved.cs | 3; /* force guest privilege */
+    regs->rflags = ((iret_saved.rflags & ~(X86_EFLAGS_IOPL | X86_EFLAGS_VM)) |
+                    X86_EFLAGS_IF);
+    regs->rsp = iret_saved.rsp;
+    regs->ss = iret_saved.ss | 3; /* force guest privilege */
 
     if ( !(iret_saved.flags & VGCF_in_syscall) )
     {
@@ -100,7 +103,7 @@ long do_iret(void)
     /* Saved %rax gets written back to regs->rax in entry.S. */
     return iret_saved.rax;
 
- exit_and_crash:
+exit_and_crash:
     domain_crash(v->domain);
     return 0;
 }
@@ -124,7 +127,7 @@ int compat_iret(void)
 
     /* Restore CS and EIP. */
     if ( unlikely(__get_guest(regs->eip, (u32 *)regs->rsp + 1)) ||
-        unlikely(__get_guest(regs->cs, (u32 *)regs->rsp + 2)) )
+         unlikely(__get_guest(regs->cs, (u32 *)regs->rsp + 2)) )
     {
         domain_crash(v->domain);
         return 0;
@@ -160,11 +163,13 @@ int compat_iret(void)
         unsigned int i;
         int rc = 0;
 
-        gdprintk(XENLOG_ERR, "VM86 mode unavailable (ksp:%08X->%08X)\n",
-                 regs->esp, ksp);
+        gdprintk(XENLOG_ERR,
+                 "VM86 mode unavailable (ksp:%08X->%08X)\n",
+                 regs->esp,
+                 ksp);
         if ( ksp < regs->esp )
         {
-            for (i = 1; i < 10; ++i)
+            for ( i = 1; i < 10; ++i )
             {
                 rc |= __get_guest(x, (u32 *)regs->rsp + i);
                 rc |= __put_guest(x, (u32 *)(unsigned long)ksp + i);
@@ -189,8 +194,8 @@ int compat_iret(void)
         ti = &v->arch.pv.trap_ctxt[X86_EXC_GP];
         if ( TI_GET_IF(ti) )
             eflags &= ~X86_EFLAGS_IF;
-        regs->eflags &= ~(X86_EFLAGS_VM|X86_EFLAGS_RF|
-                          X86_EFLAGS_NT|X86_EFLAGS_TF);
+        regs->eflags &= ~(X86_EFLAGS_VM | X86_EFLAGS_RF | X86_EFLAGS_NT |
+                          X86_EFLAGS_TF);
         if ( unlikely(__put_guest(0, (u32 *)regs->rsp)) )
         {
             domain_crash(v->domain);

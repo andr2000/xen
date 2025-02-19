@@ -15,6 +15,7 @@
 
 struct arch_pci_dev {
     vmask_t used_vectors;
+
     /*
      * These fields are (de)initialized under pcidevs-lock. Other uses of
      * them don't race (de)initialization and hence don't strictly need any
@@ -25,10 +26,12 @@ struct arch_pci_dev {
         struct {
             uint64_t pgd_maddr;
         } vtd;
+
         struct {
             struct page_info *root_table;
         } amd;
     };
+
     domid_t pseudo_domid;
     mfn_t leaf_mfn;
     struct page_list_head pgtables_list;
@@ -39,8 +42,7 @@ int pci_conf_write_intercept(unsigned int seg, unsigned int bdf,
                              uint32_t *data);
 int pci_msi_conf_write_intercept(struct pci_dev *pdev, unsigned int reg,
                                  unsigned int size, uint32_t *data);
-bool pci_mmcfg_decode(unsigned long mfn, unsigned int *seg,
-                      unsigned int *bdf);
+bool pci_mmcfg_decode(unsigned long mfn, unsigned int *seg, unsigned int *bdf);
 
 bool pci_ro_mmcfg_decode(unsigned long mfn, unsigned int *seg,
                          unsigned int *bdf);
@@ -57,8 +59,8 @@ static always_inline bool is_pci_passthrough_enabled(void)
 
 void arch_pci_init_pdev(struct pci_dev *pdev);
 
-static inline bool pci_check_bar(const struct pci_dev *pdev,
-                                 mfn_t start, mfn_t end)
+static inline bool pci_check_bar(const struct pci_dev *pdev, mfn_t start,
+                                 mfn_t end)
 {
     /*
      * Check if BAR is not overlapping with any memory region defined

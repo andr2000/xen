@@ -19,136 +19,136 @@
 #define MSR_P5_MC_TYPE                      0x00000001
 
 #define MSR_APIC_BASE                       0x0000001b
-#define  APIC_BASE_BSP                      (_AC(1, ULL) <<  8)
-#define  APIC_BASE_EXTD                     (_AC(1, ULL) << 10)
-#define  APIC_BASE_ENABLE                   (_AC(1, ULL) << 11)
-#define  APIC_BASE_ADDR_MASK                _AC(0x000ffffffffff000, ULL)
+#define APIC_BASE_BSP                      (_AC(1, ULL) <<  8)
+#define APIC_BASE_EXTD                     (_AC(1, ULL) << 10)
+#define APIC_BASE_ENABLE                   (_AC(1, ULL) << 11)
+#define APIC_BASE_ADDR_MASK                _AC(0x000ffffffffff000, ULL)
 
 #define MSR_TEST_CTRL                       0x00000033
-#define  TEST_CTRL_SPLITLOCK_DETECT         (_AC(1, ULL) << 29)
-#define  TEST_CTRL_SPLITLOCK_DISABLE        (_AC(1, ULL) << 31)
+#define TEST_CTRL_SPLITLOCK_DETECT         (_AC(1, ULL) << 29)
+#define TEST_CTRL_SPLITLOCK_DISABLE        (_AC(1, ULL) << 31)
 
 #define MSR_INTEL_CORE_THREAD_COUNT         0x00000035
-#define  MSR_CTC_THREAD_MASK                0x0000ffff
-#define  MSR_CTC_CORE_MASK                  _AC(0xffff0000, U)
+#define MSR_CTC_THREAD_MASK                0x0000ffff
+#define MSR_CTC_CORE_MASK                  _AC(0xffff0000, U)
 
 #define MSR_SPEC_CTRL                       0x00000048
-#define  SPEC_CTRL_IBRS                     (_AC(1, ULL) <<  0)
-#define  SPEC_CTRL_STIBP                    (_AC(1, ULL) <<  1)
-#define  SPEC_CTRL_SSBD                     (_AC(1, ULL) <<  2)
-#define  SPEC_CTRL_IPRED_DIS_U              (_AC(1, ULL) <<  3)
-#define  SPEC_CTRL_IPRED_DIS_S              (_AC(1, ULL) <<  4)
-#define  SPEC_CTRL_RRSBA_DIS_U              (_AC(1, ULL) <<  5)
-#define  SPEC_CTRL_RRSBA_DIS_S              (_AC(1, ULL) <<  6)
-#define  SPEC_CTRL_PSFD                     (_AC(1, ULL) <<  7)
-#define  SPEC_CTRL_DDP_DIS_U                (_AC(1, ULL) <<  8)
-#define  SPEC_CTRL_BHI_DIS_S                (_AC(1, ULL) << 10)
+#define SPEC_CTRL_IBRS                     (_AC(1, ULL) <<  0)
+#define SPEC_CTRL_STIBP                    (_AC(1, ULL) <<  1)
+#define SPEC_CTRL_SSBD                     (_AC(1, ULL) <<  2)
+#define SPEC_CTRL_IPRED_DIS_U              (_AC(1, ULL) <<  3)
+#define SPEC_CTRL_IPRED_DIS_S              (_AC(1, ULL) <<  4)
+#define SPEC_CTRL_RRSBA_DIS_U              (_AC(1, ULL) <<  5)
+#define SPEC_CTRL_RRSBA_DIS_S              (_AC(1, ULL) <<  6)
+#define SPEC_CTRL_PSFD                     (_AC(1, ULL) <<  7)
+#define SPEC_CTRL_DDP_DIS_U                (_AC(1, ULL) <<  8)
+#define SPEC_CTRL_BHI_DIS_S                (_AC(1, ULL) << 10)
 
 #define MSR_PRED_CMD                        0x00000049
-#define  PRED_CMD_IBPB                      (_AC(1, ULL) <<  0)
-#define  PRED_CMD_SBPB                      (_AC(1, ULL) <<  7)
+#define PRED_CMD_IBPB                      (_AC(1, ULL) <<  0)
+#define PRED_CMD_SBPB                      (_AC(1, ULL) <<  7)
 
 #define MSR_PPIN_CTL                        0x0000004e
-#define  PPIN_LOCKOUT                       (_AC(1, ULL) <<  0)
-#define  PPIN_ENABLE                        (_AC(1, ULL) <<  1)
+#define PPIN_LOCKOUT                       (_AC(1, ULL) <<  0)
+#define PPIN_ENABLE                        (_AC(1, ULL) <<  1)
 #define MSR_PPIN                            0x0000004f
 
 #define MSR_MISC_PACKAGE_CTRL               0x000000bc
-#define  PGK_CTRL_ENERGY_FILTER_EN          (_AC(1, ULL) <<  0)
+#define PGK_CTRL_ENERGY_FILTER_EN          (_AC(1, ULL) <<  0)
 
 #define MSR_CORE_CAPABILITIES               0x000000cf
-#define  CORE_CAPS_SPLITLOCK_DETECT         (_AC(1, ULL) <<  5)
+#define CORE_CAPS_SPLITLOCK_DETECT         (_AC(1, ULL) <<  5)
 
 #define MSR_PKG_CST_CONFIG_CONTROL          0x000000e2
-#define  NHM_C3_AUTO_DEMOTE                 (_AC(1, ULL) << 25)
-#define  NHM_C1_AUTO_DEMOTE                 (_AC(1, ULL) << 26)
-#define  ATM_LNC_C6_AUTO_DEMOTE             (_AC(1, ULL) << 25)
-#define  SNB_C3_AUTO_UNDEMOTE               (_AC(1, ULL) << 27)
-#define  SNB_C1_AUTO_UNDEMOTE               (_AC(1, ULL) << 28)
+#define NHM_C3_AUTO_DEMOTE                 (_AC(1, ULL) << 25)
+#define NHM_C1_AUTO_DEMOTE                 (_AC(1, ULL) << 26)
+#define ATM_LNC_C6_AUTO_DEMOTE             (_AC(1, ULL) << 25)
+#define SNB_C3_AUTO_UNDEMOTE               (_AC(1, ULL) << 27)
+#define SNB_C1_AUTO_UNDEMOTE               (_AC(1, ULL) << 28)
 
 #define MSR_ARCH_CAPABILITIES               0x0000010a
-#define  ARCH_CAPS_RDCL_NO                  (_AC(1, ULL) <<  0)
-#define  ARCH_CAPS_EIBRS                    (_AC(1, ULL) <<  1)
-#define  ARCH_CAPS_RSBA                     (_AC(1, ULL) <<  2)
-#define  ARCH_CAPS_SKIP_L1DFL               (_AC(1, ULL) <<  3)
-#define  ARCH_CAPS_SSB_NO                   (_AC(1, ULL) <<  4)
-#define  ARCH_CAPS_MDS_NO                   (_AC(1, ULL) <<  5)
-#define  ARCH_CAPS_IF_PSCHANGE_MC_NO        (_AC(1, ULL) <<  6)
-#define  ARCH_CAPS_TSX_CTRL                 (_AC(1, ULL) <<  7)
-#define  ARCH_CAPS_TAA_NO                   (_AC(1, ULL) <<  8)
-#define  ARCH_CAPS_MISC_PACKAGE_CTRL        (_AC(1, ULL) << 10)
-#define  ARCH_CAPS_ENERGY_FILTERING         (_AC(1, ULL) << 11)
-#define  ARCH_CAPS_DOITM                    (_AC(1, ULL) << 12)
-#define  ARCH_CAPS_SBDR_SSDP_NO             (_AC(1, ULL) << 13)
-#define  ARCH_CAPS_FBSDP_NO                 (_AC(1, ULL) << 14)
-#define  ARCH_CAPS_PSDP_NO                  (_AC(1, ULL) << 15)
-#define  ARCH_CAPS_FB_CLEAR                 (_AC(1, ULL) << 17)
-#define  ARCH_CAPS_FB_CLEAR_CTRL            (_AC(1, ULL) << 18)
-#define  ARCH_CAPS_RRSBA                    (_AC(1, ULL) << 19)
-#define  ARCH_CAPS_BHI_NO                   (_AC(1, ULL) << 20)
-#define  ARCH_CAPS_PBRSB_NO                 (_AC(1, ULL) << 24)
-#define  ARCH_CAPS_GDS_CTRL                 (_AC(1, ULL) << 25)
-#define  ARCH_CAPS_GDS_NO                   (_AC(1, ULL) << 26)
-#define  ARCH_CAPS_RFDS_NO                  (_AC(1, ULL) << 27)
-#define  ARCH_CAPS_RFDS_CLEAR               (_AC(1, ULL) << 28)
+#define ARCH_CAPS_RDCL_NO                  (_AC(1, ULL) <<  0)
+#define ARCH_CAPS_EIBRS                    (_AC(1, ULL) <<  1)
+#define ARCH_CAPS_RSBA                     (_AC(1, ULL) <<  2)
+#define ARCH_CAPS_SKIP_L1DFL               (_AC(1, ULL) <<  3)
+#define ARCH_CAPS_SSB_NO                   (_AC(1, ULL) <<  4)
+#define ARCH_CAPS_MDS_NO                   (_AC(1, ULL) <<  5)
+#define ARCH_CAPS_IF_PSCHANGE_MC_NO        (_AC(1, ULL) <<  6)
+#define ARCH_CAPS_TSX_CTRL                 (_AC(1, ULL) <<  7)
+#define ARCH_CAPS_TAA_NO                   (_AC(1, ULL) <<  8)
+#define ARCH_CAPS_MISC_PACKAGE_CTRL        (_AC(1, ULL) << 10)
+#define ARCH_CAPS_ENERGY_FILTERING         (_AC(1, ULL) << 11)
+#define ARCH_CAPS_DOITM                    (_AC(1, ULL) << 12)
+#define ARCH_CAPS_SBDR_SSDP_NO             (_AC(1, ULL) << 13)
+#define ARCH_CAPS_FBSDP_NO                 (_AC(1, ULL) << 14)
+#define ARCH_CAPS_PSDP_NO                  (_AC(1, ULL) << 15)
+#define ARCH_CAPS_FB_CLEAR                 (_AC(1, ULL) << 17)
+#define ARCH_CAPS_FB_CLEAR_CTRL            (_AC(1, ULL) << 18)
+#define ARCH_CAPS_RRSBA                    (_AC(1, ULL) << 19)
+#define ARCH_CAPS_BHI_NO                   (_AC(1, ULL) << 20)
+#define ARCH_CAPS_PBRSB_NO                 (_AC(1, ULL) << 24)
+#define ARCH_CAPS_GDS_CTRL                 (_AC(1, ULL) << 25)
+#define ARCH_CAPS_GDS_NO                   (_AC(1, ULL) << 26)
+#define ARCH_CAPS_RFDS_NO                  (_AC(1, ULL) << 27)
+#define ARCH_CAPS_RFDS_CLEAR               (_AC(1, ULL) << 28)
 
 #define MSR_FLUSH_CMD                       0x0000010b
-#define  FLUSH_CMD_L1D                      (_AC(1, ULL) <<  0)
+#define FLUSH_CMD_L1D                      (_AC(1, ULL) <<  0)
 
 #define MSR_TSX_FORCE_ABORT                 0x0000010f
-#define  TSX_FORCE_ABORT_RTM                (_AC(1, ULL) <<  0)
-#define  TSX_CPUID_CLEAR                    (_AC(1, ULL) <<  1)
-#define  TSX_ENABLE_RTM                     (_AC(1, ULL) <<  2)
+#define TSX_FORCE_ABORT_RTM                (_AC(1, ULL) <<  0)
+#define TSX_CPUID_CLEAR                    (_AC(1, ULL) <<  1)
+#define TSX_ENABLE_RTM                     (_AC(1, ULL) <<  2)
 
 #define MSR_TSX_CTRL                        0x00000122
-#define  TSX_CTRL_RTM_DISABLE               (_AC(1, ULL) <<  0)
-#define  TSX_CTRL_CPUID_CLEAR               (_AC(1, ULL) <<  1)
+#define TSX_CTRL_RTM_DISABLE               (_AC(1, ULL) <<  0)
+#define TSX_CTRL_CPUID_CLEAR               (_AC(1, ULL) <<  1)
 
 #define MSR_MCU_OPT_CTRL                    0x00000123
-#define  MCU_OPT_CTRL_RNGDS_MITG_DIS        (_AC(1, ULL) <<  0)
-#define  MCU_OPT_CTRL_RTM_ALLOW             (_AC(1, ULL) <<  1)
-#define  MCU_OPT_CTRL_RTM_LOCKED            (_AC(1, ULL) <<  2)
-#define  MCU_OPT_CTRL_FB_CLEAR_DIS          (_AC(1, ULL) <<  3)
-#define  MCU_OPT_CTRL_GDS_MIT_DIS           (_AC(1, ULL) <<  4)
-#define  MCU_OPT_CTRL_GDS_MIT_LOCK          (_AC(1, ULL) <<  5)
+#define MCU_OPT_CTRL_RNGDS_MITG_DIS        (_AC(1, ULL) <<  0)
+#define MCU_OPT_CTRL_RTM_ALLOW             (_AC(1, ULL) <<  1)
+#define MCU_OPT_CTRL_RTM_LOCKED            (_AC(1, ULL) <<  2)
+#define MCU_OPT_CTRL_FB_CLEAR_DIS          (_AC(1, ULL) <<  3)
+#define MCU_OPT_CTRL_GDS_MIT_DIS           (_AC(1, ULL) <<  4)
+#define MCU_OPT_CTRL_GDS_MIT_LOCK          (_AC(1, ULL) <<  5)
 
 #define MSR_RTIT_OUTPUT_BASE                0x00000560
 #define MSR_RTIT_OUTPUT_MASK                0x00000561
 #define MSR_RTIT_CTL                        0x00000570
-#define  RTIT_CTL_TRACE_EN                  (_AC(1, ULL) <<  0)
-#define  RTIT_CTL_CYC_EN                    (_AC(1, ULL) <<  1)
-#define  RTIT_CTL_OS                        (_AC(1, ULL) <<  2)
-#define  RTIT_CTL_USR                       (_AC(1, ULL) <<  3)
-#define  RTIT_CTL_PWR_EVT_EN                (_AC(1, ULL) <<  4)
-#define  RTIT_CTL_FUP_ON_PTW                (_AC(1, ULL) <<  5)
-#define  RTIT_CTL_FABRIC_EN                 (_AC(1, ULL) <<  6)
-#define  RTIT_CTL_CR3_FILTER                (_AC(1, ULL) <<  7)
-#define  RTIT_CTL_TOPA                      (_AC(1, ULL) <<  8)
-#define  RTIT_CTL_MTC_EN                    (_AC(1, ULL) <<  9)
-#define  RTIT_CTL_TSC_EN                    (_AC(1, ULL) << 10)
-#define  RTIT_CTL_DIS_RETC                  (_AC(1, ULL) << 11)
-#define  RTIT_CTL_PTW_EN                    (_AC(1, ULL) << 12)
-#define  RTIT_CTL_BRANCH_EN                 (_AC(1, ULL) << 13)
-#define  RTIT_CTL_MTC_FREQ                  (_AC(0xf, ULL) << 14)
-#define  RTIT_CTL_CYC_THRESH                (_AC(0xf, ULL) << 19)
-#define  RTIT_CTL_PSB_FREQ                  (_AC(0xf, ULL) << 24)
-#define  RTIT_CTL_ADDR(n)                   (_AC(0xf, ULL) << (32 + 4 * (n)))
+#define RTIT_CTL_TRACE_EN                  (_AC(1, ULL) <<  0)
+#define RTIT_CTL_CYC_EN                    (_AC(1, ULL) <<  1)
+#define RTIT_CTL_OS                        (_AC(1, ULL) <<  2)
+#define RTIT_CTL_USR                       (_AC(1, ULL) <<  3)
+#define RTIT_CTL_PWR_EVT_EN                (_AC(1, ULL) <<  4)
+#define RTIT_CTL_FUP_ON_PTW                (_AC(1, ULL) <<  5)
+#define RTIT_CTL_FABRIC_EN                 (_AC(1, ULL) <<  6)
+#define RTIT_CTL_CR3_FILTER                (_AC(1, ULL) <<  7)
+#define RTIT_CTL_TOPA                      (_AC(1, ULL) <<  8)
+#define RTIT_CTL_MTC_EN                    (_AC(1, ULL) <<  9)
+#define RTIT_CTL_TSC_EN                    (_AC(1, ULL) << 10)
+#define RTIT_CTL_DIS_RETC                  (_AC(1, ULL) << 11)
+#define RTIT_CTL_PTW_EN                    (_AC(1, ULL) << 12)
+#define RTIT_CTL_BRANCH_EN                 (_AC(1, ULL) << 13)
+#define RTIT_CTL_MTC_FREQ                  (_AC(0xf, ULL) << 14)
+#define RTIT_CTL_CYC_THRESH                (_AC(0xf, ULL) << 19)
+#define RTIT_CTL_PSB_FREQ                  (_AC(0xf, ULL) << 24)
+#define RTIT_CTL_ADDR(n)                   (_AC(0xf, ULL) << (32 + 4 * (n)))
 #define MSR_RTIT_STATUS                     0x00000571
-#define  RTIT_STATUS_FILTER_EN              (_AC(1, ULL) <<  0)
-#define  RTIT_STATUS_CONTEXT_EN             (_AC(1, ULL) <<  1)
-#define  RTIT_STATUS_TRIGGER_EN             (_AC(1, ULL) <<  2)
-#define  RTIT_STATUS_ERROR                  (_AC(1, ULL) <<  4)
-#define  RTIT_STATUS_STOPPED                (_AC(1, ULL) <<  5)
-#define  RTIT_STATUS_BYTECNT                (_AC(0x1ffff, ULL) << 32)
+#define RTIT_STATUS_FILTER_EN              (_AC(1, ULL) <<  0)
+#define RTIT_STATUS_CONTEXT_EN             (_AC(1, ULL) <<  1)
+#define RTIT_STATUS_TRIGGER_EN             (_AC(1, ULL) <<  2)
+#define RTIT_STATUS_ERROR                  (_AC(1, ULL) <<  4)
+#define RTIT_STATUS_STOPPED                (_AC(1, ULL) <<  5)
+#define RTIT_STATUS_BYTECNT                (_AC(0x1ffff, ULL) << 32)
 #define MSR_RTIT_CR3_MATCH                  0x00000572
 #define MSR_RTIT_ADDR_A(n)                 (0x00000580 + (n) * 2)
 #define MSR_RTIT_ADDR_B(n)                 (0x00000581 + (n) * 2)
 
 #define MSR_U_CET                           0x000006a0
 #define MSR_S_CET                           0x000006a2
-#define  CET_SHSTK_EN                       (_AC(1, ULL) <<  0)
-#define  CET_WRSS_EN                        (_AC(1, ULL) <<  1)
-#define  CET_ENDBR_EN                       (_AC(1, ULL) <<  2)
+#define CET_SHSTK_EN                       (_AC(1, ULL) <<  0)
+#define CET_WRSS_EN                        (_AC(1, ULL) <<  1)
+#define CET_ENDBR_EN                       (_AC(1, ULL) <<  2)
 
 #define MSR_PL0_SSP                         0x000006a4
 #define MSR_PL1_SSP                         0x000006a5
@@ -159,7 +159,7 @@
 #define MSR_PKRS                            0x000006e1
 
 #define MSR_PM_ENABLE                       0x00000770
-#define  PM_ENABLE_HWP_ENABLE               BIT(0, ULL)
+#define PM_ENABLE_HWP_ENABLE               BIT(0, ULL)
 
 #define MSR_HWP_CAPABILITIES                0x00000771
 #define MSR_HWP_INTERRUPT                   0x00000773
@@ -177,30 +177,30 @@
 #define MSR_X2APIC_SELF                     0x0000083f
 
 #define MSR_PASID                           0x00000d93
-#define  PASID_PASID_MASK                   0x000fffff
-#define  PASID_VALID                        (_AC(1, ULL) << 31)
+#define PASID_PASID_MASK                   0x000fffff
+#define PASID_VALID                        (_AC(1, ULL) << 31)
 
 #define MSR_PKG_HDC_CTL                     0x00000db0
-#define  PKG_HDC_CTL_HDC_PKG_ENABLE         BIT(0, ULL)
+#define PKG_HDC_CTL_HDC_PKG_ENABLE         BIT(0, ULL)
 #define MSR_PM_CTL1                         0x00000db1
-#define  PM_CTL1_HDC_ALLOW_BLOCK            BIT(0, ULL)
+#define PM_CTL1_HDC_ALLOW_BLOCK            BIT(0, ULL)
 
 #define MSR_MCU_CONTROL                     0x00001406
-#define  MCU_CONTROL_LOCK                   (_AC(1, ULL) <<  0)
-#define  MCU_CONTROL_DIS_MCU_LOAD           (_AC(1, ULL) <<  1)
-#define  MCU_CONTROL_EN_SMM_BYPASS          (_AC(1, ULL) <<  2)
+#define MCU_CONTROL_LOCK                   (_AC(1, ULL) <<  0)
+#define MCU_CONTROL_DIS_MCU_LOAD           (_AC(1, ULL) <<  1)
+#define MCU_CONTROL_EN_SMM_BYPASS          (_AC(1, ULL) <<  2)
 
 #define MSR_UARCH_MISC_CTRL                 0x00001b01
-#define  UARCH_CTRL_DOITM                   (_AC(1, ULL) <<  0)
+#define UARCH_CTRL_DOITM                   (_AC(1, ULL) <<  0)
 
 #define MSR_EFER                            _AC(0xc0000080, U) /* Extended Feature Enable Register */
-#define  EFER_SCE                           (_AC(1, ULL) <<  0) /* SYSCALL Enable */
-#define  EFER_LME                           (_AC(1, ULL) <<  8) /* Long Mode Enable */
-#define  EFER_LMA                           (_AC(1, ULL) << 10) /* Long Mode Active */
-#define  EFER_NXE                           (_AC(1, ULL) << 11) /* No Execute Enable */
-#define  EFER_SVME                          (_AC(1, ULL) << 12) /* Secure Virtual Machine Enable */
-#define  EFER_FFXSE                         (_AC(1, ULL) << 14) /* Fast FXSAVE/FXRSTOR */
-#define  EFER_AIBRSE                        (_AC(1, ULL) << 21) /* Automatic IBRS Enable */
+#define EFER_SCE                           (_AC(1, ULL) <<  0) /* SYSCALL Enable */
+#define EFER_LME                           (_AC(1, ULL) <<  8) /* Long Mode Enable */
+#define EFER_LMA                           (_AC(1, ULL) << 10) /* Long Mode Active */
+#define EFER_NXE                           (_AC(1, ULL) << 11) /* No Execute Enable */
+#define EFER_SVME                          (_AC(1, ULL) << 12) /* Secure Virtual Machine Enable */
+#define EFER_FFXSE                         (_AC(1, ULL) << 14) /* Fast FXSAVE/FXRSTOR */
+#define EFER_AIBRSE                        (_AC(1, ULL) << 21) /* Automatic IBRS Enable */
 
 #define EFER_KNOWN_MASK \
     (EFER_SCE | EFER_LME | EFER_LMA | EFER_NXE | EFER_SVME | EFER_FFXSE | \
@@ -216,11 +216,11 @@
 #define MSR_TSC_AUX                         _AC(0xc0000103, U) /* Auxiliary TSC */
 
 #define MSR_K8_SYSCFG                       _AC(0xc0010010, U)
-#define  SYSCFG_MTRR_FIX_DRAM_EN            (_AC(1, ULL) << 18)
-#define  SYSCFG_MTRR_FIX_DRAM_MOD_EN        (_AC(1, ULL) << 19)
-#define  SYSCFG_MTRR_VAR_DRAM_EN            (_AC(1, ULL) << 20)
-#define  SYSCFG_MTRR_TOM2_EN                (_AC(1, ULL) << 21)
-#define  SYSCFG_TOM2_FORCE_WB               (_AC(1, ULL) << 22)
+#define SYSCFG_MTRR_FIX_DRAM_EN            (_AC(1, ULL) << 18)
+#define SYSCFG_MTRR_FIX_DRAM_MOD_EN        (_AC(1, ULL) << 19)
+#define SYSCFG_MTRR_VAR_DRAM_EN            (_AC(1, ULL) << 20)
+#define SYSCFG_MTRR_TOM2_EN                (_AC(1, ULL) << 21)
+#define SYSCFG_TOM2_FORCE_WB               (_AC(1, ULL) << 22)
 
 #define MSR_K8_IORR_BASE0                   _AC(0xc0010016, U)
 #define MSR_K8_IORR_MASK0                   _AC(0xc0010017, U)
@@ -231,8 +231,8 @@
 #define MSR_K8_TSEG_MASK                    _AC(0xc0010113, U) /* AMD doc: SMMMask */
 
 #define MSR_K8_VM_CR                        _AC(0xc0010114, U)
-#define  VM_CR_INIT_REDIRECTION             (_AC(1, ULL) <<  1)
-#define  VM_CR_SVM_DISABLE                  (_AC(1, ULL) <<  4)
+#define VM_CR_INIT_REDIRECTION             (_AC(1, ULL) <<  1)
+#define VM_CR_SVM_DISABLE                  (_AC(1, ULL) <<  4)
 
 #define MSR_VIRT_SPEC_CTRL                  _AC(0xc001011f, U) /* Layout matches MSR_SPEC_CTRL */
 
@@ -325,7 +325,7 @@
 #define MSR_IA32_MCx_CTL(x)		(MSR_IA32_MC0_CTL + 4*(x))
 #define MSR_IA32_MCx_STATUS(x)		(MSR_IA32_MC0_STATUS + 4*(x))
 #define MSR_IA32_MCx_ADDR(x)		(MSR_IA32_MC0_ADDR + 4*(x))
-#define MSR_IA32_MCx_MISC(x)		(MSR_IA32_MC0_MISC + 4*(x)) 
+#define MSR_IA32_MCx_MISC(x)		(MSR_IA32_MC0_MISC + 4*(x))
 #define MSR_IA32_MCx_CTL2(x)		(MSR_IA32_MC0_CTL2 + (x))
 
 #define MSR_AMD64_MCx_MASK(x)		(MSR_AMD64_MC0_MASK + (x))
@@ -412,7 +412,7 @@
 #define AMD64_DE_CFG_LFENCE_SERIALISE	(_AC(1, ULL) << 1)
 #define MSR_AMD64_EX_CFG		0xc001102cU
 #define MSR_AMD64_BP_CFG		0xc001102eU
-#define  BP_CFG_SPEC_REDUCE		(_AC(1, ULL) <<  4)
+#define BP_CFG_SPEC_REDUCE		(_AC(1, ULL) <<  4)
 #define MSR_AMD64_DE_CFG2		0xc00110e3U
 
 #define MSR_AMD64_DR0_ADDRESS_MASK	0xc0011027U

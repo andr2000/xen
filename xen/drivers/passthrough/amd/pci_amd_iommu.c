@@ -52,8 +52,10 @@ struct amd_iommu *find_iommu_for_device(int seg, int bdf)
                 tmp.dte_requestor_id = bdf;
             ivrs_mappings[bdf] = tmp;
 
-            printk(XENLOG_WARNING "%pp not found in ACPI tables;"
-                   " using same IOMMU as function 0\n", &PCI_SBDF(seg, bdf));
+            printk(
+                XENLOG_WARNING
+                "%pp not found in ACPI tables;" " using same IOMMU as function 0\n",
+                &PCI_SBDF(seg, bdf));
 
             /* write iommu field last */
             ivrs_mappings[bdf].iommu = ivrs_mappings[bd0].iommu;
@@ -76,7 +78,7 @@ int get_dma_requestor_id(uint16_t seg, uint16_t bdf)
     struct ivrs_mappings *ivrs_mappings = get_ivrs_mappings(seg);
     int req_id;
 
-    BUG_ON ( bdf >= ivrs_bdf_entries );
+    BUG_ON(bdf >= ivrs_bdf_entries);
     req_id = ivrs_mappings[bdf].dte_requestor_id;
     if ( ivrs_mappings[bdf].valid && ivrs_mappings[req_id].valid )
         req_id = bdf;
@@ -102,7 +104,7 @@ static bool any_pdev_behind_iommu(const struct domain *d,
 {
     const struct pci_dev *pdev;
 
-    for_each_pdev ( d, pdev )
+    for_each_pdev(d, pdev)
     {
         if ( pdev == exclude )
             continue;
@@ -114,19 +116,17 @@ static bool any_pdev_behind_iommu(const struct domain *d,
     return false;
 }
 
-static bool use_ats(
-    const struct pci_dev *pdev,
-    const struct amd_iommu *iommu,
-    const struct ivrs_mappings *ivrs_dev)
+static bool use_ats(const struct pci_dev *pdev, const struct amd_iommu *iommu,
+                    const struct ivrs_mappings *ivrs_dev)
 {
-    return !ivrs_dev->block_ats &&
-           iommu_has_cap(iommu, PCI_CAP_IOTLB_SHIFT) &&
+    return !ivrs_dev->block_ats && iommu_has_cap(iommu, PCI_CAP_IOTLB_SHIFT) &&
            pci_ats_device(iommu->seg, pdev->bus, pdev->devfn);
 }
 
-static int __must_check amd_iommu_setup_domain_device(
-    struct domain *domain, struct amd_iommu *iommu,
-    uint8_t devfn, struct pci_dev *pdev)
+static int __must_check amd_iommu_setup_domain_device(struct domain *domain,
+                                                      struct amd_iommu *iommu,
+                                                      uint8_t devfn,
+                                                      struct pci_dev *pdev)
 {
     struct amd_iommu_dte *table, *dte;
     unsigned long flags;
@@ -150,8 +150,9 @@ static int __must_check amd_iommu_setup_domain_device(
     req_id = get_dma_requestor_id(iommu->seg, pdev->sbdf.bdf);
     ivrs_dev = &get_ivrs_mappings(iommu->seg)[req_id];
     sr_flags = (iommu_hwdom_passthrough && is_hardware_domain(domain)
-                ? 0 : SET_ROOT_VALID)
-               | (ivrs_dev->unity_map ? SET_ROOT_WITH_UNITY_MAP : 0);
+                    ? 0
+                    : SET_ROOT_VALID) |
+               (ivrs_dev->unity_map ? SET_ROOT_WITH_UNITY_MAP : 0);
 
     /* get device-table entry */
     req_id = get_dma_requestor_id(iommu->seg, PCI_BDF(bus, devfn));
@@ -175,9 +176,11 @@ static int __must_check amd_iommu_setup_domain_device(
     if ( !dte->v || !dte->tv )
     {
         /* bind DTE to domain page-tables */
-        rc = amd_iommu_set_root_page_table(
-                 dte, page_to_maddr(root_pg), domid,
-                 hd->arch.amd.paging_mode, sr_flags);
+        rc = amd_iommu_set_root_page_table(dte,
+                                           page_to_maddr(root_pg),
+                                           domid,
+                                           hd->arch.amd.paging_mode,
+                                           sr_flags);
         if ( rc )
         {
             ASSERT(rc < 0);
@@ -217,16 +220,17 @@ static int __must_check amd_iommu_setup_domain_device(
              (sr_flags & SET_ROOT_WITH_UNITY_MAP) )
             rc = -EOPNOTSUPP;
         else
-            rc = amd_iommu_set_root_page_table(
-                     dte, page_to_maddr(root_pg), domid,
-                     hd->arch.amd.paging_mode, sr_flags);
+            rc = amd_iommu_set_root_page_table(dte,
+                                               page_to_maddr(root_pg),
+                                               domid,
+                                               hd->arch.amd.paging_mode,
+                                               sr_flags);
         if ( rc < 0 )
         {
             spin_unlock_irqrestore(&iommu->lock, flags);
             return rc;
         }
-        if ( rc &&
-             domain != pdev->domain &&
+        if ( rc && domain != pdev->domain &&
              /*
               * By non-atomically updating the DTE's domain ID field last,
               * during a short window in time TLB entries with the old domain
@@ -237,12 +241,12 @@ static int __must_check amd_iommu_setup_domain_device(
               * of a dying domain's devices to the quarantine page tables is
               * intended anyway.
               */
-             !pdev->domain->is_dying &&
-             pdev->domain != dom_io &&
+             !pdev->domain->is_dying && pdev->domain != dom_io &&
              (any_pdev_behind_iommu(pdev->domain, pdev, iommu) ||
               pdev->phantom_stride) )
             AMD_IOMMU_WARN(" %pp: reassignment may cause %pd data corruption\n",
-                           &PCI_SBDF(pdev->seg, bus, devfn), pdev->domain);
+                           &PCI_SBDF(pdev->seg, bus, devfn),
+                           pdev->domain);
 
         /*
          * Check remaining settings are still in place from an earlier call
@@ -253,8 +257,8 @@ static int __must_check amd_iommu_setup_domain_device(
             ASSERT(dte->int_ctl == IOMMU_DEV_TABLE_INT_CONTROL_TRANSLATED);
         ASSERT(dte->iv == !!iommu_intremap);
         ASSERT(dte->ex == ivrs_dev->dte_allow_exclusion);
-        ASSERT(dte->sys_mgt == MASK_EXTR(ivrs_dev->device_flags,
-                                         ACPI_IVHD_SYSTEM_MGMT));
+        ASSERT(dte->sys_mgt ==
+               MASK_EXTR(ivrs_dev->device_flags, ACPI_IVHD_SYSTEM_MGMT));
 
         if ( use_ats(pdev, iommu, ivrs_dev) )
             ASSERT(dte->i == ats_enabled);
@@ -266,11 +270,14 @@ static int __must_check amd_iommu_setup_domain_device(
     else
         spin_unlock_irqrestore(&iommu->lock, flags);
 
-    AMD_IOMMU_DEBUG("Setup I/O page table: device id = %#x, type = %#x, "
-                    "root table = %#"PRIx64", "
-                    "domain = %d, paging mode = %d\n",
-                    req_id, pdev->type, page_to_maddr(root_pg),
-                    domid, hd->arch.amd.paging_mode);
+    AMD_IOMMU_DEBUG(
+        "Setup I/O page table: device id = %#x, type = %#x, " "root table = %#" PRIx64
+        ", " "domain = %d, paging mode = %d\n",
+        req_id,
+        pdev->type,
+        page_to_maddr(root_pg),
+        domid,
+        hd->arch.amd.paging_mode);
 
     ASSERT(pcidevs_locked());
 
@@ -296,7 +303,7 @@ int __init acpi_ivrs_init(void)
     BUG_ON(!rc);
     ivhd_type = rc;
 
-    if ( (amd_iommu_detect_acpi() !=0) || (iommu_found() == 0) )
+    if ( (amd_iommu_detect_acpi() != 0) || (iommu_found() == 0) )
         return -ENODEV;
 
     iommu_init_ops = &_iommu_init_ops;
@@ -315,8 +322,7 @@ static int __init cf_check iov_detect(void)
         return -ENODEV;
     }
 
-    if ( (init_done ? amd_iommu_init_late()
-                    : amd_iommu_init(false)) != 0 )
+    if ( (init_done ? amd_iommu_init_late() : amd_iommu_init(false)) != 0 )
     {
         printk("AMD-Vi: Error initialization\n");
         return -ENODEV;
@@ -325,7 +331,9 @@ static int __init cf_check iov_detect(void)
     init_done = 1;
 
     if ( !amd_iommu_perdev_intremap )
-        printk(XENLOG_WARNING "AMD-Vi: Using global interrupt remap table is not recommended (see XSA-36)!\n");
+        printk(
+            XENLOG_WARNING
+            "AMD-Vi: Using global interrupt remap table is not recommended (see XSA-36)!\n");
 
     return 0;
 }
@@ -369,8 +377,8 @@ int __read_mostly amd_iommu_min_paging_mode = 1;
 static int cf_check amd_iommu_domain_init(struct domain *d)
 {
     struct domain_iommu *hd = dom_iommu(d);
-    int pglvl = amd_iommu_get_paging_mode(
-                    1UL << (domain_max_paddr_bits(d) - PAGE_SHIFT));
+    int pglvl = amd_iommu_get_paging_mode(1UL << (domain_max_paddr_bits(d) -
+                                                  PAGE_SHIFT));
 
     if ( pglvl < 0 )
         return pglvl;
@@ -393,8 +401,9 @@ static void __hwdom_init cf_check amd_iommu_hwdom_init(struct domain *d)
     if ( allocate_domain_resources(d) )
         BUG();
 
-    for_each_amd_iommu ( iommu )
-        if ( iomem_deny_access(d, PFN_DOWN(iommu->mmio_base_phys),
+    for_each_amd_iommu(iommu)
+        if ( iomem_deny_access(d,
+                               PFN_DOWN(iommu->mmio_base_phys),
                                PFN_DOWN(iommu->mmio_base_phys +
                                         IOMMU_MMIO_REGION_LENGTH - 1)) )
             BUG();
@@ -422,7 +431,7 @@ static void amd_iommu_disable_domain_device(const struct domain *domain,
          pci_ats_enabled(iommu->seg, bus, pdev->devfn) )
         disable_ats_device(pdev);
 
-    BUG_ON ( iommu->dev_table.buffer == NULL );
+    BUG_ON(iommu->dev_table.buffer == NULL);
     req_id = get_dma_requestor_id(iommu->seg, PCI_BDF(bus, devfn));
     table = iommu->dev_table.buffer;
     dte = &table[req_id];
@@ -452,18 +461,19 @@ static void amd_iommu_disable_domain_device(const struct domain *domain,
 
         amd_iommu_flush_device(iommu, req_id, prev_domid);
 
-        AMD_IOMMU_DEBUG("Disable: device id = %#x, "
-                        "domain = %d, paging mode = %d\n",
-                        req_id, dte->domain_id,
-                        dom_iommu(domain)->arch.amd.paging_mode);
+        AMD_IOMMU_DEBUG(
+            "Disable: device id = %#x, " "domain = %d, paging mode = %d\n",
+            req_id,
+            dte->domain_id,
+            dom_iommu(domain)->arch.amd.paging_mode);
     }
     else
         spin_unlock_irqrestore(&iommu->lock, flags);
 }
 
-static int cf_check reassign_device(
-    struct domain *source, struct domain *target, u8 devfn,
-    struct pci_dev *pdev)
+static int cf_check reassign_device(struct domain *source,
+                                    struct domain *target, u8 devfn,
+                                    struct pci_dev *pdev)
 {
     struct amd_iommu *iommu;
     int rc;
@@ -472,7 +482,8 @@ static int cf_check reassign_device(
     if ( !iommu )
     {
         AMD_IOMMU_WARN("failed to find IOMMU: %pp cannot be assigned to %pd\n",
-                       &PCI_SBDF(pdev->seg, pdev->bus, devfn), target);
+                       &PCI_SBDF(pdev->seg, pdev->bus, devfn),
+                       target);
         return -ENODEV;
     }
 
@@ -505,30 +516,34 @@ static int cf_check reassign_device(
      */
     if ( !is_hardware_domain(source) )
     {
-        const struct ivrs_mappings *ivrs_mappings = get_ivrs_mappings(pdev->seg);
+        const struct ivrs_mappings *ivrs_mappings =
+            get_ivrs_mappings(pdev->seg);
         unsigned int bdf = PCI_BDF(pdev->bus, devfn);
 
         rc = amd_iommu_reserve_domain_unity_unmap(
-                 source,
-                 ivrs_mappings[get_dma_requestor_id(pdev->seg, bdf)].unity_map);
+            source,
+            ivrs_mappings[get_dma_requestor_id(pdev->seg, bdf)].unity_map);
         if ( rc )
             return rc;
     }
 
     AMD_IOMMU_DEBUG("Re-assign %pp from %pd to %pd\n",
-                    &PCI_SBDF(pdev->seg, pdev->bus, devfn), source, target);
+                    &PCI_SBDF(pdev->seg, pdev->bus, devfn),
+                    source,
+                    target);
 
     return 0;
 }
 
-static int cf_check amd_iommu_assign_device(
-    struct domain *d, u8 devfn, struct pci_dev *pdev, u32 flag)
+static int cf_check amd_iommu_assign_device(struct domain *d, u8 devfn,
+                                            struct pci_dev *pdev, u32 flag)
 {
     struct ivrs_mappings *ivrs_mappings = get_ivrs_mappings(pdev->seg);
     unsigned int bdf = PCI_BDF(pdev->bus, devfn);
     int req_id = get_dma_requestor_id(pdev->seg, bdf);
-    int rc = amd_iommu_reserve_domain_unity_map(
-                 d, ivrs_mappings[req_id].unity_map, flag);
+    int rc = amd_iommu_reserve_domain_unity_map(d,
+                                                ivrs_mappings[req_id].unity_map,
+                                                flag);
 
     if ( !rc )
         rc = reassign_device(pdev->domain, d, devfn, pdev);
@@ -536,14 +551,20 @@ static int cf_check amd_iommu_assign_device(
     if ( rc && !is_hardware_domain(d) )
     {
         int ret = amd_iommu_reserve_domain_unity_unmap(
-                      d, ivrs_mappings[req_id].unity_map);
+            d,
+            ivrs_mappings[req_id].unity_map);
 
         if ( ret )
         {
-            printk(XENLOG_ERR "AMD-Vi: "
-                   "unity-unmap for %pd/%04x:%02x:%02x.%u failed (%d)\n",
-                   d, pdev->seg, pdev->bus,
-                   PCI_SLOT(devfn), PCI_FUNC(devfn), ret);
+            printk(
+                XENLOG_ERR
+                "AMD-Vi: " "unity-unmap for %pd/%04x:%02x:%02x.%u failed (%d)\n",
+                d,
+                pdev->seg,
+                pdev->bus,
+                PCI_SLOT(devfn),
+                PCI_FUNC(devfn),
+                ret);
             domain_crash(d);
         }
     }
@@ -593,7 +614,8 @@ static int cf_check amd_iommu_add_device(u8 devfn, struct pci_dev *pdev)
         }
 
         AMD_IOMMU_WARN("no IOMMU for %pp; cannot be handed to %pd\n",
-                        &PCI_SBDF(pdev->seg, pdev->bus, devfn), pdev->domain);
+                       &PCI_SBDF(pdev->seg, pdev->bus, devfn),
+                       pdev->domain);
         return -ENODEV;
     }
 
@@ -603,28 +625,28 @@ static int cf_check amd_iommu_add_device(u8 devfn, struct pci_dev *pdev)
          !ivrs_mappings[ivrs_mappings[bdf].dte_requestor_id].valid )
         return -EPERM;
 
-    if ( iommu_intremap &&
-         ivrs_mappings[bdf].dte_requestor_id == bdf &&
+    if ( iommu_intremap && ivrs_mappings[bdf].dte_requestor_id == bdf &&
          !ivrs_mappings[bdf].intremap_table )
     {
         unsigned long flags;
 
         if ( pdev->msix || pdev->msi_maxvec )
         {
-            ivrs_mappings[bdf].intremap_table =
-                amd_iommu_alloc_intremap_table(
-                    iommu, &ivrs_mappings[bdf].intremap_inuse,
-                    pdev->msix ? pdev->msix->nr_entries
-                               : pdev->msi_maxvec);
+            ivrs_mappings[bdf].intremap_table = amd_iommu_alloc_intremap_table(
+                iommu,
+                &ivrs_mappings[bdf].intremap_inuse,
+                pdev->msix ? pdev->msix->nr_entries : pdev->msi_maxvec);
             if ( !ivrs_mappings[bdf].intremap_table )
                 return -ENOMEM;
         }
 
         spin_lock_irqsave(&iommu->lock, flags);
 
-        amd_iommu_set_intremap_table(
-            iommu->dev_table.buffer + (bdf * IOMMU_DEV_TABLE_ENTRY_SIZE),
-            ivrs_mappings[bdf].intremap_table, iommu, iommu_intremap);
+        amd_iommu_set_intremap_table(iommu->dev_table.buffer +
+                                         (bdf * IOMMU_DEV_TABLE_ENTRY_SIZE),
+                                     ivrs_mappings[bdf].intremap_table,
+                                     iommu,
+                                     iommu_intremap);
 
         spin_unlock_irqrestore(&iommu->lock, flags);
 
@@ -637,7 +659,8 @@ static int cf_check amd_iommu_add_device(u8 devfn, struct pci_dev *pdev)
              ivrs_mappings[ivrs_mappings[bdf].dte_requestor_id].unity_map,
              0) )
         AMD_IOMMU_WARN("%pd: unity mapping failed for %pp\n",
-                       pdev->domain, &PCI_SBDF(pdev->seg, bdf));
+                       pdev->domain,
+                       &PCI_SBDF(pdev->seg, bdf));
 
     if ( iommu_quarantine && pdev->arch.pseudo_domid == DOMID_INVALID )
     {
@@ -670,7 +693,8 @@ static int cf_check amd_iommu_remove_device(u8 devfn, struct pci_dev *pdev)
     if ( !iommu )
     {
         AMD_IOMMU_WARN("failed to find IOMMU: %pp cannot be removed from %pd\n",
-                        &PCI_SBDF(pdev->seg, pdev->bus, devfn), pdev->domain);
+                       &PCI_SBDF(pdev->seg, pdev->bus, devfn),
+                       pdev->domain);
         return -ENODEV;
     }
 
@@ -683,7 +707,8 @@ static int cf_check amd_iommu_remove_device(u8 devfn, struct pci_dev *pdev)
              pdev->domain,
              ivrs_mappings[ivrs_mappings[bdf].dte_requestor_id].unity_map) )
         AMD_IOMMU_WARN("%pd: unity unmapping failed for %pp\n",
-                       pdev->domain, &PCI_SBDF(pdev->seg, bdf));
+                       pdev->domain,
+                       &PCI_SBDF(pdev->seg, bdf));
 
     amd_iommu_quarantine_teardown(pdev);
 
@@ -732,22 +757,26 @@ static void amd_dump_page_table_level(struct page_info *pg, int level,
         if ( pde->next_level && (pde->next_level != (level - 1)) )
         {
             printk("AMD IOMMU table error. next_level = %d, expected %d\n",
-                   pde->next_level, level - 1);
+                   pde->next_level,
+                   level - 1);
 
             continue;
         }
 
         address = gpa + amd_offset_level_address(index, level);
         if ( pde->next_level >= 1 )
-            amd_dump_page_table_level(
-                mfn_to_page(_mfn(pde->mfn)), pde->next_level,
-                address, indent + 1);
+            amd_dump_page_table_level(mfn_to_page(_mfn(pde->mfn)),
+                                      pde->next_level,
+                                      address,
+                                      indent + 1);
         else
             printk("%*sdfn: %08lx  mfn: %08lx  %c%c\n",
-                   indent, "",
+                   indent,
+                   "",
                    (unsigned long)PFN_DOWN(address),
                    (unsigned long)PFN_DOWN(pfn_to_paddr(pde->mfn)),
-                   pde->ir ? 'r' : '-', pde->iw ? 'w' : '-');
+                   pde->ir ? 'r' : '-',
+                   pde->iw ? 'w' : '-');
     }
 
     unmap_domain_page(table_vaddr);
@@ -762,7 +791,9 @@ static void cf_check amd_dump_page_tables(struct domain *d)
 
     printk("AMD IOMMU %pd table has %u levels\n", d, hd->arch.amd.paging_mode);
     amd_dump_page_table_level(hd->arch.amd.root_table,
-                              hd->arch.amd.paging_mode, 0, 0);
+                              hd->arch.amd.paging_mode,
+                              0,
+                              0);
 }
 
 static const struct iommu_ops __initconst_cf_clobber _iommu_ops = {
@@ -772,7 +803,7 @@ static const struct iommu_ops __initconst_cf_clobber _iommu_ops = {
     .quarantine_init = amd_iommu_quarantine_init,
     .add_device = amd_iommu_add_device,
     .remove_device = amd_iommu_remove_device,
-    .assign_device  = amd_iommu_assign_device,
+    .assign_device = amd_iommu_assign_device,
     .teardown = amd_iommu_domain_destroy,
     .clear_root_pgtable = amd_iommu_clear_root_pgtable,
     .map_page = amd_iommu_map_page,

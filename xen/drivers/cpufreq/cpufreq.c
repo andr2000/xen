@@ -51,10 +51,11 @@ static unsigned int __read_mostly usr_max_freq;
 static void cpufreq_cmdline_common_para(struct cpufreq_policy *new_policy);
 
 struct cpufreq_dom {
-    unsigned int	dom;
-    cpumask_var_t	map;
-    struct list_head	node;
+    unsigned int dom;
+    cpumask_var_t map;
+    struct list_head node;
 };
+
 static LIST_HEAD_READ_MOSTLY(cpufreq_dom_list_head);
 
 bool __initdata cpufreq_governor_internal;
@@ -64,8 +65,9 @@ LIST_HEAD_READ_MOSTLY(cpufreq_governor_list);
 /* set xen as default cpufreq */
 enum cpufreq_controller cpufreq_controller = FREQCTL_xen;
 
-enum cpufreq_xen_opt __initdata cpufreq_xen_opts[2] = { CPUFREQ_xen,
-                                                        CPUFREQ_none };
+enum cpufreq_xen_opt
+    __initdata cpufreq_xen_opts[2] = { CPUFREQ_xen, CPUFREQ_none };
+
 unsigned int __initdata cpufreq_xen_cnt = 1;
 
 static int __init cpufreq_cmdline_parse(const char *s, const char *e);
@@ -138,6 +140,7 @@ static int __init cf_check setup_cpufreq_option(const char *str)
 
     return (choice < 0) ? ret : 0;
 }
+
 custom_param("cpufreq", setup_cpufreq_option);
 
 bool __read_mostly cpufreq_verbose;
@@ -146,11 +149,11 @@ struct cpufreq_governor *__find_governor(const char *governor)
 {
     struct cpufreq_governor *t;
 
-    if (!governor)
+    if ( !governor )
         return NULL;
 
     list_for_each_entry(t, &cpufreq_governor_list, governor_list)
-        if (!strncasecmp(governor, t->name, CPUFREQ_NAME_LEN))
+        if ( !strncasecmp(governor, t->name, CPUFREQ_NAME_LEN) )
             return t;
 
     return NULL;
@@ -158,10 +161,10 @@ struct cpufreq_governor *__find_governor(const char *governor)
 
 int __init cpufreq_register_governor(struct cpufreq_governor *governor)
 {
-    if (!governor)
+    if ( !governor )
         return -EINVAL;
 
-    if (__find_governor(governor->name) != NULL)
+    if ( __find_governor(governor->name) != NULL )
         return -EEXIST;
 
     list_add(&governor->governor_list, &cpufreq_governor_list);
@@ -174,19 +177,18 @@ int cpufreq_limit_change(unsigned int cpu)
     struct cpufreq_policy *data;
     struct cpufreq_policy policy;
 
-    if (!cpu_online(cpu) || !(data = per_cpu(cpufreq_cpu_policy, cpu)) ||
-        !processor_pminfo[cpu])
+    if ( !cpu_online(cpu) || !(data = per_cpu(cpufreq_cpu_policy, cpu)) ||
+         !processor_pminfo[cpu] )
         return -ENODEV;
 
     perf = &processor_pminfo[cpu]->perf;
 
-    if (perf->platform_limit >= perf->state_count)
+    if ( perf->platform_limit >= perf->state_count )
         return -EINVAL;
 
-    memcpy(&policy, data, sizeof(struct cpufreq_policy)); 
+    memcpy(&policy, data, sizeof(struct cpufreq_policy));
 
-    policy.max =
-        perf->states[perf->platform_limit].core_frequency * 1000;
+    policy.max = perf->states[perf->platform_limit].core_frequency * 1000;
 
     return __cpufreq_set_policy(data, &policy);
 }
@@ -212,65 +214,74 @@ int cpufreq_add_cpu(unsigned int cpu)
     if ( !(perf->init & XEN_PX_INIT) )
         return -EINVAL;
 
-    if (!cpufreq_driver.init)
+    if ( !cpufreq_driver.init )
         return 0;
 
-    if (per_cpu(cpufreq_cpu_policy, cpu))
+    if ( per_cpu(cpufreq_cpu_policy, cpu) )
         return 0;
 
-    if (perf->shared_type == CPUFREQ_SHARED_TYPE_HW)
+    if ( perf->shared_type == CPUFREQ_SHARED_TYPE_HW )
         hw_all = 1;
 
     dom = perf->domain_info.domain;
 
-    list_for_each(pos, &cpufreq_dom_list_head) {
+    list_for_each(pos, &cpufreq_dom_list_head)
+    {
         cpufreq_dom = list_entry(pos, struct cpufreq_dom, node);
-        if (dom == cpufreq_dom->dom) {
+        if ( dom == cpufreq_dom->dom )
+        {
             domexist = 1;
             break;
         }
     }
 
-    if (!domexist) {
+    if ( !domexist )
+    {
         cpufreq_dom = xzalloc(struct cpufreq_dom);
-        if (!cpufreq_dom)
+        if ( !cpufreq_dom )
             return -ENOMEM;
 
-        if (!zalloc_cpumask_var(&cpufreq_dom->map)) {
+        if ( !zalloc_cpumask_var(&cpufreq_dom->map) )
+        {
             xfree(cpufreq_dom);
             return -ENOMEM;
         }
 
         cpufreq_dom->dom = dom;
         list_add(&cpufreq_dom->node, &cpufreq_dom_list_head);
-    } else {
+    }
+    else
+    {
         /* domain sanity check under whatever coordination type */
         firstcpu = cpumask_first(cpufreq_dom->map);
-        if ((perf->domain_info.coord_type !=
-            processor_pminfo[firstcpu]->perf.domain_info.coord_type) ||
-            (perf->domain_info.num_processors !=
-            processor_pminfo[firstcpu]->perf.domain_info.num_processors)) {
-
-            printk(KERN_WARNING "cpufreq fail to add CPU%d:"
-                   "incorrect _PSD(%"PRIu64":%"PRIu64"), "
-                   "expect(%"PRIu64"/%"PRIu64")\n",
-                   cpu, perf->domain_info.coord_type,
+        if ( (perf->domain_info.coord_type !=
+              processor_pminfo[firstcpu]->perf.domain_info.coord_type) ||
+             (perf->domain_info.num_processors !=
+              processor_pminfo[firstcpu]->perf.domain_info.num_processors) )
+        {
+            printk(KERN_WARNING
+                   "cpufreq fail to add CPU%d:" "incorrect _PSD(%" PRIu64
+                   ":%" PRIu64 "), " "expect(%" PRIu64 "/%" PRIu64 ")\n",
+                   cpu,
+                   perf->domain_info.coord_type,
                    perf->domain_info.num_processors,
                    processor_pminfo[firstcpu]->perf.domain_info.coord_type,
-                   processor_pminfo[firstcpu]->perf.domain_info.num_processors
-                );
+                   processor_pminfo[firstcpu]->perf.domain_info.num_processors);
             return -EINVAL;
         }
     }
 
-    if (!domexist || hw_all) {
+    if ( !domexist || hw_all )
+    {
         policy = xzalloc(struct cpufreq_policy);
-        if (!policy) {
+        if ( !policy )
+        {
             ret = -ENOMEM;
             goto err0;
         }
 
-        if (!zalloc_cpumask_var(&policy->cpus)) {
+        if ( !zalloc_cpumask_var(&policy->cpus) )
+        {
             xfree(policy);
             ret = -ENOMEM;
             goto err0;
@@ -280,20 +291,23 @@ int cpufreq_add_cpu(unsigned int cpu)
         per_cpu(cpufreq_cpu_policy, cpu) = policy;
 
         ret = alternative_call(cpufreq_driver.init, policy);
-        if (ret) {
+        if ( ret )
+        {
             free_cpumask_var(policy->cpus);
             xfree(policy);
             per_cpu(cpufreq_cpu_policy, cpu) = NULL;
             goto err0;
         }
-        if (cpufreq_verbose)
+        if ( cpufreq_verbose )
             printk("CPU %u initialization completed\n", cpu);
-    } else {
+    }
+    else
+    {
         firstcpu = cpumask_first(cpufreq_dom->map);
         policy = per_cpu(cpufreq_cpu_policy, firstcpu);
 
         per_cpu(cpufreq_cpu_policy, cpu) = policy;
-        if (cpufreq_verbose)
+        if ( cpufreq_verbose )
             printk("adding CPU %u\n", cpu);
     }
 
@@ -301,28 +315,31 @@ int cpufreq_add_cpu(unsigned int cpu)
     cpumask_set_cpu(cpu, cpufreq_dom->map);
 
     ret = cpufreq_statistic_init(cpu);
-    if (ret)
+    if ( ret )
         goto err1;
 
-    if (hw_all || (cpumask_weight(cpufreq_dom->map) ==
-                   perf->domain_info.num_processors)) {
+    if ( hw_all || (cpumask_weight(cpufreq_dom->map) ==
+                    perf->domain_info.num_processors) )
+    {
         memcpy(&new_policy, policy, sizeof(struct cpufreq_policy));
         policy->governor = NULL;
 
         cpufreq_cmdline_common_para(&new_policy);
 
         ret = __cpufreq_set_policy(policy, &new_policy);
-        if (ret) {
-            if (new_policy.governor == CPUFREQ_DEFAULT_GOVERNOR)
+        if ( ret )
+        {
+            if ( new_policy.governor == CPUFREQ_DEFAULT_GOVERNOR )
                 /* if default governor fail, cpufreq really meet troubles */
                 goto err2;
-            else {
+            else
+            {
                 /* grub option governor fail */
                 /* give one more chance to default gov */
                 memcpy(&new_policy, policy, sizeof(struct cpufreq_policy));
                 new_policy.governor = CPUFREQ_DEFAULT_GOVERNOR;
                 ret = __cpufreq_set_policy(policy, &new_policy);
-                if (ret)
+                if ( ret )
                     goto err2;
             }
         }
@@ -337,13 +354,15 @@ err1:
     cpumask_clear_cpu(cpu, policy->cpus);
     cpumask_clear_cpu(cpu, cpufreq_dom->map);
 
-    if (cpumask_empty(policy->cpus)) {
+    if ( cpumask_empty(policy->cpus) )
+    {
         alternative_call(cpufreq_driver.exit, policy);
         free_cpumask_var(policy->cpus);
         xfree(policy);
     }
 err0:
-    if (cpumask_empty(cpufreq_dom->map)) {
+    if ( cpumask_empty(cpufreq_dom->map) )
+    {
         list_del(&cpufreq_dom->node);
         free_cpumask_var(cpufreq_dom->map);
         xfree(cpufreq_dom);
@@ -370,30 +389,32 @@ int cpufreq_del_cpu(unsigned int cpu)
     if ( !(perf->init & XEN_PX_INIT) )
         return -EINVAL;
 
-    if (!per_cpu(cpufreq_cpu_policy, cpu))
+    if ( !per_cpu(cpufreq_cpu_policy, cpu) )
         return 0;
 
-    if (perf->shared_type == CPUFREQ_SHARED_TYPE_HW)
+    if ( perf->shared_type == CPUFREQ_SHARED_TYPE_HW )
         hw_all = 1;
 
     dom = perf->domain_info.domain;
     policy = per_cpu(cpufreq_cpu_policy, cpu);
 
-    list_for_each(pos, &cpufreq_dom_list_head) {
+    list_for_each(pos, &cpufreq_dom_list_head)
+    {
         cpufreq_dom = list_entry(pos, struct cpufreq_dom, node);
-        if (dom == cpufreq_dom->dom) {
+        if ( dom == cpufreq_dom->dom )
+        {
             domexist = 1;
             break;
         }
     }
 
-    if (!domexist)
+    if ( !domexist )
         return -EINVAL;
 
     /* for HW_ALL, stop gov for each core of the _PSD domain */
     /* for SW_ALL & SW_ANY, stop gov for the 1st core of the _PSD domain */
-    if (hw_all || (cpumask_weight(cpufreq_dom->map) ==
-                   perf->domain_info.num_processors))
+    if ( hw_all || (cpumask_weight(cpufreq_dom->map) ==
+                    perf->domain_info.num_processors) )
         __cpufreq_governor(policy, CPUFREQ_GOV_STOP);
 
     cpufreq_statistic_exit(cpu);
@@ -401,7 +422,8 @@ int cpufreq_del_cpu(unsigned int cpu)
     cpumask_clear_cpu(cpu, policy->cpus);
     cpumask_clear_cpu(cpu, cpufreq_dom->map);
 
-    if (cpumask_empty(policy->cpus)) {
+    if ( cpumask_empty(policy->cpus) )
+    {
         alternative_call(cpufreq_driver.exit, policy);
         free_cpumask_var(policy->cpus);
         xfree(policy);
@@ -409,32 +431,40 @@ int cpufreq_del_cpu(unsigned int cpu)
 
     /* for the last cpu of the domain, clean room */
     /* It's safe here to free freq_table, drv_data and policy */
-    if (cpumask_empty(cpufreq_dom->map)) {
+    if ( cpumask_empty(cpufreq_dom->map) )
+    {
         list_del(&cpufreq_dom->node);
         free_cpumask_var(cpufreq_dom->map);
         xfree(cpufreq_dom);
     }
 
-    if (cpufreq_verbose)
+    if ( cpufreq_verbose )
         printk("deleting CPU %u\n", cpu);
     return 0;
 }
 
 static void print_PCT(struct xen_pct_register *ptr)
 {
-    printk("\t_PCT: descriptor=%d, length=%d, space_id=%d, "
-           "bit_width=%d, bit_offset=%d, reserved=%d, address=%"PRId64"\n",
-           ptr->descriptor, ptr->length, ptr->space_id, ptr->bit_width,
-           ptr->bit_offset, ptr->reserved, ptr->address);
+    printk(
+        "\t_PCT: descriptor=%d, length=%d, space_id=%d, " "bit_width=%d, bit_offset=%d, reserved=%d, address=%" PRId64
+        "\n",
+        ptr->descriptor,
+        ptr->length,
+        ptr->space_id,
+        ptr->bit_width,
+        ptr->bit_offset,
+        ptr->reserved,
+        ptr->address);
 }
 
 static void print_PSS(struct xen_processor_px *ptr, int count)
 {
     int i;
     printk("\t_PSS: state_count=%d\n", count);
-    for (i=0; i<count; i++){
-        printk("\tState%d: %"PRId64"MHz %"PRId64"mW %"PRId64"us "
-               "%"PRId64"us %#"PRIx64" %#"PRIx64"\n",
+    for ( i = 0; i < count; i++ )
+    {
+        printk("\tState%d: %" PRId64 "MHz %" PRId64 "mW %" PRId64
+               "us " "%" PRId64 "us %#" PRIx64 " %#" PRIx64 "\n",
                i,
                ptr[i].core_frequency,
                ptr[i].power,
@@ -445,11 +475,14 @@ static void print_PSS(struct xen_processor_px *ptr, int count)
     }
 }
 
-static void print_PSD( struct xen_psd_package *ptr)
+static void print_PSD(struct xen_psd_package *ptr)
 {
-    printk("\t_PSD: num_entries=%"PRId64" rev=%"PRId64
-           " domain=%"PRId64" coord_type=%"PRId64" num_processors=%"PRId64"\n",
-           ptr->num_entries, ptr->revision, ptr->domain, ptr->coord_type,
+    printk("\t_PSD: num_entries=%" PRId64 " rev=%" PRId64 " domain=%" PRId64
+           " coord_type=%" PRId64 " num_processors=%" PRId64 "\n",
+           ptr->num_entries,
+           ptr->revision,
+           ptr->domain,
+           ptr->coord_type,
            ptr->num_processors);
 }
 
@@ -471,8 +504,7 @@ int set_px_pminfo(uint32_t acpi_id, struct xen_processor_performance *perf)
         goto out;
     }
     if ( cpufreq_verbose )
-        printk("Set CPU acpi_id(%d) cpu(%d) Px State info:\n",
-               acpi_id, cpu);
+        printk("Set CPU acpi_id(%d) cpu(%d) Px State info:\n", acpi_id, cpu);
 
     pmpt = processor_pminfo[cpu];
     if ( !pmpt )
@@ -492,16 +524,17 @@ int set_px_pminfo(uint32_t acpi_id, struct xen_processor_performance *perf)
     if ( perf->flags & XEN_PX_PCT )
     {
         /* space_id check */
-        if ( perf->control_register.space_id !=
-             perf->status_register.space_id )
+        if ( perf->control_register.space_id != perf->status_register.space_id )
         {
             ret = -EINVAL;
             goto out;
         }
 
-        memcpy(&pxpt->control_register, &perf->control_register,
+        memcpy(&pxpt->control_register,
+               &perf->control_register,
                sizeof(struct xen_pct_register));
-        memcpy(&pxpt->status_register, &perf->status_register,
+        memcpy(&pxpt->status_register,
+               &perf->status_register,
                sizeof(struct xen_pct_register));
 
         if ( cpufreq_verbose )
@@ -534,7 +567,7 @@ int set_px_pminfo(uint32_t acpi_id, struct xen_processor_performance *perf)
         pxpt->state_count = perf->state_count;
 
         if ( cpufreq_verbose )
-            print_PSS(pxpt->states,pxpt->state_count);
+            print_PSS(pxpt->states, pxpt->state_count);
     }
 
     if ( perf->flags & XEN_PX_PSD )
@@ -549,7 +582,8 @@ int set_px_pminfo(uint32_t acpi_id, struct xen_processor_performance *perf)
         }
 
         pxpt->shared_type = perf->shared_type;
-        memcpy(&pxpt->domain_info, &perf->domain_info,
+        memcpy(&pxpt->domain_info,
+               &perf->domain_info,
                sizeof(struct xen_psd_package));
 
         if ( cpufreq_verbose )
@@ -570,7 +604,7 @@ int set_px_pminfo(uint32_t acpi_id, struct xen_processor_performance *perf)
         }
     }
 
-    if ( perf->flags == ( XEN_PX_PCT | XEN_PX_PSS | XEN_PX_PSD | XEN_PX_PPC ) )
+    if ( perf->flags == (XEN_PX_PCT | XEN_PX_PSS | XEN_PX_PSD | XEN_PX_PPC) )
     {
         pxpt->init = XEN_PX_INIT;
 
@@ -584,25 +618,29 @@ out:
 
 static void cpufreq_cmdline_common_para(struct cpufreq_policy *new_policy)
 {
-    if (usr_max_freq)
+    if ( usr_max_freq )
         new_policy->max = usr_max_freq;
-    if (usr_min_freq)
+    if ( usr_min_freq )
         new_policy->min = usr_min_freq;
 }
 
-static int __init cpufreq_handle_common_option(const char *name, const char *val)
+static int __init cpufreq_handle_common_option(const char *name,
+                                               const char *val)
 {
-    if (!strcmp(name, "maxfreq") && val) {
+    if ( !strcmp(name, "maxfreq") && val )
+    {
         usr_max_freq = simple_strtoul(val, NULL, 0);
         return 1;
     }
 
-    if (!strcmp(name, "minfreq") && val) {
+    if ( !strcmp(name, "minfreq") && val )
+    {
         usr_min_freq = simple_strtoul(val, NULL, 0);
         return 1;
     }
 
-    if (!strcmp(name, "verbose")) {
+    if ( !strcmp(name, "verbose") )
+    {
         cpufreq_verbose = !val || !!simple_strtoul(val, NULL, 0);
         return 1;
     }
@@ -612,8 +650,7 @@ static int __init cpufreq_handle_common_option(const char *name, const char *val
 
 static int __init cpufreq_cmdline_parse(const char *s, const char *e)
 {
-    static struct cpufreq_governor *__initdata cpufreq_governors[] =
-    {
+    static struct cpufreq_governor *__initdata cpufreq_governors[] = {
         CPUFREQ_DEFAULT_GOVERNOR,
         &cpufreq_gov_userspace,
         &cpufreq_gov_dbs,
@@ -626,50 +663,58 @@ static int __init cpufreq_cmdline_parse(const char *s, const char *e)
     int rc = 0;
 
     strlcpy(buf, s, sizeof(buf));
-    if (e - s < sizeof(buf))
+    if ( e - s < sizeof(buf) )
         buf[e - s] = '\0';
-    do {
+    do
+    {
         char *val, *end = strchr(str, ',');
         unsigned int i;
 
-        if (end)
+        if ( end )
             *end++ = '\0';
         val = strchr(str, '=');
-        if (val)
+        if ( val )
             *val++ = '\0';
 
-        if (!cpufreq_opt_governor) {
-            if (!val) {
-                for (i = 0; i < ARRAY_SIZE(cpufreq_governors); ++i) {
-                    if (!strcmp(str, cpufreq_governors[i]->name)) {
+        if ( !cpufreq_opt_governor )
+        {
+            if ( !val )
+            {
+                for ( i = 0; i < ARRAY_SIZE(cpufreq_governors); ++i )
+                {
+                    if ( !strcmp(str, cpufreq_governors[i]->name) )
+                    {
                         cpufreq_opt_governor = cpufreq_governors[i];
                         gov_index = i;
                         str = NULL;
                         break;
                     }
                 }
-            } else {
+            }
+            else
+            {
                 cpufreq_opt_governor = CPUFREQ_DEFAULT_GOVERNOR;
             }
         }
 
-        if (str && !cpufreq_handle_common_option(str, val) &&
-            (!cpufreq_governors[gov_index]->handle_option ||
-             !cpufreq_governors[gov_index]->handle_option(str, val)))
+        if ( str && !cpufreq_handle_common_option(str, val) &&
+             (!cpufreq_governors[gov_index]->handle_option ||
+              !cpufreq_governors[gov_index]->handle_option(str, val)) )
         {
             printk(XENLOG_WARNING "cpufreq/%s: option '%s' not recognized\n",
-                   cpufreq_governors[gov_index]->name, str);
+                   cpufreq_governors[gov_index]->name,
+                   str);
             rc = -EINVAL;
         }
 
         str = end;
-    } while (str);
+    } while ( str );
 
     return rc;
 }
 
-static int cf_check cpu_callback(
-    struct notifier_block *nfb, unsigned long action, void *hcpu)
+static int cf_check cpu_callback(struct notifier_block *nfb,
+                                 unsigned long action, void *hcpu)
 {
     unsigned int cpu = (unsigned long)hcpu;
 
@@ -689,22 +734,21 @@ static int cf_check cpu_callback(
     return NOTIFY_DONE;
 }
 
-static struct notifier_block cpu_nfb = {
-    .notifier_call = cpu_callback
-};
+static struct notifier_block cpu_nfb = { .notifier_call = cpu_callback };
 
 static int __init cf_check cpufreq_presmp_init(void)
 {
     register_cpu_notifier(&cpu_nfb);
     return 0;
 }
+
 presmp_initcall(cpufreq_presmp_init);
 
 int __init cpufreq_register_driver(const struct cpufreq_driver *driver_data)
 {
-   if ( !driver_data || !driver_data->init ||
-        !driver_data->verify || !driver_data->exit ||
-        (!driver_data->target == !driver_data->setpolicy) )
+    if ( !driver_data || !driver_data->init || !driver_data->verify ||
+         !driver_data->exit ||
+         (!driver_data->target == !driver_data->setpolicy) )
         return -EINVAL;
 
     if ( cpufreq_driver.init )

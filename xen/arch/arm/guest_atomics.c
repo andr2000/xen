@@ -26,29 +26,27 @@ static void calibrate_safe_atomic(void)
         unsigned long res, tmp;
 
 #ifdef CONFIG_ARM_32
-        asm volatile (" ldrex   %2, %1\n"
-                      " add     %2, %2, #1\n"
-                      " strex   %0, %2, %1\n"
-                      : "=&r" (res), "+Q" (mem), "=&r" (tmp));
+        asm volatile(
+            " ldrex   %2, %1\n" " add     %2, %2, #1\n" " strex   %0, %2, %1\n"
+            : "=&r"(res), "+Q"(mem), "=&r"(tmp));
 #else
-        asm volatile (" ldxr    %w2, %1\n"
-                      " add     %w2, %w2, #1\n"
-                      " stxr    %w0, %w2, %1\n"
-                      : "=&r" (res), "+Q" (mem), "=&r" (tmp));
+        asm volatile(
+            " ldxr    %w2, %1\n" " add     %w2, %w2, #1\n" " stxr    %w0, %w2, %1\n"
+            : "=&r"(res), "+Q"(mem), "=&r"(tmp));
 #endif
         counter++;
-    } while (NOW() < deadline);
+    } while ( NOW() < deadline );
 
     this_cpu(guest_safe_atomic_max) = counter;
 
     printk(XENLOG_DEBUG
            "CPU%u: Guest atomics will try %u times before pausing the domain\n",
-           smp_processor_id(), counter);
+           smp_processor_id(),
+           counter);
 }
 
 static int cpu_guest_safe_atomic_callback(struct notifier_block *nfb,
-                                          unsigned long action,
-                                          void *hcpu)
+                                          unsigned long action, void *hcpu)
 {
     if ( action == CPU_STARTING )
         calibrate_safe_atomic();
@@ -68,6 +66,7 @@ static int __init guest_safe_atomic_init(void)
 
     return 0;
 }
+
 presmp_initcall(guest_safe_atomic_init);
 
 /*

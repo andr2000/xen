@@ -137,8 +137,9 @@ static void __init linflex_uart_init_preirq(struct serial_port *port)
     linflex_uart_writel(uart, UARTCR, UARTCR_UART);
 
     /* 8 bit data, no parity, UART mode, Buffer mode */
-    linflex_uart_writel(uart, UARTCR, UARTCR_PC1 | UARTCR_PC0 | UARTCR_WL0 |
-                        UARTCR_UART);
+    linflex_uart_writel(uart,
+                        UARTCR,
+                        UARTCR_PC1 | UARTCR_PC0 | UARTCR_WL0 | UARTCR_UART);
 
     /* end init mode */
     ctrl = linflex_uart_readl(uart, LINCR1);
@@ -216,7 +217,7 @@ static void linflex_uart_putc(struct serial_port *port, char c)
     if ( !linflex_uart_tx_fifo_mode(uart) )
     {
         while ( (linflex_uart_readl(uart, UARTSR) & UARTSR_DTFTFF) == 0 )
-                cpu_relax();
+            cpu_relax();
 
         uartsr = linflex_uart_readl(uart, UARTSR) | (UARTSR_DTFTFF);
         linflex_uart_writel(uart, UARTSR, uartsr);
@@ -240,7 +241,8 @@ static int linflex_uart_getc(struct serial_port *port, char *pc)
     ch = linflex_uart_readl(uart, BDRM);
     *pc = ch & 0xff;
 
-    if ( !rx_fifo_mode ) {
+    if ( !rx_fifo_mode )
+    {
         uartsr = linflex_uart_readl(uart, UARTSR) | UARTSR_DRFRFE;
         linflex_uart_writel(uart, UARTSR, uartsr);
     }
@@ -294,7 +296,8 @@ static struct uart_driver __read_mostly linflex_uart_driver = {
     .vuart_info = linflex_vuart_info,
 };
 
-static int __init linflex_uart_init(struct dt_device_node *dev, const void *data)
+static int __init linflex_uart_init(struct dt_device_node *dev,
+                                    const void *data)
 {
     const char *config = data;
     struct linflex_uart *uart;
@@ -306,8 +309,9 @@ static int __init linflex_uart_init(struct dt_device_node *dev, const void *data
     {
         baud = simple_strtoul(config, &config, 10);
         if ( strcmp(config, "") )
-            printk("linflex-uart: Only baud rate is configurable, discarding other options: %s\n",
-                   config);
+            printk(
+                "linflex-uart: Only baud rate is configurable, discarding other options: %s\n",
+                config);
     }
     else
     {
@@ -322,7 +326,8 @@ static int __init linflex_uart_init(struct dt_device_node *dev, const void *data
     res = dt_device_get_paddr(dev, 0, &addr, &size);
     if ( res )
     {
-        printk("linflex-uart: Unable to retrieve the base address of the UART\n");
+        printk(
+            "linflex-uart: Unable to retrieve the base address of the UART\n");
         return res;
     }
 
@@ -358,8 +363,7 @@ static int __init linflex_uart_init(struct dt_device_node *dev, const void *data
     return 0;
 }
 
-static const struct dt_device_match linflex_uart_dt_compat[] __initconst =
-{
+static const struct dt_device_match linflex_uart_dt_compat[] __initconst = {
     DT_MATCH_COMPATIBLE("nxp,s32g2-linflexuart"),
     DT_MATCH_COMPATIBLE("nxp,s32g3-linflexuart"),
     DT_MATCH_COMPATIBLE("fsl,s32v234-linflexuart"),
@@ -367,8 +371,7 @@ static const struct dt_device_match linflex_uart_dt_compat[] __initconst =
 };
 
 DT_DEVICE_START(linflex_uart, "NXP LINFlexD UART", DEVICE_SERIAL)
-    .dt_match = linflex_uart_dt_compat,
-    .init = linflex_uart_init,
+    .dt_match = linflex_uart_dt_compat, .init = linflex_uart_init,
 DT_DEVICE_END
 
 /*

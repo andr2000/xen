@@ -55,11 +55,8 @@ struct timer {
  * a brand new timer, or a killed timer. It must *never* execute concurrently
  * with any other operation on the same timer.
  */
-void init_timer(
-    struct timer *timer,
-    void        (*function)(void *data),
-    void         *data,
-    unsigned int  cpu);
+void init_timer(struct timer *timer, void (*function)(void *data), void *data,
+                unsigned int cpu);
 
 /* Set the expiry time and activate a timer. */
 void set_timer(struct timer *timer, s_time_t expires);

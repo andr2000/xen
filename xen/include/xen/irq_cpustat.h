@@ -21,9 +21,9 @@ extern irq_cpustat_t irq_stat[];
 
 #define __IRQ_STAT(cpu, member)	(irq_stat[cpu].member)
 
-  /* arch independent irq_stat fields */
+/* arch independent irq_stat fields */
 #define softirq_pending(cpu)	__IRQ_STAT((cpu), __softirq_pending)
 #define local_irq_count(cpu)	__IRQ_STAT((cpu), __local_irq_count)
 #define mwait_wakeup(cpu)	__IRQ_STAT((cpu), __mwait_wakeup)
 
-#endif	/* __irq_cpustat_h */
+#endif /* __irq_cpustat_h */

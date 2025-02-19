@@ -27,42 +27,42 @@
 
 typedef struct __packed {
     /* These are used in all kinds of entry. */
-    unsigned long valid:1;      /* Valid mapping */
-    unsigned long table:1;      /* == 1 in 4k map entries too */
+    unsigned long valid:1; /* Valid mapping */
+    unsigned long table:1; /* == 1 in 4k map entries too */
 
     /*
      * These ten bits are only used in Block entries and are ignored
      * in Table entries.
      */
-    unsigned long ai:3;         /* Attribute Index */
-    unsigned long ns:1;         /* Not-Secure */
-    unsigned long up:1;         /* Unpriviledged access */
-    unsigned long ro:1;         /* Read-Only */
-    unsigned long sh:2;         /* Shareability */
-    unsigned long af:1;         /* Access Flag */
-    unsigned long ng:1;         /* Not-Global */
+    unsigned long ai:3; /* Attribute Index */
+    unsigned long ns:1; /* Not-Secure */
+    unsigned long up:1; /* Unpriviledged access */
+    unsigned long ro:1; /* Read-Only */
+    unsigned long sh:2; /* Shareability */
+    unsigned long af:1; /* Access Flag */
+    unsigned long ng:1; /* Not-Global */
 
     /* The base address must be appropriately aligned for Block entries */
     unsigned long long base:36; /* Base address of block or next table */
-    unsigned long sbz:4;        /* Must be zero */
+    unsigned long sbz:4; /* Must be zero */
 
     /*
      * These seven bits are only used in Block entries and are ignored
      * in Table entries.
      */
-    unsigned long contig:1;     /* In a block of 16 contiguous entries */
-    unsigned long pxn:1;        /* Privileged-XN */
-    unsigned long xn:1;         /* eXecute-Never */
-    unsigned long avail:4;      /* Ignored by hardware */
+    unsigned long contig:1; /* In a block of 16 contiguous entries */
+    unsigned long pxn:1; /* Privileged-XN */
+    unsigned long xn:1; /* eXecute-Never */
+    unsigned long avail:4; /* Ignored by hardware */
 
     /*
      * These 5 bits are only used in Table entries and are ignored in
      * Block entries.
      */
-    unsigned long pxnt:1;       /* Privileged-XN */
-    unsigned long xnt:1;        /* eXecute-Never */
-    unsigned long apt:2;        /* Access Permissions */
-    unsigned long nst:1;        /* Not-Secure */
+    unsigned long pxnt:1; /* Privileged-XN */
+    unsigned long xnt:1; /* eXecute-Never */
+    unsigned long apt:2; /* Access Permissions */
+    unsigned long nst:1; /* Not-Secure */
 } lpae_pt_t;
 
 /*
@@ -71,18 +71,18 @@ typedef struct __packed {
  */
 typedef struct __packed {
     /* These are used in all kinds of entry. */
-    unsigned long valid:1;      /* Valid mapping */
-    unsigned long table:1;      /* == 1 in 4k map entries too */
+    unsigned long valid:1; /* Valid mapping */
+    unsigned long table:1; /* == 1 in 4k map entries too */
 
     /*
      * These ten bits are only used in Block entries and are ignored
      * in Table entries.
      */
-    unsigned long mattr:4;      /* Memory Attributes */
-    unsigned long read:1;       /* Read access */
-    unsigned long write:1;      /* Write access */
-    unsigned long sh:2;         /* Shareability */
-    unsigned long af:1;         /* Access Flag */
+    unsigned long mattr:4; /* Memory Attributes */
+    unsigned long read:1; /* Read access */
+    unsigned long write:1; /* Write access */
+    unsigned long sh:2; /* Shareability */
+    unsigned long af:1; /* Access Flag */
     unsigned long sbz4:1;
 
     /* The base address must be appropriately aligned for Block entries */
@@ -93,10 +93,10 @@ typedef struct __packed {
      * These seven bits are only used in Block entries and are ignored
      * in Table entries.
      */
-    unsigned long contig:1;     /* In a block of 16 contiguous entries */
+    unsigned long contig:1; /* In a block of 16 contiguous entries */
     unsigned long sbz2:1;
-    unsigned long xn:1;         /* eXecute-Never */
-    unsigned long type:4;       /* Ignore by hardware. Used to store p2m types */
+    unsigned long xn:1; /* eXecute-Never */
+    unsigned long type:4; /* Ignore by hardware. Used to store p2m types */
 
     unsigned long sbz1:5;
 } lpae_p2m_t;
@@ -111,8 +111,8 @@ typedef struct __packed {
  */
 typedef struct __packed {
     /* These are used in all kinds of entry. */
-    unsigned long valid:1;      /* Valid mapping */
-    unsigned long table:1;      /* == 1 in 4k map entries too */
+    unsigned long valid:1; /* Valid mapping */
+    unsigned long table:1; /* == 1 in 4k map entries too */
 
     unsigned long pad2:10;
 

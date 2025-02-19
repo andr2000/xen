@@ -23,10 +23,10 @@
 #ifndef BUG_FRAME_STRUCT
 
 struct bug_frame {
-    signed int loc_disp:BUG_DISP_WIDTH;
-    unsigned int line_hi:BUG_LINE_HI_WIDTH;
-    signed int ptr_disp:BUG_DISP_WIDTH;
-    unsigned int line_lo:BUG_LINE_LO_WIDTH;
+    signed int loc_disp : BUG_DISP_WIDTH;
+    unsigned int line_hi : BUG_LINE_HI_WIDTH;
+    signed int ptr_disp : BUG_DISP_WIDTH;
+    unsigned int line_lo : BUG_LINE_LO_WIDTH;
     signed int msg_disp[];
 };
 
@@ -50,7 +50,6 @@ struct bug_frame {
 #define BUG_CHECK_LINE_WIDTH(line) ((void)(line))
 
 #endif /* BUG_FRAME_STRUCT */
-
 
 /*
  * Some architectures mark immediate instruction operands in a special way.

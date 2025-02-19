@@ -25,38 +25,35 @@ static bool __ro_after_init opt_cpufreq_hdc = true;
 #define HWP_ENERGY_PERF_BALANCE         0x80
 #define HWP_ENERGY_PERF_MAX_POWERSAVE   0xff
 
-union hwp_request
-{
-    struct
-    {
+union hwp_request {
+    struct {
         unsigned int min_perf:8;
         unsigned int max_perf:8;
         unsigned int desired:8;
         unsigned int energy_perf:8;
         unsigned int activity_window:10;
         bool package_control:1;
-        unsigned int :16;
+        unsigned int:16;
         bool activity_window_valid:1;
         bool energy_perf_valid:1;
         bool desired_valid:1;
         bool max_perf_valid:1;
         bool min_perf_valid:1;
     };
+
     uint64_t raw;
 };
 
-struct hwp_drv_data
-{
-    union
-    {
+struct hwp_drv_data {
+    union {
         uint64_t hwp_caps;
-        struct
-        {
+
+        struct {
             unsigned int highest:8;
             unsigned int guaranteed:8;
             unsigned int most_efficient:8;
             unsigned int lowest:8;
-            unsigned int :32;
+            unsigned int:32;
         } hw;
     };
     union hwp_request curr_req;
@@ -67,6 +64,7 @@ struct hwp_drv_data
     uint8_t desired;
     uint8_t energy_perf;
 };
+
 static DEFINE_PER_CPU_READ_MOSTLY(struct hwp_drv_data *, hwp_drv_data);
 
 #define hwp_err(cpu, fmt, args...) \
@@ -132,7 +130,8 @@ int __init hwp_cmdline_parse(const char *s, const char *e)
         if ( !hwp_handle_option(s, end) )
         {
             printk(XENLOG_WARNING "cpufreq/hwp: option '%.*s' not recognized\n",
-                   (int)((end ?: e) - s), s);
+                   (int)((end ?: e) - s),
+                   s);
 
             return -EINVAL;
         }
@@ -143,10 +142,9 @@ int __init hwp_cmdline_parse(const char *s, const char *e)
     return 0;
 }
 
-static struct cpufreq_governor cpufreq_gov_hwp =
-{
-    .name          = "hwp",
-    .governor      = hwp_governor,
+static struct cpufreq_governor cpufreq_gov_hwp = {
+    .name = "hwp",
+    .governor = hwp_governor,
 };
 
 static int __init cf_check cpufreq_gov_hwp_init(void)
@@ -156,6 +154,7 @@ static int __init cf_check cpufreq_gov_hwp_init(void)
 
     return cpufreq_register_governor(&cpufreq_gov_hwp);
 }
+
 __initcall(cpufreq_gov_hwp_init);
 
 bool hwp_active(void)
@@ -185,13 +184,14 @@ static bool __init hwp_available(void)
 
     eax = cpuid_eax(CPUID_PM_LEAF);
 
-    hwp_verbose("%d notify: %d act-window: %d energy-perf: %d pkg-level: %d peci: %d\n",
-                !!(eax & CPUID6_EAX_HWP),
-                !!(eax & CPUID6_EAX_HWP_NOTIFICATION),
-                !!(eax & CPUID6_EAX_HWP_ACTIVITY_WINDOW),
-                !!(eax & CPUID6_EAX_HWP_ENERGY_PERFORMANCE_PREFERENCE),
-                !!(eax & CPUID6_EAX_HWP_PACKAGE_LEVEL_REQUEST),
-                !!(eax & CPUID6_EAX_HWP_PECI));
+    hwp_verbose(
+        "%d notify: %d act-window: %d energy-perf: %d pkg-level: %d peci: %d\n",
+        !!(eax & CPUID6_EAX_HWP),
+        !!(eax & CPUID6_EAX_HWP_NOTIFICATION),
+        !!(eax & CPUID6_EAX_HWP_ACTIVITY_WINDOW),
+        !!(eax & CPUID6_EAX_HWP_ENERGY_PERFORMANCE_PREFERENCE),
+        !!(eax & CPUID6_EAX_HWP_PACKAGE_LEVEL_REQUEST),
+        !!(eax & CPUID6_EAX_HWP_PECI));
 
     if ( !(eax & CPUID6_EAX_HWP) )
         return false;
@@ -203,9 +203,9 @@ static bool __init hwp_available(void)
         return false;
     }
 
-    feature_hwp_notification    = eax & CPUID6_EAX_HWP_NOTIFICATION;
+    feature_hwp_notification = eax & CPUID6_EAX_HWP_NOTIFICATION;
     feature_hwp_activity_window = eax & CPUID6_EAX_HWP_ACTIVITY_WINDOW;
-    feature_hdc                 = eax & CPUID6_EAX_HDC;
+    feature_hdc = eax & CPUID6_EAX_HDC;
 
     hwp_verbose("Hardware Duty Cycling (HDC) %ssupported%s\n",
                 feature_hdc ? "" : "not ",
@@ -248,7 +248,8 @@ static void cf_check hwp_write_request(void *info)
     if ( wrmsr_safe(MSR_HWP_REQUEST, hwp_req.raw) )
     {
         hwp_verbose("CPU%u: error wrmsr_safe(MSR_HWP_REQUEST, %lx)\n",
-                    policy->cpu, hwp_req.raw);
+                    policy->cpu,
+                    hwp_req.raw);
         rdmsr_safe(MSR_HWP_REQUEST, data->curr_req.raw);
         data->ret = -EINVAL;
     }
@@ -394,9 +395,8 @@ static void cf_check hwp_init_msrs(void *info)
     /* Check for turbo support. */
     intel_feature_detect(policy);
 
-    if ( feature_hdc &&
-         (!hdc_set_pkg_hdc_ctl(policy->cpu, opt_cpufreq_hdc) ||
-          !hdc_set_pm_ctl1(policy->cpu, opt_cpufreq_hdc)) )
+    if ( feature_hdc && (!hdc_set_pkg_hdc_ctl(policy->cpu, opt_cpufreq_hdc) ||
+                         !hdc_set_pm_ctl1(policy->cpu, opt_cpufreq_hdc)) )
     {
         hwp_err(policy->cpu, "Disabling HDC support\n");
         feature_hdc = false;
@@ -406,7 +406,7 @@ static void cf_check hwp_init_msrs(void *info)
 
     return;
 
- error:
+error:
     data->curr_req.raw = -1;
     val &= ~PM_ENABLE_HWP_ENABLE;
     if ( wrmsr_safe(MSR_PM_ENABLE, val) )
@@ -452,7 +452,8 @@ static int cf_check hwp_cpufreq_cpu_init(struct cpufreq_policy *policy)
 
     if ( first_run || data->curr_req.raw != initial_req.raw )
     {
-        hwp_verbose("CPU%u: rdmsr HWP_REQUEST %016lx\n", cpu,
+        hwp_verbose("CPU%u: rdmsr HWP_REQUEST %016lx\n",
+                    cpu,
                     data->curr_req.raw);
         first_run = false;
     }
@@ -501,47 +502,47 @@ static void cf_check hwp_set_misc_turbo(void *info)
     if ( wrmsr_safe(MSR_IA32_MISC_ENABLE, msr) )
     {
         hwp_verbose("CPU%u: error wrmsr_safe(MSR_IA32_MISC_ENABLE): %016lx\n",
-                    policy->cpu, msr);
+                    policy->cpu,
+                    msr);
         data->ret = -EACCES;
     }
 }
 
-static int cf_check hwp_cpufreq_update(unsigned int cpu, struct cpufreq_policy *policy)
+static int cf_check hwp_cpufreq_update(unsigned int cpu,
+                                       struct cpufreq_policy *policy)
 {
     on_selected_cpus(cpumask_of(cpu), hwp_set_misc_turbo, policy, 1);
 
     return per_cpu(hwp_drv_data, cpu)->ret;
 }
 
-static const struct cpufreq_driver __initconst_cf_clobber
-hwp_cpufreq_driver = {
-    .name   = XEN_HWP_DRIVER_NAME,
+static const struct cpufreq_driver __initconst_cf_clobber hwp_cpufreq_driver = {
+    .name = XEN_HWP_DRIVER_NAME,
     .verify = hwp_cpufreq_verify,
     .target = hwp_cpufreq_target,
-    .init   = hwp_cpufreq_cpu_init,
-    .exit   = hwp_cpufreq_cpu_exit,
+    .init = hwp_cpufreq_cpu_init,
+    .exit = hwp_cpufreq_cpu_exit,
     .update = hwp_cpufreq_update,
 };
 
-int get_hwp_para(unsigned int cpu,
-                 struct xen_cppc_para *cppc_para)
+int get_hwp_para(unsigned int cpu, struct xen_cppc_para *cppc_para)
 {
     const struct hwp_drv_data *data = per_cpu(hwp_drv_data, cpu);
 
     if ( data == NULL )
         return -ENODATA;
 
-    cppc_para->features         =
+    cppc_para->features =
         (feature_hwp_activity_window ? XEN_SYSCTL_CPPC_FEAT_ACT_WINDOW : 0);
-    cppc_para->lowest           = data->hw.lowest;
+    cppc_para->lowest = data->hw.lowest;
     cppc_para->lowest_nonlinear = data->hw.most_efficient;
-    cppc_para->nominal          = data->hw.guaranteed;
-    cppc_para->highest          = data->hw.highest;
-    cppc_para->minimum          = data->minimum;
-    cppc_para->maximum          = data->maximum;
-    cppc_para->desired          = data->desired;
-    cppc_para->energy_perf      = data->energy_perf;
-    cppc_para->activity_window  = data->activity_window;
+    cppc_para->nominal = data->hw.guaranteed;
+    cppc_para->highest = data->hw.highest;
+    cppc_para->minimum = data->minimum;
+    cppc_para->maximum = data->maximum;
+    cppc_para->desired = data->desired;
+    cppc_para->energy_perf = data->energy_perf;
+    cppc_para->activity_window = data->activity_window;
 
     return 0;
 }
@@ -557,10 +558,8 @@ int set_hwp_para(struct cpufreq_policy *policy,
         return -ENOENT;
 
     /* Validate all parameters - Disallow reserved bits. */
-    if ( set_cppc->minimum > 255 ||
-         set_cppc->maximum > 255 ||
-         set_cppc->desired > 255 ||
-         set_cppc->energy_perf > 255 ||
+    if ( set_cppc->minimum > 255 || set_cppc->maximum > 255 ||
+         set_cppc->desired > 255 || set_cppc->energy_perf > 255 ||
          (set_cppc->set_params & ~XEN_SYSCTL_CPPC_SET_PARAM_MASK) ||
          (set_cppc->activity_window & ~XEN_SYSCTL_CPPC_ACT_WINDOW_MASK) )
         return -EINVAL;

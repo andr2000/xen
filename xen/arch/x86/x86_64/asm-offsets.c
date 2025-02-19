@@ -17,7 +17,7 @@
 #include <xen/multiboot2.h>
 
 #ifdef CONFIG_VIDEO
-# include "../boot/video.h"
+#include "../boot/video.h"
 #endif
 
 #define DEFINE(_sym, _val)                                                 \
@@ -63,19 +63,19 @@ void __dummy__(void)
     DEFINE(sym, offsetof(struct cpu_user_regs, mem) -                   \
                 offsetof(struct cpu_user_regs, error_code) __VA_ARGS__)
 
-    OFFSET_EF(EFRAME_entry_vector,    entry_vector);
-    OFFSET_EF(EFRAME_rip,             rip);
-    OFFSET_EF(EFRAME_cs,              cs);
-    OFFSET_EF(EFRAME_eflags,          eflags);
+    OFFSET_EF(EFRAME_entry_vector, entry_vector);
+    OFFSET_EF(EFRAME_rip, rip);
+    OFFSET_EF(EFRAME_cs, cs);
+    OFFSET_EF(EFRAME_eflags, eflags);
 
     /*
      * These aren't real fields.  They're spare space, used by the IST
      * exit-to-xen path.
      */
-    OFFSET_EF(EFRAME_shadow_scf,      eflags, +4);
-    OFFSET_EF(EFRAME_shadow_sel,      eflags, +6);
+    OFFSET_EF(EFRAME_shadow_scf, eflags, +4);
+    OFFSET_EF(EFRAME_shadow_sel, eflags, +6);
 
-    OFFSET_EF(EFRAME_rsp,             rsp);
+    OFFSET_EF(EFRAME_rsp, rsp);
     BLANK();
 
 #undef OFFSET_EF
@@ -91,11 +91,13 @@ void __dummy__(void)
     OFFSET(VCPU_syscall32_addr, struct vcpu, arch.pv.syscall32_callback_eip);
     OFFSET(VCPU_syscall32_sel, struct vcpu, arch.pv.syscall32_callback_cs);
     OFFSET(VCPU_syscall32_disables_events,
-           struct vcpu, arch.pv.syscall32_disables_events);
+           struct vcpu,
+           arch.pv.syscall32_disables_events);
     OFFSET(VCPU_sysenter_addr, struct vcpu, arch.pv.sysenter_callback_eip);
     OFFSET(VCPU_sysenter_sel, struct vcpu, arch.pv.sysenter_callback_cs);
     OFFSET(VCPU_sysenter_disables_events,
-           struct vcpu, arch.pv.sysenter_disables_events);
+           struct vcpu,
+           arch.pv.sysenter_disables_events);
     OFFSET(VCPU_trap_ctxt, struct vcpu, arch.pv.trap_ctxt);
     OFFSET(VCPU_kernel_sp, struct vcpu, arch.pv.kernel_sp);
     OFFSET(VCPU_kernel_ss, struct vcpu, arch.pv.kernel_ss);
@@ -110,7 +112,7 @@ void __dummy__(void)
     OFFSET(VCPU_async_exception_mask, struct vcpu, arch.async_exception_mask);
     DEFINE(VCPU_TRAP_NMI, VCPU_TRAP_NMI);
     DEFINE(VCPU_TRAP_MCE, VCPU_TRAP_MCE);
-    DEFINE(_VGCF_syscall_disables_events,  _VGCF_syscall_disables_events);
+    DEFINE(_VGCF_syscall_disables_events, _VGCF_syscall_disables_events);
     BLANK();
 
 #ifdef CONFIG_HVM
@@ -127,7 +129,9 @@ void __dummy__(void)
 
     OFFSET(VCPU_nhvm_guestmode, struct vcpu, arch.hvm.nvcpu.nv_guestmode);
     OFFSET(VCPU_nhvm_p2m, struct vcpu, arch.hvm.nvcpu.nv_p2m);
-    OFFSET(VCPU_nsvm_hap_enabled, struct vcpu, arch.hvm.nvcpu.u.nsvm.ns_hap_enabled);
+    OFFSET(VCPU_nsvm_hap_enabled,
+           struct vcpu,
+           arch.hvm.nvcpu.u.nsvm.ns_hap_enabled);
     BLANK();
 #endif
 
@@ -135,8 +139,12 @@ void __dummy__(void)
     OFFSET(DOMAIN_is_32bit_pv, struct domain, arch.pv.is_32bit);
     BLANK();
 
-    OFFSET(COMPAT_VCPUINFO_upcall_pending, struct compat_vcpu_info, evtchn_upcall_pending);
-    OFFSET(COMPAT_VCPUINFO_upcall_mask, struct compat_vcpu_info, evtchn_upcall_mask);
+    OFFSET(COMPAT_VCPUINFO_upcall_pending,
+           struct compat_vcpu_info,
+           evtchn_upcall_pending);
+    OFFSET(COMPAT_VCPUINFO_upcall_mask,
+           struct compat_vcpu_info,
+           evtchn_upcall_mask);
     BLANK();
 #endif
 
@@ -214,24 +222,24 @@ void __dummy__(void)
     BLANK();
 
 #ifdef CONFIG_VIDEO
-    OFFSET(BVI_cursor_pos,      struct boot_video_info, orig_x);
-    OFFSET(BVI_video_mode,      struct boot_video_info, orig_video_mode);
-    OFFSET(BVI_video_cols,      struct boot_video_info, orig_video_cols);
-    OFFSET(BVI_video_lines,     struct boot_video_info, orig_video_lines);
-    OFFSET(BVI_have_vga,        struct boot_video_info, orig_video_isVGA);
-    OFFSET(BVI_font_points,     struct boot_video_info, orig_video_points);
-    OFFSET(BVI_capabilities,    struct boot_video_info, capabilities);
-    OFFSET(BVI_lfb_linelength,  struct boot_video_info, lfb_linelength);
-    OFFSET(BVI_lfb_width,       struct boot_video_info, lfb_width);
-    OFFSET(BVI_lfb_height,      struct boot_video_info, lfb_height);
-    OFFSET(BVI_lfb_depth,       struct boot_video_info, lfb_depth);
-    OFFSET(BVI_lfb_base,        struct boot_video_info, lfb_base);
-    OFFSET(BVI_lfb_size,        struct boot_video_info, lfb_size);
-    OFFSET(BVI_lfb_colors,      struct boot_video_info, colors);
-    OFFSET(BVI_vesapm_seg,      struct boot_video_info, vesapm.seg);
-    OFFSET(BVI_vesapm_off,      struct boot_video_info, vesapm.off);
-    OFFSET(BVI_vesa_attrib,     struct boot_video_info, vesa_attrib);
-    DEFINE(BVI_size,            sizeof(struct boot_video_info));
+    OFFSET(BVI_cursor_pos, struct boot_video_info, orig_x);
+    OFFSET(BVI_video_mode, struct boot_video_info, orig_video_mode);
+    OFFSET(BVI_video_cols, struct boot_video_info, orig_video_cols);
+    OFFSET(BVI_video_lines, struct boot_video_info, orig_video_lines);
+    OFFSET(BVI_have_vga, struct boot_video_info, orig_video_isVGA);
+    OFFSET(BVI_font_points, struct boot_video_info, orig_video_points);
+    OFFSET(BVI_capabilities, struct boot_video_info, capabilities);
+    OFFSET(BVI_lfb_linelength, struct boot_video_info, lfb_linelength);
+    OFFSET(BVI_lfb_width, struct boot_video_info, lfb_width);
+    OFFSET(BVI_lfb_height, struct boot_video_info, lfb_height);
+    OFFSET(BVI_lfb_depth, struct boot_video_info, lfb_depth);
+    OFFSET(BVI_lfb_base, struct boot_video_info, lfb_base);
+    OFFSET(BVI_lfb_size, struct boot_video_info, lfb_size);
+    OFFSET(BVI_lfb_colors, struct boot_video_info, colors);
+    OFFSET(BVI_vesapm_seg, struct boot_video_info, vesapm.seg);
+    OFFSET(BVI_vesapm_off, struct boot_video_info, vesapm.off);
+    OFFSET(BVI_vesa_attrib, struct boot_video_info, vesa_attrib);
+    DEFINE(BVI_size, sizeof(struct boot_video_info));
     BLANK();
 #endif /* CONFIG_VIDEO */
 }

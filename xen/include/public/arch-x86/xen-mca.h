@@ -92,8 +92,8 @@
 #define MC_TYPE_RECOVERY        3
 
 struct mcinfo_common {
-    uint16_t type;      /* structure type */
-    uint16_t size;      /* size of this struct in bytes */
+    uint16_t type; /* structure type */
+    uint16_t size; /* size of this struct in bytes */
 };
 typedef struct mcinfo_common xen_mcinfo_common_t;
 
@@ -104,6 +104,7 @@ typedef struct mcinfo_common xen_mcinfo_common_t;
 #define MC_FLAG_RESET		(1 << 4)
 #define MC_FLAG_CMCI		(1 << 5)
 #define MC_FLAG_MCE		(1 << 6)
+
 /* contains global x86 mc information */
 struct mcinfo_global {
     xen_mcinfo_common_t common;
@@ -127,16 +128,15 @@ struct mcinfo_bank {
     uint16_t mc_domid; /* Usecase 5: domain referenced by mc_addr on dom0
                         * and if mc_addr is valid. Never valid on DomU. */
     uint64_t mc_status; /* bank status */
-    uint64_t mc_addr;   /* bank address, only valid
+    uint64_t mc_addr; /* bank address, only valid
                          * if addr bit is set in mc_status */
     uint64_t mc_misc;
     uint64_t mc_ctrl2;
     uint64_t mc_tsc;
 };
 
-
 struct mcinfo_msr {
-    uint64_t reg;   /* MSR */
+    uint64_t reg; /* MSR */
     uint64_t value; /* MSR value */
 };
 typedef struct mcinfo_msr xen_mcinfo_msr_t;
@@ -186,16 +186,14 @@ struct mcinfo_extended {
  * non-volatile memory for further proactive actions, such as offlining the
  * easy broken page earlier when doing next reboot.
 */
-struct page_offline_action
-{
+struct page_offline_action {
     /* Params for passing the offlined page number to DOM0 */
     uint64_t mfn;
     uint64_t status;
 };
 typedef struct page_offline_action xen_page_offline_action_t;
 
-struct cpu_offline_action
-{
+struct cpu_offline_action {
     /* Params for passing the identity of the offlined CPU to DOM0 */
     uint32_t mc_socketid;
     uint16_t mc_coreid;
@@ -204,12 +202,13 @@ struct cpu_offline_action
 typedef struct cpu_offline_action xen_cpu_offline_action_t;
 
 #define MAX_UNION_SIZE 16
-struct mcinfo_recovery
-{
+
+struct mcinfo_recovery {
     xen_mcinfo_common_t common;
     uint16_t mc_bank; /* bank nr */
     uint8_t action_flags;
     uint8_t action_types;
+
     union {
         xen_page_offline_action_t page_retire;
         xen_cpu_offline_action_t cpu_offline;
@@ -217,11 +216,11 @@ struct mcinfo_recovery
     } action_info;
 };
 
-
 #define MCINFO_HYPERCALLSIZE	1024
 #define MCINFO_MAXSIZE		768
 
 #define MCINFO_FLAGS_UNCOMPLETE 0x1
+
 struct mc_info {
     /* Number of mcinfo_* entries in mi_data */
     uint32_t mi_nentries;
@@ -270,7 +269,6 @@ struct mcinfo_logical_cpu {
 typedef struct mcinfo_logical_cpu xen_mc_logical_cpu_t;
 DEFINE_XEN_GUEST_HANDLE(xen_mc_logical_cpu_t);
 
-
 /*
  * OS's should use these instead of writing their own lookup function
  * each with its own bugs and drawbacks.
@@ -315,7 +313,6 @@ DEFINE_XEN_GUEST_HANDLE(xen_mc_logical_cpu_t);
         (ret) = found_ ? mic_ : NULL;                           \
     } while (0)
 
-
 /* Usecase 1
  * Register machine check trap callback handler
  *    (already done via "set_trap_table" hypercall)
@@ -331,14 +328,15 @@ DEFINE_XEN_GUEST_HANDLE(xen_mc_logical_cpu_t);
  * Note, this hypercall is special, because both Dom0 and DomU must use this.
  */
 #define XEN_MC_fetch            1
+
 struct xen_mc_fetch {
     /* IN/OUT variables. */
-    uint32_t flags;	/* IN: XEN_MC_NONURGENT, XEN_MC_URGENT,
+    uint32_t flags; /* IN: XEN_MC_NONURGENT, XEN_MC_URGENT,
                            XEN_MC_ACK if ack'ing an earlier fetch */
-                       /* OUT: XEN_MC_OK, XEN_MC_FETCHFAILED,
+    /* OUT: XEN_MC_OK, XEN_MC_FETCHFAILED,
                           XEN_MC_NODATA, XEN_MC_NOMATCH */
     uint32_t _pad0;
-    uint64_t fetch_id;	/* OUT: id for ack, IN: id we are ack'ing */
+    uint64_t fetch_id; /* OUT: id for ack, IN: id we are ack'ing */
 
     /* OUT variables. */
     XEN_GUEST_HANDLE(mc_info_t) data;
@@ -346,27 +344,28 @@ struct xen_mc_fetch {
 typedef struct xen_mc_fetch xen_mc_fetch_t;
 DEFINE_XEN_GUEST_HANDLE(xen_mc_fetch_t);
 
-
 /* Usecase 4
  * This tells the hypervisor to notify a DomU about the machine check error
  */
 #define XEN_MC_notifydomain     2
+
 struct xen_mc_notifydomain {
     /* IN variables. */
-    uint16_t mc_domid;    /* The unprivileged domain to notify. */
-    uint16_t mc_vcpuid;   /* The vcpu in mc_domid to notify.
+    uint16_t mc_domid; /* The unprivileged domain to notify. */
+    uint16_t mc_vcpuid; /* The vcpu in mc_domid to notify.
                            * Usually echo'd value from the fetch hypercall. */
 
     /* IN/OUT variables. */
     uint32_t flags;
 
-/* IN: XEN_MC_CORRECTABLE, XEN_MC_TRAP */
-/* OUT: XEN_MC_OK, XEN_MC_CANNOTHANDLE, XEN_MC_NOTDELIVERED, XEN_MC_NOMATCH */
+    /* IN: XEN_MC_CORRECTABLE, XEN_MC_TRAP */
+    /* OUT: XEN_MC_OK, XEN_MC_CANNOTHANDLE, XEN_MC_NOTDELIVERED, XEN_MC_NOMATCH */
 };
 typedef struct xen_mc_notifydomain xen_mc_notifydomain_t;
 DEFINE_XEN_GUEST_HANDLE(xen_mc_notifydomain_t);
 
 #define XEN_MC_physcpuinfo 3
+
 struct xen_mc_physcpuinfo {
     /* IN/OUT */
     uint32_t ncpus;
@@ -378,12 +377,13 @@ typedef struct xen_mc_physcpuinfo xen_mc_physcpuinfo_t;
 
 #define XEN_MC_msrinject    4
 #define MC_MSRINJ_MAXMSRS       8
+
 struct xen_mc_msrinject {
     /* IN */
-    uint32_t mcinj_cpunr;           /* target processor id */
-    uint32_t mcinj_flags;           /* see MC_MSRINJ_F_* below */
-    uint32_t mcinj_count;           /* 0 .. count-1 in array are valid */
-    domid_t  mcinj_domid;           /* valid only if MC_MSRINJ_F_GPADDR is
+    uint32_t mcinj_cpunr; /* target processor id */
+    uint32_t mcinj_flags; /* see MC_MSRINJ_F_* below */
+    uint32_t mcinj_count; /* 0 .. count-1 in array are valid */
+    domid_t mcinj_domid; /* valid only if MC_MSRINJ_F_GPADDR is
                                        present in mcinj_flags */
     uint16_t _pad0;
     xen_mcinfo_msr_t mcinj_msr[MC_MSRINJ_MAXMSRS];
@@ -395,8 +395,9 @@ typedef struct xen_mc_msrinject xen_mc_msrinject_t;
 #define MC_MSRINJ_F_GPADDR      0x2
 
 #define XEN_MC_mceinject    5
+
 struct xen_mc_mceinject {
-    unsigned int mceinj_cpunr;      /* target processor id */
+    unsigned int mceinj_cpunr; /* target processor id */
 };
 typedef struct xen_mc_mceinject xen_mc_mceinject_t;
 
@@ -419,14 +420,15 @@ typedef struct xen_mc_inject_v2 xen_mc_inject_v2_t;
 struct xen_mc {
     uint32_t cmd;
     uint32_t interface_version; /* XEN_MCA_INTERFACE_VERSION */
+
     union {
-        xen_mc_fetch_t             mc_fetch;
-        xen_mc_notifydomain_t      mc_notifydomain;
-        xen_mc_physcpuinfo_t       mc_physcpuinfo;
-        xen_mc_msrinject_t         mc_msrinject;
-        xen_mc_mceinject_t         mc_mceinject;
+        xen_mc_fetch_t mc_fetch;
+        xen_mc_notifydomain_t mc_notifydomain;
+        xen_mc_physcpuinfo_t mc_physcpuinfo;
+        xen_mc_msrinject_t mc_msrinject;
+        xen_mc_mceinject_t mc_mceinject;
 #if defined(__XEN__) || defined(__XEN_TOOLS__)
-        xen_mc_inject_v2_t         mc_inject_v2;
+        xen_mc_inject_v2_t mc_inject_v2;
 #endif
     } u;
 };

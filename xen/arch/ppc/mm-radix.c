@@ -73,7 +73,7 @@ static __init struct lvl3_pd *lvl3_pd_pool_alloc(void)
 {
     BUILD_BUG_ON(sizeof(struct lvl3_pd) != sizeof(struct lvl2_pd));
 
-    return (struct lvl3_pd *) lvl2_pd_pool_alloc();
+    return (struct lvl3_pd *)lvl2_pd_pool_alloc();
 }
 
 static __init struct lvl4_pt *lvl4_pt_pool_alloc(void)
@@ -88,8 +88,7 @@ static __init struct lvl4_pt *lvl4_pt_pool_alloc(void)
 }
 
 static void __init setup_initial_mapping(struct lvl1_pd *lvl1,
-                                         vaddr_t map_start,
-                                         vaddr_t map_end,
+                                         vaddr_t map_start, vaddr_t map_end,
                                          paddr_t phys_base)
 {
     uint64_t page_addr;
@@ -119,8 +118,8 @@ static void __init setup_initial_mapping(struct lvl1_pd *lvl1,
         if ( !pde_is_valid(*pde) )
         {
             lvl2 = lvl2_pd_pool_alloc();
-            *pde = paddr_to_pde(__pa(lvl2), PDE_VALID,
-                                XEN_PT_ENTRIES_LOG2_LVL_2);
+            *pde =
+                paddr_to_pde(__pa(lvl2), PDE_VALID, XEN_PT_ENTRIES_LOG2_LVL_2);
         }
         else
             lvl2 = __va(pde_to_paddr(*pde));
@@ -130,8 +129,8 @@ static void __init setup_initial_mapping(struct lvl1_pd *lvl1,
         if ( !pde_is_valid(*pde) )
         {
             lvl3 = lvl3_pd_pool_alloc();
-            *pde = paddr_to_pde(__pa(lvl3), PDE_VALID,
-                                XEN_PT_ENTRIES_LOG2_LVL_3);
+            *pde =
+                paddr_to_pde(__pa(lvl3), PDE_VALID, XEN_PT_ENTRIES_LOG2_LVL_3);
         }
         else
             lvl3 = __va(pde_to_paddr(*pde));
@@ -141,8 +140,8 @@ static void __init setup_initial_mapping(struct lvl1_pd *lvl1,
         if ( !pde_is_valid(*pde) )
         {
             lvl4 = lvl4_pt_pool_alloc();
-            *pde = paddr_to_pde(__pa(lvl4), PDE_VALID,
-                                XEN_PT_ENTRIES_LOG2_LVL_4);
+            *pde =
+                paddr_to_pde(__pa(lvl4), PDE_VALID, XEN_PT_ENTRIES_LOG2_LVL_4);
         }
         else
             lvl4 = __va(pde_to_paddr(*pde));
@@ -162,18 +161,20 @@ static void __init setup_initial_mapping(struct lvl1_pd *lvl1,
             }
             else if ( is_kernel_rodata(page_addr) )
             {
-                radix_dprintk("%016lx being marked as RODATA (RO)\n", page_addr);
+                radix_dprintk("%016lx being marked as RODATA (RO)\n",
+                              page_addr);
                 flags = PTE_XEN_RO;
             }
             else
             {
-                radix_dprintk("%016lx being marked as DEFAULT (RW)\n", page_addr);
+                radix_dprintk("%016lx being marked as DEFAULT (RW)\n",
+                              page_addr);
                 flags = PTE_XEN_RW;
             }
 
             *pte = paddr_to_pte(paddr, flags);
             radix_dprintk("%016lx is the result of PTE map\n",
-                paddr_to_pte(paddr, flags).pte);
+                          paddr_to_pte(paddr, flags).pte);
         }
         else
         {
@@ -248,11 +249,9 @@ void arch_dump_shared_mem_info(void)
     BUG_ON("unimplemented");
 }
 
-int xenmem_add_to_physmap_one(struct domain *d,
-                              unsigned int space,
+int xenmem_add_to_physmap_one(struct domain *d, unsigned int space,
                               union add_to_physmap_extra extra,
-                              unsigned long idx,
-                              gfn_t gfn)
+                              unsigned long idx, gfn_t gfn)
 {
     BUG_ON("unimplemented");
 }
@@ -262,9 +261,7 @@ int destroy_xen_mappings(unsigned long s, unsigned long e)
     BUG_ON("unimplemented");
 }
 
-int map_pages_to_xen(unsigned long virt,
-                     mfn_t mfn,
-                     unsigned long nr_mfns,
+int map_pages_to_xen(unsigned long virt, mfn_t mfn, unsigned long nr_mfns,
                      unsigned int flags)
 {
     BUG_ON("unimplemented");

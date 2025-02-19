@@ -209,30 +209,29 @@ union gic_state_data {
  * The LR register format is different for GIC HW version
  */
 struct gic_lr {
-   /* Virtual IRQ */
-   uint32_t virq;
-   uint8_t priority;
-   bool active;
-   bool pending;
-   bool hw_status;
-   union
-   {
-       /* Only filled when there are a corresponding pIRQ (hw_state = true) */
-       struct
-       {
-           uint32_t pirq;
-       } hw;
-       /* Only filled when there are no corresponding pIRQ (hw_state = false) */
-       struct
-       {
-           bool eoi;
-           uint8_t source;      /* GICv2 only */
-       } virt;
-   };
+    /* Virtual IRQ */
+    uint32_t virq;
+    uint8_t priority;
+    bool active;
+    bool pending;
+    bool hw_status;
+
+    union {
+        /* Only filled when there are a corresponding pIRQ (hw_state = true) */
+        struct {
+            uint32_t pirq;
+        } hw;
+
+        /* Only filled when there are no corresponding pIRQ (hw_state = false) */
+        struct {
+            bool eoi;
+            uint8_t source; /* GICv2 only */
+        } virt;
+    };
 };
 
 enum gic_version {
-    GIC_INVALID = 0,    /* the default until explicitly set up */
+    GIC_INVALID = 0, /* the default until explicitly set up */
     GIC_V2,
     GIC_V3,
 };
@@ -247,8 +246,7 @@ void gic_set_irq_type(struct irq_desc *desc, unsigned int type);
 /* Program the GIC to route an interrupt */
 extern void gic_route_irq_to_xen(struct irq_desc *desc, unsigned int priority);
 extern int gic_route_irq_to_guest(struct domain *d, unsigned int virq,
-                                  struct irq_desc *desc,
-                                  unsigned int priority);
+                                  struct irq_desc *desc, unsigned int priority);
 
 /* Remove an IRQ passthrough to a guest */
 int gic_remove_irq_from_guest(struct domain *d, unsigned int virq,
@@ -258,7 +256,7 @@ extern void gic_clear_pending_irqs(struct vcpu *v);
 
 extern void init_maintenance_interrupt(void);
 extern void gic_raise_guest_irq(struct vcpu *v, unsigned int virtual_irq,
-        unsigned int priority);
+                                unsigned int priority);
 extern void gic_raise_inflight_irq(struct vcpu *v, unsigned int virtual_irq);
 
 /* Accept an interrupt from the GIC and dispatch its handler */
@@ -440,8 +438,7 @@ static inline bool gic_read_pending_state(struct irq_desc *irqd)
 
 void register_gic_ops(const struct gic_hw_operations *ops);
 int gic_make_hwdom_dt_node(const struct domain *d,
-                           const struct dt_device_node *gic,
-                           void *fdt);
+                           const struct dt_device_node *gic, void *fdt);
 
 #ifdef CONFIG_ACPI
 int gic_make_hwdom_madt(const struct domain *d, u32 offset);

@@ -29,26 +29,30 @@ void __init setup_frametable_mappings(paddr_t ps, paddr_t pe)
     BUILD_BUG_ON(sizeof(struct page_info) != PAGE_INFO_SIZE);
 
     if ( frametable_size > FRAMETABLE_SIZE )
-        panic("The frametable cannot cover the physical region %#"PRIpaddr" - %#"PRIpaddr"\n",
-              ps, pe);
+        panic("The frametable cannot cover the physical region %#" PRIpaddr
+              " - %#" PRIpaddr "\n",
+              ps,
+              pe);
 
     frametable_base_pdx = mfn_to_pdx(maddr_to_mfn(ps));
     /* Round up to 2M or 32M boundary, as appropriate. */
     frametable_size = ROUNDUP(frametable_size, mapping_size);
-    base_mfn = alloc_boot_pages(frametable_size >> PAGE_SHIFT, 32<<(20-12));
+    base_mfn = alloc_boot_pages(frametable_size >> PAGE_SHIFT, 32 << (20 - 12));
 
-    rc = map_pages_to_xen(FRAMETABLE_VIRT_START, base_mfn,
+    rc = map_pages_to_xen(FRAMETABLE_VIRT_START,
+                          base_mfn,
                           frametable_size >> PAGE_SHIFT,
                           PAGE_HYPERVISOR_RW | _PAGE_BLOCK);
     if ( rc )
         panic("Unable to setup the frametable mappings.\n");
 
     memset(&frame_table[0], 0, nr_pdxs * sizeof(struct page_info));
-    memset(&frame_table[nr_pdxs], -1,
+    memset(&frame_table[nr_pdxs],
+           -1,
            frametable_size - (nr_pdxs * sizeof(struct page_info)));
 
-    frametable_virt_end = FRAMETABLE_VIRT_START + (nr_pdxs *
-                                                   sizeof(struct page_info));
+    frametable_virt_end = FRAMETABLE_VIRT_START +
+                          (nr_pdxs * sizeof(struct page_info));
 }
 
 /*

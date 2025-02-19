@@ -23,7 +23,7 @@
 #include "efi.h"
 #include "efi/pe.h"
 
-#if defined(__arm__) || defined (__aarch64__)
+#if defined(__arm__) || defined(__aarch64__)
 #define PE_HEADER_MACHINE 0xaa64
 #elif defined(__x86_64__)
 #define PE_HEADER_MACHINE 0x8664
@@ -60,16 +60,14 @@ const void *__init pe_find_section(const void *image, const UINTN image_size,
     const struct section_header *sect;
     UINTN offset, i;
 
-    if ( image_size < sizeof(*mz) ||
-         mz->magic != MZ_MAGIC )
+    if ( image_size < sizeof(*mz) || mz->magic != MZ_MAGIC )
         return NULL;
 
     offset = mz->peaddr;
     pe = image + offset;
 
     offset += sizeof(*pe);
-    if ( image_size < offset ||
-         pe->magic != PE_MAGIC )
+    if ( image_size < offset || pe->magic != PE_MAGIC )
         return NULL;
 
     if ( pe->machine != PE_HEADER_MACHINE )

@@ -35,8 +35,8 @@ static unsigned int crashing_cpu;
 static DEFINE_PER_CPU_READ_MOSTLY(bool, crash_save_done);
 
 /* This becomes the NMI handler for non-crashing CPUs, when Xen is crashing. */
-static int noreturn cf_check do_nmi_crash(
-    const struct cpu_user_regs *regs, int cpu)
+static int noreturn cf_check do_nmi_crash(const struct cpu_user_regs *regs,
+                                          int cpu)
 {
     stac();
 
@@ -91,8 +91,8 @@ static int noreturn cf_check do_nmi_crash(
     case APIC_MODE_X2APIC:
         apic_id = apic_rdmsr(APIC_ID);
 
-        apic_wrmsr(APIC_ICR, APIC_DM_NMI | APIC_DEST_PHYSICAL
-                   | ((u64)apic_id << 32));
+        apic_wrmsr(APIC_ICR,
+                   APIC_DM_NMI | APIC_DEST_PHYSICAL | ((u64)apic_id << 32));
         break;
 
     case APIC_MODE_XAPIC:
@@ -109,7 +109,7 @@ static int noreturn cf_check do_nmi_crash(
         break;
     }
 
-    for ( ; ; )
+    for ( ;; )
         halt();
 }
 
@@ -131,7 +131,9 @@ static void nmi_shootdown_cpus(void)
      * change the NMI handler to a nop to avoid deviation from this codepath.
      */
     _set_gate_lower(&idt_tables[cpu][X86_EXC_NMI],
-                    SYS_DESC_irq_gate, 0, &trap_nop);
+                    SYS_DESC_irq_gate,
+                    0,
+                    &trap_nop);
     set_ist(&idt_tables[cpu][X86_EXC_MC], IST_NONE);
 
     set_nmi_callback(do_nmi_crash);

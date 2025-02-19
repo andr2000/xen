@@ -7,7 +7,6 @@
  * Copyright (c) 2009 Citrix Systems, Inc. (Patrick Colp)
  */
 
-
 #include <asm/p2m.h>
 #include <xen/guest_access.h>
 #include <xen/vm_event.h>
@@ -26,10 +25,8 @@
  */
 void p2m_mem_paging_drop_page(struct domain *d, gfn_t gfn, p2m_type_t p2mt)
 {
-    vm_event_request_t req = {
-        .reason = VM_EVENT_REASON_MEM_PAGING,
-        .u.mem_paging.gfn = gfn_x(gfn)
-    };
+    vm_event_request_t req = { .reason = VM_EVENT_REASON_MEM_PAGING,
+                               .u.mem_paging.gfn = gfn_x(gfn) };
 
     /*
      * We allow no ring in this unique case, because it won't affect
@@ -79,10 +76,8 @@ void p2m_mem_paging_drop_page(struct domain *d, gfn_t gfn, p2m_type_t p2mt)
 void p2m_mem_paging_populate(struct domain *d, gfn_t gfn)
 {
     struct vcpu *v = current;
-    vm_event_request_t req = {
-        .reason = VM_EVENT_REASON_MEM_PAGING,
-        .u.mem_paging.gfn = gfn_x(gfn)
-    };
+    vm_event_request_t req = { .reason = VM_EVENT_REASON_MEM_PAGING,
+                               .u.mem_paging.gfn = gfn_x(gfn) };
     p2m_type_t p2mt;
     p2m_access_t a;
     mfn_t mfn;
@@ -92,8 +87,10 @@ void p2m_mem_paging_populate(struct domain *d, gfn_t gfn)
     /* We're paging. There should be a ring. */
     if ( rc == -EOPNOTSUPP )
     {
-        gdprintk(XENLOG_ERR, "%pd paging gfn %"PRI_gfn" yet no ring in place\n",
-                 d, gfn_x(gfn));
+        gdprintk(XENLOG_ERR,
+                 "%pd paging gfn %" PRI_gfn " yet no ring in place\n",
+                 d,
+                 gfn_x(gfn));
         /* Prevent the vcpu from faulting repeatedly on the same gfn */
         if ( v->domain == d )
             vcpu_pause_nosync(v);
@@ -176,9 +173,13 @@ void p2m_mem_paging_resume(struct domain *d, vm_event_response_t *rsp)
          */
         if ( mfn_valid(mfn) && (p2mt == p2m_ram_paging_in) )
         {
-            int rc = p2m_set_entry(p2m, gfn, mfn, PAGE_ORDER_4K,
+            int rc = p2m_set_entry(p2m,
+                                   gfn,
+                                   mfn,
+                                   PAGE_ORDER_4K,
                                    paging_mode_log_dirty(d) ? p2m_ram_logdirty
-                                                            : p2m_ram_rw, a);
+                                                            : p2m_ram_rw,
+                                   a);
 
             if ( !rc )
                 set_gpfn_from_mfn(mfn_x(mfn), gfn_x(gfn));
@@ -241,7 +242,7 @@ static int nominate(struct domain *d, gfn_t gfn)
     /* Fix p2m entry */
     ret = p2m_set_entry(p2m, gfn, mfn, PAGE_ORDER_4K, p2m_ram_paging_out, a);
 
- out:
+out:
     gfn_unlock(p2m, gfn, 0);
     return ret;
 }
@@ -301,17 +302,16 @@ static int evict(struct domain *d, gfn_t gfn)
     put_page_alloc_ref(page);
 
     /* Remove mapping from p2m table */
-    ret = p2m_set_entry(p2m, gfn, INVALID_MFN, PAGE_ORDER_4K,
-                        p2m_ram_paged, a);
+    ret = p2m_set_entry(p2m, gfn, INVALID_MFN, PAGE_ORDER_4K, p2m_ram_paged, a);
 
     /* Track number of paged gfns */
     atomic_inc(&d->paged_pages);
 
- out_put:
+out_put:
     /* Put the page back so it gets freed */
     put_page(page);
 
- out:
+out:
     gfn_unlock(p2m, gfn, 0);
     return ret;
 }
@@ -371,8 +371,10 @@ static int prepare(struct domain *d, gfn_t gfn,
              * here is a clear indication of something fishy going on.
              */
             gprintk(XENLOG_ERR,
-                    "%pd: fresh page for GFN %"PRI_gfn" in unexpected state\n",
-                    d, gfn_x(gfn));
+                    "%pd: fresh page for GFN %" PRI_gfn
+                    " in unexpected state\n",
+                    d,
+                    gfn_x(gfn));
             domain_crash(d);
             page = NULL;
             goto out;
@@ -395,9 +397,13 @@ static int prepare(struct domain *d, gfn_t gfn,
      * pending resume operation, it will be idempotent p2m entry-wise, but
      * will unpause the vcpu.
      */
-    ret = p2m_set_entry(p2m, gfn, mfn, PAGE_ORDER_4K,
+    ret = p2m_set_entry(p2m,
+                        gfn,
+                        mfn,
+                        PAGE_ORDER_4K,
                         paging_mode_log_dirty(d) ? p2m_ram_logdirty
-                                                 : p2m_ram_rw, a);
+                                                 : p2m_ram_rw,
+                        a);
     if ( !ret )
     {
         set_gpfn_from_mfn(mfn_x(mfn), gfn_x(gfn));
@@ -406,7 +412,7 @@ static int prepare(struct domain *d, gfn_t gfn,
             atomic_dec(&d->paged_pages);
     }
 
- out:
+out:
     gfn_unlock(p2m, gfn, 0);
 
     if ( page )
@@ -445,7 +451,7 @@ int mem_paging_memop(XEN_GUEST_HANDLE_PARAM(xen_mem_paging_op_t) arg)
     if ( unlikely(!vm_event_check_ring(d->vm_event_paging)) )
         goto out;
 
-    switch( mpo.op )
+    switch ( mpo.op )
     {
     case XENMEM_paging_op_nominate:
         rc = nominate(d, _gfn(mpo.gfn));
@@ -473,7 +479,6 @@ out:
     rcu_unlock_domain(d);
     return rc;
 }
-
 
 /*
  * Local variables:

@@ -36,4 +36,4 @@
 #define X86_VENDOR_HYGON_ECX _AC(0x656e6975, U)
 #define X86_VENDOR_HYGON_EDX _AC(0x6e65476e, U)
 
-#endif	/* __XEN_X86_VENDORS_H__ */
+#endif /* __XEN_X86_VENDORS_H__ */

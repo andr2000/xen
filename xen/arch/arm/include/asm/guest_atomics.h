@@ -86,17 +86,18 @@ static inline void guest_clear_mask16(struct domain *d, uint16_t mask,
     domain_unpause(d);
 }
 
-static always_inline unsigned long __guest_cmpxchg(struct domain *d,
-                                                   volatile void *ptr,
-                                                   unsigned long old,
-                                                   unsigned long new,
-                                                   unsigned int size)
+static always_inline unsigned long
+__guest_cmpxchg(struct domain *d, volatile void *ptr, unsigned long old,
+                unsigned long new, unsigned int size)
 {
     unsigned long oldval = old;
 
     perfc_incr(atomics_guest);
 
-    if ( __cmpxchg_timeout(ptr, &oldval, new, size,
+    if ( __cmpxchg_timeout(ptr,
+                           &oldval,
+                           new,
+                           size,
                            this_cpu(guest_safe_atomic_max)) )
         return oldval;
 
@@ -115,16 +116,16 @@ static always_inline unsigned long __guest_cmpxchg(struct domain *d,
                                          (unsigned long)(n),\
                                          sizeof (*(ptr))))
 
-static inline uint64_t guest_cmpxchg64(struct domain *d,
-                                       volatile uint64_t *ptr,
-                                       uint64_t old,
-                                       uint64_t new)
+static inline uint64_t guest_cmpxchg64(struct domain *d, volatile uint64_t *ptr,
+                                       uint64_t old, uint64_t new)
 {
     uint64_t oldval = old;
 
     perfc_incr(atomics_guest);
 
-    if ( __cmpxchg64_timeout(ptr, &oldval, new,
+    if ( __cmpxchg64_timeout(ptr,
+                             &oldval,
+                             new,
                              this_cpu(guest_safe_atomic_max)) )
         return oldval;
 

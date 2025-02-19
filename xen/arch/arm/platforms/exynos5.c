@@ -59,8 +59,10 @@ static int exynos5_init_time(void)
         return -ENXIO;
     }
 
-    dprintk(XENLOG_INFO, "mct_base_addr: 0x%"PRIpaddr" size: 0x%"PRIpaddr"\n",
-            mct_base_addr, size);
+    dprintk(XENLOG_INFO,
+            "mct_base_addr: 0x%" PRIpaddr " size: 0x%" PRIpaddr "\n",
+            mct_base_addr,
+            size);
 
     mct = ioremap_nocache(mct_base_addr, size);
     if ( !mct )
@@ -82,11 +84,15 @@ static int exynos5_init_time(void)
 static int exynos5250_specific_mapping(struct domain *d)
 {
     /* Map the chip ID */
-    map_mmio_regions(d, gaddr_to_gfn(EXYNOS5_PA_CHIPID), 1,
+    map_mmio_regions(d,
+                     gaddr_to_gfn(EXYNOS5_PA_CHIPID),
+                     1,
                      maddr_to_mfn(EXYNOS5_PA_CHIPID));
 
     /* Map the PWM region */
-    map_mmio_regions(d, gaddr_to_gfn(EXYNOS5_PA_TIMER), 2,
+    map_mmio_regions(d,
+                     gaddr_to_gfn(EXYNOS5_PA_TIMER),
+                     2,
                      maddr_to_mfn(EXYNOS5_PA_TIMER));
 
     return 0;
@@ -131,8 +137,12 @@ static int __init exynos5_smp_init(void)
         dprintk(XENLOG_ERR, "Error in %s\n", compatible);
         return -ENXIO;
     }
-    dprintk(XENLOG_INFO,"sysram_addr: 0x%"PRIpaddr" size: 0x%"PRIpaddr"offset: 0x%"PRIpaddr"\n",
-            sysram_addr, size, sysram_offset);
+    dprintk(XENLOG_INFO,
+            "sysram_addr: 0x%" PRIpaddr " size: 0x%" PRIpaddr
+            "offset: 0x%" PRIpaddr "\n",
+            sysram_addr,
+            size,
+            sysram_offset);
 
     sysram = ioremap_nocache(sysram_addr, size);
     if ( !sysram )
@@ -141,8 +151,9 @@ static int __init exynos5_smp_init(void)
         return -EFAULT;
     }
 
-    printk("Set SYSRAM to %"PRIpaddr" (%p)\n",
-           __pa(init_secondary), init_secondary);
+    printk("Set SYSRAM to %" PRIpaddr " (%p)\n",
+           __pa(init_secondary),
+           init_secondary);
     writel(__pa(init_secondary), sysram + sysram_offset);
 
     iounmap(sysram);
@@ -158,8 +169,7 @@ static int exynos_cpu_power_state(void __iomem *power, int cpu)
 
 static void exynos_cpu_power_up(void __iomem *power, int cpu)
 {
-    __raw_writel(S5P_CORE_LOCAL_PWR_EN,
-                 power + EXYNOS_ARM_CORE_CONFIG(cpu));
+    __raw_writel(S5P_CORE_LOCAL_PWR_EN, power + EXYNOS_ARM_CORE_CONFIG(cpu));
 }
 
 static int exynos5_cpu_power_up(void __iomem *power, int cpu)
@@ -193,8 +203,7 @@ static int exynos5_get_pmu_baseandsize(paddr_t *power_base_addr, paddr_t *size)
 {
     struct dt_device_node *node;
     int rc;
-    static const struct dt_device_match exynos_dt_pmu_matches[] =
-    {
+    static const struct dt_device_match exynos_dt_pmu_matches[] = {
         DT_MATCH_COMPATIBLE("samsung,exynos5250-pmu"),
         DT_MATCH_COMPATIBLE("samsung,exynos5410-pmu"),
         DT_MATCH_COMPATIBLE("samsung,exynos5420-pmu"),
@@ -215,8 +224,10 @@ static int exynos5_get_pmu_baseandsize(paddr_t *power_base_addr, paddr_t *size)
         return -ENXIO;
     }
 
-    dprintk(XENLOG_DEBUG, "power_base_addr: 0x%"PRIpaddr" size: 0x%"PRIpaddr"\n",
-            *power_base_addr, *size);
+    dprintk(XENLOG_DEBUG,
+            "power_base_addr: 0x%" PRIpaddr " size: 0x%" PRIpaddr "\n",
+            *power_base_addr,
+            *size);
 
     return 0;
 }
@@ -277,8 +288,7 @@ static void exynos5_reset(void)
     iounmap(pmu);
 }
 
-static const struct dt_device_match exynos5_blacklist_dev[] __initconst =
-{
+static const struct dt_device_match exynos5_blacklist_dev[] __initconst = {
     /* Multi core Timer
      * TODO: this device set up IRQ to CPU 1 which is not yet handled by Xen.
      * This is result to random freeze.
@@ -288,35 +298,23 @@ static const struct dt_device_match exynos5_blacklist_dev[] __initconst =
     { /* sentinel */ },
 };
 
-static const char * const exynos5250_dt_compat[] __initconst =
-{
-    "samsung,exynos5250",
-    NULL
-};
+static const char *const exynos5250_dt_compat[]
+    __initconst = { "samsung,exynos5250", NULL };
 
-static const char * const exynos5_dt_compat[] __initconst =
-{
-    "samsung,exynos5410",
-    NULL
-};
+static const char *const exynos5_dt_compat[]
+    __initconst = { "samsung,exynos5410", NULL };
 
 PLATFORM_START(exynos5250, "SAMSUNG EXYNOS5250")
-    .compatible = exynos5250_dt_compat,
-    .init_time = exynos5_init_time,
+    .compatible = exynos5250_dt_compat, .init_time = exynos5_init_time,
     .specific_mapping = exynos5250_specific_mapping,
-    .smp_init = exynos5_smp_init,
-    .cpu_up = cpu_up_send_sgi,
-    .reset = exynos5_reset,
-    .blacklist_dev = exynos5_blacklist_dev,
+    .smp_init = exynos5_smp_init, .cpu_up = cpu_up_send_sgi,
+    .reset = exynos5_reset, .blacklist_dev = exynos5_blacklist_dev,
 PLATFORM_END
 
 PLATFORM_START(exynos5, "SAMSUNG EXYNOS5")
-    .compatible = exynos5_dt_compat,
-    .init_time = exynos5_init_time,
-    .smp_init = exynos5_smp_init,
-    .cpu_up = exynos5_cpu_up,
-    .reset = exynos5_reset,
-    .blacklist_dev = exynos5_blacklist_dev,
+    .compatible = exynos5_dt_compat, .init_time = exynos5_init_time,
+    .smp_init = exynos5_smp_init, .cpu_up = exynos5_cpu_up,
+    .reset = exynos5_reset, .blacklist_dev = exynos5_blacklist_dev,
 PLATFORM_END
 
 /*

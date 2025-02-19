@@ -27,7 +27,7 @@ unsigned int __init get_llc_way_size(void)
     for ( n = CLIDR_CTYPEn_LEVELS; n != 0; n-- )
     {
         uint8_t ctype_n = (clidr_el1 >> CLIDR_CTYPEn_SHIFT(n)) &
-                           CLIDR_CTYPEn_MASK;
+                          CLIDR_CTYPEn_MASK;
 
         /* Unified cache (see Arm ARM DDI 0487J.a D19.2.27) */
         if ( ctype_n == 0b100 )
@@ -56,7 +56,9 @@ unsigned int __init get_llc_way_size(void)
     num_sets = ((ccsidr_el1 >> ccsidr_numsets_shift) & ccsidr_numsets_mask) + 1;
 
     printk(XENLOG_INFO "LLC found: L%u (line size: %u bytes, sets num: %u)\n",
-           n, line_size, num_sets);
+           n,
+           line_size,
+           num_sets);
 
     /* Restore value in CSSELR_EL1 */
     WRITE_SYSREG(csselr_el1, CSSELR_EL1);
@@ -87,8 +89,11 @@ static paddr_t __init get_xen_paddr(paddr_t xen_size)
 
         if ( bank->size >= min_size )
         {
-            e = consider_modules(bank->start, bank->start + bank->size,
-                                 min_size, XEN_PADDR_ALIGN, 0);
+            e = consider_modules(bank->start,
+                                 bank->start + bank->size,
+                                 min_size,
+                                 XEN_PADDR_ALIGN,
+                                 0);
             if ( !e )
                 continue;
 
@@ -110,8 +115,9 @@ static paddr_t __init get_xen_paddr(paddr_t xen_size)
     if ( !paddr )
         panic("Not enough memory to relocate Xen\n");
 
-    printk("Placing Xen at 0x%"PRIpaddr"-0x%"PRIpaddr"\n",
-           paddr, paddr + min_size);
+    printk("Placing Xen at 0x%" PRIpaddr "-0x%" PRIpaddr "\n",
+           paddr,
+           paddr + min_size);
 
     return paddr;
 }

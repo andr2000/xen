@@ -53,7 +53,7 @@ static void clear_cpu_lr_mask(void)
 
 enum gic_version gic_hw_version(void)
 {
-   return gic_hw_ops->info->hw_version;
+    return gic_hw_ops->info->hw_version;
 }
 
 unsigned int gic_number_lines(void)
@@ -110,15 +110,16 @@ static void gic_set_irq_priority(struct irq_desc *desc, unsigned int priority)
  */
 void gic_route_irq_to_xen(struct irq_desc *desc, unsigned int priority)
 {
-    ASSERT(priority <= 0xff);     /* Only 8 bits of priority */
-    ASSERT(desc->irq < gic_number_lines());/* Can't route interrupts that don't exist */
+    ASSERT(priority <= 0xff); /* Only 8 bits of priority */
+    ASSERT(desc->irq <
+           gic_number_lines()); /* Can't route interrupts that don't exist */
     ASSERT(test_bit(_IRQ_DISABLED, &desc->status));
     ASSERT(spin_is_locked(&desc->lock));
 
     desc->handler = gic_hw_ops->gic_host_irq_type;
 
     /* SGIs are always edge-triggered, so there is need to set it */
-    if ( desc->irq >= NR_GIC_SGI)
+    if ( desc->irq >= NR_GIC_SGI )
         gic_set_irq_type(desc, desc->arch.type);
     gic_set_irq_priority(desc, priority);
 }
@@ -186,8 +187,7 @@ int gic_remove_irq_from_guest(struct domain *d, unsigned int virq,
 }
 
 int gic_irq_xlate(const u32 *intspec, unsigned int intsize,
-                  unsigned int *out_hwirq,
-                  unsigned int *out_type)
+                  unsigned int *out_hwirq, unsigned int *out_type)
 {
     if ( intsize < 3 )
         return -EINVAL;
@@ -230,7 +230,7 @@ static void __init gic_acpi_preinit(void)
         panic("Unable to find compatible GIC in the ACPI table\n");
 }
 #else
-static void __init gic_acpi_preinit(void) { }
+static void __init gic_acpi_preinit(void) {}
 #endif
 
 /* Find the interrupt controller and set up the callback to translate
@@ -270,7 +270,7 @@ void send_SGI_self(enum gic_sgi sgi)
 
 void send_SGI_allbutself(enum gic_sgi sgi)
 {
-   gic_hw_ops->send_SGI(sgi, SGI_TARGET_OTHERS, NULL);
+    gic_hw_ops->send_SGI(sgi, SGI_TARGET_OTHERS, NULL);
 }
 
 void smp_send_state_dump(unsigned int cpu)
@@ -310,7 +310,7 @@ static void do_static_sgi(struct cpu_user_regs *regs, enum gic_sgi sgi)
      */
     smp_rmb();
 
-    switch (sgi)
+    switch ( sgi )
     {
     case GIC_SGI_EVENT_CHECK:
         /* Nothing to do, will check for events on return path */
@@ -335,7 +335,8 @@ void gic_interrupt(struct cpu_user_regs *regs, int is_fiq)
 {
     unsigned int irq;
 
-    do  {
+    do
+    {
         /* Reading IRQ will ACK it */
         irq = gic_hw_ops->read_irq();
 
@@ -358,7 +359,7 @@ void gic_interrupt(struct cpu_user_regs *regs, int is_fiq)
             local_irq_disable();
             break;
         }
-    } while (1);
+    } while ( 1 );
 }
 
 static void maintenance_interrupt(int irq, void *dev_id)
@@ -379,19 +380,23 @@ static void maintenance_interrupt(int irq, void *dev_id)
 
 void gic_dump_info(struct vcpu *v)
 {
-    printk("GICH_LRs (vcpu %d) mask=%"PRIx64"\n", v->vcpu_id, v->arch.lr_mask);
+    printk("GICH_LRs (vcpu %d) mask=%" PRIx64 "\n",
+           v->vcpu_id,
+           v->arch.lr_mask);
     gic_hw_ops->dump_state(v);
 }
 
 void init_maintenance_interrupt(void)
 {
-    request_irq(gic_hw_ops->info->maintenance_irq, 0, maintenance_interrupt,
-                "irq-maintenance", NULL);
+    request_irq(gic_hw_ops->info->maintenance_irq,
+                0,
+                maintenance_interrupt,
+                "irq-maintenance",
+                NULL);
 }
 
 int gic_make_hwdom_dt_node(const struct domain *d,
-                           const struct dt_device_node *gic,
-                           void *fdt)
+                           const struct dt_device_node *gic, void *fdt)
 {
     ASSERT(gic == dt_interrupt_controller);
 
@@ -408,10 +413,10 @@ unsigned long gic_get_hwdom_madt_size(const struct domain *d)
 {
     unsigned long madt_size;
 
-    madt_size = sizeof(struct acpi_table_madt)
-                + ACPI_MADT_GICC_LENGTH * d->max_vcpus
-                + sizeof(struct acpi_madt_generic_distributor)
-                + gic_hw_ops->get_hwdom_extra_madt_size(d);
+    madt_size = sizeof(struct acpi_table_madt) +
+                ACPI_MADT_GICC_LENGTH * d->max_vcpus +
+                sizeof(struct acpi_madt_generic_distributor) +
+                gic_hw_ops->get_hwdom_extra_madt_size(d);
 
     return madt_size;
 }
@@ -422,8 +427,7 @@ int gic_iomem_deny_access(struct domain *d)
     return gic_hw_ops->iomem_deny_access(d);
 }
 
-static int cpu_gic_callback(struct notifier_block *nfb,
-                            unsigned long action,
+static int cpu_gic_callback(struct notifier_block *nfb, unsigned long action,
                             void *hcpu)
 {
     switch ( action )
@@ -449,6 +453,7 @@ static int __init cpu_gic_notifier_init(void)
 
     return 0;
 }
+
 __initcall(cpu_gic_notifier_init);
 
 /*

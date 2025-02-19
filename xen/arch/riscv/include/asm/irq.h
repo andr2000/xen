@@ -13,8 +13,7 @@
 
 #define arch_evtchn_bind_pirq(d, pirq) ((void)((d) + (pirq)))
 
-struct arch_pirq {
-};
+struct arch_pirq {};
 
 struct arch_irq_desc {
     unsigned int type;

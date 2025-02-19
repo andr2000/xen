@@ -13,8 +13,7 @@
 #ifndef __ASSEMBLY__
 
 /* On stack VCPU state */
-struct cpu_user_regs
-{
+struct cpu_user_regs {
     unsigned long zero;
     unsigned long ra;
     unsigned long sp;
@@ -61,10 +60,10 @@ static inline void cpu_relax(void)
 {
 #ifdef __riscv_zihintpause
     /* Reduce instruction retirement. */
-    __asm__ __volatile__ ( "pause" );
+    __asm__ __volatile__("pause");
 #else
     /* Encoding of the pause instruction */
-    __asm__ __volatile__ ( ".insn r MISC_MEM, 0, 0, x0, x0, x16" );
+    __asm__ __volatile__(".insn r MISC_MEM, 0, 0, x0, x0, x16");
 #endif
 
     barrier();
@@ -72,7 +71,7 @@ static inline void cpu_relax(void)
 
 static inline void wfi(void)
 {
-    __asm__ __volatile__ ("wfi");
+    __asm__ __volatile__("wfi");
 }
 
 /*
@@ -88,7 +87,7 @@ static inline void die(void)
 
 static inline void sfence_vma(void)
 {
-    asm volatile ( "sfence.vma" ::: "memory" );
+    asm volatile("sfence.vma" ::: "memory");
 }
 
 #endif /* __ASSEMBLY__ */

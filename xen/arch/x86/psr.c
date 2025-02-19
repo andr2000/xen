@@ -134,8 +134,8 @@ static const struct feat_props {
     enum psr_type alt_type;
 
     /* get_feat_info is used to return feature HW info through sysctl. */
-    bool (*get_feat_info)(const struct feat_node *feat,
-                          uint32_t data[], unsigned int array_len);
+    bool (*get_feat_info)(const struct feat_node *feat, uint32_t data[],
+                          unsigned int array_len);
 
     /* write_msr is used to write out feature MSR register. */
     void (*write_msr)(unsigned int cos, uint32_t val, enum psr_type type);
@@ -336,9 +336,8 @@ static bool cat_init_feature(const struct cpuid_leaf *regs,
         /* We reserve cos=0 as default cbm (all bits within cbm_len are 1). */
         feat->cos_reg_val[0] = cat_default_val(feat->cat.cbm_len);
 
-        wrmsrl((type == FEAT_TYPE_L3_CAT ?
-                MSR_IA32_PSR_L3_MASK(0) :
-                MSR_IA32_PSR_L2_MASK(0)),
+        wrmsrl((type == FEAT_TYPE_L3_CAT ? MSR_IA32_PSR_L3_MASK(0)
+                                         : MSR_IA32_PSR_L2_MASK(0)),
                cat_default_val(feat->cat.cbm_len));
 
         break;
@@ -375,16 +374,18 @@ static bool cat_init_feature(const struct cpuid_leaf *regs,
 
     if ( opt_cpu_info )
         printk(XENLOG_INFO "%s: enabled on socket %u, cos_max:%u, cbm_len:%u\n",
-               cat_feat_name[type], cpu_to_socket(smp_processor_id()),
-               feat->cos_max, feat->cat.cbm_len);
+               cat_feat_name[type],
+               cpu_to_socket(smp_processor_id()),
+               feat->cos_max,
+               feat->cat.cbm_len);
 
     return true;
 }
 
 static bool mba_init_feature(const struct cpuid_leaf *regs,
-                            struct feat_node *feat,
-                            struct psr_socket_info *info,
-                            enum psr_feat_type type)
+                             struct feat_node *feat,
+                             struct psr_socket_info *info,
+                             enum psr_feat_type type)
 {
     /* No valid value so do not enable feature. */
     if ( !regs->a || !regs->d || type != FEAT_TYPE_MBA )
@@ -410,16 +411,19 @@ static bool mba_init_feature(const struct cpuid_leaf *regs,
     info->features[type] = feat;
 
     if ( opt_cpu_info )
-        printk(XENLOG_INFO
-               "MBA: enabled on socket %u, cos_max:%u, thrtl_max:%u, linear:%d\n",
-               cpu_to_socket(smp_processor_id()),
-               feat->cos_max, feat->mba.thrtl_max, feat->mba.linear);
+        printk(
+            XENLOG_INFO
+            "MBA: enabled on socket %u, cos_max:%u, thrtl_max:%u, linear:%d\n",
+            cpu_to_socket(smp_processor_id()),
+            feat->cos_max,
+            feat->mba.thrtl_max,
+            feat->mba.linear);
 
     return true;
 }
 
-static bool cf_check cat_get_feat_info(
-    const struct feat_node *feat, uint32_t data[], unsigned int array_len)
+static bool cf_check cat_get_feat_info(const struct feat_node *feat,
+                                       uint32_t data[], unsigned int array_len)
 {
     if ( array_len != PSR_INFO_ARRAY_SIZE )
         return false;
@@ -432,8 +436,8 @@ static bool cf_check cat_get_feat_info(
 }
 
 /* L3 CAT props */
-static void cf_check l3_cat_write_msr(
-    unsigned int cos, uint32_t val, enum psr_type type)
+static void cf_check l3_cat_write_msr(unsigned int cos, uint32_t val,
+                                      enum psr_type type)
 {
     wrmsrl(MSR_IA32_PSR_L3_MASK(cos), val);
 }
@@ -448,8 +452,8 @@ static const struct feat_props l3_cat_props = {
 };
 
 /* L3 CDP props */
-static bool cf_check l3_cdp_get_feat_info(
-    const struct feat_node *feat, uint32_t data[], uint32_t array_len)
+static bool cf_check l3_cdp_get_feat_info(const struct feat_node *feat,
+                                          uint32_t data[], uint32_t array_len)
 {
     if ( !cat_get_feat_info(feat, data, array_len) )
         return false;
@@ -459,12 +463,11 @@ static bool cf_check l3_cdp_get_feat_info(
     return true;
 }
 
-static void cf_check l3_cdp_write_msr(
-    unsigned int cos, uint32_t val, enum psr_type type)
+static void cf_check l3_cdp_write_msr(unsigned int cos, uint32_t val,
+                                      enum psr_type type)
 {
-    wrmsrl(((type == PSR_TYPE_L3_DATA) ?
-            MSR_IA32_PSR_L3_MASK_DATA(cos) :
-            MSR_IA32_PSR_L3_MASK_CODE(cos)),
+    wrmsrl(((type == PSR_TYPE_L3_DATA) ? MSR_IA32_PSR_L3_MASK_DATA(cos)
+                                       : MSR_IA32_PSR_L3_MASK_CODE(cos)),
            val);
 }
 
@@ -479,8 +482,8 @@ static const struct feat_props l3_cdp_props = {
 };
 
 /* L2 CAT props */
-static void cf_check l2_cat_write_msr(
-    unsigned int cos, uint32_t val, enum psr_type type)
+static void cf_check l2_cat_write_msr(unsigned int cos, uint32_t val,
+                                      enum psr_type type)
 {
     wrmsrl(MSR_IA32_PSR_L2_MASK(cos), val);
 }
@@ -495,8 +498,8 @@ static const struct feat_props l2_cat_props = {
 };
 
 /* MBA props */
-static bool cf_check mba_get_feat_info(
-    const struct feat_node *feat, uint32_t data[], unsigned int array_len)
+static bool cf_check mba_get_feat_info(const struct feat_node *feat,
+                                       uint32_t data[], unsigned int array_len)
 {
     ASSERT(array_len == PSR_INFO_ARRAY_SIZE);
 
@@ -509,14 +512,14 @@ static bool cf_check mba_get_feat_info(
     return true;
 }
 
-static void cf_check mba_write_msr(
-    unsigned int cos, uint32_t val, enum psr_type type)
+static void cf_check mba_write_msr(unsigned int cos, uint32_t val,
+                                   enum psr_type type)
 {
     wrmsrl(MSR_IA32_PSR_MBA_MASK(cos), val);
 }
 
-static bool cf_check mba_sanitize_thrtl(
-    const struct feat_node *feat, uint32_t *thrtl)
+static bool cf_check mba_sanitize_thrtl(const struct feat_node *feat,
+                                        uint32_t *thrtl)
 {
     /*
      * Per SDM (chapter "Memory Bandwidth Allocation Configuration"):
@@ -581,7 +584,8 @@ static int __init cf_check parse_psr_param(const char *s)
     const char *q;
     int rc = 0;
 
-    do {
+    do
+    {
         ss = strchr(s, ',');
         if ( !ss )
             ss = strchr(s, '\0');
@@ -617,6 +621,7 @@ static int __init cf_check parse_psr_param(const char *s)
 
     return rc;
 }
+
 custom_param("psr", parse_psr_param);
 
 static void __init init_psr_cmt(unsigned int rmid_max)
@@ -739,8 +744,8 @@ static void psr_assoc_init(void)
         unsigned int cos_max = get_max_cos_max(info);
 
         if ( info->feat_init )
-            psra->cos_mask = ((1ULL << get_count_order(cos_max)) - 1) <<
-                             ASSOC_REG_SHIFT;
+            psra->cos_mask = ((1ULL << get_count_order(cos_max)) - 1)
+                             << ASSOC_REG_SHIFT;
     }
 
     if ( psr_cmt_enabled() || psra->cos_mask )
@@ -752,11 +757,9 @@ static inline void psr_assoc_rmid(uint64_t *reg, unsigned int rmid)
     *reg = (*reg & ~rmid_mask) | (rmid & rmid_mask);
 }
 
-static uint64_t psr_assoc_cos(uint64_t reg, unsigned int cos,
-                              uint64_t cos_mask)
+static uint64_t psr_assoc_cos(uint64_t reg, unsigned int cos, uint64_t cos_mask)
 {
-    return (reg & ~cos_mask) |
-            (((uint64_t)cos << ASSOC_REG_SHIFT) & cos_mask);
+    return (reg & ~cos_mask) | (((uint64_t)cos << ASSOC_REG_SHIFT) & cos_mask);
 }
 
 void psr_ctxt_switch_to(struct domain *d)
@@ -808,8 +811,8 @@ static struct psr_socket_info *get_socket_info(unsigned int socket)
     return socket_info + socket;
 }
 
-int psr_get_info(unsigned int socket, enum psr_type type,
-                 uint32_t data[], unsigned int array_len)
+int psr_get_info(unsigned int socket, enum psr_type type, uint32_t data[],
+                 unsigned int array_len)
 {
     const struct psr_socket_info *info = get_socket_info(socket);
     const struct feat_node *feat;
@@ -840,8 +843,8 @@ int psr_get_info(unsigned int socket, enum psr_type type,
     return -EINVAL;
 }
 
-int psr_get_val(struct domain *d, unsigned int socket,
-                uint32_t *val, enum psr_type type)
+int psr_get_val(struct domain *d, unsigned int socket, uint32_t *val,
+                enum psr_type type)
 {
     const struct psr_socket_info *info = get_socket_info(socket);
     const struct feat_node *feat;
@@ -910,8 +913,7 @@ static unsigned int get_cos_num(void)
     return num;
 }
 
-static int gather_val_array(uint32_t val[],
-                            unsigned int array_len,
+static int gather_val_array(uint32_t val[], unsigned int array_len,
                             const struct psr_socket_info *info,
                             unsigned int old_cos)
 {
@@ -979,12 +981,10 @@ static int skip_prior_features(unsigned int *array_len,
     return skip_len;
 }
 
-static int insert_val_into_array(uint32_t val[],
-                                 unsigned int array_len,
+static int insert_val_into_array(uint32_t val[], unsigned int array_len,
                                  const struct psr_socket_info *info,
                                  enum psr_feat_type feat_type,
-                                 enum psr_type type,
-                                 uint32_t new_val)
+                                 enum psr_type type, uint32_t new_val)
 {
     const struct feat_node *feat;
     const struct feat_props *props;
@@ -1040,10 +1040,8 @@ static int insert_val_into_array(uint32_t val[],
     return ret;
 }
 
-static int compare_val(const uint32_t val[],
-                       const struct feat_node *feat,
-                       const struct feat_props *props,
-                       unsigned int cos)
+static int compare_val(const uint32_t val[], const struct feat_node *feat,
+                       const struct feat_props *props, unsigned int cos)
 {
     unsigned int i;
 
@@ -1147,10 +1145,8 @@ static int find_cos(const uint32_t val[], unsigned int array_len,
     return -ENOENT;
 }
 
-static bool fits_cos_max(const uint32_t val[],
-                         uint32_t array_len,
-                         const struct psr_socket_info *info,
-                         unsigned int cos)
+static bool fits_cos_max(const uint32_t val[], uint32_t array_len,
+                         const struct psr_socket_info *info, unsigned int cos)
 {
     unsigned int i;
 
@@ -1194,8 +1190,7 @@ static bool fits_cos_max(const uint32_t val[],
 
 static int pick_avail_cos(const struct psr_socket_info *info,
                           const uint32_t val[], unsigned int array_len,
-                          unsigned int old_cos,
-                          enum psr_feat_type feat_type)
+                          unsigned int old_cos, enum psr_feat_type feat_type)
 {
     unsigned int cos, cos_max = 0;
     const struct feat_node *feat;
@@ -1213,7 +1208,7 @@ static int pick_avail_cos(const struct psr_socket_info *info,
     /* We cannot use id 0 because it stores the default values. */
     if ( old_cos && ref[old_cos] == 1 &&
          fits_cos_max(val, array_len, info, old_cos) )
-            return old_cos;
+        return old_cos;
 
     /* Find an unused one other than cos0. */
     for ( cos = 1; cos <= cos_max; cos++ )
@@ -1242,8 +1237,7 @@ static unsigned int get_socket_cpu(unsigned int socket)
     return nr_cpu_ids;
 }
 
-struct cos_write_info
-{
+struct cos_write_info {
     unsigned int cos;
     unsigned int array_len;
     const uint32_t *val;
@@ -1299,8 +1293,7 @@ static int write_psr_msrs(unsigned int socket, unsigned int cos,
                           enum psr_feat_type feat_type)
 {
     struct psr_socket_info *info = get_socket_info(socket);
-    struct cos_write_info data =
-    {
+    struct cos_write_info data = {
         .cos = cos,
         .val = val,
         .array_len = array_len,
@@ -1323,8 +1316,8 @@ static int write_psr_msrs(unsigned int socket, unsigned int cos,
     return 0;
 }
 
-int psr_set_val(struct domain *d, unsigned int socket,
-                uint64_t new_val, enum psr_type type)
+int psr_set_val(struct domain *d, unsigned int socket, uint64_t new_val,
+                enum psr_type type)
 {
     unsigned int old_cos, array_len;
     int cos, ret;
@@ -1341,8 +1334,7 @@ int psr_set_val(struct domain *d, unsigned int socket,
         return -EINVAL;
 
     feat_type = psr_type_to_feat_type(type);
-    if ( feat_type >= ARRAY_SIZE(info->features) ||
-         !info->features[feat_type] )
+    if ( feat_type >= ARRAY_SIZE(info->features) || !info->features[feat_type] )
         return -ENOENT;
 
     /*
@@ -1382,8 +1374,12 @@ int psr_set_val(struct domain *d, unsigned int socket,
     if ( (ret = gather_val_array(val_array, array_len, info, old_cos)) != 0 )
         goto free_array;
 
-    if ( (ret = insert_val_into_array(val_array, array_len, info,
-                                      feat_type, type, val)) != 0 )
+    if ( (ret = insert_val_into_array(val_array,
+                                      array_len,
+                                      info,
+                                      feat_type,
+                                      type,
+                                      val)) != 0 )
         goto free_array;
 
     spin_lock(&info->ref_lock);
@@ -1450,10 +1446,10 @@ int psr_set_val(struct domain *d, unsigned int socket,
 
     goto free_array;
 
- unlock_free_array:
+unlock_free_array:
     spin_unlock(&info->ref_lock);
 
- free_array:
+free_array:
     xfree(val_array);
     return ret;
 }
@@ -1537,16 +1533,14 @@ static int psr_cpu_prepare(void)
         return 0;
 
     /* Malloc memory for the global feature node here. */
-    if ( feat_l3 == NULL &&
-         (feat_l3 = xzalloc(struct feat_node)) == NULL )
+    if ( feat_l3 == NULL && (feat_l3 = xzalloc(struct feat_node)) == NULL )
         return -ENOMEM;
 
     if ( feat_l2_cat == NULL &&
          (feat_l2_cat = xzalloc(struct feat_node)) == NULL )
         return -ENOMEM;
 
-    if ( feat_mba == NULL &&
-         (feat_mba = xzalloc(struct feat_node)) == NULL )
+    if ( feat_mba == NULL && (feat_mba = xzalloc(struct feat_node)) == NULL )
         return -ENOMEM;
 
     return 0;
@@ -1625,7 +1619,7 @@ static void psr_cpu_init(void)
 
     info->feat_init = true;
 
- assoc_init:
+assoc_init:
     psr_assoc_init();
 }
 
@@ -1644,8 +1638,8 @@ static void psr_cpu_fini(unsigned int cpu)
         free_socket_resources(socket);
 }
 
-static int cf_check cpu_callback(
-    struct notifier_block *nfb, unsigned long action, void *hcpu)
+static int cf_check cpu_callback(struct notifier_block *nfb,
+                                 unsigned long action, void *hcpu)
 {
     int rc = 0;
     unsigned int cpu = (unsigned long)hcpu;
@@ -1667,15 +1661,13 @@ static int cf_check cpu_callback(
     return notifier_from_errno(rc);
 }
 
-static struct notifier_block cpu_nfb = {
-    .notifier_call = cpu_callback,
-    /*
+static struct notifier_block cpu_nfb = { .notifier_call = cpu_callback,
+                                         /*
      * Ensure socket_cpumask is still valid in CPU_DEAD notification
      * (E.g. our CPU_DEAD notification should be called ahead of
      * cpu_smpboot_free).
      */
-    .priority = -1
-};
+                                         .priority = -1 };
 
 static int __init cf_check psr_presmp_init(void)
 {
@@ -1694,6 +1686,7 @@ static int __init cf_check psr_presmp_init(void)
 
     return 0;
 }
+
 presmp_initcall(psr_presmp_init);
 
 /*

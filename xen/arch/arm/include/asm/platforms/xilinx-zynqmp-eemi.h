@@ -104,6 +104,7 @@ enum pm_ret_status {
                                                 ARM_SMCCC_CONV_32,   \
                                                 ARM_SMCCC_OWNER_SIP, \
                                                 fid)
+
 enum ipi_api_id {
     IPI_MAILBOX_OPEN = 0x1000,
     IPI_MAILBOX_RELEASE,

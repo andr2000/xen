@@ -31,8 +31,8 @@ static int emulate_forced_invalid_op(struct cpu_user_regs *regs)
     eip += sizeof(sig);
 
     /* We only emulate CPUID. */
-    if ( (rc = copy_from_guest_pv(instr, (char __user *)eip,
-                                  sizeof(instr))) != 0 )
+    if ( (rc = copy_from_guest_pv(instr, (char __user *)eip, sizeof(instr))) !=
+         0 )
     {
         pv_inject_page_fault(0, eip + sizeof(instr) - rc);
         return EXCRET_fault_fixed;

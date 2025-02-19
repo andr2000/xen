@@ -21,9 +21,7 @@ int arch_cpu_up(int cpu)
     return platform_cpu_up(cpu);
 }
 
-void arch_cpu_up_finish(void)
-{
-}
+void arch_cpu_up_finish(void) {}
 
 /*
  * Local variables:

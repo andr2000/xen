@@ -31,18 +31,17 @@
 #define HPET_EVT_LEGACY_BIT  2
 #define HPET_EVT_LEGACY     (1 << HPET_EVT_LEGACY_BIT)
 
-struct hpet_event_channel
-{
+struct hpet_event_channel {
     unsigned long mult;
-    int           shift;
-    s_time_t      next_event;
+    int shift;
+    s_time_t next_event;
     cpumask_var_t cpumask;
-    spinlock_t    lock;
-    void          (*event_handler)(struct hpet_event_channel *ch);
+    spinlock_t lock;
+    void (*event_handler)(struct hpet_event_channel *ch);
 
-    unsigned int idx;   /* physical channel idx */
-    unsigned int cpu;   /* msi target */
-    struct msi_desc msi;/* msi state */
+    unsigned int idx; /* physical channel idx */
+    unsigned int cpu; /* msi target */
+    struct msi_desc msi; /* msi state */
     unsigned int flags; /* HPET_EVT_x */
 } __cacheline_aligned;
 static struct hpet_event_channel *__read_mostly hpet_events;
@@ -71,7 +70,8 @@ static int __init cf_check parse_hpet_param(const char *s)
     const char *ss;
     int val, rc = 0;
 
-    do {
+    do
+    {
         ss = strchr(s, ',');
         if ( !ss )
             ss = strchr(s, '\0');
@@ -90,6 +90,7 @@ static int __init cf_check parse_hpet_param(const char *s)
 
     return rc;
 }
+
 custom_param("hpet", parse_hpet_param);
 
 /*
@@ -119,7 +120,7 @@ static inline unsigned long ns2ticks(unsigned long nsec, int shift,
 {
     uint64_t tmp = ((uint64_t)nsec * factor) >> shift;
 
-    return (unsigned long) tmp;
+    return (unsigned long)tmp;
 }
 
 static int hpet_next_event(unsigned long delta, int timer)
@@ -138,9 +139,8 @@ static int hpet_next_event(unsigned long delta, int timer)
     return ((cmp + 2 - cnt) > delta) ? -ETIME : 0;
 }
 
-static int reprogram_hpet_evt_channel(
-    struct hpet_event_channel *ch,
-    s_time_t expire, s_time_t now, int force)
+static int reprogram_hpet_evt_channel(struct hpet_event_channel *ch,
+                                      s_time_t expire, s_time_t now, int force)
 {
     int64_t delta;
     int ret;
@@ -191,7 +191,7 @@ static void evt_do_broadcast(cpumask_t *mask)
     cpuidle_wakeup_mwait(mask);
 
     if ( !cpumask_empty(mask) )
-       cpumask_raise_softirq(mask, TIMER_SOFTIRQ);
+        cpumask_raise_softirq(mask, TIMER_SOFTIRQ);
 }
 
 static void cf_check handle_hpet_broadcast(struct hpet_event_channel *ch)
@@ -246,7 +246,9 @@ static void cf_check hpet_interrupt_handler(int irq, void *data)
 
     if ( !ch->event_handler )
     {
-        printk(XENLOG_WARNING "Spurious HPET timer interrupt on HPET timer %d\n", ch->idx);
+        printk(XENLOG_WARNING
+               "Spurious HPET timer interrupt on HPET timer %d\n",
+               ch->idx);
         return;
     }
 
@@ -308,8 +310,8 @@ static void cf_check hpet_msi_ack(struct irq_desc *desc)
     ack_APIC_irq();
 }
 
-static void cf_check hpet_msi_set_affinity(
-    struct irq_desc *desc, const cpumask_t *mask)
+static void cf_check hpet_msi_set_affinity(struct irq_desc *desc,
+                                           const cpumask_t *mask)
 {
     struct hpet_event_channel *ch = desc->action->dev_id;
     struct msi_msg msg = ch->msi.msg;
@@ -330,13 +332,13 @@ static void cf_check hpet_msi_set_affinity(
  * IRQ Chip for MSI HPET Devices,
  */
 static hw_irq_controller hpet_msi_type = {
-    .typename   = "HPET-MSI",
-    .startup    = hpet_msi_startup,
-    .shutdown   = hpet_msi_shutdown,
-    .enable	    = hpet_msi_unmask,
-    .disable    = hpet_msi_mask,
-    .ack        = hpet_msi_ack,
-    .set_affinity   = hpet_msi_set_affinity,
+    .typename = "HPET-MSI",
+    .startup = hpet_msi_startup,
+    .shutdown = hpet_msi_shutdown,
+    .enable = hpet_msi_unmask,
+    .disable = hpet_msi_mask,
+    .ack = hpet_msi_ack,
+    .set_affinity = hpet_msi_set_affinity,
 };
 
 static int __hpet_setup_msi_irq(struct irq_desc *desc)
@@ -443,7 +445,8 @@ static void __init hpet_fsb_cap_lookup(void)
     }
 
     printk(XENLOG_INFO "HPET: %u timers usable for broadcast (%u total)\n",
-           num_hpets_used, num_chs);
+           num_hpets_used,
+           num_chs);
 }
 
 static struct hpet_event_channel *hpet_get_channel(unsigned int cpu)
@@ -497,8 +500,7 @@ static void set_channel_irq_affinity(struct hpet_event_channel *ch)
         ch->event_handler(ch);
 }
 
-static void hpet_attach_channel(unsigned int cpu,
-                                struct hpet_event_channel *ch)
+static void hpet_attach_channel(unsigned int cpu, struct hpet_event_channel *ch)
 {
     ASSERT(!local_irq_is_enabled());
     spin_lock(&ch->lock);
@@ -515,8 +517,7 @@ static void hpet_attach_channel(unsigned int cpu,
         set_channel_irq_affinity(ch);
 }
 
-static void hpet_detach_channel(unsigned int cpu,
-                                struct hpet_event_channel *ch)
+static void hpet_detach_channel(unsigned int cpu, struct hpet_event_channel *ch)
 {
     unsigned int next;
 
@@ -552,7 +553,7 @@ static void cf_check handle_rtc_once(uint8_t index, uint8_t value)
         return;
 
     /* RTC Reg B, contain PIE/AIE/UIE */
-    if ( value & (RTC_PIE | RTC_AIE | RTC_UIE ) )
+    if ( value & (RTC_PIE | RTC_AIE | RTC_UIE) )
     {
         cpuidle_disable_deep_cstate();
         ACCESS_ONCE(pv_rtc_handler) = NULL;
@@ -614,8 +615,8 @@ void __init hpet_broadcast_init(void)
          * The period is a femto seconds value. We need to calculate the scaled
          * math multiplication factor for nanosecond to hpet tick conversion.
          */
-        hpet_events[i].mult = div_sc((unsigned long)hpet_rate,
-                                     1000000000UL, 32);
+        hpet_events[i].mult =
+            div_sc((unsigned long)hpet_rate, 1000000000UL, 32);
         hpet_events[i].shift = 32;
         hpet_events[i].next_event = STIME_MAX;
         spin_lock_init(&hpet_events[i].lock);
@@ -759,8 +760,8 @@ void cf_check hpet_broadcast_exit(void)
 
 int hpet_broadcast_is_available(void)
 {
-    return ((hpet_events && (hpet_events->flags & HPET_EVT_LEGACY))
-            || num_hpets_used > 0);
+    return ((hpet_events && (hpet_events->flags & HPET_EVT_LEGACY)) ||
+            num_hpets_used > 0);
 }
 
 int hpet_legacy_irq_tick(void)
@@ -768,8 +769,8 @@ int hpet_legacy_irq_tick(void)
     this_cpu(irq_count)--;
 
     if ( !hpet_events ||
-         (hpet_events->flags & (HPET_EVT_DISABLE|HPET_EVT_LEGACY)) !=
-         HPET_EVT_LEGACY )
+         (hpet_events->flags & (HPET_EVT_DISABLE | HPET_EVT_LEGACY)) !=
+             HPET_EVT_LEGACY )
         return 0;
     hpet_events->event_handler(hpet_events);
     return 1;
@@ -777,6 +778,7 @@ int hpet_legacy_irq_tick(void)
 
 static u32 *hpet_boot_cfg;
 static uint64_t __initdata hpet_rate;
+
 static __initdata struct {
     uint32_t cmp, cfg;
 } pre_legacy_c0;
@@ -785,8 +787,7 @@ bool __init hpet_enable_legacy_replacement_mode(void)
 {
     unsigned int cfg, c0_cfg, ticks, count;
 
-    if ( !hpet_rate ||
-         !(hpet_read32(HPET_ID) & HPET_ID_LEGSUP) ||
+    if ( !hpet_rate || !(hpet_read32(HPET_ID) & HPET_ID_LEGSUP) ||
          ((cfg = hpet_read32(HPET_CFG)) & HPET_CFG_LEGACY) )
         return false;
 
@@ -835,7 +836,7 @@ bool __init hpet_enable_legacy_replacement_mode(void)
      * This lets us set a period when the main counter isn't at 0.
      */
     hpet_write32(count + ticks, HPET_Tn_CMP(0));
-    hpet_write32(ticks,         HPET_Tn_CMP(0));
+    hpet_write32(ticks, HPET_Tn_CMP(0));
 
     /* Restart the main counter, and legacy mode. */
     hpet_write32(cfg | HPET_CFG_ENABLE | HPET_CFG_LEGACY, HPET_CFG);
@@ -937,7 +938,8 @@ void hpet_resume(uint32_t *boot_cfg)
         {
             printk(XENLOG_WARNING
                    "HPET: reserved bits %#x set in channel %u config register\n",
-                   cfg & HPET_TN_RESERVED, i);
+                   cfg & HPET_TN_RESERVED,
+                   i);
             cfg &= ~HPET_TN_RESERVED;
         }
         hpet_write32(cfg, HPET_Tn_CFG(i));

@@ -31,7 +31,8 @@ static unsigned int fill_gva_list(uint64_t *gva_list, const void *va,
     unsigned long end = cur + (PAGE_SIZE << order);
     unsigned int n = 0;
 
-    do {
+    do
+    {
         unsigned long diff = end - cur;
 
         gva_list[n] = cur & PAGE_MASK;
@@ -83,18 +84,20 @@ static uint64_t flush_tlb_ex(const cpumask_t *mask, const void *va,
     if ( nr_banks < 0 )
         return ~0ULL;
 
-    max_gvas =
-        (PAGE_SIZE - sizeof(*flush) - nr_banks *
-         sizeof(flush->hv_vp_set.bank_contents[0])) /
-        sizeof(uint64_t);       /* gva is represented as uint64_t */
+    max_gvas = (PAGE_SIZE - sizeof(*flush) -
+                nr_banks * sizeof(flush->hv_vp_set.bank_contents[0])) /
+               sizeof(uint64_t); /* gva is represented as uint64_t */
 
     /*
      * Flush the entire address space if va is NULL or if there is not
      * enough space for gva_list.
      */
     if ( !va || (PAGE_SIZE << order) / HV_TLB_FLUSH_UNIT > max_gvas )
-        return hv_do_rep_hypercall(HVCALL_FLUSH_VIRTUAL_ADDRESS_SPACE_EX, 0,
-                                   nr_banks, virt_to_maddr(flush), 0);
+        return hv_do_rep_hypercall(HVCALL_FLUSH_VIRTUAL_ADDRESS_SPACE_EX,
+                                   0,
+                                   nr_banks,
+                                   virt_to_maddr(flush),
+                                   0);
 
     /*
      * The calculation of gva_list address requires the structure to
@@ -105,14 +108,15 @@ static uint64_t flush_tlb_ex(const cpumask_t *mask, const void *va,
 
     return hv_do_rep_hypercall(HVCALL_FLUSH_VIRTUAL_ADDRESS_LIST_EX,
                                fill_gva_list(gva_list, va, order),
-                               nr_banks, virt_to_maddr(flush), 0);
+                               nr_banks,
+                               virt_to_maddr(flush),
+                               0);
 }
 
 /* Maximum number of gvas for hv_tlb_flush */
 #define MAX_GVAS ((PAGE_SIZE - sizeof(struct hv_tlb_flush)) / sizeof(uint64_t))
 
-int hyperv_flush_tlb(const cpumask_t *mask, const void *va,
-                     unsigned int flags)
+int hyperv_flush_tlb(const cpumask_t *mask, const void *va, unsigned int flags)
 {
     unsigned long irq_flags;
     struct hv_tlb_flush *flush = this_cpu(hv_input_page);
@@ -150,7 +154,7 @@ int hyperv_flush_tlb(const cpumask_t *mask, const void *va,
         if ( hv_vp_index(cpumask_last(mask)) >= 64 )
             goto do_ex_hypercall;
 
-        for_each_cpu ( cpu, mask )
+        for_each_cpu(cpu, mask)
         {
             unsigned int vpid = hv_vp_index(cpu);
 
@@ -173,17 +177,20 @@ int hyperv_flush_tlb(const cpumask_t *mask, const void *va,
      */
     if ( !va || (PAGE_SIZE << order) / HV_TLB_FLUSH_UNIT > MAX_GVAS )
         ret = hv_do_hypercall(HVCALL_FLUSH_VIRTUAL_ADDRESS_SPACE,
-                              virt_to_maddr(flush), 0);
+                              virt_to_maddr(flush),
+                              0);
     else
         ret = hv_do_rep_hypercall(HVCALL_FLUSH_VIRTUAL_ADDRESS_LIST,
                                   fill_gva_list(flush->gva_list, va, order),
-                                  0, virt_to_maddr(flush), 0);
+                                  0,
+                                  virt_to_maddr(flush),
+                                  0);
     goto done;
 
- do_ex_hypercall:
+do_ex_hypercall:
     ret = flush_tlb_ex(mask, va, flags);
 
- done:
+done:
     local_irq_restore(irq_flags);
 
     return ret & HV_HYPERCALL_RESULT_MASK ? -ENXIO : 0;

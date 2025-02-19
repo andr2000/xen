@@ -61,7 +61,8 @@ int compat_common_vcpu_op(int cmd, struct vcpu *v,
                 return -EFAULT;
 
             domain_lock(d);
-            rc = v->is_initialised ? -EEXIST : arch_set_info_hvm_guest(v, &ctxt);
+            rc = v->is_initialised ? -EEXIST
+                                   : arch_set_info_hvm_guest(v, &ctxt);
             domain_unlock(d);
         }
         else
@@ -86,8 +87,11 @@ int compat_common_vcpu_op(int cmd, struct vcpu *v,
         }
 
         if ( rc == -ERESTART )
-            rc = hypercall_create_continuation(__HYPERVISOR_vcpu_op, "iih",
-                                               cmd, vcpuid, arg);
+            rc = hypercall_create_continuation(__HYPERVISOR_vcpu_op,
+                                               "iih",
+                                               cmd,
+                                               vcpuid,
+                                               arg);
 
         break;
     }

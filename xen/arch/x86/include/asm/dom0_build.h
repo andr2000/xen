@@ -17,13 +17,12 @@ struct boot_info;
 int dom0_construct_pv(struct boot_info *bi, struct domain *d);
 int dom0_construct_pvh(struct boot_info *bi, struct domain *d);
 
-unsigned long dom0_paging_pages(const struct domain *d,
-                                unsigned long nr_pages);
+unsigned long dom0_paging_pages(const struct domain *d, unsigned long nr_pages);
 
-void dom0_update_physmap(bool compat, unsigned long pfn,
-                         unsigned long mfn, unsigned long vphysmap_s);
+void dom0_update_physmap(bool compat, unsigned long pfn, unsigned long mfn,
+                         unsigned long vphysmap_s);
 
-#endif	/* _DOM0_BUILD_H_ */
+#endif /* _DOM0_BUILD_H_ */
 
 /*
  * Local variables:

@@ -11,7 +11,7 @@
 
 #ifndef __ASSEMBLY__
 
-register struct pcpu_info *tp asm ( "tp" );
+register struct pcpu_info *tp asm("tp");
 
 struct pcpu_info {
     unsigned int processor_id; /* Xen CPU id */

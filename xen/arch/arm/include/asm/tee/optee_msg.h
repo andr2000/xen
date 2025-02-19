@@ -107,9 +107,9 @@
  * structure to secure world.
  */
 struct optee_msg_param_tmem {
-	uint64_t buf_ptr;
-	uint64_t size;
-	uint64_t shm_ref;
+    uint64_t buf_ptr;
+    uint64_t size;
+    uint64_t shm_ref;
 };
 
 /**
@@ -119,9 +119,9 @@ struct optee_msg_param_tmem {
  * @shm_ref:	Shared memory reference, pointer to a struct tee_shm
  */
 struct optee_msg_param_rmem {
-	uint64_t offs;
-	uint64_t size;
-	uint64_t shm_ref;
+    uint64_t offs;
+    uint64_t size;
+    uint64_t shm_ref;
 };
 
 /**
@@ -131,9 +131,9 @@ struct optee_msg_param_rmem {
  * @c: third value
  */
 struct optee_msg_param_value {
-	uint64_t a;
-	uint64_t b;
-	uint64_t c;
+    uint64_t a;
+    uint64_t b;
+    uint64_t c;
 };
 
 /**
@@ -149,12 +149,13 @@ struct optee_msg_param_value {
  * OPTEE_MSG_ATTR_TYPE_NONE indicates that none of the members are used.
  */
 struct optee_msg_param {
-	uint64_t attr;
-	union {
-		struct optee_msg_param_tmem tmem;
-		struct optee_msg_param_rmem rmem;
-		struct optee_msg_param_value value;
-	} u;
+    uint64_t attr;
+
+    union {
+        struct optee_msg_param_tmem tmem;
+        struct optee_msg_param_rmem rmem;
+        struct optee_msg_param_value value;
+    } u;
 };
 
 /**
@@ -176,17 +177,17 @@ struct optee_msg_param {
  * attrs field). All parameters tagged as meta have to come first.
  */
 struct optee_msg_arg {
-	uint32_t cmd;
-	uint32_t func;
-	uint32_t session;
-	uint32_t cancel_id;
-	uint32_t pad;
-	uint32_t ret;
-	uint32_t ret_origin;
-	uint32_t num_params;
+    uint32_t cmd;
+    uint32_t func;
+    uint32_t session;
+    uint32_t cancel_id;
+    uint32_t pad;
+    uint32_t ret;
+    uint32_t ret_origin;
+    uint32_t num_params;
 
-	/* num_params tells the actual number of element in params */
-	struct optee_msg_param params[];
+    /* num_params tells the actual number of element in params */
+    struct optee_msg_param params[];
 };
 
 /**

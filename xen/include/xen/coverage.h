@@ -11,4 +11,4 @@ static inline int sysctl_cov_op(void *unused)
 }
 #endif
 
-#endif	/* _XEN_GCOV_H */
+#endif /* _XEN_GCOV_H */

@@ -39,9 +39,10 @@ int compat_set_px_pminfo(uint32_t acpi_id,
     xlat_malloc_init(xlat_page_current);
 
     xen_perf = xlat_malloc_array(xlat_page_current,
-                                  struct xen_processor_performance, 1);
+                                 struct xen_processor_performance,
+                                 1);
     if ( unlikely(xen_perf == NULL) )
-	return -EFAULT;
+        return -EFAULT;
 
 #define XLAT_processor_performance_HNDL_states(_d_, _s_) do { \
     if ( unlikely(!compat_handle_okay((_s_)->states, (_s_)->state_count)) ) \

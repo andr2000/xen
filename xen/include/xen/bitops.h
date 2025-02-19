@@ -50,8 +50,7 @@ unsigned int attr_const generic_hweightl(unsigned long x);
  * If two examples of this operation race, one can appear to succeed
  * but actually fail.  You must protect multiple accesses with a lock.
  */
-static always_inline bool
-generic__test_and_set_bit(int nr, volatile void *addr)
+static always_inline bool generic__test_and_set_bit(int nr, volatile void *addr)
 {
     bitop_uint_t mask = BITOP_MASK(nr);
     volatile bitop_uint_t *p = (volatile bitop_uint_t *)addr + BITOP_WORD(nr);
@@ -70,8 +69,8 @@ generic__test_and_set_bit(int nr, volatile void *addr)
  * If two examples of this operation race, one can appear to succeed
  * but actually fail.  You must protect multiple accesses with a lock.
  */
-static always_inline bool
-generic__test_and_clear_bit(int nr, volatile void *addr)
+static always_inline bool generic__test_and_clear_bit(int nr,
+                                                      volatile void *addr)
 {
     bitop_uint_t mask = BITOP_MASK(nr);
     volatile bitop_uint_t *p = (volatile bitop_uint_t *)addr + BITOP_WORD(nr);
@@ -90,8 +89,8 @@ generic__test_and_clear_bit(int nr, volatile void *addr)
  * If two examples of this operation race, one can appear to succeed
  * but actually fail.  You must protect multiple accesses with a lock.
  */
-static always_inline bool
-generic__test_and_change_bit(int nr, volatile void *addr)
+static always_inline bool generic__test_and_change_bit(int nr,
+                                                       volatile void *addr)
 {
     bitop_uint_t mask = BITOP_MASK(nr);
     volatile bitop_uint_t *p = (volatile bitop_uint_t *)addr + BITOP_WORD(nr);
@@ -113,8 +112,8 @@ generic__test_and_change_bit(int nr, volatile void *addr)
 static always_inline bool generic_test_bit(int nr, const volatile void *addr)
 {
     bitop_uint_t mask = BITOP_MASK(nr);
-    const volatile bitop_uint_t *p =
-        (const volatile bitop_uint_t *)addr + BITOP_WORD(nr);
+    const volatile bitop_uint_t *p = (const volatile bitop_uint_t *)addr +
+                                     BITOP_WORD(nr);
 
     return (*p & mask);
 }
@@ -128,8 +127,7 @@ static always_inline bool generic_test_bit(int nr, const volatile void *addr)
  * If two examples of this operation race, one can appear to succeed
  * but actually fail.  You must protect multiple accesses with a lock.
  */
-static always_inline bool
-__test_and_set_bit(int nr, volatile void *addr)
+static always_inline bool __test_and_set_bit(int nr, volatile void *addr)
 {
 #ifndef arch__test_and_set_bit
 #define arch__test_and_set_bit generic__test_and_set_bit
@@ -137,6 +135,7 @@ __test_and_set_bit(int nr, volatile void *addr)
 
     return arch__test_and_set_bit(nr, addr);
 }
+
 #define __test_and_set_bit(nr, addr) ({             \
     if ( bitop_bad_size(addr) ) __bitop_bad_size(); \
     __test_and_set_bit(nr, addr);                   \
@@ -151,8 +150,7 @@ __test_and_set_bit(int nr, volatile void *addr)
  * If two examples of this operation race, one can appear to succeed
  * but actually fail.  You must protect multiple accesses with a lock.
  */
-static always_inline bool
-__test_and_clear_bit(int nr, volatile void *addr)
+static always_inline bool __test_and_clear_bit(int nr, volatile void *addr)
 {
 #ifndef arch__test_and_clear_bit
 #define arch__test_and_clear_bit generic__test_and_clear_bit
@@ -160,6 +158,7 @@ __test_and_clear_bit(int nr, volatile void *addr)
 
     return arch__test_and_clear_bit(nr, addr);
 }
+
 #define __test_and_clear_bit(nr, addr) ({           \
     if ( bitop_bad_size(addr) ) __bitop_bad_size(); \
     __test_and_clear_bit(nr, addr);                 \
@@ -174,8 +173,7 @@ __test_and_clear_bit(int nr, volatile void *addr)
  * If two examples of this operation race, one can appear to succeed
  * but actually fail.  You must protect multiple accesses with a lock.
  */
-static always_inline bool
-__test_and_change_bit(int nr, volatile void *addr)
+static always_inline bool __test_and_change_bit(int nr, volatile void *addr)
 {
 #ifndef arch__test_and_change_bit
 #define arch__test_and_change_bit generic__test_and_change_bit
@@ -183,6 +181,7 @@ __test_and_change_bit(int nr, volatile void *addr)
 
     return arch__test_and_change_bit(nr, addr);
 }
+
 #define __test_and_change_bit(nr, addr) ({              \
     if ( bitop_bad_size(addr) ) __bitop_bad_size();     \
     __test_and_change_bit(nr, addr);                    \
@@ -205,6 +204,7 @@ static always_inline bool test_bit(int nr, const volatile void *addr)
 
     return arch_test_bit(nr, addr);
 }
+
 #define test_bit(nr, addr) ({                           \
     if ( bitop_bad_size(addr) ) __bitop_bad_size();     \
     test_bit(nr, addr);                                 \
@@ -349,8 +349,7 @@ static always_inline attr_const unsigned int hweight64(uint64_t x)
  * @size: The bitmap size in bits
  */
 extern unsigned long find_next_bit(const unsigned long *addr,
-                                   unsigned long size,
-                                   unsigned long offset);
+                                   unsigned long size, unsigned long offset);
 #endif
 
 #ifndef find_next_zero_bit
@@ -392,9 +391,9 @@ extern unsigned long find_first_zero_bit(const unsigned long *addr,
 static inline int get_bitmask_order(unsigned int count)
 {
     int order;
-    
+
     order = fls(count);
-    return order;   /* We could be slightly more clever with -1 here... */
+    return order; /* We could be slightly more clever with -1 here... */
 }
 
 static inline int get_count_order(unsigned int count)
@@ -402,7 +401,7 @@ static inline int get_count_order(unsigned int count)
     int order;
 
     order = fls(count) - 1;
-    if (count & (count - 1))
+    if ( count & (count - 1) )
         order++;
     return order;
 }

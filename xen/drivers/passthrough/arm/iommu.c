@@ -40,7 +40,8 @@ void __init iommu_set_ops(const struct iommu_ops *ops)
 
     if ( iommu_ops && iommu_ops != ops )
     {
-        printk("WARNING: Cannot set IOMMU ops, already set to a different value\n");
+        printk(
+            "WARNING: Cannot set IOMMU ops, already set to a different value\n");
         return;
     }
 
@@ -99,7 +100,7 @@ int __init iommu_hardware_setup(void)
     {
         num_iommus = 0;
 
-        list_for_each_entry_safe ( np, tmp, &deferred_probe_list, domain_list )
+        list_for_each_entry_safe(np, tmp, &deferred_probe_list, domain_list)
         {
             rc = device_init(np, DEVICE_IOMMU, NULL);
             if ( !rc )
@@ -128,18 +129,18 @@ int arch_iommu_domain_init(struct domain *d)
     return iommu_dt_domain_init(d);
 }
 
-void arch_iommu_domain_destroy(struct domain *d)
-{
-}
+void arch_iommu_domain_destroy(struct domain *d) {}
 
 void __hwdom_init arch_iommu_hwdom_init(struct domain *d)
 {
     /* Set to false options not supported on ARM. */
     if ( iommu_hwdom_inclusive )
-        printk(XENLOG_WARNING "map-inclusive dom0-iommu option is not supported on ARM\n");
+        printk(XENLOG_WARNING
+               "map-inclusive dom0-iommu option is not supported on ARM\n");
     iommu_hwdom_inclusive = false;
     if ( iommu_hwdom_reserved == 1 )
-        printk(XENLOG_WARNING "map-reserved dom0-iommu option is not supported on ARM\n");
+        printk(XENLOG_WARNING
+               "map-reserved dom0-iommu option is not supported on ARM\n");
     iommu_hwdom_reserved = 0;
 }
 

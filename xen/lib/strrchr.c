@@ -11,13 +11,13 @@
  */
 char *(strrchr)(const char *s, int c)
 {
-	const char *p = s + strlen(s);
+    const char *p = s + strlen(s);
 
-	for (; *p != (char)c; --p)
-		if (p == s)
-			return NULL;
+    for ( ; *p != (char)c; --p )
+        if ( p == s )
+            return NULL;
 
-	return (char *)p;
+    return (char *)p;
 }
 
 /*

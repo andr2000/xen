@@ -89,8 +89,8 @@ void send_IPI_mask(const cpumask_t *mask, int vector)
      * onlined and parked), there are no disabled CPUs and all possible CPUs in
      * the system have been accounted for.
      */
-    if ( system_state > SYS_STATE_smp_boot &&
-         !unaccounted_cpus && !disabled_cpus && !cpu_in_hotplug_context() &&
+    if ( system_state > SYS_STATE_smp_boot && !unaccounted_cpus &&
+         !disabled_cpus && !cpu_in_hotplug_context() &&
          /* NB: get_cpu_maps lock requires enabled interrupts. */
          local_irq_is_enabled() && (cpus_locked = get_cpu_maps()) &&
          (park_offline_cpus ||
@@ -201,7 +201,7 @@ void cf_check send_IPI_mask_flat(const cpumask_t *cpumask, int vector)
      * Send the IPI. The write to APIC_ICR fires this off.
      */
     apic_write(APIC_ICR, cfg);
-    
+
     local_irq_restore(flags);
 }
 
@@ -212,7 +212,7 @@ void cf_check send_IPI_mask_phys(const cpumask_t *mask, int vector)
 
     local_irq_save(flags);
 
-    for_each_cpu ( query_cpu, mask )
+    for_each_cpu(query_cpu, mask)
     {
         if ( !cpu_online(query_cpu) || (query_cpu == smp_processor_id()) )
             continue;
@@ -272,8 +272,7 @@ void flush_area_mask(const cpumask_t *mask, const void *va, unsigned int flags)
          cpumask_test_cpu(cpu, mask) )
         flags = flush_area_local(va, flags);
 
-    if ( (flags & ~FLUSH_ORDER_MASK) &&
-         !cpumask_subset(mask, cpumask_of(cpu)) )
+    if ( (flags & ~FLUSH_ORDER_MASK) && !cpumask_subset(mask, cpumask_of(cpu)) )
     {
         if ( cpu_has_hypervisor &&
              !(flags & ~(FLUSH_TLB | FLUSH_TLB_GLOBAL | FLUSH_VA_VALID |
@@ -284,8 +283,8 @@ void flush_area_mask(const cpumask_t *mask, const void *va, unsigned int flags)
         spin_lock(&flush_lock);
         cpumask_and(&flush_cpumask, mask, &cpu_online_map);
         cpumask_clear_cpu(cpu, &flush_cpumask);
-        flush_va      = va;
-        flush_flags   = flags;
+        flush_va = va;
+        flush_flags = flags;
         send_IPI_mask(&flush_cpumask, INVALIDATE_TLB_VECTOR);
         while ( !cpumask_empty(&flush_cpumask) )
             cpu_relax();
@@ -299,7 +298,8 @@ void cf_check new_tlbflush_clock_period(void)
     cpumask_t allbutself;
 
     /* Flush everyone else. We definitely flushed just before entry. */
-    cpumask_andnot(&allbutself, &cpu_online_map,
+    cpumask_andnot(&allbutself,
+                   &cpu_online_map,
                    cpumask_of(smp_processor_id()));
     flush_mask(&allbutself, FLUSH_TLB);
 
@@ -338,7 +338,7 @@ void __stop_this_cpu(void)
      * some BIOSes.
      */
     clts();
-    asm volatile ( "fninit" );
+    asm volatile("fninit");
 
     cpumask_clear_cpu(smp_processor_id(), &cpu_online_map);
 }
@@ -346,7 +346,7 @@ void __stop_this_cpu(void)
 static void cf_check stop_this_cpu(void *dummy)
 {
     __stop_this_cpu();
-    for ( ; ; )
+    for ( ;; )
         halt();
 }
 
@@ -412,8 +412,7 @@ long cf_check cpu_up_helper(void *data)
     if ( ret == -EBUSY )
         ret = cpu_up(cpu);
 
-    if ( !ret && !opt_smt &&
-         cpu_data[cpu].compute_unit_id == INVALID_CUID &&
+    if ( !ret && !opt_smt && cpu_data[cpu].compute_unit_id == INVALID_CUID &&
          cpumask_weight(per_cpu(cpu_sibling_mask, cpu)) > 1 )
     {
         ret = cpu_down_helper(data);

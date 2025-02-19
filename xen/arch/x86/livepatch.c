@@ -38,7 +38,7 @@ int arch_livepatch_safety_check(void)
 {
     struct domain *d;
 
-    for_each_domain ( d )
+    for_each_domain(d)
     {
 #ifdef CONFIG_MEM_SHARING
         if ( has_active_waitqueue(d->vm_event_share) )
@@ -54,7 +54,7 @@ int arch_livepatch_safety_check(void)
 
     return 0;
 
- fail:
+fail:
     printk(XENLOG_ERR LIVEPATCH "%pd found with active waitqueue\n", d);
     return -EBUSY;
 }
@@ -157,8 +157,8 @@ void noinline arch_livepatch_apply(const struct livepatch_func *func,
         BUILD_BUG_ON(ARCH_PATCH_INSN_SIZE != (1 + sizeof(val)));
 
         insn[0] = 0xe9; /* Relative jump. */
-        val = func->new_addr - (func->old_addr + state->patch_offset +
-                                ARCH_PATCH_INSN_SIZE);
+        val = func->new_addr -
+              (func->old_addr + state->patch_offset + ARCH_PATCH_INSN_SIZE);
 
         memcpy(&insn[1], &val, sizeof(val));
     }
@@ -175,7 +175,8 @@ void noinline arch_livepatch_apply(const struct livepatch_func *func,
 void noinline arch_livepatch_revert(const struct livepatch_func *func,
                                     struct livepatch_fstate *state)
 {
-    memcpy(func->old_addr + state->patch_offset, state->insn_buffer,
+    memcpy(func->old_addr + state->patch_offset,
+           state->insn_buffer,
            livepatch_insn_len(func, state));
 }
 
@@ -190,6 +191,7 @@ void noinline arch_livepatch_post_action(void)
 }
 
 static nmi_callback_t *saved_nmi_callback;
+
 /*
  * Note that because of this NOP code the do_nmi is not safely patchable.
  * Also if we do receive 'real' NMIs we have lost them.
@@ -212,11 +214,9 @@ void arch_livepatch_unmask(void)
 
 int arch_livepatch_verify_elf(const struct livepatch_elf *elf)
 {
-
     const Elf_Ehdr *hdr = elf->hdr;
 
-    if ( hdr->e_machine != EM_X86_64 ||
-         hdr->e_ident[EI_CLASS] != ELFCLASS64 ||
+    if ( hdr->e_machine != EM_X86_64 || hdr->e_ident[EI_CLASS] != ELFCLASS64 ||
          hdr->e_ident[EI_DATA] != ELFDATA2LSB )
     {
         printk(XENLOG_ERR LIVEPATCH "%s: Unsupported ELF Machine type\n",
@@ -271,21 +271,26 @@ int arch_livepatch_perform_rela(struct livepatch_elf *elf,
         }
         else if ( symndx >= elf->nsym )
         {
-            printk(XENLOG_ERR LIVEPATCH "%s: Relative relocation wants symbol@%u which is past end\n",
-                   elf->name, symndx);
+            printk(XENLOG_ERR LIVEPATCH
+                   "%s: Relative relocation wants symbol@%u which is past end\n",
+                   elf->name,
+                   symndx);
             return -EINVAL;
         }
         else if ( !elf->sym[symndx].sym )
         {
             printk(XENLOG_ERR LIVEPATCH "%s: No symbol@%u\n",
-                   elf->name, symndx);
+                   elf->name,
+                   symndx);
             return -EINVAL;
         }
         else if ( elf->sym[symndx].ignored )
         {
-            printk(XENLOG_ERR LIVEPATCH
-                   "%s: Relocation against ignored symbol %s cannot be resolved\n",
-                   elf->name, elf->sym[symndx].name);
+            printk(
+                XENLOG_ERR LIVEPATCH
+                "%s: Relocation against ignored symbol %s cannot be resolved\n",
+                elf->name,
+                elf->sym[symndx].name);
             return -EINVAL;
         }
 
@@ -298,7 +303,7 @@ int arch_livepatch_perform_rela(struct livepatch_elf *elf,
 
         case R_X86_64_64:
             if ( r->r_offset >= base->sec->sh_size ||
-                (r->r_offset + sizeof(uint64_t)) > base->sec->sh_size )
+                 (r->r_offset + sizeof(uint64_t)) > base->sec->sh_size )
                 goto bad_offset;
 
             *(uint64_t *)dest = val;
@@ -315,31 +320,38 @@ int arch_livepatch_perform_rela(struct livepatch_elf *elf,
              */
         case R_X86_64_PC32:
             if ( r->r_offset >= base->sec->sh_size ||
-                (r->r_offset + sizeof(uint32_t)) > base->sec->sh_size )
+                 (r->r_offset + sizeof(uint32_t)) > base->sec->sh_size )
                 goto bad_offset;
 
             val -= (uint64_t)dest;
             *(int32_t *)dest = val;
             if ( (int64_t)val != *(int32_t *)dest )
             {
-                printk(XENLOG_ERR LIVEPATCH "%s: Overflow in relocation %u in %s for %s\n",
-                       elf->name, i, rela->name, base->name);
+                printk(XENLOG_ERR LIVEPATCH
+                       "%s: Overflow in relocation %u in %s for %s\n",
+                       elf->name,
+                       i,
+                       rela->name,
+                       base->name);
                 return -EOVERFLOW;
             }
             break;
 
         default:
             printk(XENLOG_ERR LIVEPATCH "%s: Unhandled relocation %lu\n",
-                   elf->name, ELF64_R_TYPE(r->r_info));
+                   elf->name,
+                   ELF64_R_TYPE(r->r_info));
             return -EOPNOTSUPP;
         }
     }
 
     return 0;
 
- bad_offset:
-    printk(XENLOG_ERR LIVEPATCH "%s: Relative relocation offset is past %s section\n",
-           elf->name, base->name);
+bad_offset:
+    printk(XENLOG_ERR LIVEPATCH
+           "%s: Relative relocation offset is past %s section\n",
+           elf->name,
+           base->name);
     return -EINVAL;
 }
 
@@ -377,6 +389,7 @@ void __init arch_livepatch_init(void)
 
     vm_init_type(VMAP_XEN, start, end);
 }
+
 /*
  * Local variables:
  * mode: C

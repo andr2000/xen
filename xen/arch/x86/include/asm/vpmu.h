@@ -50,7 +50,7 @@ struct vpmu_struct {
     u32 flags;
     u32 last_pcpu;
     u32 hw_lapic_lvtpc;
-    void *context;      /* May be shared with PV guest */
+    void *context; /* May be shared with PV guest */
     void *priv_context; /* hypervisor-only */
     size_t context_size;
     size_t priv_context_size;
@@ -78,19 +78,23 @@ static inline void vpmu_set(struct vpmu_struct *vpmu, const u32 mask)
 {
     vpmu->flags |= mask;
 }
+
 static inline void vpmu_reset(struct vpmu_struct *vpmu, const u32 mask)
 {
     vpmu->flags &= ~mask;
 }
+
 static inline void vpmu_clear(struct vpmu_struct *vpmu)
 {
     /* VPMU_AVAILABLE should be altered by get/put_vpmu(). */
     vpmu->flags &= VPMU_AVAILABLE;
 }
+
 static inline bool vpmu_is_set(const struct vpmu_struct *vpmu, const u32 mask)
 {
     return !!(vpmu->flags & mask);
 }
+
 static inline bool vpmu_are_all_set(const struct vpmu_struct *vpmu,
                                     const u32 mask)
 {
@@ -111,6 +115,7 @@ static inline int vpmu_do_wrmsr(unsigned int msr, uint64_t msr_content)
 {
     return vpmu_do_msr(msr, &msr_content, true /* write */);
 }
+
 static inline int vpmu_do_rdmsr(unsigned int msr, uint64_t *msr_content)
 {
     return vpmu_do_msr(msr, msr_content, false /* read */);
@@ -143,4 +148,3 @@ static inline int vpmu_allocate_context(struct vcpu *v)
 #endif
 
 #endif /* __ASM_X86_HVM_VPMU_H_*/
-

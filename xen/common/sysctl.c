@@ -53,8 +53,9 @@ long do_sysctl(XEN_GUEST_HANDLE_PARAM(xen_sysctl_t) u_sysctl)
      */
     while ( !spin_trylock(&sysctl_lock) )
         if ( hypercall_preempt_check() )
-            return hypercall_create_continuation(
-                __HYPERVISOR_sysctl, "h", u_sysctl);
+            return hypercall_create_continuation(__HYPERVISOR_sysctl,
+                                                 "h",
+                                                 u_sysctl);
 
     switch ( op->cmd )
     {
@@ -75,14 +76,14 @@ long do_sysctl(XEN_GUEST_HANDLE_PARAM(xen_sysctl_t) u_sysctl)
         break;
 
     case XEN_SYSCTL_getdomaininfolist:
-    { 
+    {
         struct domain *d;
         struct xen_domctl_getdomaininfo info;
         u32 num_domains = 0;
 
         rcu_read_lock(&domlist_read_lock);
 
-        for_each_domain ( d )
+        for_each_domain(d)
         {
             if ( d->domain_id < op->u.getdomaininfolist.first_domain )
                 continue;
@@ -95,20 +96,22 @@ long do_sysctl(XEN_GUEST_HANDLE_PARAM(xen_sysctl_t) u_sysctl)
             getdomaininfo(d, &info);
 
             if ( copy_to_guest_offset(op->u.getdomaininfolist.buffer,
-                                      num_domains, &info, 1) )
+                                      num_domains,
+                                      &info,
+                                      1) )
             {
                 ret = -EFAULT;
                 break;
             }
-            
+
             num_domains++;
         }
-        
+
         rcu_read_unlock(&domlist_read_lock);
-        
+
         if ( ret != 0 )
             break;
-        
+
         op->u.getdomaininfolist.num_domains = num_domains;
     }
     break;
@@ -163,14 +166,14 @@ long do_sysctl(XEN_GUEST_HANDLE_PARAM(xen_sysctl_t) u_sysctl)
     break;
 
     case XEN_SYSCTL_availheap:
-        op->u.availheap.avail_bytes = avail_domheap_pages_region(
-            op->u.availheap.node,
-            op->u.availheap.min_bitwidth,
-            op->u.availheap.max_bitwidth);
+        op->u.availheap.avail_bytes =
+            avail_domheap_pages_region(op->u.availheap.node,
+                                       op->u.availheap.min_bitwidth,
+                                       op->u.availheap.max_bitwidth);
         op->u.availheap.avail_bytes <<= PAGE_SHIFT;
         break;
 
-#if defined (CONFIG_ACPI) && defined (CONFIG_HAS_CPUFREQ)
+#if defined(CONFIG_ACPI) && defined(CONFIG_HAS_CPUFREQ)
     case XEN_SYSCTL_get_pmstat:
         ret = do_get_pm_info(&op->u.get_pmstat);
         break;
@@ -205,8 +208,10 @@ long do_sysctl(XEN_GUEST_HANDLE_PARAM(xen_sysctl_t) u_sysctl)
             break;
         }
 
-        memset(status, PG_OFFLINE_INVALID, sizeof(uint32_t) *
-                      (op->u.page_offline.end - op->u.page_offline.start + 1));
+        memset(status,
+               PG_OFFLINE_INVALID,
+               sizeof(uint32_t) *
+                   (op->u.page_offline.end - op->u.page_offline.start + 1));
 
         for ( mfn = _mfn(op->u.page_offline.start);
               mfn_x(mfn) <= op->u.page_offline.end;
@@ -214,28 +219,29 @@ long do_sysctl(XEN_GUEST_HANDLE_PARAM(xen_sysctl_t) u_sysctl)
         {
             switch ( op->u.page_offline.cmd )
             {
-                /* Shall revert her if failed, or leave caller do it? */
-                case sysctl_page_offline:
-                    ret = offline_page(mfn, 0, ptr++);
-                    break;
-                case sysctl_page_online:
-                    ret = online_page(mfn, ptr++);
-                    break;
-                case sysctl_query_page_offline:
-                    ret = query_page_offline(mfn, ptr++);
-                    break;
-                default:
-                    ret = -EINVAL;
-                    break;
+            /* Shall revert her if failed, or leave caller do it? */
+            case sysctl_page_offline:
+                ret = offline_page(mfn, 0, ptr++);
+                break;
+            case sysctl_page_online:
+                ret = online_page(mfn, ptr++);
+                break;
+            case sysctl_query_page_offline:
+                ret = query_page_offline(mfn, ptr++);
+                break;
+            default:
+                ret = -EINVAL;
+                break;
             }
 
-            if (ret)
+            if ( ret )
                 break;
         }
 
-        if ( copy_to_guest(
-                 op->u.page_offline.status, status,
-                 op->u.page_offline.end - op->u.page_offline.start + 1) )
+        if ( copy_to_guest(op->u.page_offline.status,
+                           status,
+                           op->u.page_offline.end - op->u.page_offline.start +
+                               1) )
             ret = -EFAULT;
 
         xfree(status);
@@ -256,13 +262,12 @@ long do_sysctl(XEN_GUEST_HANDLE_PARAM(xen_sysctl_t) u_sysctl)
         struct xen_sysctl_physinfo *pi = &op->u.physinfo;
 
         memset(pi, 0, sizeof(*pi));
-        pi->threads_per_core =
-            cpumask_weight(per_cpu(cpu_sibling_mask, 0));
-        pi->cores_per_socket =
-            cpumask_weight(per_cpu(cpu_core_mask, 0)) / pi->threads_per_core;
+        pi->threads_per_core = cpumask_weight(per_cpu(cpu_sibling_mask, 0));
+        pi->cores_per_socket = cpumask_weight(per_cpu(cpu_core_mask, 0)) /
+                               pi->threads_per_core;
         pi->nr_cpus = num_online_cpus();
         pi->nr_nodes = num_online_nodes();
-        pi->max_node_id = MAX_NUMNODES-1;
+        pi->max_node_id = MAX_NUMNODES - 1;
         pi->max_cpu_id = nr_cpu_ids - 1;
         pi->total_pages = total_pages;
         /* Protected by lock */
@@ -304,7 +309,7 @@ long do_sysctl(XEN_GUEST_HANDLE_PARAM(xen_sysctl_t) u_sysctl)
 
         if ( do_meminfo || do_distance )
         {
-            struct xen_sysctl_meminfo meminfo = { };
+            struct xen_sysctl_meminfo meminfo = {};
 
             if ( num_nodes > ni->num_nodes )
                 num_nodes = ni->num_nodes;
@@ -317,7 +322,8 @@ long do_sysctl(XEN_GUEST_HANDLE_PARAM(xen_sysctl_t) u_sysctl)
                     if ( node_online(i) )
                     {
                         meminfo.memsize = node_spanned_pages(i) << PAGE_SHIFT;
-                        meminfo.memfree = avail_node_heap_pages(i) << PAGE_SHIFT;
+                        meminfo.memfree = avail_node_heap_pages(i)
+                                          << PAGE_SHIFT;
                     }
                     else
                         meminfo.memsize = meminfo.memfree = XEN_INVALID_MEM_SZ;
@@ -338,8 +344,10 @@ long do_sysctl(XEN_GUEST_HANDLE_PARAM(xen_sysctl_t) u_sysctl)
                             distance[j] = XEN_INVALID_NODE_DIST;
                     }
 
-                    if ( copy_to_guest_offset(ni->distance, i * num_nodes,
-                                              distance, num_nodes) )
+                    if ( copy_to_guest_offset(ni->distance,
+                                              i * num_nodes,
+                                              distance,
+                                              num_nodes) )
                     {
                         ret = -EFAULT;
                         break;
@@ -353,8 +361,7 @@ long do_sysctl(XEN_GUEST_HANDLE_PARAM(xen_sysctl_t) u_sysctl)
         if ( !ret && (ni->num_nodes != i) )
         {
             ni->num_nodes = i;
-            if ( __copy_field_to_guest(u_sysctl, op,
-                                       u.numainfo.num_nodes) )
+            if ( __copy_field_to_guest(u_sysctl, op, u.numainfo.num_nodes) )
             {
                 ret = -EFAULT;
                 break;
@@ -371,7 +378,7 @@ long do_sysctl(XEN_GUEST_HANDLE_PARAM(xen_sysctl_t) u_sysctl)
         num_cpus = cpumask_last(&cpu_present_map) + 1;
         if ( !guest_handle_is_null(ti->cputopo) )
         {
-            struct xen_sysctl_cputopo cputopo = { };
+            struct xen_sysctl_cputopo cputopo = {};
 
             if ( num_cpus > ti->num_cpus )
                 num_cpus = ti->num_cpus;
@@ -405,8 +412,7 @@ long do_sysctl(XEN_GUEST_HANDLE_PARAM(xen_sysctl_t) u_sysctl)
         if ( !ret && (ti->num_cpus != i) )
         {
             ti->num_cpus = i;
-            if ( __copy_field_to_guest(u_sysctl, op,
-                                       u.cputopoinfo.num_cpus) )
+            if ( __copy_field_to_guest(u_sysctl, op, u.cputopoinfo.num_cpus) )
             {
                 ret = -EFAULT;
                 break;
@@ -426,8 +432,7 @@ long do_sysctl(XEN_GUEST_HANDLE_PARAM(xen_sysctl_t) u_sysctl)
         struct xen_sysctl_pcitopoinfo *ti = &op->u.pcitopoinfo;
         unsigned int i = 0;
 
-        if ( guest_handle_is_null(ti->devs) ||
-             guest_handle_is_null(ti->nodes) )
+        if ( guest_handle_is_null(ti->devs) || guest_handle_is_null(ti->nodes) )
         {
             ret = -EINVAL;
             break;
@@ -487,7 +492,7 @@ long do_sysctl(XEN_GUEST_HANDLE_PARAM(xen_sysctl_t) u_sysctl)
         break;
     }
 
- out:
+out:
     spin_unlock(&sysctl_lock);
 
     if ( copyback && (!ret || copyback > 0) &&

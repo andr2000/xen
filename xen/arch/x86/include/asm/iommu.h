@@ -31,9 +31,9 @@ typedef uint64_t daddr_t;
 #define dfn_to_daddr(dfn) __dfn_to_daddr(dfn_x(dfn))
 #define daddr_to_dfn(daddr) _dfn(__daddr_to_dfn(daddr))
 
-struct arch_iommu
-{
+struct arch_iommu {
     spinlock_t mapping_lock; /* io page table lock */
+
     struct {
         struct page_list_head list;
         spinlock_t lock;
@@ -45,9 +45,12 @@ struct arch_iommu
         /* Intel VT-d */
         struct {
             uint64_t pgd_maddr; /* io page directory machine address */
-            unsigned int agaw; /* adjusted guest address width, 0 is level 2 30-bit */
-            unsigned long *iommu_bitmap; /* bitmap of iommu(s) that the domain uses */
+            unsigned int
+                agaw; /* adjusted guest address width, 0 is level 2 30-bit */
+            unsigned long
+                *iommu_bitmap; /* bitmap of iommu(s) that the domain uses */
         } vtd;
+
         /* AMD IOMMU */
         struct {
             unsigned int paging_mode;
@@ -58,13 +61,13 @@ struct arch_iommu
 
 extern struct iommu_ops iommu_ops;
 
-# include <asm/alternative.h>
-# define iommu_call(ops, fn, args...) ({      \
+#include <asm/alternative.h>
+#define iommu_call(ops, fn, args...) ({      \
     ASSERT((ops) == &iommu_ops);              \
     alternative_call(iommu_ops.fn, ## args);  \
 })
 
-# define iommu_vcall(ops, fn, args...) ({     \
+#define iommu_vcall(ops, fn, args...) ({     \
     ASSERT((ops) == &iommu_ops);              \
     alternative_vcall(iommu_ops.fn, ## args); \
 })
@@ -97,8 +100,8 @@ static inline void iommu_adjust_irq_affinities(void)
 static inline bool iommu_supports_x2apic(void)
 {
     return iommu_init_ops && iommu_init_ops->supports_x2apic
-           ? iommu_init_ops->supports_x2apic()
-           : false;
+               ? iommu_init_ops->supports_x2apic()
+               : false;
 }
 
 int iommu_enable_x2apic(void);
@@ -109,9 +112,8 @@ static inline void iommu_disable_x2apic(void)
         iommu_vcall(&iommu_ops, disable_x2apic);
 }
 
-int iommu_identity_mapping(struct domain *d, p2m_access_t p2ma,
-                           paddr_t base, paddr_t end,
-                           unsigned int flag);
+int iommu_identity_mapping(struct domain *d, p2m_access_t p2ma, paddr_t base,
+                           paddr_t end, unsigned int flag);
 void iommu_identity_map_teardown(struct domain *d);
 
 extern bool untrusted_msi;

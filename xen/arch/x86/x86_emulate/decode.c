@@ -11,25 +11,23 @@
 #include "private.h"
 
 #ifdef __XEN__
-# include <xen/err.h>
+#include <xen/err.h>
 #else
-# define ERR_PTR(val) NULL
+#define ERR_PTR(val) NULL
 #endif
 
 #define evex_encoded() (s->evex.mbs)
 
-struct x86_emulate_state *
-x86_decode_insn(
+struct x86_emulate_state *x86_decode_insn(
     struct x86_emulate_ctxt *ctxt,
-    int (*insn_fetch)(
-        unsigned long offset, void *p_data, unsigned int bytes,
-        struct x86_emulate_ctxt *ctxt))
+    int (*insn_fetch)(unsigned long offset, void *p_data, unsigned int bytes,
+                      struct x86_emulate_ctxt *ctxt))
 {
     static DEFINE_PER_CPU(struct x86_emulate_state, state);
     struct x86_emulate_state *s = &this_cpu(state);
     const struct x86_emulate_ops ops = {
         .insn_fetch = insn_fetch,
-        .read       = x86emul_unhandleable_rw,
+        .read = x86emul_unhandleable_rw,
     };
     int rc;
 
@@ -59,132 +57,291 @@ x86_decode_insn(
 
 static const opcode_desc_t opcode_table[256] = {
     /* 0x00 - 0x07 */
-    ByteOp|DstMem|SrcReg|ModRM, DstMem|SrcReg|ModRM,
-    ByteOp|DstReg|SrcMem|ModRM, DstReg|SrcMem|ModRM,
-    ByteOp|DstEax|SrcImm, DstEax|SrcImm, ImplicitOps|Mov, ImplicitOps|Mov,
+    ByteOp | DstMem | SrcReg | ModRM,
+    DstMem | SrcReg | ModRM,
+    ByteOp | DstReg | SrcMem | ModRM,
+    DstReg | SrcMem | ModRM,
+    ByteOp | DstEax | SrcImm,
+    DstEax | SrcImm,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
     /* 0x08 - 0x0F */
-    ByteOp|DstMem|SrcReg|ModRM, DstMem|SrcReg|ModRM,
-    ByteOp|DstReg|SrcMem|ModRM, DstReg|SrcMem|ModRM,
-    ByteOp|DstEax|SrcImm, DstEax|SrcImm, ImplicitOps|Mov, 0,
+    ByteOp | DstMem | SrcReg | ModRM,
+    DstMem | SrcReg | ModRM,
+    ByteOp | DstReg | SrcMem | ModRM,
+    DstReg | SrcMem | ModRM,
+    ByteOp | DstEax | SrcImm,
+    DstEax | SrcImm,
+    ImplicitOps | Mov,
+    0,
     /* 0x10 - 0x17 */
-    ByteOp|DstMem|SrcReg|ModRM, DstMem|SrcReg|ModRM,
-    ByteOp|DstReg|SrcMem|ModRM, DstReg|SrcMem|ModRM,
-    ByteOp|DstEax|SrcImm, DstEax|SrcImm, ImplicitOps|Mov, ImplicitOps|Mov,
+    ByteOp | DstMem | SrcReg | ModRM,
+    DstMem | SrcReg | ModRM,
+    ByteOp | DstReg | SrcMem | ModRM,
+    DstReg | SrcMem | ModRM,
+    ByteOp | DstEax | SrcImm,
+    DstEax | SrcImm,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
     /* 0x18 - 0x1F */
-    ByteOp|DstMem|SrcReg|ModRM, DstMem|SrcReg|ModRM,
-    ByteOp|DstReg|SrcMem|ModRM, DstReg|SrcMem|ModRM,
-    ByteOp|DstEax|SrcImm, DstEax|SrcImm, ImplicitOps|Mov, ImplicitOps|Mov,
+    ByteOp | DstMem | SrcReg | ModRM,
+    DstMem | SrcReg | ModRM,
+    ByteOp | DstReg | SrcMem | ModRM,
+    DstReg | SrcMem | ModRM,
+    ByteOp | DstEax | SrcImm,
+    DstEax | SrcImm,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
     /* 0x20 - 0x27 */
-    ByteOp|DstMem|SrcReg|ModRM, DstMem|SrcReg|ModRM,
-    ByteOp|DstReg|SrcMem|ModRM, DstReg|SrcMem|ModRM,
-    ByteOp|DstEax|SrcImm, DstEax|SrcImm, 0, ImplicitOps,
+    ByteOp | DstMem | SrcReg | ModRM,
+    DstMem | SrcReg | ModRM,
+    ByteOp | DstReg | SrcMem | ModRM,
+    DstReg | SrcMem | ModRM,
+    ByteOp | DstEax | SrcImm,
+    DstEax | SrcImm,
+    0,
+    ImplicitOps,
     /* 0x28 - 0x2F */
-    ByteOp|DstMem|SrcReg|ModRM, DstMem|SrcReg|ModRM,
-    ByteOp|DstReg|SrcMem|ModRM, DstReg|SrcMem|ModRM,
-    ByteOp|DstEax|SrcImm, DstEax|SrcImm, 0, ImplicitOps,
+    ByteOp | DstMem | SrcReg | ModRM,
+    DstMem | SrcReg | ModRM,
+    ByteOp | DstReg | SrcMem | ModRM,
+    DstReg | SrcMem | ModRM,
+    ByteOp | DstEax | SrcImm,
+    DstEax | SrcImm,
+    0,
+    ImplicitOps,
     /* 0x30 - 0x37 */
-    ByteOp|DstMem|SrcReg|ModRM, DstMem|SrcReg|ModRM,
-    ByteOp|DstReg|SrcMem|ModRM, DstReg|SrcMem|ModRM,
-    ByteOp|DstEax|SrcImm, DstEax|SrcImm, 0, ImplicitOps,
+    ByteOp | DstMem | SrcReg | ModRM,
+    DstMem | SrcReg | ModRM,
+    ByteOp | DstReg | SrcMem | ModRM,
+    DstReg | SrcMem | ModRM,
+    ByteOp | DstEax | SrcImm,
+    DstEax | SrcImm,
+    0,
+    ImplicitOps,
     /* 0x38 - 0x3F */
-    ByteOp|DstReg|SrcMem|ModRM, DstReg|SrcMem|ModRM,
-    ByteOp|DstReg|SrcMem|ModRM, DstReg|SrcMem|ModRM,
-    ByteOp|DstEax|SrcImm, DstEax|SrcImm, 0, ImplicitOps,
+    ByteOp | DstReg | SrcMem | ModRM,
+    DstReg | SrcMem | ModRM,
+    ByteOp | DstReg | SrcMem | ModRM,
+    DstReg | SrcMem | ModRM,
+    ByteOp | DstEax | SrcImm,
+    DstEax | SrcImm,
+    0,
+    ImplicitOps,
     /* 0x40 - 0x4F */
-    ImplicitOps, ImplicitOps, ImplicitOps, ImplicitOps,
-    ImplicitOps, ImplicitOps, ImplicitOps, ImplicitOps,
-    ImplicitOps, ImplicitOps, ImplicitOps, ImplicitOps,
-    ImplicitOps, ImplicitOps, ImplicitOps, ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
     /* 0x50 - 0x5F */
-    ImplicitOps|Mov, ImplicitOps|Mov, ImplicitOps|Mov, ImplicitOps|Mov,
-    ImplicitOps|Mov, ImplicitOps|Mov, ImplicitOps|Mov, ImplicitOps|Mov,
-    ImplicitOps|Mov, ImplicitOps|Mov, ImplicitOps|Mov, ImplicitOps|Mov,
-    ImplicitOps|Mov, ImplicitOps|Mov, ImplicitOps|Mov, ImplicitOps|Mov,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
     /* 0x60 - 0x67 */
-    ImplicitOps, ImplicitOps, DstReg|SrcMem|ModRM, DstReg|SrcNone|ModRM|Mov,
-    0, 0, 0, 0,
+    ImplicitOps,
+    ImplicitOps,
+    DstReg | SrcMem | ModRM,
+    DstReg | SrcNone | ModRM | Mov,
+    0,
+    0,
+    0,
+    0,
     /* 0x68 - 0x6F */
-    DstImplicit|SrcImm|Mov, DstReg|SrcImm|ModRM|Mov,
-    DstImplicit|SrcImmByte|Mov, DstReg|SrcImmByte|ModRM|Mov,
-    ImplicitOps|Mov, ImplicitOps|Mov, ImplicitOps|Mov, ImplicitOps|Mov,
+    DstImplicit | SrcImm | Mov,
+    DstReg | SrcImm | ModRM | Mov,
+    DstImplicit | SrcImmByte | Mov,
+    DstReg | SrcImmByte | ModRM | Mov,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
     /* 0x70 - 0x77 */
-    DstImplicit|SrcImmByte, DstImplicit|SrcImmByte,
-    DstImplicit|SrcImmByte, DstImplicit|SrcImmByte,
-    DstImplicit|SrcImmByte, DstImplicit|SrcImmByte,
-    DstImplicit|SrcImmByte, DstImplicit|SrcImmByte,
+    DstImplicit | SrcImmByte,
+    DstImplicit | SrcImmByte,
+    DstImplicit | SrcImmByte,
+    DstImplicit | SrcImmByte,
+    DstImplicit | SrcImmByte,
+    DstImplicit | SrcImmByte,
+    DstImplicit | SrcImmByte,
+    DstImplicit | SrcImmByte,
     /* 0x78 - 0x7F */
-    DstImplicit|SrcImmByte, DstImplicit|SrcImmByte,
-    DstImplicit|SrcImmByte, DstImplicit|SrcImmByte,
-    DstImplicit|SrcImmByte, DstImplicit|SrcImmByte,
-    DstImplicit|SrcImmByte, DstImplicit|SrcImmByte,
+    DstImplicit | SrcImmByte,
+    DstImplicit | SrcImmByte,
+    DstImplicit | SrcImmByte,
+    DstImplicit | SrcImmByte,
+    DstImplicit | SrcImmByte,
+    DstImplicit | SrcImmByte,
+    DstImplicit | SrcImmByte,
+    DstImplicit | SrcImmByte,
     /* 0x80 - 0x87 */
-    ByteOp|DstMem|SrcImm|ModRM, DstMem|SrcImm|ModRM,
-    ByteOp|DstMem|SrcImm|ModRM, DstMem|SrcImmByte|ModRM,
-    ByteOp|DstReg|SrcMem|ModRM, DstReg|SrcMem|ModRM,
-    ByteOp|DstMem|SrcReg|ModRM, DstMem|SrcReg|ModRM,
+    ByteOp | DstMem | SrcImm | ModRM,
+    DstMem | SrcImm | ModRM,
+    ByteOp | DstMem | SrcImm | ModRM,
+    DstMem | SrcImmByte | ModRM,
+    ByteOp | DstReg | SrcMem | ModRM,
+    DstReg | SrcMem | ModRM,
+    ByteOp | DstMem | SrcReg | ModRM,
+    DstMem | SrcReg | ModRM,
     /* 0x88 - 0x8F */
-    ByteOp|DstMem|SrcReg|ModRM|Mov, DstMem|SrcReg|ModRM|Mov,
-    ByteOp|DstReg|SrcMem|ModRM|Mov, DstReg|SrcMem|ModRM|Mov,
-    DstMem|SrcReg|ModRM|Mov, DstReg|SrcNone|ModRM,
-    DstReg|SrcMem16|ModRM|Mov, DstMem|SrcNone|ModRM|Mov,
+    ByteOp | DstMem | SrcReg | ModRM | Mov,
+    DstMem | SrcReg | ModRM | Mov,
+    ByteOp | DstReg | SrcMem | ModRM | Mov,
+    DstReg | SrcMem | ModRM | Mov,
+    DstMem | SrcReg | ModRM | Mov,
+    DstReg | SrcNone | ModRM,
+    DstReg | SrcMem16 | ModRM | Mov,
+    DstMem | SrcNone | ModRM | Mov,
     /* 0x90 - 0x97 */
-    DstImplicit|SrcEax, DstImplicit|SrcEax,
-    DstImplicit|SrcEax, DstImplicit|SrcEax,
-    DstImplicit|SrcEax, DstImplicit|SrcEax,
-    DstImplicit|SrcEax, DstImplicit|SrcEax,
+    DstImplicit | SrcEax,
+    DstImplicit | SrcEax,
+    DstImplicit | SrcEax,
+    DstImplicit | SrcEax,
+    DstImplicit | SrcEax,
+    DstImplicit | SrcEax,
+    DstImplicit | SrcEax,
+    DstImplicit | SrcEax,
     /* 0x98 - 0x9F */
-    ImplicitOps, ImplicitOps, ImplicitOps, ImplicitOps,
-    ImplicitOps|Mov, ImplicitOps|Mov, ImplicitOps, ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
+    ImplicitOps | Mov,
+    ImplicitOps | Mov,
+    ImplicitOps,
+    ImplicitOps,
     /* 0xA0 - 0xA7 */
-    ByteOp|DstEax|SrcMem|Mov, DstEax|SrcMem|Mov,
-    ByteOp|DstMem|SrcEax|Mov, DstMem|SrcEax|Mov,
-    ByteOp|ImplicitOps|Mov, ImplicitOps|Mov,
-    ByteOp|ImplicitOps, ImplicitOps,
+    ByteOp | DstEax | SrcMem | Mov,
+    DstEax | SrcMem | Mov,
+    ByteOp | DstMem | SrcEax | Mov,
+    DstMem | SrcEax | Mov,
+    ByteOp | ImplicitOps | Mov,
+    ImplicitOps | Mov,
+    ByteOp | ImplicitOps,
+    ImplicitOps,
     /* 0xA8 - 0xAF */
-    ByteOp|DstEax|SrcImm, DstEax|SrcImm,
-    ByteOp|DstImplicit|SrcEax|Mov, DstImplicit|SrcEax|Mov,
-    ByteOp|DstEax|SrcImplicit|Mov, DstEax|SrcImplicit|Mov,
-    ByteOp|DstImplicit|SrcEax, DstImplicit|SrcEax,
+    ByteOp | DstEax | SrcImm,
+    DstEax | SrcImm,
+    ByteOp | DstImplicit | SrcEax | Mov,
+    DstImplicit | SrcEax | Mov,
+    ByteOp | DstEax | SrcImplicit | Mov,
+    DstEax | SrcImplicit | Mov,
+    ByteOp | DstImplicit | SrcEax,
+    DstImplicit | SrcEax,
     /* 0xB0 - 0xB7 */
-    ByteOp|DstReg|SrcImm|Mov, ByteOp|DstReg|SrcImm|Mov,
-    ByteOp|DstReg|SrcImm|Mov, ByteOp|DstReg|SrcImm|Mov,
-    ByteOp|DstReg|SrcImm|Mov, ByteOp|DstReg|SrcImm|Mov,
-    ByteOp|DstReg|SrcImm|Mov, ByteOp|DstReg|SrcImm|Mov,
+    ByteOp | DstReg | SrcImm | Mov,
+    ByteOp | DstReg | SrcImm | Mov,
+    ByteOp | DstReg | SrcImm | Mov,
+    ByteOp | DstReg | SrcImm | Mov,
+    ByteOp | DstReg | SrcImm | Mov,
+    ByteOp | DstReg | SrcImm | Mov,
+    ByteOp | DstReg | SrcImm | Mov,
+    ByteOp | DstReg | SrcImm | Mov,
     /* 0xB8 - 0xBF */
-    DstReg|SrcImm|Mov, DstReg|SrcImm|Mov, DstReg|SrcImm|Mov, DstReg|SrcImm|Mov,
-    DstReg|SrcImm|Mov, DstReg|SrcImm|Mov, DstReg|SrcImm|Mov, DstReg|SrcImm|Mov,
+    DstReg | SrcImm | Mov,
+    DstReg | SrcImm | Mov,
+    DstReg | SrcImm | Mov,
+    DstReg | SrcImm | Mov,
+    DstReg | SrcImm | Mov,
+    DstReg | SrcImm | Mov,
+    DstReg | SrcImm | Mov,
+    DstReg | SrcImm | Mov,
     /* 0xC0 - 0xC7 */
-    ByteOp|DstMem|SrcImm|ModRM, DstMem|SrcImmByte|ModRM,
-    DstImplicit|SrcImm16, ImplicitOps,
-    DstReg|SrcMem|ModRM|Mov, DstReg|SrcMem|ModRM|Mov,
-    ByteOp|DstMem|SrcImm|ModRM|Mov, DstMem|SrcImm|ModRM|Mov,
+    ByteOp | DstMem | SrcImm | ModRM,
+    DstMem | SrcImmByte | ModRM,
+    DstImplicit | SrcImm16,
+    ImplicitOps,
+    DstReg | SrcMem | ModRM | Mov,
+    DstReg | SrcMem | ModRM | Mov,
+    ByteOp | DstMem | SrcImm | ModRM | Mov,
+    DstMem | SrcImm | ModRM | Mov,
     /* 0xC8 - 0xCF */
-    DstImplicit|SrcImm16, ImplicitOps, DstImplicit|SrcImm16, ImplicitOps,
-    ImplicitOps, DstImplicit|SrcImmByte, ImplicitOps, ImplicitOps,
+    DstImplicit | SrcImm16,
+    ImplicitOps,
+    DstImplicit | SrcImm16,
+    ImplicitOps,
+    ImplicitOps,
+    DstImplicit | SrcImmByte,
+    ImplicitOps,
+    ImplicitOps,
     /* 0xD0 - 0xD7 */
-    ByteOp|DstMem|SrcImplicit|ModRM, DstMem|SrcImplicit|ModRM,
-    ByteOp|DstMem|SrcImplicit|ModRM, DstMem|SrcImplicit|ModRM,
-    DstImplicit|SrcImmByte, DstImplicit|SrcImmByte, ImplicitOps, ImplicitOps,
+    ByteOp | DstMem | SrcImplicit | ModRM,
+    DstMem | SrcImplicit | ModRM,
+    ByteOp | DstMem | SrcImplicit | ModRM,
+    DstMem | SrcImplicit | ModRM,
+    DstImplicit | SrcImmByte,
+    DstImplicit | SrcImmByte,
+    ImplicitOps,
+    ImplicitOps,
     /* 0xD8 - 0xDF */
-    ImplicitOps|ModRM, ImplicitOps|ModRM|Mov,
-    ImplicitOps|ModRM, ImplicitOps|ModRM|Mov,
-    ImplicitOps|ModRM, ImplicitOps|ModRM|Mov,
-    DstImplicit|SrcMem16|ModRM, ImplicitOps|ModRM|Mov,
+    ImplicitOps | ModRM,
+    ImplicitOps | ModRM | Mov,
+    ImplicitOps | ModRM,
+    ImplicitOps | ModRM | Mov,
+    ImplicitOps | ModRM,
+    ImplicitOps | ModRM | Mov,
+    DstImplicit | SrcMem16 | ModRM,
+    ImplicitOps | ModRM | Mov,
     /* 0xE0 - 0xE7 */
-    DstImplicit|SrcImmByte, DstImplicit|SrcImmByte,
-    DstImplicit|SrcImmByte, DstImplicit|SrcImmByte,
-    DstEax|SrcImmByte, DstEax|SrcImmByte,
-    DstImplicit|SrcImmByte, DstImplicit|SrcImmByte,
+    DstImplicit | SrcImmByte,
+    DstImplicit | SrcImmByte,
+    DstImplicit | SrcImmByte,
+    DstImplicit | SrcImmByte,
+    DstEax | SrcImmByte,
+    DstEax | SrcImmByte,
+    DstImplicit | SrcImmByte,
+    DstImplicit | SrcImmByte,
     /* 0xE8 - 0xEF */
-    DstImplicit|SrcImm|Mov, DstImplicit|SrcImm,
-    ImplicitOps, DstImplicit|SrcImmByte,
-    DstEax|SrcImplicit, DstEax|SrcImplicit, ImplicitOps, ImplicitOps,
+    DstImplicit | SrcImm | Mov,
+    DstImplicit | SrcImm,
+    ImplicitOps,
+    DstImplicit | SrcImmByte,
+    DstEax | SrcImplicit,
+    DstEax | SrcImplicit,
+    ImplicitOps,
+    ImplicitOps,
     /* 0xF0 - 0xF7 */
-    0, ImplicitOps, 0, 0,
-    ImplicitOps, ImplicitOps, ByteOp|ModRM, ModRM,
+    0,
+    ImplicitOps,
+    0,
+    0,
+    ImplicitOps,
+    ImplicitOps,
+    ByteOp | ModRM,
+    ModRM,
     /* 0xF8 - 0xFF */
-    ImplicitOps, ImplicitOps, ImplicitOps, ImplicitOps,
-    ImplicitOps, ImplicitOps, ByteOp|DstMem|SrcNone|ModRM, DstMem|SrcNone|ModRM
+    ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
+    ImplicitOps,
+    ByteOp | DstMem | SrcNone | ModRM,
+    DstMem | SrcNone | ModRM
 };
 
 static const struct twobyte_table {
@@ -193,120 +350,120 @@ static const struct twobyte_table {
     disp8scale_t d8s:4;
 } twobyte_table[256] = {
     [0x00] = { ModRM },
-    [0x01] = { ImplicitOps|ModRM },
-    [0x02] = { DstReg|SrcMem16|ModRM },
-    [0x03] = { DstReg|SrcMem16|ModRM },
+    [0x01] = { ImplicitOps | ModRM },
+    [0x02] = { DstReg | SrcMem16 | ModRM },
+    [0x03] = { DstReg | SrcMem16 | ModRM },
     [0x05] = { ImplicitOps },
     [0x06] = { ImplicitOps },
     [0x07] = { ImplicitOps },
     [0x08] = { ImplicitOps },
     [0x09] = { ImplicitOps },
     [0x0b] = { ImplicitOps },
-    [0x0d] = { ImplicitOps|ModRM },
+    [0x0d] = { ImplicitOps | ModRM },
     [0x0e] = { ImplicitOps },
-    [0x0f] = { ModRM|SrcImmByte },
-    [0x10] = { DstImplicit|SrcMem|ModRM|Mov, simd_any_fp, d8s_vl },
-    [0x11] = { DstMem|SrcImplicit|ModRM|Mov, simd_any_fp, d8s_vl },
-    [0x12] = { DstImplicit|SrcMem|ModRM|Mov, simd_other, 3 },
-    [0x13] = { DstMem|SrcImplicit|ModRM|Mov, simd_other, 3 },
-    [0x14 ... 0x15] = { DstImplicit|SrcMem|ModRM, simd_packed_fp, d8s_vl },
-    [0x16] = { DstImplicit|SrcMem|ModRM|Mov, simd_other, 3 },
-    [0x17] = { DstMem|SrcImplicit|ModRM|Mov, simd_other, 3 },
-    [0x18 ... 0x1c] = { ImplicitOps|ModRM },
-    [0x1d] = { ImplicitOps|ModRM, simd_none, d8s_vl },
-    [0x1e ... 0x1f] = { ImplicitOps|ModRM },
-    [0x20 ... 0x21] = { DstMem|SrcImplicit|ModRM },
-    [0x22 ... 0x23] = { DstImplicit|SrcMem|ModRM },
-    [0x28] = { DstImplicit|SrcMem|ModRM|Mov, simd_packed_fp, d8s_vl },
-    [0x29] = { DstMem|SrcImplicit|ModRM|Mov, simd_packed_fp, d8s_vl },
-    [0x2a] = { DstImplicit|SrcMem|ModRM|Mov, simd_other, d8s_dq64 },
-    [0x2b] = { DstMem|SrcImplicit|ModRM|Mov, simd_any_fp, d8s_vl },
-    [0x2c ... 0x2d] = { DstImplicit|SrcMem|ModRM|Mov, simd_other },
-    [0x2e ... 0x2f] = { ImplicitOps|ModRM|TwoOp, simd_none, d8s_dq },
+    [0x0f] = { ModRM | SrcImmByte },
+    [0x10] = { DstImplicit | SrcMem | ModRM | Mov, simd_any_fp, d8s_vl },
+    [0x11] = { DstMem | SrcImplicit | ModRM | Mov, simd_any_fp, d8s_vl },
+    [0x12] = { DstImplicit | SrcMem | ModRM | Mov, simd_other, 3 },
+    [0x13] = { DstMem | SrcImplicit | ModRM | Mov, simd_other, 3 },
+    [0x14 ... 0x15] = { DstImplicit | SrcMem | ModRM, simd_packed_fp, d8s_vl },
+    [0x16] = { DstImplicit | SrcMem | ModRM | Mov, simd_other, 3 },
+    [0x17] = { DstMem | SrcImplicit | ModRM | Mov, simd_other, 3 },
+    [0x18 ... 0x1c] = { ImplicitOps | ModRM },
+    [0x1d] = { ImplicitOps | ModRM, simd_none, d8s_vl },
+    [0x1e ... 0x1f] = { ImplicitOps | ModRM },
+    [0x20 ... 0x21] = { DstMem | SrcImplicit | ModRM },
+    [0x22 ... 0x23] = { DstImplicit | SrcMem | ModRM },
+    [0x28] = { DstImplicit | SrcMem | ModRM | Mov, simd_packed_fp, d8s_vl },
+    [0x29] = { DstMem | SrcImplicit | ModRM | Mov, simd_packed_fp, d8s_vl },
+    [0x2a] = { DstImplicit | SrcMem | ModRM | Mov, simd_other, d8s_dq64 },
+    [0x2b] = { DstMem | SrcImplicit | ModRM | Mov, simd_any_fp, d8s_vl },
+    [0x2c ... 0x2d] = { DstImplicit | SrcMem | ModRM | Mov, simd_other },
+    [0x2e ... 0x2f] = { ImplicitOps | ModRM | TwoOp, simd_none, d8s_dq },
     [0x30 ... 0x35] = { ImplicitOps },
     [0x37] = { ImplicitOps },
-    [0x38] = { DstReg|SrcMem|ModRM },
-    [0x3a] = { DstReg|SrcImmByte|ModRM },
-    [0x40 ... 0x4f] = { DstReg|SrcMem|ModRM|Mov },
-    [0x50] = { DstReg|SrcImplicit|ModRM|Mov },
-    [0x51] = { DstImplicit|SrcMem|ModRM|TwoOp, simd_any_fp, d8s_vl },
-    [0x52 ... 0x53] = { DstImplicit|SrcMem|ModRM|TwoOp, simd_single_fp },
-    [0x54 ... 0x57] = { DstImplicit|SrcMem|ModRM, simd_packed_fp, d8s_vl },
-    [0x58 ... 0x59] = { DstImplicit|SrcMem|ModRM, simd_any_fp, d8s_vl },
-    [0x5a] = { DstImplicit|SrcMem|ModRM|Mov, simd_any_fp, d8s_vl },
-    [0x5b] = { DstImplicit|SrcMem|ModRM|Mov, simd_packed_fp, d8s_vl },
-    [0x5c ... 0x5f] = { DstImplicit|SrcMem|ModRM, simd_any_fp, d8s_vl },
-    [0x60 ... 0x62] = { DstImplicit|SrcMem|ModRM, simd_other, d8s_vl },
-    [0x63 ... 0x67] = { DstImplicit|SrcMem|ModRM, simd_packed_int, d8s_vl },
-    [0x68 ... 0x6a] = { DstImplicit|SrcMem|ModRM, simd_other, d8s_vl },
-    [0x6b ... 0x6d] = { DstImplicit|SrcMem|ModRM, simd_packed_int, d8s_vl },
-    [0x6e] = { DstImplicit|SrcMem|ModRM|Mov, simd_none, d8s_dq64 },
-    [0x6f] = { DstImplicit|SrcMem|ModRM|Mov, simd_packed_int, d8s_vl },
-    [0x70] = { SrcImmByte|ModRM|TwoOp, simd_other, d8s_vl },
-    [0x71 ... 0x73] = { DstImplicit|SrcImmByte|ModRM, simd_none, d8s_vl },
-    [0x74 ... 0x76] = { DstImplicit|SrcMem|ModRM, simd_packed_int, d8s_vl },
-    [0x77] = { DstImplicit|SrcNone },
-    [0x78 ... 0x79] = { DstImplicit|SrcMem|ModRM|Mov, simd_other, d8s_vl },
-    [0x7a] = { DstImplicit|SrcMem|ModRM|Mov, simd_packed_fp, d8s_vl },
-    [0x7b] = { DstImplicit|SrcMem|ModRM|Mov, simd_other, d8s_dq64 },
-    [0x7c ... 0x7d] = { DstImplicit|SrcMem|ModRM, simd_other, d8s_vl },
-    [0x7e] = { DstMem|SrcImplicit|ModRM|Mov, simd_none, d8s_dq64 },
-    [0x7f] = { DstMem|SrcImplicit|ModRM|Mov, simd_packed_int, d8s_vl },
-    [0x80 ... 0x8f] = { DstImplicit|SrcImm },
-    [0x90 ... 0x9f] = { ByteOp|DstMem|SrcNone|ModRM|Mov },
-    [0xa0 ... 0xa1] = { ImplicitOps|Mov },
+    [0x38] = { DstReg | SrcMem | ModRM },
+    [0x3a] = { DstReg | SrcImmByte | ModRM },
+    [0x40 ... 0x4f] = { DstReg | SrcMem | ModRM | Mov },
+    [0x50] = { DstReg | SrcImplicit | ModRM | Mov },
+    [0x51] = { DstImplicit | SrcMem | ModRM | TwoOp, simd_any_fp, d8s_vl },
+    [0x52 ... 0x53] = { DstImplicit | SrcMem | ModRM | TwoOp, simd_single_fp },
+    [0x54 ... 0x57] = { DstImplicit | SrcMem | ModRM, simd_packed_fp, d8s_vl },
+    [0x58 ... 0x59] = { DstImplicit | SrcMem | ModRM, simd_any_fp, d8s_vl },
+    [0x5a] = { DstImplicit | SrcMem | ModRM | Mov, simd_any_fp, d8s_vl },
+    [0x5b] = { DstImplicit | SrcMem | ModRM | Mov, simd_packed_fp, d8s_vl },
+    [0x5c ... 0x5f] = { DstImplicit | SrcMem | ModRM, simd_any_fp, d8s_vl },
+    [0x60 ... 0x62] = { DstImplicit | SrcMem | ModRM, simd_other, d8s_vl },
+    [0x63 ... 0x67] = { DstImplicit | SrcMem | ModRM, simd_packed_int, d8s_vl },
+    [0x68 ... 0x6a] = { DstImplicit | SrcMem | ModRM, simd_other, d8s_vl },
+    [0x6b ... 0x6d] = { DstImplicit | SrcMem | ModRM, simd_packed_int, d8s_vl },
+    [0x6e] = { DstImplicit | SrcMem | ModRM | Mov, simd_none, d8s_dq64 },
+    [0x6f] = { DstImplicit | SrcMem | ModRM | Mov, simd_packed_int, d8s_vl },
+    [0x70] = { SrcImmByte | ModRM | TwoOp, simd_other, d8s_vl },
+    [0x71 ... 0x73] = { DstImplicit | SrcImmByte | ModRM, simd_none, d8s_vl },
+    [0x74 ... 0x76] = { DstImplicit | SrcMem | ModRM, simd_packed_int, d8s_vl },
+    [0x77] = { DstImplicit | SrcNone },
+    [0x78 ... 0x79] = { DstImplicit | SrcMem | ModRM | Mov, simd_other, d8s_vl },
+    [0x7a] = { DstImplicit | SrcMem | ModRM | Mov, simd_packed_fp, d8s_vl },
+    [0x7b] = { DstImplicit | SrcMem | ModRM | Mov, simd_other, d8s_dq64 },
+    [0x7c ... 0x7d] = { DstImplicit | SrcMem | ModRM, simd_other, d8s_vl },
+    [0x7e] = { DstMem | SrcImplicit | ModRM | Mov, simd_none, d8s_dq64 },
+    [0x7f] = { DstMem | SrcImplicit | ModRM | Mov, simd_packed_int, d8s_vl },
+    [0x80 ... 0x8f] = { DstImplicit | SrcImm },
+    [0x90 ... 0x9f] = { ByteOp | DstMem | SrcNone | ModRM | Mov },
+    [0xa0 ... 0xa1] = { ImplicitOps | Mov },
     [0xa2] = { ImplicitOps },
-    [0xa3] = { DstBitBase|SrcReg|ModRM },
-    [0xa4] = { DstMem|SrcImmByte|ModRM },
-    [0xa5] = { DstMem|SrcReg|ModRM },
+    [0xa3] = { DstBitBase | SrcReg | ModRM },
+    [0xa4] = { DstMem | SrcImmByte | ModRM },
+    [0xa5] = { DstMem | SrcReg | ModRM },
     [0xa6 ... 0xa7] = { ModRM },
-    [0xa8 ... 0xa9] = { ImplicitOps|Mov },
+    [0xa8 ... 0xa9] = { ImplicitOps | Mov },
     [0xaa] = { ImplicitOps },
-    [0xab] = { DstBitBase|SrcReg|ModRM },
-    [0xac] = { DstMem|SrcImmByte|ModRM },
-    [0xad] = { DstMem|SrcReg|ModRM },
-    [0xae] = { ImplicitOps|ModRM },
-    [0xaf] = { DstReg|SrcMem|ModRM },
-    [0xb0] = { ByteOp|DstMem|SrcReg|ModRM },
-    [0xb1] = { DstMem|SrcReg|ModRM },
-    [0xb2] = { DstReg|SrcMem|ModRM|Mov },
-    [0xb3] = { DstBitBase|SrcReg|ModRM },
-    [0xb4 ... 0xb5] = { DstReg|SrcMem|ModRM|Mov },
-    [0xb6] = { ByteOp|DstReg|SrcMem|ModRM|Mov },
-    [0xb7] = { DstReg|SrcMem16|ModRM|Mov },
-    [0xb8] = { DstReg|SrcMem|ModRM },
+    [0xab] = { DstBitBase | SrcReg | ModRM },
+    [0xac] = { DstMem | SrcImmByte | ModRM },
+    [0xad] = { DstMem | SrcReg | ModRM },
+    [0xae] = { ImplicitOps | ModRM },
+    [0xaf] = { DstReg | SrcMem | ModRM },
+    [0xb0] = { ByteOp | DstMem | SrcReg | ModRM },
+    [0xb1] = { DstMem | SrcReg | ModRM },
+    [0xb2] = { DstReg | SrcMem | ModRM | Mov },
+    [0xb3] = { DstBitBase | SrcReg | ModRM },
+    [0xb4 ... 0xb5] = { DstReg | SrcMem | ModRM | Mov },
+    [0xb6] = { ByteOp | DstReg | SrcMem | ModRM | Mov },
+    [0xb7] = { DstReg | SrcMem16 | ModRM | Mov },
+    [0xb8] = { DstReg | SrcMem | ModRM },
     [0xb9] = { ModRM },
-    [0xba] = { DstBitBase|SrcImmByte|ModRM },
-    [0xbb] = { DstBitBase|SrcReg|ModRM },
-    [0xbc ... 0xbd] = { DstReg|SrcMem|ModRM },
-    [0xbe] = { ByteOp|DstReg|SrcMem|ModRM|Mov },
-    [0xbf] = { DstReg|SrcMem16|ModRM|Mov },
-    [0xc0] = { ByteOp|DstMem|SrcReg|ModRM },
-    [0xc1] = { DstMem|SrcReg|ModRM },
-    [0xc2] = { DstImplicit|SrcImmByte|ModRM, simd_any_fp, d8s_vl },
-    [0xc3] = { DstMem|SrcReg|ModRM|Mov },
-    [0xc4] = { DstImplicit|SrcImmByte|ModRM, simd_none, 1 },
-    [0xc5] = { DstReg|SrcImmByte|ModRM|Mov },
-    [0xc6] = { DstImplicit|SrcImmByte|ModRM, simd_packed_fp, d8s_vl },
-    [0xc7] = { ImplicitOps|ModRM },
+    [0xba] = { DstBitBase | SrcImmByte | ModRM },
+    [0xbb] = { DstBitBase | SrcReg | ModRM },
+    [0xbc ... 0xbd] = { DstReg | SrcMem | ModRM },
+    [0xbe] = { ByteOp | DstReg | SrcMem | ModRM | Mov },
+    [0xbf] = { DstReg | SrcMem16 | ModRM | Mov },
+    [0xc0] = { ByteOp | DstMem | SrcReg | ModRM },
+    [0xc1] = { DstMem | SrcReg | ModRM },
+    [0xc2] = { DstImplicit | SrcImmByte | ModRM, simd_any_fp, d8s_vl },
+    [0xc3] = { DstMem | SrcReg | ModRM | Mov },
+    [0xc4] = { DstImplicit | SrcImmByte | ModRM, simd_none, 1 },
+    [0xc5] = { DstReg | SrcImmByte | ModRM | Mov },
+    [0xc6] = { DstImplicit | SrcImmByte | ModRM, simd_packed_fp, d8s_vl },
+    [0xc7] = { ImplicitOps | ModRM },
     [0xc8 ... 0xcf] = { ImplicitOps },
-    [0xd0] = { DstImplicit|SrcMem|ModRM, simd_other },
-    [0xd1 ... 0xd3] = { DstImplicit|SrcMem|ModRM, simd_128, 4 },
-    [0xd4 ... 0xd5] = { DstImplicit|SrcMem|ModRM, simd_packed_int, d8s_vl },
-    [0xd6] = { DstMem|SrcImplicit|ModRM|Mov, simd_other, 3 },
-    [0xd7] = { DstReg|SrcImplicit|ModRM|Mov },
-    [0xd8 ... 0xdf] = { DstImplicit|SrcMem|ModRM, simd_packed_int, d8s_vl },
-    [0xe0] = { DstImplicit|SrcMem|ModRM, simd_packed_int, d8s_vl },
-    [0xe1 ... 0xe2] = { DstImplicit|SrcMem|ModRM, simd_128, 4 },
-    [0xe3 ... 0xe5] = { DstImplicit|SrcMem|ModRM, simd_packed_int, d8s_vl },
-    [0xe6] = { DstImplicit|SrcMem|ModRM|Mov, simd_packed_fp, d8s_vl },
-    [0xe7] = { DstMem|SrcImplicit|ModRM|Mov, simd_packed_int, d8s_vl },
-    [0xe8 ... 0xef] = { DstImplicit|SrcMem|ModRM, simd_packed_int, d8s_vl },
-    [0xf0] = { DstImplicit|SrcMem|ModRM|Mov, simd_other },
-    [0xf1 ... 0xf3] = { DstImplicit|SrcMem|ModRM, simd_128, 4 },
-    [0xf4 ... 0xf6] = { DstImplicit|SrcMem|ModRM, simd_packed_int, d8s_vl },
-    [0xf7] = { DstMem|SrcMem|ModRM|Mov, simd_packed_int },
-    [0xf8 ... 0xfe] = { DstImplicit|SrcMem|ModRM, simd_packed_int, d8s_vl },
+    [0xd0] = { DstImplicit | SrcMem | ModRM, simd_other },
+    [0xd1 ... 0xd3] = { DstImplicit | SrcMem | ModRM, simd_128, 4 },
+    [0xd4 ... 0xd5] = { DstImplicit | SrcMem | ModRM, simd_packed_int, d8s_vl },
+    [0xd6] = { DstMem | SrcImplicit | ModRM | Mov, simd_other, 3 },
+    [0xd7] = { DstReg | SrcImplicit | ModRM | Mov },
+    [0xd8 ... 0xdf] = { DstImplicit | SrcMem | ModRM, simd_packed_int, d8s_vl },
+    [0xe0] = { DstImplicit | SrcMem | ModRM, simd_packed_int, d8s_vl },
+    [0xe1 ... 0xe2] = { DstImplicit | SrcMem | ModRM, simd_128, 4 },
+    [0xe3 ... 0xe5] = { DstImplicit | SrcMem | ModRM, simd_packed_int, d8s_vl },
+    [0xe6] = { DstImplicit | SrcMem | ModRM | Mov, simd_packed_fp, d8s_vl },
+    [0xe7] = { DstMem | SrcImplicit | ModRM | Mov, simd_packed_int, d8s_vl },
+    [0xe8 ... 0xef] = { DstImplicit | SrcMem | ModRM, simd_packed_int, d8s_vl },
+    [0xf0] = { DstImplicit | SrcMem | ModRM | Mov, simd_other },
+    [0xf1 ... 0xf3] = { DstImplicit | SrcMem | ModRM, simd_128, 4 },
+    [0xf4 ... 0xf6] = { DstImplicit | SrcMem | ModRM, simd_packed_int, d8s_vl },
+    [0xf7] = { DstMem | SrcMem | ModRM | Mov, simd_packed_int },
+    [0xf8 ... 0xfe] = { DstImplicit | SrcMem | ModRM, simd_packed_int, d8s_vl },
     [0xff] = { ModRM }
 };
 
@@ -337,7 +494,9 @@ static const struct ext0f38_table {
     [0x19] = { .simd_size = simd_scalar_opc, .two_op = 1, .d8s = 3 },
     [0x1a] = { .simd_size = simd_128, .two_op = 1, .d8s = 4 },
     [0x1b] = { .simd_size = simd_256, .two_op = 1, .d8s = d8s_vl_by_2 },
-    [0x1c ... 0x1f] = { .simd_size = simd_packed_int, .two_op = 1, .d8s = d8s_vl },
+    [0x1c ... 0x1f] = { .simd_size = simd_packed_int,
+              .two_op = 1,
+              .d8s = d8s_vl },
     [0x20] = { .simd_size = simd_other, .two_op = 1, .d8s = d8s_vl_by_2 },
     [0x21] = { .simd_size = simd_other, .two_op = 1, .d8s = d8s_vl_by_4 },
     [0x22] = { .simd_size = simd_other, .two_op = 1, .d8s = d8s_vl_by_8 },
@@ -368,7 +527,9 @@ static const struct ext0f38_table {
     [0x4e] = { .simd_size = simd_packed_fp, .two_op = 1, .d8s = d8s_vl },
     [0x4f] = { .simd_size = simd_scalar_vexw, .d8s = d8s_dq },
     [0x50 ... 0x53] = { .simd_size = simd_packed_int, .d8s = d8s_vl },
-    [0x54 ... 0x55] = { .simd_size = simd_packed_int, .two_op = 1, .d8s = d8s_vl },
+    [0x54 ... 0x55] = { .simd_size = simd_packed_int,
+              .two_op = 1,
+              .d8s = d8s_vl },
     [0x56] = { .simd_size = simd_other, .d8s = d8s_vl },
     [0x57] = { .simd_size = simd_scalar_vexw, .d8s = d8s_dq },
     [0x58] = { .simd_size = simd_other, .two_op = 1, .d8s = 2 },
@@ -376,7 +537,10 @@ static const struct ext0f38_table {
     [0x5a] = { .simd_size = simd_128, .two_op = 1, .d8s = 4 },
     [0x5b] = { .simd_size = simd_256, .two_op = 1, .d8s = d8s_vl_by_2 },
     [0x62] = { .simd_size = simd_packed_int, .two_op = 1, .d8s = d8s_bw },
-    [0x63] = { .simd_size = simd_packed_int, .to_mem = 1, .two_op = 1, .d8s = d8s_bw },
+    [0x63] = { .simd_size = simd_packed_int,
+              .to_mem = 1,
+              .two_op = 1,
+              .d8s = d8s_bw },
     [0x64 ... 0x66] = { .simd_size = simd_packed_int, .d8s = d8s_vl },
     [0x68] = { .simd_size = simd_packed_int, .d8s = d8s_vl },
     [0x70 ... 0x73] = { .simd_size = simd_packed_int, .d8s = d8s_vl },
@@ -391,8 +555,14 @@ static const struct ext0f38_table {
     [0x83] = { .simd_size = simd_packed_int, .d8s = d8s_vl },
     [0x88] = { .simd_size = simd_packed_fp, .two_op = 1, .d8s = d8s_dq },
     [0x89] = { .simd_size = simd_packed_int, .two_op = 1, .d8s = d8s_dq },
-    [0x8a] = { .simd_size = simd_packed_fp, .to_mem = 1, .two_op = 1, .d8s = d8s_dq },
-    [0x8b] = { .simd_size = simd_packed_int, .to_mem = 1, .two_op = 1, .d8s = d8s_dq },
+    [0x8a] = { .simd_size = simd_packed_fp,
+              .to_mem = 1,
+              .two_op = 1,
+              .d8s = d8s_dq },
+    [0x8b] = { .simd_size = simd_packed_int,
+              .to_mem = 1,
+              .two_op = 1,
+              .d8s = d8s_dq },
     [0x8c] = { .simd_size = simd_packed_int },
     [0x8d] = { .simd_size = simd_packed_int, .d8s = d8s_vl },
     [0x8e] = { .simd_size = simd_packed_int, .to_mem = 1 },
@@ -406,7 +576,10 @@ static const struct ext0f38_table {
     [0x9d] = { .simd_size = simd_scalar_vexw, .d8s = d8s_dq },
     [0x9e] = { .simd_size = simd_packed_fp, .d8s = d8s_vl },
     [0x9f] = { .simd_size = simd_scalar_vexw, .d8s = d8s_dq },
-    [0xa0 ... 0xa3] = { .simd_size = simd_other, .to_mem = 1, .vsib = 1, .d8s = d8s_dq },
+    [0xa0 ... 0xa3] = { .simd_size = simd_other,
+              .to_mem = 1,
+              .vsib = 1,
+              .d8s = d8s_dq },
     [0xa6 ... 0xa8] = { .simd_size = simd_packed_fp, .d8s = d8s_vl },
     [0xa9] = { .simd_size = simd_scalar_vexw, .d8s = d8s_dq },
     [0xaa] = { .simd_size = simd_packed_fp, .d8s = d8s_vl },
@@ -460,22 +633,35 @@ static const struct ext0f3a_table {
     [0x01] = { .simd_size = simd_packed_fp, .two_op = 1, .d8s = d8s_vl },
     [0x02] = { .simd_size = simd_packed_int },
     [0x03] = { .simd_size = simd_packed_int, .d8s = d8s_vl },
-    [0x04 ... 0x05] = { .simd_size = simd_packed_fp, .two_op = 1, .d8s = d8s_vl },
+    [0x04 ... 0x05] = { .simd_size = simd_packed_fp,
+              .two_op = 1,
+              .d8s = d8s_vl },
     [0x06] = { .simd_size = simd_packed_fp },
-    [0x08 ... 0x09] = { .simd_size = simd_packed_fp, .two_op = 1, .d8s = d8s_vl },
+    [0x08 ... 0x09] = { .simd_size = simd_packed_fp,
+              .two_op = 1,
+              .d8s = d8s_vl },
     [0x0a ... 0x0b] = { .simd_size = simd_scalar_opc, .d8s = d8s_dq },
     [0x0c ... 0x0d] = { .simd_size = simd_packed_fp },
     [0x0e] = { .simd_size = simd_packed_int },
     [0x0f] = { .simd_size = simd_packed_int, .d8s = d8s_vl },
     [0x14] = { .simd_size = simd_none, .to_mem = 1, .two_op = 1, .d8s = 0 },
     [0x15] = { .simd_size = simd_none, .to_mem = 1, .two_op = 1, .d8s = 1 },
-    [0x16] = { .simd_size = simd_none, .to_mem = 1, .two_op = 1, .d8s = d8s_dq64 },
+    [0x16] = { .simd_size = simd_none,
+              .to_mem = 1,
+              .two_op = 1,
+              .d8s = d8s_dq64 },
     [0x17] = { .simd_size = simd_none, .to_mem = 1, .two_op = 1, .d8s = 2 },
     [0x18] = { .simd_size = simd_128, .d8s = 4 },
     [0x19] = { .simd_size = simd_128, .to_mem = 1, .two_op = 1, .d8s = 4 },
     [0x1a] = { .simd_size = simd_256, .d8s = d8s_vl_by_2 },
-    [0x1b] = { .simd_size = simd_256, .to_mem = 1, .two_op = 1, .d8s = d8s_vl_by_2 },
-    [0x1d] = { .simd_size = simd_other, .to_mem = 1, .two_op = 1, .d8s = d8s_vl_by_2 },
+    [0x1b] = { .simd_size = simd_256,
+              .to_mem = 1,
+              .two_op = 1,
+              .d8s = d8s_vl_by_2 },
+    [0x1d] = { .simd_size = simd_other,
+              .to_mem = 1,
+              .two_op = 1,
+              .d8s = d8s_vl_by_2 },
     [0x1e ... 0x1f] = { .simd_size = simd_packed_int, .d8s = d8s_vl },
     [0x20] = { .simd_size = simd_none, .d8s = 0 },
     [0x21] = { .simd_size = simd_other, .d8s = 2 },
@@ -488,7 +674,10 @@ static const struct ext0f3a_table {
     [0x38] = { .simd_size = simd_128, .d8s = 4 },
     [0x3a] = { .simd_size = simd_256, .d8s = d8s_vl_by_2 },
     [0x39] = { .simd_size = simd_128, .to_mem = 1, .two_op = 1, .d8s = 4 },
-    [0x3b] = { .simd_size = simd_256, .to_mem = 1, .two_op = 1, .d8s = d8s_vl_by_2 },
+    [0x3b] = { .simd_size = simd_256,
+              .to_mem = 1,
+              .two_op = 1,
+              .d8s = d8s_vl_by_2 },
     [0x3e ... 0x3f] = { .simd_size = simd_packed_int, .d8s = d8s_vl },
     [0x40 ... 0x41] = { .simd_size = simd_packed_fp },
     [0x42 ... 0x43] = { .simd_size = simd_packed_int, .d8s = d8s_vl },
@@ -525,9 +714,9 @@ static const struct ext0f3a_table {
 };
 
 static const opcode_desc_t xop_table[] = {
-    DstReg|SrcImmByte|ModRM,
-    DstReg|SrcMem|ModRM,
-    DstReg|SrcImm|ModRM,
+    DstReg | SrcImmByte | ModRM,
+    DstReg | SrcMem | ModRM,
+    DstReg | SrcImm | ModRM,
 };
 
 static const struct ext8f08_table {
@@ -578,7 +767,7 @@ static unsigned int decode_disp8scale(enum disp8scale scale,
             return scale;
         if ( s->evex.brs )
         {
-    case d8s_dq:
+        case d8s_dq:
             return 1 + !s->fp16 + s->evex.w;
         }
         break;
@@ -623,10 +812,9 @@ static unsigned int decode_disp8scale(enum disp8scale scale,
 })
 #define insn_fetch_type(type) ((type)insn_fetch_bytes(sizeof(type)))
 
-static int
-decode_onebyte(struct x86_emulate_state *s,
-               struct x86_emulate_ctxt *ctxt,
-               const struct x86_emulate_ops *ops)
+static int decode_onebyte(struct x86_emulate_state *s,
+                          struct x86_emulate_ctxt *ctxt,
+                          const struct x86_emulate_ops *ops)
 {
     int rc = X86EMUL_OKAY;
 
@@ -658,7 +846,9 @@ decode_onebyte(struct x86_emulate_state *s,
     case 0x82: /* Grp1 (x86/32 only) */
         s->not_64bit = true;
         /* fall through */
-    case 0x80: case 0x81: case 0x83: /* Grp1 */
+    case 0x80:
+    case 0x81:
+    case 0x83: /* Grp1 */
         if ( (s->modrm_reg & 7) == 7 ) /* cmp */
             s->desc = (s->desc & ByteOp) | DstNone | SrcMem;
         break;
@@ -676,8 +866,10 @@ decode_onebyte(struct x86_emulate_state *s,
         s->imm2 = insn_fetch_type(uint16_t);
         break;
 
-    case 0xa0: case 0xa1: /* mov mem.offs,{%al,%ax,%eax,%rax} */
-    case 0xa2: case 0xa3: /* mov {%al,%ax,%eax,%rax},mem.offs */
+    case 0xa0:
+    case 0xa1: /* mov mem.offs,{%al,%ax,%eax,%rax} */
+    case 0xa2:
+    case 0xa3: /* mov {%al,%ax,%eax,%rax},mem.offs */
         /* Source EA is not encoded via ModRM. */
         s->ea.type = OP_MEM;
         s->ea.mem.off = insn_fetch_bytes(s->ad_bytes);
@@ -693,7 +885,8 @@ decode_onebyte(struct x86_emulate_state *s,
         s->imm2 = insn_fetch_type(uint8_t);
         break;
 
-    case 0xf6: case 0xf7: /* Grp3 */
+    case 0xf6:
+    case 0xf7: /* Grp3 */
         if ( !(s->modrm_reg & 6) ) /* test */
             s->desc = (s->desc & ByteOp) | DstNone | SrcMem;
         break;
@@ -725,14 +918,13 @@ decode_onebyte(struct x86_emulate_state *s,
         break;
     }
 
- done:
+done:
     return rc;
 }
 
-static int
-decode_twobyte(struct x86_emulate_state *s,
-               struct x86_emulate_ctxt *ctxt,
-               const struct x86_emulate_ops *ops)
+static int decode_twobyte(struct x86_emulate_state *s,
+                          struct x86_emulate_ctxt *ctxt,
+                          const struct x86_emulate_ops *ops)
 {
     int rc = X86EMUL_OKAY;
 
@@ -744,7 +936,8 @@ decode_twobyte(struct x86_emulate_state *s,
         case 0:
             s->desc |= DstMem | SrcImplicit | Mov;
             break;
-        case 2: case 4:
+        case 2:
+        case 4:
             s->desc |= SrcMem16;
             break;
         }
@@ -774,15 +967,18 @@ decode_twobyte(struct x86_emulate_state *s,
         ctxt->opcode |= MASK_INSR(s->vex.pfx, X86EMUL_OPC_PFX_MASK);
         break;
 
-    case 0x20: case 0x22: /* mov to/from cr */
+    case 0x20:
+    case 0x22: /* mov to/from cr */
         if ( s->lock_prefix && vcpu_has_cr8_legacy() )
         {
             s->modrm_reg += 8;
             s->lock_prefix = false;
         }
         /* fall through */
-    case 0x21: case 0x23: /* mov to/from dr */
-        ASSERT(s->ea.type == OP_REG); /* Early operand adjustment ensures this. */
+    case 0x21:
+    case 0x23: /* mov to/from dr */
+        ASSERT(s->ea.type ==
+               OP_REG); /* Early operand adjustment ensures this. */
         generate_exception_if(s->lock_prefix, X86_EXC_UD);
         s->op_bytes = mode_64bit() ? 8 : 4;
         break;
@@ -797,8 +993,8 @@ decode_twobyte(struct x86_emulate_state *s,
         ctxt->opcode |= MASK_INSR(s->vex.pfx, X86EMUL_OPC_PFX_MASK);
         if ( s->vex.pfx == vex_f3 ) /* movq xmm/m64,xmm */
         {
-    case X86EMUL_OPC_VEX_F3(0, 0x7e): /* vmovq xmm/m64,xmm */
-    case X86EMUL_OPC_EVEX_F3(0, 0x7e): /* vmovq xmm/m64,xmm */
+        case X86EMUL_OPC_VEX_F3(0, 0x7e): /* vmovq xmm/m64,xmm */
+        case X86EMUL_OPC_EVEX_F3(0, 0x7e): /* vmovq xmm/m64,xmm */
             s->desc = DstImplicit | SrcMem | TwoOp;
             s->simd_size = simd_other;
             /* Avoid the s->desc clobbering of TwoOp below. */
@@ -806,13 +1002,13 @@ decode_twobyte(struct x86_emulate_state *s,
         }
         break;
 
-    case X86EMUL_OPC_VEX(0, 0x90):    /* kmov{w,q} */
+    case X86EMUL_OPC_VEX(0, 0x90): /* kmov{w,q} */
     case X86EMUL_OPC_VEX_66(0, 0x90): /* kmov{b,d} */
         s->desc = DstReg | SrcMem | Mov;
         s->simd_size = simd_other;
         break;
 
-    case X86EMUL_OPC_VEX(0, 0x91):    /* kmov{w,q} */
+    case X86EMUL_OPC_VEX(0, 0x91): /* kmov{w,q} */
     case X86EMUL_OPC_VEX_66(0, 0x91): /* kmov{b,d} */
         s->desc = DstMem | SrcReg | Mov;
         s->simd_size = simd_other;
@@ -867,8 +1063,8 @@ decode_twobyte(struct x86_emulate_state *s,
         ctxt->opcode |= MASK_INSR(s->vex.pfx, X86EMUL_OPC_PFX_MASK);
         if ( s->vex.pfx == vex_f2 ) /* lddqu mem,xmm */
         {
-        /* fall through */
-    case X86EMUL_OPC_VEX_F2(0, 0xf0): /* vlddqu mem,{x,y}mm */
+            /* fall through */
+        case X86EMUL_OPC_VEX_F2(0, 0xf0): /* vlddqu mem,{x,y}mm */
             s->desc = DstImplicit | SrcMem | TwoOp;
             s->simd_size = simd_other;
             /* Avoid the s->desc clobbering of TwoOp below. */
@@ -882,18 +1078,16 @@ decode_twobyte(struct x86_emulate_state *s,
      * three operands.  Those which do really have two operands
      * should have exited earlier.
      */
-    if ( s->simd_size && s->vex.opcx &&
-         (s->vex.pfx & VEX_PREFIX_SCALAR_MASK) )
+    if ( s->simd_size && s->vex.opcx && (s->vex.pfx & VEX_PREFIX_SCALAR_MASK) )
         s->desc &= ~TwoOp;
 
- done:
+done:
     return rc;
 }
 
-static int
-decode_0f38(struct x86_emulate_state *s,
-            struct x86_emulate_ctxt *ctxt,
-            const struct x86_emulate_ops *ops)
+static int decode_0f38(struct x86_emulate_state *s,
+                       struct x86_emulate_ctxt *ctxt,
+                       const struct x86_emulate_ops *ops)
 {
     switch ( ctxt->opcode & X86EMUL_OPC_MASK )
     {
@@ -930,15 +1124,16 @@ decode_0f38(struct x86_emulate_state *s,
             ctxt->opcode |= MASK_INSR(s->vex.pfx, X86EMUL_OPC_PFX_MASK);
         break;
 
-    case X86EMUL_OPC_VEX_66(0, 0xe0) ...
-         X86EMUL_OPC_VEX_66(0, 0xef): /* cmp<cc>xadd */
-    case X86EMUL_OPC_VEX(0, 0xf2):    /* andn */
-    case X86EMUL_OPC_VEX(0, 0xf3):    /* Grp 17 */
-    case X86EMUL_OPC_VEX(0, 0xf5):    /* bzhi */
+    case X86EMUL_OPC_VEX_66(0,
+                            0xe0)... X86EMUL_OPC_VEX_66(0,
+                                                        0xef): /* cmp<cc>xadd */
+    case X86EMUL_OPC_VEX(0, 0xf2): /* andn */
+    case X86EMUL_OPC_VEX(0, 0xf3): /* Grp 17 */
+    case X86EMUL_OPC_VEX(0, 0xf5): /* bzhi */
     case X86EMUL_OPC_VEX_F3(0, 0xf5): /* pext */
     case X86EMUL_OPC_VEX_F2(0, 0xf5): /* pdep */
     case X86EMUL_OPC_VEX_F2(0, 0xf6): /* mulx */
-    case X86EMUL_OPC_VEX(0, 0xf7):    /* bextr */
+    case X86EMUL_OPC_VEX(0, 0xf7): /* bextr */
     case X86EMUL_OPC_VEX_66(0, 0xf7): /* shlx */
     case X86EMUL_OPC_VEX_F3(0, 0xf7): /* sarx */
     case X86EMUL_OPC_VEX_F2(0, 0xf7): /* shrx */
@@ -952,26 +1147,28 @@ decode_0f38(struct x86_emulate_state *s,
     return X86EMUL_OKAY;
 }
 
-static int
-decode_0f3a(struct x86_emulate_state *s,
-            struct x86_emulate_ctxt *ctxt,
-            const struct x86_emulate_ops *ops)
+static int decode_0f3a(struct x86_emulate_state *s,
+                       struct x86_emulate_ctxt *ctxt,
+                       const struct x86_emulate_ops *ops)
 {
     if ( !s->vex.opcx )
         ctxt->opcode |= MASK_INSR(s->vex.pfx, X86EMUL_OPC_PFX_MASK);
 
     switch ( ctxt->opcode & X86EMUL_OPC_MASK )
     {
-    case X86EMUL_OPC_66(0, 0x14)
-     ... X86EMUL_OPC_66(0, 0x17):     /* pextr*, extractps */
-    case X86EMUL_OPC_VEX_66(0, 0x14)
-     ... X86EMUL_OPC_VEX_66(0, 0x17): /* vpextr*, vextractps */
-    case X86EMUL_OPC_EVEX_66(0, 0x14)
-     ... X86EMUL_OPC_EVEX_66(0, 0x17): /* vpextr*, vextractps */
+    case X86EMUL_OPC_66(0,
+                        0x14)... X86EMUL_OPC_66(0,
+                                                0x17): /* pextr*, extractps */
+    case X86EMUL_OPC_VEX_66(0, 0x14)... X86EMUL_OPC_VEX_66(
+        0,
+        0x17): /* vpextr*, vextractps */
+    case X86EMUL_OPC_EVEX_66(0, 0x14)... X86EMUL_OPC_EVEX_66(
+        0,
+        0x17): /* vpextr*, vextractps */
     case X86EMUL_OPC_VEX_F2(0, 0xf0): /* rorx */
         break;
 
-    case X86EMUL_OPC_66(0, 0x20):     /* pinsrb */
+    case X86EMUL_OPC_66(0, 0x20): /* pinsrb */
     case X86EMUL_OPC_VEX_66(0, 0x20): /* vpinsrb */
     case X86EMUL_OPC_EVEX_66(0, 0x20): /* vpinsrb */
         s->desc = DstImplicit | SrcMem;
@@ -979,7 +1176,7 @@ decode_0f3a(struct x86_emulate_state *s,
             s->desc |= ByteOp;
         break;
 
-    case X86EMUL_OPC_66(0, 0x22):     /* pinsr{d,q} */
+    case X86EMUL_OPC_66(0, 0x22): /* pinsr{d,q} */
     case X86EMUL_OPC_VEX_66(0, 0x22): /* vpinsr{d,q} */
     case X86EMUL_OPC_EVEX_66(0, 0x22): /* vpinsr{d,q} */
         s->desc = DstImplicit | SrcMem;
@@ -995,8 +1192,7 @@ decode_0f3a(struct x86_emulate_state *s,
 
 #define ad_bytes (s->ad_bytes) /* for truncate_ea() */
 
-int x86emul_decode(struct x86_emulate_state *s,
-                   struct x86_emulate_ctxt *ctxt,
+int x86emul_decode(struct x86_emulate_state *s, struct x86_emulate_ctxt *ctxt,
                    const struct x86_emulate_ops *ops)
 {
     uint8_t b, d;
@@ -1013,8 +1209,7 @@ int x86emul_decode(struct x86_emulate_state *s,
     s->ea.reg = PTR_POISON;
     s->ip = ctxt->regs->r(ip);
 
-    s->op_bytes = def_op_bytes = ad_bytes = def_ad_bytes =
-        ctxt->addr_size / 8;
+    s->op_bytes = def_op_bytes = ad_bytes = def_ad_bytes = ctxt->addr_size / 8;
     if ( s->op_bytes == 8 )
     {
         s->op_bytes = def_op_bytes = 4;
@@ -1024,7 +1219,7 @@ int x86emul_decode(struct x86_emulate_state *s,
     }
 
     /* Prefix bytes. */
-    for ( ; ; )
+    for ( ;; )
     {
         switch ( b = insn_fetch_type(uint8_t) )
         {
@@ -1070,7 +1265,7 @@ int x86emul_decode(struct x86_emulate_state *s,
         /* Any legacy prefix after a REX prefix nullifies its effect. */
         s->rex_prefix = 0;
     }
- done_prefixes:
+done_prefixes:
 
     if ( s->rex_prefix & REX_W )
         s->op_bytes = 8;
@@ -1174,8 +1369,10 @@ int x86emul_decode(struct x86_emulate_state *s,
                         s->evex.raw[1] = s->vex.raw[1];
                         s->evex.raw[2] = insn_fetch_type(uint8_t);
 
-                        generate_exception_if(!s->evex.mbs || s->evex.mbz, X86_EXC_UD);
-                        generate_exception_if(!s->evex.opmsk && s->evex.z, X86_EXC_UD);
+                        generate_exception_if(!s->evex.mbs || s->evex.mbz,
+                                              X86_EXC_UD);
+                        generate_exception_if(!s->evex.opmsk && s->evex.z,
+                                              X86_EXC_UD);
 
                         if ( !mode_64bit() )
                             s->evex.R = 1;
@@ -1216,7 +1413,7 @@ int x86emul_decode(struct x86_emulate_state *s,
                     case evex_map5:
                         if ( !evex_encoded() )
                         {
-                    default:
+                        default:
                             rc = X86EMUL_UNRECOGNIZED;
                             goto done;
                         }
@@ -1280,7 +1477,7 @@ int x86emul_decode(struct x86_emulate_state *s,
 #undef ModRM /* Only its aliases are valid to use from here on. */
         s->modrm_reg = ((s->rex_prefix & 4) << 1) | ((s->modrm & 0x38) >> 3) |
                        ((evex_encoded() && !s->evex.R) << 4);
-        s->modrm_rm  = s->modrm & 0x07;
+        s->modrm_rm = s->modrm & 0x07;
 
         /*
          * Early operand adjustments. Only ones affecting further processing
@@ -1370,7 +1567,8 @@ int x86emul_decode(struct x86_emulate_state *s,
                 break;
 
             case 0x7a: /* vcvttps2qq and vcvtudq2pd need special casing */
-                if ( disp8scale && s->evex.pfx != vex_f2 && !s->evex.w && !s->evex.brs )
+                if ( disp8scale && s->evex.pfx != vex_f2 && !s->evex.w &&
+                     !s->evex.brs )
                     --disp8scale;
                 break;
 
@@ -1385,15 +1583,15 @@ int x86emul_decode(struct x86_emulate_state *s,
                 break;
 
             case 0xe6: /* vcvtdq2pd needs special casing */
-                if ( disp8scale && s->evex.pfx == vex_f3 && !s->evex.w && !s->evex.brs )
+                if ( disp8scale && s->evex.pfx == vex_f3 && !s->evex.w &&
+                     !s->evex.brs )
                     --disp8scale;
                 break;
             }
             break;
 
         case ext_0f38:
-            d = ext0f38_table[b].to_mem ? DstMem | SrcReg
-                                        : DstReg | SrcMem;
+            d = ext0f38_table[b].to_mem ? DstMem | SrcReg : DstReg | SrcMem;
             if ( ext0f38_table[b].two_op )
                 d |= TwoOp;
             if ( ext0f38_table[b].vsib )
@@ -1474,12 +1672,14 @@ int x86emul_decode(struct x86_emulate_state *s,
             case 0x2a: /* vcvtsi2sh */
                 break;
 
-            case 0x2c: case 0x2d: /* vcvt{,t}sh2si */
+            case 0x2c:
+            case 0x2d: /* vcvt{,t}sh2si */
                 if ( s->evex.pfx == vex_f3 )
                     s->fp16 = true;
                 break;
 
-            case 0x2e: case 0x2f: /* v{,u}comish */
+            case 0x2e:
+            case 0x2f: /* v{,u}comish */
                 if ( !s->evex.pfx )
                     s->fp16 = true;
                 s->simd_size = simd_none;
@@ -1499,7 +1699,8 @@ int x86emul_decode(struct x86_emulate_state *s,
                 s->simd_size = simd_none;
                 break;
 
-            case 0x78: case 0x79: /* vcvt{,t}ph2u{d,q}q, vcvt{,t}sh2usi */
+            case 0x78:
+            case 0x79: /* vcvt{,t}ph2u{d,q}q, vcvt{,t}sh2usi */
                 if ( s->evex.pfx != vex_f2 )
                     s->fp16 = true;
                 break;
@@ -1533,7 +1734,8 @@ int x86emul_decode(struct x86_emulate_state *s,
                 }
                 /* vcvt{,t}sh2usi needs special casing. */
                 fallthrough;
-            case 0x2c: case 0x2d: /* vcvt{,t}sh2si need special casing */
+            case 0x2c:
+            case 0x2d: /* vcvt{,t}sh2si need special casing */
                 disp8scale = 1;
                 break;
 
@@ -1547,7 +1749,8 @@ int x86emul_decode(struct x86_emulate_state *s,
                     --disp8scale;
                 break;
 
-            case 0x7a: case 0x7b: /* vcvt{,t}ph2qq need special casing */
+            case 0x7a:
+            case 0x7b: /* vcvt{,t}ph2qq need special casing */
                 if ( s->evex.pfx == vex_66 && !s->evex.brs )
                     disp8scale = s->evex.brs ? 1 : 2 + s->evex.lr;
                 break;
@@ -1560,8 +1763,7 @@ int x86emul_decode(struct x86_emulate_state *s,
              * Re-use ext0f38_table[] here, for the similarity of the entries
              * valid in map 6.
              */
-            d = ext0f38_table[b].to_mem ? DstMem | SrcReg
-                                        : DstReg | SrcMem;
+            d = ext0f38_table[b].to_mem ? DstMem | SrcReg : DstReg | SrcMem;
             if ( ext0f38_table[b].two_op )
                 d |= TwoOp;
             s->simd_size = ext0f38_table[b].simd_size ?: simd_other;
@@ -1584,8 +1786,10 @@ int x86emul_decode(struct x86_emulate_state *s,
                 }
                 break;
 
-            case 0x56: case 0x57: /* vf{,c}maddc{p,s}h */
-            case 0xd6: case 0xd7: /* vf{,c}mulc{p,s}h */
+            case 0x56:
+            case 0x57: /* vf{,c}maddc{p,s}h */
+            case 0xd6:
+            case 0xd7: /* vf{,c}mulc{p,s}h */
                 break;
             }
 
@@ -1681,8 +1885,8 @@ int x86emul_decode(struct x86_emulate_state *s,
                 s->sib_index = ((sib >> 3) & 7) | ((s->rex_prefix << 2) & 8);
                 s->sib_scale = (sib >> 6) & 3;
                 if ( unlikely(d & vSIB) )
-                    s->sib_index |= (mode_64bit() && evex_encoded() &&
-                                     !s->evex.RX) << 4;
+                    s->sib_index |=
+                        (mode_64bit() && evex_encoded() && !s->evex.RX) << 4;
                 else if ( s->sib_index != 4 )
                 {
                     s->ea.mem.off = *decode_gpr(ctxt->regs, s->sib_index);
@@ -1692,16 +1896,17 @@ int x86emul_decode(struct x86_emulate_state *s,
                     s->ea.mem.off += insn_fetch_type(int32_t);
                 else if ( sib_base == 4 )
                 {
-                    s->ea.mem.seg  = x86_seg_ss;
+                    s->ea.mem.seg = x86_seg_ss;
                     s->ea.mem.off += ctxt->regs->r(sp);
                     if ( !s->ext && (b == 0x8f) )
                         /* POP <rm> computes its EA post increment. */
                         s->ea.mem.off += ((mode_64bit() && (s->op_bytes == 4))
-                                       ? 8 : s->op_bytes);
+                                              ? 8
+                                              : s->op_bytes);
                 }
                 else if ( sib_base == 5 )
                 {
-                    s->ea.mem.seg  = x86_seg_ss;
+                    s->ea.mem.seg = x86_seg_ss;
                     s->ea.mem.off += ctxt->regs->r(bp);
                 }
                 else
@@ -1751,21 +1956,27 @@ int x86emul_decode(struct x86_emulate_state *s,
         {
             if ( mode_64bit() && !amd_like(ctxt) &&
                  ((s->ext == ext_none && (b | 1) == 0xe9) /* call / jmp */ ||
-                  (s->ext == ext_0f && (b | 0xf) == 0x8f) /* jcc */ ) )
+                  (s->ext == ext_0f && (b | 0xf) == 0x8f) /* jcc */) )
                 s->op_bytes = 4;
             bytes = s->op_bytes != 8 ? s->op_bytes : 4;
         }
         else
         {
-    case SrcImmByte:
+        case SrcImmByte:
             bytes = 1;
         }
         /* NB. Immediates are sign-extended as necessary. */
         switch ( bytes )
         {
-        case 1: s->imm1 = insn_fetch_type(int8_t);  break;
-        case 2: s->imm1 = insn_fetch_type(int16_t); break;
-        case 4: s->imm1 = insn_fetch_type(int32_t); break;
+        case 1:
+            s->imm1 = insn_fetch_type(int8_t);
+            break;
+        case 2:
+            s->imm1 = insn_fetch_type(int16_t);
+            break;
+        case 4:
+            s->imm1 = insn_fetch_type(int32_t);
+            break;
         }
         break;
     case SrcImm16:
@@ -1870,7 +2081,7 @@ int x86emul_decode(struct x86_emulate_state *s,
         {
             s->op_bytes = 0;
             break;
-    case simd_packed_fp:
+        case simd_packed_fp:
             if ( s->vex.pfx & VEX_PREFIX_SCALAR_MASK )
             {
                 s->op_bytes = 0;
@@ -1918,6 +2129,6 @@ int x86emul_decode(struct x86_emulate_state *s,
         break;
     }
 
- done:
+done:
     return rc;
 }

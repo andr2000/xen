@@ -91,33 +91,27 @@
 
 #define pt_entry(pt, va) (&((pt)->entries[pt_index((pt), (va))]))
 
-typedef struct
-{
+typedef struct {
     __be64 pde;
 } pde_t;
 
-typedef struct
-{
+typedef struct {
     __be64 pte;
 } pte_t;
 
-struct lvl1_pd
-{
+struct lvl1_pd {
     pde_t entries[XEN_PT_ENTRIES_LVL(1)];
 } __aligned(XEN_PT_SIZE_LVL(1));
 
-struct lvl2_pd
-{
+struct lvl2_pd {
     pde_t entries[XEN_PT_ENTRIES_LVL(2)];
 } __aligned(XEN_PT_SIZE_LVL(2));
 
-struct lvl3_pd
-{
+struct lvl3_pd {
     pde_t entries[XEN_PT_ENTRIES_LVL(3)];
 } __aligned(XEN_PT_SIZE_LVL(3));
 
-struct lvl4_pt
-{
+struct lvl4_pt {
     pte_t entries[XEN_PT_ENTRIES_LVL(4)];
 } __aligned(XEN_PT_SIZE_LVL(4));
 
@@ -160,15 +154,16 @@ static inline bool pde_is_valid(pde_t pde)
  * ISA 3.0 partition and process table entry format
  */
 struct patb_entry {
-	__be64 patb0;
-	__be64 patb1;
+    __be64 patb0;
+    __be64 patb1;
 };
+
 #define PATB0_HR PPC_BIT(0) /* host uses radix */
 #define PATB1_GR PPC_BIT(0) /* guest uses radix; must match HR */
 
 struct prtb_entry {
-	__be64 prtb0;
-	__be64 reserved;
+    __be64 prtb0;
+    __be64 reserved;
 };
 
 /*

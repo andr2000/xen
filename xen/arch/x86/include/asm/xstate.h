@@ -51,24 +51,27 @@ extern unsigned int *xstate_offsets;
 extern unsigned int *xstate_sizes;
 
 /* extended state save area */
-struct __attribute__((aligned (64))) xsave_struct
-{
-    union __attribute__((aligned(16))) {     /* FPU/MMX, SSE */
+struct __attribute__((aligned(64))) xsave_struct {
+    union __attribute__((aligned(16))) { /* FPU/MMX, SSE */
         char x[512];
+
         struct {
             uint16_t fcw;
             uint16_t fsw;
             uint8_t ftw;
             uint8_t rsvd1;
             uint16_t fop;
+
             union {
                 uint64_t addr;
+
                 struct {
                     uint32_t offs;
                     uint16_t sel;
                     uint16_t rsvd;
                 };
             } fip, fdp;
+
             uint32_t mxcsr;
             uint32_t mxcsr_mask;
             /* data registers follow here */
@@ -79,9 +82,9 @@ struct __attribute__((aligned (64))) xsave_struct
         u64 xstate_bv;
         u64 xcomp_bv;
         u64 reserved[6];
-    } xsave_hdr;                             /* The 64-byte header */
+    } xsave_hdr; /* The 64-byte header */
 
-    char data[];                             /* Variable layout states */
+    char data[]; /* Variable layout states */
 };
 
 typedef typeof(((struct xsave_struct){}).fpu_sse) fpusse_t;
@@ -101,8 +104,8 @@ void xsave(struct vcpu *v, uint64_t mask);
 void xrstor(struct vcpu *v, uint64_t mask);
 void xstate_set_init(uint64_t mask);
 bool xsave_enabled(const struct vcpu *v);
-int __must_check validate_xstate(const struct domain *d,
-                                 uint64_t xcr0, uint64_t xcr0_accum,
+int __must_check validate_xstate(const struct domain *d, uint64_t xcr0,
+                                 uint64_t xcr0_accum,
                                  const struct xsave_hdr *hdr);
 int __must_check handle_xsetbv(u32 index, u64 new_bv);
 void expand_xsave_states(const struct vcpu *v, void *dest, unsigned int size);
@@ -120,14 +123,15 @@ static inline uint64_t xgetbv(unsigned int index)
     uint32_t lo, hi;
 
     ASSERT(index); /* get_xcr0() should be used instead. */
-    asm volatile ( ".byte 0x0f,0x01,0xd0" /* xgetbv */
-                   : "=a" (lo), "=d" (hi) : "c" (index) );
+    asm volatile(".byte 0x0f,0x01,0xd0" /* xgetbv */
+                 : "=a"(lo), "=d"(hi)
+                 : "c"(index));
 
     return lo | ((uint64_t)hi << 32);
 }
 
 static inline bool __nonnull(1)
-xsave_area_compressed(const struct xsave_struct *xsave_area)
+    xsave_area_compressed(const struct xsave_struct *xsave_area)
 {
     return xsave_area->xsave_hdr.xcomp_bv & XSTATE_COMPACTION_ENABLED;
 }

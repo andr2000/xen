@@ -44,6 +44,7 @@ struct evtchn_fifo_domain {
 
 union evtchn_fifo_lastq {
     uint32_t raw;
+
     struct {
         uint8_t last_priority;
         uint16_t last_vcpu_id;
@@ -90,8 +91,10 @@ static void cf_check evtchn_fifo_init(struct domain *d, struct evtchn *evtchn)
      */
     word = evtchn_fifo_word_from_port(d, evtchn->port);
     if ( word && guest_test_bit(d, EVTCHN_FIFO_LINKED, word) )
-        gdprintk(XENLOG_WARNING, "domain %d, port %d already on a queue\n",
-                 d->domain_id, evtchn->port);
+        gdprintk(XENLOG_WARNING,
+                 "domain %d, port %d already on a queue\n",
+                 d->domain_id,
+                 evtchn->port);
 }
 
 static int try_set_link(event_word_t *word, event_word_t *w, uint32_t link)
@@ -152,14 +155,16 @@ static bool evtchn_fifo_set_link(struct domain *d, event_word_t *word,
             return ret;
         }
     }
-    gdprintk(XENLOG_WARNING, "domain %d, port %d not linked\n",
-             d->domain_id, link);
+    gdprintk(XENLOG_WARNING,
+             "domain %d, port %d not linked\n",
+             d->domain_id,
+             link);
     guest_clear_bit(d, EVTCHN_FIFO_BUSY, word);
     return 1;
 }
 
-static void cf_check evtchn_fifo_set_pending(
-    struct vcpu *v, struct evtchn *evtchn)
+static void cf_check evtchn_fifo_set_pending(struct vcpu *v,
+                                             struct evtchn *evtchn)
 {
     struct domain *d = v->domain;
     unsigned int port;
@@ -231,7 +236,8 @@ static void cf_check evtchn_fifo_set_pending(
     {
         gprintk(XENLOG_WARNING,
                 "%pd port %u lost event (too many queue changes)\n",
-                d, evtchn->port);
+                d,
+                evtchn->port);
         goto done;
     }
 
@@ -242,8 +248,8 @@ static void cf_check evtchn_fifo_set_pending(
      */
     if ( unlikely(!v->evtchn_fifo->control_block) )
     {
-        printk(XENLOG_G_WARNING
-               "%pv has no FIFO event channel control block\n", v);
+        printk(XENLOG_G_WARNING "%pv has no FIFO event channel control block\n",
+               v);
         goto unlock;
     }
 
@@ -270,7 +276,7 @@ static void cf_check evtchn_fifo_set_pending(
         /* Moved to a different queue? */
         if ( old_q != q )
         {
-            union evtchn_fifo_lastq lastq = { };
+            union evtchn_fifo_lastq lastq = {};
 
             lastq.last_vcpu_id = v->vcpu_id;
             lastq.last_priority = q->priority;
@@ -303,14 +309,15 @@ static void cf_check evtchn_fifo_set_pending(
         q->tail = port;
     }
 
- unlock:
+unlock:
     if ( q != old_q )
         spin_unlock(&old_q->lock);
     spin_unlock_irqrestore(&q->lock, flags);
 
- done:
+done:
     if ( !linked &&
-         !guest_test_and_set_bit(d, q->priority,
+         !guest_test_and_set_bit(d,
+                                 q->priority,
                                  &v->evtchn_fifo->control_block->ready) )
         vcpu_mark_events_pending(v);
 
@@ -318,8 +325,8 @@ static void cf_check evtchn_fifo_set_pending(
         evtchn_check_pollers(d, port);
 }
 
-static void cf_check evtchn_fifo_clear_pending(
-    struct domain *d, struct evtchn *evtchn)
+static void cf_check evtchn_fifo_clear_pending(struct domain *d,
+                                               struct evtchn *evtchn)
 {
     event_word_t *word;
 
@@ -352,32 +359,33 @@ static void cf_check evtchn_fifo_unmask(struct domain *d, struct evtchn *evtchn)
         evtchn_fifo_set_pending(v, evtchn);
 }
 
-static bool cf_check evtchn_fifo_is_pending(
-    const struct domain *d, const struct evtchn *evtchn)
+static bool cf_check evtchn_fifo_is_pending(const struct domain *d,
+                                            const struct evtchn *evtchn)
 {
     const event_word_t *word = evtchn_fifo_word_from_port(d, evtchn->port);
 
     return word && guest_test_bit(d, EVTCHN_FIFO_PENDING, word);
 }
 
-static bool cf_check evtchn_fifo_is_masked(
-    const struct domain *d, const struct evtchn *evtchn)
+static bool cf_check evtchn_fifo_is_masked(const struct domain *d,
+                                           const struct evtchn *evtchn)
 {
     const event_word_t *word = evtchn_fifo_word_from_port(d, evtchn->port);
 
     return !word || guest_test_bit(d, EVTCHN_FIFO_MASKED, word);
 }
 
-static bool cf_check evtchn_fifo_is_busy(
-    const struct domain *d, const struct evtchn *evtchn)
+static bool cf_check evtchn_fifo_is_busy(const struct domain *d,
+                                         const struct evtchn *evtchn)
 {
     const event_word_t *word = evtchn_fifo_word_from_port(d, evtchn->port);
 
     return word && guest_test_bit(d, EVTCHN_FIFO_LINKED, word);
 }
 
-static int cf_check evtchn_fifo_set_priority(
-    struct domain *d, struct evtchn *evtchn, unsigned int priority)
+static int cf_check evtchn_fifo_set_priority(struct domain *d,
+                                             struct evtchn *evtchn,
+                                             unsigned int priority)
 {
     if ( priority > EVTCHN_FIFO_PRIORITY_MIN )
         return -EINVAL;
@@ -392,8 +400,8 @@ static int cf_check evtchn_fifo_set_priority(
     return 0;
 }
 
-static void cf_check evtchn_fifo_print_state(
-    struct domain *d, const struct evtchn *evtchn)
+static void cf_check evtchn_fifo_print_state(struct domain *d,
+                                             const struct evtchn *evtchn)
 {
     event_word_t *word;
 
@@ -401,23 +409,24 @@ static void cf_check evtchn_fifo_print_state(
     if ( !word )
         printk("?     ");
     else if ( guest_test_bit(d, EVTCHN_FIFO_LINKED, word) )
-        printk("%c %-4u", guest_test_bit(d, EVTCHN_FIFO_BUSY, word) ? 'B' : ' ',
+        printk("%c %-4u",
+               guest_test_bit(d, EVTCHN_FIFO_BUSY, word) ? 'B' : ' ',
                *word & EVTCHN_FIFO_LINK_MASK);
     else
-        printk("%c -   ", guest_test_bit(d, EVTCHN_FIFO_BUSY, word) ? 'B' : ' ');
+        printk("%c -   ",
+               guest_test_bit(d, EVTCHN_FIFO_BUSY, word) ? 'B' : ' ');
 }
 
-static const struct evtchn_port_ops evtchn_port_ops_fifo =
-{
-    .init          = evtchn_fifo_init,
-    .set_pending   = evtchn_fifo_set_pending,
+static const struct evtchn_port_ops evtchn_port_ops_fifo = {
+    .init = evtchn_fifo_init,
+    .set_pending = evtchn_fifo_set_pending,
     .clear_pending = evtchn_fifo_clear_pending,
-    .unmask        = evtchn_fifo_unmask,
-    .is_pending    = evtchn_fifo_is_pending,
-    .is_masked     = evtchn_fifo_is_masked,
-    .is_busy       = evtchn_fifo_is_busy,
-    .set_priority  = evtchn_fifo_set_priority,
-    .print_state   = evtchn_fifo_print_state,
+    .unmask = evtchn_fifo_unmask,
+    .is_pending = evtchn_fifo_is_pending,
+    .is_masked = evtchn_fifo_is_masked,
+    .is_busy = evtchn_fifo_is_busy,
+    .set_priority = evtchn_fifo_set_priority,
+    .print_state = evtchn_fifo_print_state,
 };
 
 static int map_guest_page(struct domain *d, uint64_t gfn, void **virt)
@@ -581,8 +590,8 @@ int evtchn_fifo_init_control(struct evtchn_init_control *init_control)
     init_control->link_bits = EVTCHN_FIFO_LINK_BITS;
 
     vcpu_id = init_control->vcpu;
-    gfn     = init_control->control_gfn;
-    offset  = init_control->offset;
+    gfn = init_control->control_gfn;
+    offset = init_control->offset;
 
     if ( (v = domain_vcpu(d, vcpu_id)) == NULL )
         return -ENOENT;
@@ -595,7 +604,8 @@ int evtchn_fifo_init_control(struct evtchn_init_control *init_control)
      * Make sure the guest controlled value offset is bounded even during
      * speculative execution.
      */
-    offset = array_index_nospec(offset,
+    offset =
+        array_index_nospec(offset,
                            PAGE_SIZE - sizeof(evtchn_fifo_control_block_t) + 1);
 
     /* Must be 8-bytes aligned. */
@@ -614,7 +624,8 @@ int evtchn_fifo_init_control(struct evtchn_init_control *init_control)
         /* Latch the value before it changes during setup_event_array(). */
         unsigned int prev_evtchns = max_evtchns(d);
 
-        for_each_vcpu ( d, vcb ) {
+        for_each_vcpu(d, vcb)
+        {
             rc = setup_control_block(vcb);
             if ( rc < 0 )
                 goto error;
@@ -642,7 +653,7 @@ int evtchn_fifo_init_control(struct evtchn_init_control *init_control)
 
     return rc;
 
- error:
+error:
     evtchn_fifo_destroy(d);
     write_unlock(&d->event_lock);
     return rc;
@@ -708,7 +719,7 @@ void evtchn_fifo_destroy(struct domain *d)
 {
     struct vcpu *v;
 
-    for_each_vcpu( d, v )
+    for_each_vcpu(d, v)
         cleanup_control_block(v);
     cleanup_event_array(d);
 }

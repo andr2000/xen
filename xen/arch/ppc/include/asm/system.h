@@ -16,7 +16,7 @@
 #include <asm/processor.h>
 #include <asm/msr.h>
 
-#define xchg(ptr,x)                                                            \
+#define xchg(ptr, x)                                                            \
 ({                                                                             \
     __typeof__(*(ptr)) _x_ = (x);                                              \
     (__typeof__(*(ptr))) __xchg((ptr), (unsigned long)_x_, sizeof(*(ptr)));    \
@@ -38,17 +38,17 @@ static inline unsigned long fn(volatile type *m, unsigned long val)            \
 }
 
 build_xchg(__xchg_u8, uint8_t, "lbarx", "stbcx.")
-build_xchg(__xchg_u16, uint16_t, "lharx", "sthcx.")
-build_xchg(__xchg_u32, uint32_t, "lwarx", "stwcx.")
-build_xchg(__xchg_u64, uint64_t, "ldarx", "stdcx.")
+    build_xchg(__xchg_u16, uint16_t, "lharx", "sthcx.")
+        build_xchg(__xchg_u32, uint32_t, "lwarx", "stwcx.")
+            build_xchg(__xchg_u64, uint64_t, "ldarx", "stdcx.")
 
 #undef build_xchg
 
-/*
+    /*
  * This function doesn't exist, so you'll get a linker error
  * if something tries to do an invalid xchg().
  */
-extern void __xchg_called_with_bad_pointer(void);
+    extern void __xchg_called_with_bad_pointer(void);
 
 static inline unsigned long __xchg(volatile void *ptr, unsigned long x,
                                    int size)
@@ -68,22 +68,17 @@ static inline unsigned long __xchg(volatile void *ptr, unsigned long x,
     return x;
 }
 
-
 static inline unsigned long __cmpxchg_u32(volatile int *p, int old, int new)
 {
     unsigned int prev;
 
-    asm volatile ( PPC_ATOMIC_ENTRY_BARRIER
-                   "1: lwarx   %0,0,%2\n"
-                   "cmpw    0,%0,%3\n"
-                   "bne-    2f\n "
-                   "stwcx.  %4,0,%2\n"
-                   "bne-    1b\n"
-                   PPC_ATOMIC_EXIT_BARRIER "\n"
-                   "2:"
-                   : "=&r" (prev), "=m" (*p)
-                   : "r" (p), "r" (old), "r" (new), "m" (*p)
-                   : "cc", "memory" );
+    asm volatile(
+        PPC_ATOMIC_ENTRY_BARRIER
+        "1: lwarx   %0,0,%2\n" "cmpw    0,%0,%3\n" "bne-    2f\n " "stwcx.  %4,0,%2\n" "bne-    1b\n" PPC_ATOMIC_EXIT_BARRIER
+        "\n" "2:"
+        : "=&r"(prev), "=m"(*p)
+        : "r"(p), "r"(old), "r"(new), "m"(*p)
+        : "cc", "memory");
 
     return prev;
 }
@@ -93,17 +88,13 @@ static inline unsigned long __cmpxchg_u64(volatile long *p, unsigned long old,
 {
     unsigned long prev;
 
-    asm volatile ( PPC_ATOMIC_ENTRY_BARRIER
-                   "1: ldarx   %0,0,%2\n"
-                   "cmpd    0,%0,%3\n"
-                   "bne-    2f\n"
-                   "stdcx.  %4,0,%2\n"
-                   "bne-    1b\n"
-                   PPC_ATOMIC_EXIT_BARRIER "\n"
-                   "2:"
-                   : "=&r" (prev), "=m" (*p)
-                   : "r" (p), "r" (old), "r" (new), "m" (*p)
-                   : "cc", "memory" );
+    asm volatile(
+        PPC_ATOMIC_ENTRY_BARRIER
+        "1: ldarx   %0,0,%2\n" "cmpd    0,%0,%3\n" "bne-    2f\n" "stdcx.  %4,0,%2\n" "bne-    1b\n" PPC_ATOMIC_EXIT_BARRIER
+        "\n" "2:"
+        : "=&r"(prev), "=m"(*p)
+        : "r"(p), "r"(old), "r"(new), "m"(*p)
+        : "cc", "memory");
 
     return prev;
 }
@@ -112,16 +103,14 @@ static inline unsigned long __cmpxchg_u64(volatile long *p, unsigned long old,
    if something tries to do an invalid cmpxchg().  */
 extern void __cmpxchg_called_with_bad_pointer(void);
 
-static always_inline unsigned long __cmpxchg(
-    volatile void *ptr,
-    unsigned long old,
-    unsigned long new,
-    int size)
+static always_inline unsigned long
+__cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
 {
     switch ( size )
     {
     case 2:
-        BUG_ON("unimplemented"); return 0; /* XXX implement __cmpxchg_u16 ? */
+        BUG_ON("unimplemented");
+        return 0; /* XXX implement __cmpxchg_u16 ? */
     case 4:
         return __cmpxchg_u32(ptr, old, new);
     case 8:
@@ -131,16 +120,15 @@ static always_inline unsigned long __cmpxchg(
     return old;
 }
 
-#define cmpxchg_user(ptr,o,n) cmpxchg(ptr,o,n)
+#define cmpxchg_user(ptr, o, n) cmpxchg(ptr,o,n)
 
-#define cmpxchg(ptr,o,n)                                                       \
+#define cmpxchg(ptr, o, n)                                                       \
   ({                                                                           \
      __typeof__(*(ptr)) _o_ = (o);                                             \
      __typeof__(*(ptr)) _n_ = (n);                                             \
      (__typeof__(*(ptr)))__cmpxchg((ptr), (unsigned long)_o_,                  \
                                    (unsigned long)_n_, sizeof(*(ptr)));        \
   })
-
 
 /*
  * Memory barrier.

@@ -84,7 +84,7 @@ struct x86_cpu_id {
     uint16_t vendor;
     uint16_t family;
     uint16_t model;
-    uint16_t feature;   /* bit index */
+    uint16_t feature; /* bit index */
     const void *driver_data;
 };
 
@@ -119,17 +119,13 @@ extern void init_intel_cacheinfo(struct cpuinfo_x86 *c);
 unsigned int apicid_to_socket(unsigned int apicid);
 
 /* Some CPUID calls want 'count' to be placed in ecx */
-static inline void cpuid_count(
-    unsigned int op,
-    unsigned int count,
-    unsigned int *eax,
-    unsigned int *ebx,
-    unsigned int *ecx,
-    unsigned int *edx)
+static inline void cpuid_count(unsigned int op, unsigned int count,
+                               unsigned int *eax, unsigned int *ebx,
+                               unsigned int *ecx, unsigned int *edx)
 {
-    asm volatile ( "cpuid"
-          : "=a" (*eax), "=b" (*ebx), "=c" (*ecx), "=d" (*edx)
-          : "0" (op), "c" (count) );
+    asm volatile("cpuid"
+                 : "=a"(*eax), "=b"(*ebx), "=c"(*ecx), "=d"(*edx)
+                 : "0"(op), "c"(count));
 }
 
 /*
@@ -137,12 +133,9 @@ static inline void cpuid_count(
  * clear %ecx since some cpus (Cyrix MII) do not set or clear %ecx
  * resulting in stale register contents being returned.
  */
-static inline void cpuid(
-    unsigned int leaf,
-    unsigned int *eax,
-    unsigned int *ebx,
-    unsigned int *ecx,
-    unsigned int *edx)
+static inline void cpuid(unsigned int leaf, unsigned int *eax,
+                         unsigned int *ebx, unsigned int *ecx,
+                         unsigned int *edx)
 {
     cpuid_count(leaf, 0, eax, ebx, ecx, edx);
 }
@@ -154,10 +147,7 @@ static always_inline unsigned int cpuid_eax(unsigned int op)
 {
     unsigned int eax;
 
-    asm volatile ( "cpuid"
-          : "=a" (eax)
-          : "0" (op)
-          : "bx", "cx", "dx" );
+    asm volatile("cpuid" : "=a"(eax) : "0"(op) : "bx", "cx", "dx");
     return eax;
 }
 
@@ -165,10 +155,7 @@ static always_inline unsigned int cpuid_ebx(unsigned int op)
 {
     unsigned int eax, ebx;
 
-    asm volatile ( "cpuid"
-          : "=a" (eax), "=b" (ebx)
-          : "0" (op)
-          : "cx", "dx" );
+    asm volatile("cpuid" : "=a"(eax), "=b"(ebx) : "0"(op) : "cx", "dx");
     return ebx;
 }
 
@@ -176,10 +163,7 @@ static always_inline unsigned int cpuid_ecx(unsigned int op)
 {
     unsigned int eax, ecx;
 
-    asm volatile ( "cpuid"
-          : "=a" (eax), "=c" (ecx)
-          : "0" (op)
-          : "bx", "dx" );
+    asm volatile("cpuid" : "=a"(eax), "=c"(ecx) : "0"(op) : "bx", "dx");
     return ecx;
 }
 
@@ -187,15 +171,12 @@ static always_inline unsigned int cpuid_edx(unsigned int op)
 {
     unsigned int eax, edx;
 
-    asm volatile ( "cpuid"
-          : "=a" (eax), "=d" (edx)
-          : "0" (op)
-          : "bx", "cx" );
+    asm volatile("cpuid" : "=a"(eax), "=d"(edx) : "0"(op) : "bx", "cx");
     return edx;
 }
 
-static always_inline unsigned int cpuid_count_ebx(
-    unsigned int leaf, unsigned int subleaf)
+static always_inline unsigned int cpuid_count_ebx(unsigned int leaf,
+                                                  unsigned int subleaf)
 {
     unsigned int ebx, tmp;
 
@@ -204,8 +185,8 @@ static always_inline unsigned int cpuid_count_ebx(
     return ebx;
 }
 
-static always_inline unsigned int cpuid_count_edx(
-    unsigned int leaf, unsigned int subleaf)
+static always_inline unsigned int cpuid_count_edx(unsigned int leaf,
+                                                  unsigned int subleaf)
 {
     unsigned int edx, tmp;
 
@@ -217,25 +198,25 @@ static always_inline unsigned int cpuid_count_edx(
 static inline unsigned long read_cr0(void)
 {
     unsigned long cr0;
-    asm volatile ( "mov %%cr0,%0\n\t" : "=r" (cr0) );
+    asm volatile("mov %%cr0,%0\n\t" : "=r"(cr0));
     return cr0;
-} 
+}
 
 static inline void write_cr0(unsigned long val)
 {
-    asm volatile ( "mov %0,%%cr0" : : "r" ((unsigned long)val) );
+    asm volatile("mov %0,%%cr0" : : "r"((unsigned long)val));
 }
 
 static inline unsigned long read_cr2(void)
 {
     unsigned long cr2;
-    asm volatile ( "mov %%cr2,%0\n\t" : "=r" (cr2) );
+    asm volatile("mov %%cr2,%0\n\t" : "=r"(cr2));
     return cr2;
 }
 
 static inline void write_cr3(unsigned long val)
 {
-    asm volatile ( "mov %0, %%cr3" : : "r" (val) : "memory" );
+    asm volatile("mov %0, %%cr3" : : "r"(val) : "memory");
 }
 
 static inline unsigned long cr3_pa(unsigned long cr3)
@@ -279,22 +260,22 @@ static inline void write_cr4(unsigned long val)
      */
     info->cr4 = val & (info->cr4 | ~X86_CR4_FSGSBASE);
 
-    asm volatile ( "mov %[val], %%cr4"
-                   : "+m" (info->cr4) /* Force ordering without a barrier. */
-                   : [val] "r" (val) );
+    asm volatile("mov %[val], %%cr4"
+                 : "+m"(info->cr4) /* Force ordering without a barrier. */
+                 : [val] "r"(val));
 
     info->cr4 = val;
 }
 
 /* Clear and set 'TS' bit respectively */
-static inline void clts(void) 
+static inline void clts(void)
 {
-    asm volatile ( "clts" );
+    asm volatile("clts");
 }
 
-static inline void stts(void) 
+static inline void stts(void)
 {
-    write_cr0(X86_CR0_TS|read_cr0());
+    write_cr0(X86_CR0_TS | read_cr0());
 }
 
 /*
@@ -306,7 +287,7 @@ static inline void stts(void)
 extern unsigned long mmu_cr4_features;
 extern unsigned long cr4_pv32_mask;
 
-static always_inline void set_in_cr4 (unsigned long mask)
+static always_inline void set_in_cr4(unsigned long mask)
 {
     mmu_cr4_features |= mask;
     write_cr4(read_cr4() | mask);
@@ -319,38 +300,36 @@ static always_inline void __monitor(const void *eax, unsigned long ecx,
                                     unsigned long edx)
 {
     /* "monitor %eax,%ecx,%edx;" */
-    asm volatile (
-        ".byte 0x0f,0x01,0xc8;"
-        : : "a" (eax), "c" (ecx), "d"(edx) );
+    asm volatile(".byte 0x0f,0x01,0xc8;" : : "a"(eax), "c"(ecx), "d"(edx));
 }
 
 static always_inline void __mwait(unsigned long eax, unsigned long ecx)
 {
     /* "mwait %eax,%ecx;" */
-    asm volatile (
-        ".byte 0x0f,0x01,0xc9;"
-        : : "a" (eax), "c" (ecx) );
+    asm volatile(".byte 0x0f,0x01,0xc9;" : : "a"(eax), "c"(ecx));
 }
 
 #define IOBMP_BYTES             8192
 #define IOBMP_INVALID_OFFSET    0x8000
 
 struct __packed tss64 {
-    uint32_t :32;
+    uint32_t:32;
     uint64_t rsp0, rsp1, rsp2;
-    uint64_t :64;
+    uint64_t:64;
     /*
      * Interrupt Stack Table is 1-based so tss->ist[0] corresponds to an IST
      * value of 1 in an Interrupt Descriptor.
      */
     uint64_t ist[7];
-    uint64_t :64;
-    uint16_t :16, bitmap;
+    uint64_t:64;
+    uint16_t:16, bitmap;
 };
+
 struct tss_page {
     uint64_t __aligned(PAGE_SIZE) ist_ssp[8];
     struct tss64 tss;
 };
+
 DECLARE_PER_CPU(struct tss_page, tss_page);
 
 #define IST_NONE 0UL
@@ -372,18 +351,18 @@ static inline void set_ist(idt_entry_t *idt, unsigned int ist)
 
 static inline void enable_each_ist(idt_entry_t *idt)
 {
-    set_ist(&idt[X86_EXC_DF],  IST_DF);
+    set_ist(&idt[X86_EXC_DF], IST_DF);
     set_ist(&idt[X86_EXC_NMI], IST_NMI);
-    set_ist(&idt[X86_EXC_MC],  IST_MCE);
-    set_ist(&idt[X86_EXC_DB],  IST_DB);
+    set_ist(&idt[X86_EXC_MC], IST_MCE);
+    set_ist(&idt[X86_EXC_DB], IST_DB);
 }
 
 static inline void disable_each_ist(idt_entry_t *idt)
 {
-    set_ist(&idt[X86_EXC_DF],  IST_NONE);
+    set_ist(&idt[X86_EXC_DF], IST_NONE);
     set_ist(&idt[X86_EXC_NMI], IST_NONE);
-    set_ist(&idt[X86_EXC_MC],  IST_NONE);
-    set_ist(&idt[X86_EXC_DB],  IST_NONE);
+    set_ist(&idt[X86_EXC_MC], IST_NONE);
+    set_ist(&idt[X86_EXC_DB], IST_NONE);
 }
 
 #define IDT_ENTRIES 256
@@ -397,7 +376,7 @@ extern void write_ptbase(struct vcpu *v);
 /* REP NOP (PAUSE) is a good thing to insert into busy-wait loops. */
 static always_inline void rep_nop(void)
 {
-    asm volatile ( "rep;nop" : : : "memory" );
+    asm volatile("rep;nop" : : : "memory");
 }
 
 #define cpu_relax() rep_nop()
@@ -423,49 +402,34 @@ static inline void enable_nmis(void)
 {
     unsigned long tmp;
 
-    asm volatile ( "mov     %%rsp, %[rsp]        \n\t"
-                   "lea    .Ldone(%%rip), %[rip] \n\t"
+    asm volatile(
+        "mov     %%rsp, %[rsp]        \n\t" "lea    .Ldone(%%rip), %[rip] \n\t"
 #ifdef CONFIG_XEN_SHSTK
-                   /* Check for CET-SS being active. */
-                   "mov    $1, %k[ssp]           \n\t"
-                   "rdsspq %[ssp]                \n\t"
-                   "cmp    $1, %k[ssp]           \n\t"
-                   "je     .Lshstk_done          \n\t"
+        /* Check for CET-SS being active. */
+        "mov    $1, %k[ssp]           \n\t" "rdsspq %[ssp]                \n\t" "cmp    $1, %k[ssp]           \n\t" "je     .Lshstk_done          \n\t"
 
-                   /* Push 3 words on the shadow stack */
-                   ".rept 3                      \n\t"
-                   "call 1f; nop; 1:             \n\t"
-                   ".endr                        \n\t"
+        /* Push 3 words on the shadow stack */
+        ".rept 3                      \n\t" "call 1f; nop; 1:             \n\t" ".endr                        \n\t"
 
-                   /* Fixup to be an IRET shadow stack frame */
-                   "wrssq  %q[cs], -1*8(%[ssp])  \n\t"
-                   "wrssq  %[rip], -2*8(%[ssp])  \n\t"
-                   "wrssq  %[ssp], -3*8(%[ssp])  \n\t"
+        /* Fixup to be an IRET shadow stack frame */
+        "wrssq  %q[cs], -1*8(%[ssp])  \n\t" "wrssq  %[rip], -2*8(%[ssp])  \n\t" "wrssq  %[ssp], -3*8(%[ssp])  \n\t"
 
-                   ".Lshstk_done:"
+        ".Lshstk_done:"
 #endif
-                   /* Write an IRET regular frame */
-                   "push   %[ss]                 \n\t"
-                   "push   %[rsp]                \n\t"
-                   "pushf                        \n\t"
-                   "push   %q[cs]                \n\t"
-                   "push   %[rip]                \n\t"
-                   "iretq                        \n\t"
-                   ".Ldone:                      \n\t"
-                   : [rip] "=&r" (tmp),
-                     [rsp] "=&r" (tmp),
-                     [ssp] "=&r" (tmp)
-                   : [ss] "i" (__HYPERVISOR_DS),
-                     [cs] "r" (__HYPERVISOR_CS) );
+        /* Write an IRET regular frame */
+        "push   %[ss]                 \n\t" "push   %[rsp]                \n\t" "pushf                        \n\t" "push   %q[cs]                \n\t" "push   %[rip]                \n\t" "iretq                        \n\t" ".Ldone:                      \n\t"
+        : [rip] "=&r"(tmp), [rsp] "=&r"(tmp), [ssp] "=&r"(tmp)
+        : [ss] "i"(__HYPERVISOR_DS), [cs] "r"(__HYPERVISOR_CS));
 }
 
 void nocall sysenter_entry(void);
 
 struct stubs {
     union {
-        void(*func)(void);
+        void (*func)(void);
         unsigned long addr;
     };
+
     unsigned long mfn;
 };
 
@@ -506,6 +470,7 @@ void tsx_init(void);
 #else
 #define opt_tsx      0     /* explicitly indicate TSX is off */
 #define rtm_disabled false /* RTM was not force-disabled */
+
 static inline void tsx_init(void) {}
 #endif
 

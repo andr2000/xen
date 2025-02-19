@@ -66,6 +66,7 @@ struct hypfs_entry {
 
 struct hypfs_entry_leaf {
     struct hypfs_entry e;
+
     union {
         const void *content;
         void *write_ptr;
@@ -78,14 +79,14 @@ struct hypfs_entry_dir {
 };
 
 struct hypfs_dyndir_id {
-    struct hypfs_entry_dir dir;             /* Modified copy of template. */
-    struct hypfs_funcs funcs;               /* Dynamic functions. */
+    struct hypfs_entry_dir dir; /* Modified copy of template. */
+    struct hypfs_funcs funcs; /* Dynamic functions. */
     const struct hypfs_entry_dir *template; /* Template used. */
 #define HYPFS_DYNDIR_ID_NAMELEN 12
-    char name[HYPFS_DYNDIR_ID_NAMELEN];     /* Name of hypfs entry. */
+    char name[HYPFS_DYNDIR_ID_NAMELEN]; /* Name of hypfs entry. */
 
-    unsigned int id;                        /* Numerical id. */
-    void *data;                             /* Data associated with id. */
+    unsigned int id; /* Numerical id. */
+    void *data; /* Data associated with id. */
 };
 
 #define HYPFS_DIR_INIT_FUNC(var, nam, fn)         \
@@ -163,14 +164,14 @@ static inline void hypfs_string_set_reference(struct hypfs_entry_leaf *leaf,
 
 extern struct hypfs_entry_dir hypfs_root;
 
-int hypfs_add_dir(struct hypfs_entry_dir *parent,
-                  struct hypfs_entry_dir *dir, bool nofault);
+int hypfs_add_dir(struct hypfs_entry_dir *parent, struct hypfs_entry_dir *dir,
+                  bool nofault);
 void hypfs_add_dyndir(struct hypfs_entry_dir *parent,
                       struct hypfs_entry_dir *template);
 int hypfs_add_leaf(struct hypfs_entry_dir *parent,
                    struct hypfs_entry_leaf *leaf, bool nofault);
-const struct hypfs_entry *cf_check hypfs_node_enter(
-    const struct hypfs_entry *entry);
+const struct hypfs_entry *cf_check
+hypfs_node_enter(const struct hypfs_entry *entry);
 void cf_check hypfs_node_exit(const struct hypfs_entry *entry);
 int cf_check hypfs_read_dir(const struct hypfs_entry *entry,
                             XEN_GUEST_HANDLE_PARAM(void) uaddr);
@@ -200,8 +201,9 @@ void hypfs_free_dyndata(void);
 int hypfs_read_dyndir_id_entry(const struct hypfs_entry_dir *template,
                                unsigned int id, bool is_last,
                                XEN_GUEST_HANDLE_PARAM(void) *uaddr);
-struct hypfs_entry *hypfs_gen_dyndir_id_entry(
-    const struct hypfs_entry_dir *template, unsigned int id, void *data);
+struct hypfs_entry *
+hypfs_gen_dyndir_id_entry(const struct hypfs_entry_dir *template,
+                          unsigned int id, void *data);
 unsigned int hypfs_dynid_entry_size(const struct hypfs_entry *template,
                                     unsigned int id);
 #endif

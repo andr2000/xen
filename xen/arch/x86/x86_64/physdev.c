@@ -73,13 +73,13 @@ CHECK_physdev_pci_device_add
 #undef xen_physdev_pci_device_add
 
 #define xen_physdev_pci_device physdev_pci_device
-CHECK_physdev_pci_device
+    CHECK_physdev_pci_device
 #undef xen_physdev_pci_device
 
 #define COMPAT
 #undef guest_handle_okay
 #define guest_handle_okay          compat_handle_okay
-typedef int ret_t;
+    typedef int ret_t;
 
 #include "../physdev.c"
 

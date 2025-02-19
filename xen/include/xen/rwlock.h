@@ -14,7 +14,7 @@ typedef struct {
     spinlock_t lock;
 } rwlock_t;
 
-#define    RW_LOCK_UNLOCKED {           \
+#define RW_LOCK_UNLOCKED {           \
     .cnts = ATOMIC_INIT(0),             \
     .lock = SPIN_LOCK_UNLOCKED          \
 }
@@ -23,13 +23,13 @@ typedef struct {
 #define rwlock_init(l) (*(l) = (rwlock_t)RW_LOCK_UNLOCKED)
 
 /* Writer states & reader shift and bias. */
-#define    _QW_SHIFT    14                      /* Writer flags shift */
-#define    _QW_CPUMASK  ((1U << _QW_SHIFT) - 1) /* Writer CPU mask */
-#define    _QW_WAITING  (1U << _QW_SHIFT)       /* A writer is waiting */
-#define    _QW_LOCKED   (3U << _QW_SHIFT)       /* A writer holds the lock */
-#define    _QW_WMASK    (3U << _QW_SHIFT)       /* Writer mask */
-#define    _QR_SHIFT    (_QW_SHIFT + 2)         /* Reader count shift */
-#define    _QR_BIAS     (1U << _QR_SHIFT)
+#define _QW_SHIFT    14                      /* Writer flags shift */
+#define _QW_CPUMASK  ((1U << _QW_SHIFT) - 1) /* Writer CPU mask */
+#define _QW_WAITING  (1U << _QW_SHIFT)       /* A writer is waiting */
+#define _QW_LOCKED   (3U << _QW_SHIFT)       /* A writer holds the lock */
+#define _QW_WMASK    (3U << _QW_SHIFT)       /* Writer mask */
+#define _QR_SHIFT    (_QW_SHIFT + 2)         /* Reader count shift */
+#define _QR_BIAS     (1U << _QR_SHIFT)
 
 void queue_read_lock_slowpath(rwlock_t *lock);
 void queue_write_lock_slowpath(rwlock_t *lock);
@@ -319,21 +319,21 @@ static always_inline void write_lock_irq(rwlock_t *l)
 #define rw_is_write_locked_by_me(l) \
     lock_evaluate_nospec(_is_write_locked_by_me(atomic_read(&(l)->cnts)))
 
-
 typedef struct percpu_rwlock percpu_rwlock_t;
 
 struct percpu_rwlock {
-    rwlock_t            rwlock;
-    bool                writer_activating;
+    rwlock_t rwlock;
+    bool writer_activating;
 #ifndef NDEBUG
-    percpu_rwlock_t     **percpu_owner;
+    percpu_rwlock_t **percpu_owner;
 #endif
 };
 
 #ifndef NDEBUG
 #define PERCPU_RW_LOCK_UNLOCKED(owner) { RW_LOCK_UNLOCKED, 0, owner }
+
 static inline void _percpu_rwlock_owner_check(percpu_rwlock_t **per_cpudata,
-                                         percpu_rwlock_t *percpu_rwlock)
+                                              percpu_rwlock_t *percpu_rwlock)
 {
     ASSERT(per_cpudata == percpu_rwlock->percpu_owner);
 }
@@ -359,7 +359,7 @@ static always_inline void _percpu_read_lock(percpu_rwlock_t **per_cpudata,
      * Detect using a second percpu_rwlock_t simulatenously and fallback
      * to standard read_lock.
      */
-    if ( unlikely(this_cpu_ptr(per_cpudata) != NULL ) )
+    if ( unlikely(this_cpu_ptr(per_cpudata) != NULL) )
     {
         read_lock(&percpu_rwlock->rwlock);
         return;
@@ -393,7 +393,7 @@ static always_inline void _percpu_read_lock(percpu_rwlock_t **per_cpudata,
 }
 
 static inline void _percpu_read_unlock(percpu_rwlock_t **per_cpudata,
-                percpu_rwlock_t *percpu_rwlock)
+                                       percpu_rwlock_t *percpu_rwlock)
 {
     /* Validate the correct per_cpudata variable has been provided. */
     _percpu_rwlock_owner_check(per_cpudata, percpu_rwlock);
@@ -407,7 +407,7 @@ static inline void _percpu_read_unlock(percpu_rwlock_t **per_cpudata,
      * Detect using a second percpu_rwlock_t simulatenously and fallback
      * to standard read_unlock.
      */
-    if ( unlikely(this_cpu_ptr(per_cpudata) != percpu_rwlock ) )
+    if ( unlikely(this_cpu_ptr(per_cpudata) != percpu_rwlock) )
     {
         read_unlock(&percpu_rwlock->rwlock);
         return;
@@ -422,7 +422,7 @@ void _percpu_write_lock(percpu_rwlock_t **per_cpudata,
                         percpu_rwlock_t *percpu_rwlock);
 
 static inline void _percpu_write_unlock(percpu_rwlock_t **per_cpudata,
-                percpu_rwlock_t *percpu_rwlock)
+                                        percpu_rwlock_t *percpu_rwlock)
 {
     /* Validate the correct per_cpudata variable has been provided. */
     _percpu_rwlock_owner_check(per_cpudata, percpu_rwlock);

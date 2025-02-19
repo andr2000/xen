@@ -9,8 +9,8 @@
 #define PAGE_ORDER_1G       18
 
 #ifndef __ASSEMBLY__
-# include <xen/types.h>
-# include <xen/lib.h>
+#include <xen/types.h>
+#include <xen/lib.h>
 #endif
 
 #include <asm/x86_64/page.h>
@@ -111,22 +111,25 @@
 static inline l1_pgentry_t l1e_from_paddr(paddr_t pa, unsigned int flags)
 {
     ASSERT((pa & ~(PADDR_MASK & PAGE_MASK)) == 0);
-    return (l1_pgentry_t) { pa | put_pte_flags(flags) };
+    return (l1_pgentry_t){ pa | put_pte_flags(flags) };
 }
+
 static inline l2_pgentry_t l2e_from_paddr(paddr_t pa, unsigned int flags)
 {
     ASSERT((pa & ~(PADDR_MASK & PAGE_MASK)) == 0);
-    return (l2_pgentry_t) { pa | put_pte_flags(flags) };
+    return (l2_pgentry_t){ pa | put_pte_flags(flags) };
 }
+
 static inline l3_pgentry_t l3e_from_paddr(paddr_t pa, unsigned int flags)
 {
     ASSERT((pa & ~(PADDR_MASK & PAGE_MASK)) == 0);
-    return (l3_pgentry_t) { pa | put_pte_flags(flags) };
+    return (l3_pgentry_t){ pa | put_pte_flags(flags) };
 }
+
 static inline l4_pgentry_t l4e_from_paddr(paddr_t pa, unsigned int flags)
 {
     ASSERT((pa & ~(PADDR_MASK & PAGE_MASK)) == 0);
-    return (l4_pgentry_t) { pa | put_pte_flags(flags) };
+    return (l4_pgentry_t){ pa | put_pte_flags(flags) };
 }
 #endif /* !__ASSEMBLY__ */
 
@@ -158,13 +161,13 @@ static inline l4_pgentry_t l4e_from_paddr(paddr_t pa, unsigned int flags)
 #define l1e_flip_flags(x, flags)    ((x).l1 ^= put_pte_flags(flags))
 
 /* Check if a pte's page mapping or significant access flags have changed. */
-#define l1e_has_changed(x,y,flags) \
+#define l1e_has_changed(x, y, flags) \
     ( !!(((x).l1 ^ (y).l1) & ((PADDR_MASK&PAGE_MASK)|put_pte_flags(flags))) )
-#define l2e_has_changed(x,y,flags) \
+#define l2e_has_changed(x, y, flags) \
     ( !!(((x).l2 ^ (y).l2) & ((PADDR_MASK&PAGE_MASK)|put_pte_flags(flags))) )
-#define l3e_has_changed(x,y,flags) \
+#define l3e_has_changed(x, y, flags) \
     ( !!(((x).l3 ^ (y).l3) & ((PADDR_MASK&PAGE_MASK)|put_pte_flags(flags))) )
-#define l4e_has_changed(x,y,flags) \
+#define l4e_has_changed(x, y, flags) \
     ( !!(((x).l4 ^ (y).l4) & ((PADDR_MASK&PAGE_MASK)|put_pte_flags(flags))) )
 
 #define map_l1t_from_l2e(x)        (l1_pgentry_t *)map_domain_page(l2e_get_mfn(x))
@@ -207,7 +210,10 @@ static inline l4_pgentry_t l4e_from_paddr(paddr_t pa, unsigned int flags)
 #ifndef __ASSEMBLY__
 
 /* Page-table type. */
-typedef struct { u64 pfn; } pagetable_t;
+typedef struct {
+    u64 pfn;
+} pagetable_t;
+
 #define pagetable_get_paddr(x)  ((paddr_t)(x).pfn << PAGE_SHIFT)
 #define pagetable_get_page(x)   mfn_to_page(pagetable_get_mfn(x))
 #define pagetable_get_pfn(x)    ((x).pfn)
@@ -277,15 +283,14 @@ void copy_page_sse2(void *to, const void *from);
 #define __linear_l4_table \
  ((l4_pgentry_t *)(__linear_l3_table + l3_linear_offset(LINEAR_PT_VIRT_START)))
 
-
 #ifndef __ASSEMBLY__
 extern root_pgentry_t idle_pg_table[ROOT_PAGETABLE_ENTRIES];
-extern l2_pgentry_t  *compat_idle_pg_table_l2;
-extern unsigned int   m2p_compat_vstart;
+extern l2_pgentry_t *compat_idle_pg_table_l2;
+extern unsigned int m2p_compat_vstart;
 extern l2_pgentry_t l2_xenmap[L2_PAGETABLE_ENTRIES],
-    l2_bootmap[4*L2_PAGETABLE_ENTRIES];
+    l2_bootmap[4 * L2_PAGETABLE_ENTRIES];
 extern l3_pgentry_t l3_bootmap[L3_PAGETABLE_ENTRIES];
-extern l2_pgentry_t l2_directmap[4*L2_PAGETABLE_ENTRIES];
+extern l2_pgentry_t l2_directmap[4 * L2_PAGETABLE_ENTRIES];
 extern l1_pgentry_t l1_fixmap[L1_PAGETABLE_ENTRIES];
 void paging_init(void);
 void efi_update_l4_pgtable(unsigned int l4idx, l4_pgentry_t l4e);
@@ -357,19 +362,22 @@ static inline unsigned int pte_flags_to_cacheattr(unsigned int flags)
 {
     return ((flags >> 5) & 4) | ((flags >> 3) & 3);
 }
+
 static inline unsigned int cacheattr_to_pte_flags(unsigned int cacheattr)
 {
     return ((cacheattr & 4) << 5) | ((cacheattr & 3) << 3);
 }
 
 /* return true if permission increased */
-static inline bool
-perms_strictly_increased(uint32_t old_flags, uint32_t new_flags)
+static inline bool perms_strictly_increased(uint32_t old_flags,
+                                            uint32_t new_flags)
 /* Given the flags of two entries, are the new flags a strict
  * increase in rights over the old ones? */
 {
-    uint32_t of = old_flags & (_PAGE_PRESENT|_PAGE_RW|_PAGE_USER|_PAGE_NX_BIT);
-    uint32_t nf = new_flags & (_PAGE_PRESENT|_PAGE_RW|_PAGE_USER|_PAGE_NX_BIT);
+    uint32_t of = old_flags &
+                  (_PAGE_PRESENT | _PAGE_RW | _PAGE_USER | _PAGE_NX_BIT);
+    uint32_t nf = new_flags &
+                  (_PAGE_PRESENT | _PAGE_RW | _PAGE_USER | _PAGE_NX_BIT);
     /* Flip the NX bit, since it's the only one that decreases rights;
      * we calculate as if it were an "X" bit. */
     of ^= _PAGE_NX_BIT;
@@ -381,7 +389,7 @@ perms_strictly_increased(uint32_t old_flags, uint32_t new_flags)
 
 static inline void invalidate_icache(void)
 {
-/*
+    /*
  * There is nothing to be done here as icaches are sufficiently
  * coherent on x86.
  */

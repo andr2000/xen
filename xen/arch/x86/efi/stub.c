@@ -29,17 +29,15 @@ void __init noreturn efi_multiboot2(EFI_HANDLE ImageHandle,
      * not be directly supported by C compiler.
      */
     asm volatile(
-    "    call *%[outstr]              \n"
-    "0:  hlt                          \n"
-    "    jmp  0b                      \n"
-       : "+c" (StdErr), "=d" (StdErr) ASM_CALL_CONSTRAINT
-       : "1" (err), [outstr] "rm" (StdErr->OutputString)
-       : "rax", "r8", "r9", "r10", "r11", "memory");
+        "    call *%[outstr]              \n" "0:  hlt                          \n" "    jmp  0b                      \n"
+        : "+c"(StdErr), "=d"(StdErr)ASM_CALL_CONSTRAINT
+        : "1"(err), [outstr] "rm"(StdErr->OutputString)
+        : "rax", "r8", "r9", "r10", "r11", "memory");
 
     unreachable();
 }
 
-void __init efi_init_memory(void) { }
+void __init efi_init_memory(void) {}
 
 bool efi_boot_mem_unused(unsigned long *start, unsigned long *end)
 {
@@ -49,4 +47,4 @@ bool efi_boot_mem_unused(unsigned long *start, unsigned long *end)
     return false;
 }
 
-void efi_update_l4_pgtable(unsigned int l4idx, l4_pgentry_t l4e) { }
+void efi_update_l4_pgtable(unsigned int l4idx, l4_pgentry_t l4e) {}

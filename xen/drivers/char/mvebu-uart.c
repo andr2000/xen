@@ -62,7 +62,7 @@ static struct mvebu3700_uart {
     void __iomem *regs;
     struct irqaction irqaction;
     struct vuart_info vuart;
-} mvebu3700_com = {0};
+} mvebu3700_com = { 0 };
 
 #define mvebu3700_read(uart, off)           readl((uart)->regs + (off))
 #define mvebu3700_write(uart, off, val)     writel(val, (uart)->regs + (off))
@@ -73,8 +73,8 @@ static void mvebu3700_uart_interrupt(int irq, void *data)
     struct mvebu3700_uart *uart = port->uart;
     uint32_t st = mvebu3700_read(uart, UART_STATUS_REG);
 
-    if ( st & (STATUS_RX_RDY | STATUS_OVR_ERR | STATUS_FRM_ERR |
-               STATUS_BRK_DET) )
+    if ( st &
+         (STATUS_RX_RDY | STATUS_OVR_ERR | STATUS_FRM_ERR | STATUS_BRK_DET) )
         serial_rx_interrupt(port);
 
     if ( st & STATUS_TX_RDY )
@@ -110,8 +110,8 @@ static void __init mvebu3700_uart_init_postirq(struct serial_port *port)
     uint32_t reg;
 
     uart->irqaction.handler = mvebu3700_uart_interrupt;
-    uart->irqaction.name    = "mvebu3700_uart";
-    uart->irqaction.dev_id  = port;
+    uart->irqaction.name = "mvebu3700_uart";
+    uart->irqaction.dev_id = port;
 
     if ( setup_irq(uart->irq, 0, &uart->irqaction) != 0 )
     {
@@ -201,15 +201,15 @@ static int mvebu3700_uart_tx_ready(struct serial_port *port)
 }
 
 static struct uart_driver __read_mostly mvebu3700_uart_driver = {
-    .init_preirq  = mvebu3700_uart_init_preirq,
+    .init_preirq = mvebu3700_uart_init_preirq,
     .init_postirq = mvebu3700_uart_init_postirq,
-    .putc         = mvebu3700_uart_putc,
-    .getc         = mvebu3700_uart_getc,
-    .tx_ready     = mvebu3700_uart_tx_ready,
-    .stop_tx      = mvebu3700_uart_stop_tx,
-    .start_tx     = mvebu3700_uart_start_tx,
-    .irq          = mvebu3700_irq,
-    .vuart_info   = mvebu3700_vuart_info,
+    .putc = mvebu3700_uart_putc,
+    .getc = mvebu3700_uart_getc,
+    .tx_ready = mvebu3700_uart_tx_ready,
+    .stop_tx = mvebu3700_uart_stop_tx,
+    .start_tx = mvebu3700_uart_start_tx,
+    .irq = mvebu3700_irq,
+    .vuart_info = mvebu3700_vuart_info,
 };
 
 static int __init mvebu_uart_init(struct dt_device_node *dev, const void *data)
@@ -238,7 +238,7 @@ static int __init mvebu_uart_init(struct dt_device_node *dev, const void *data)
         return -EINVAL;
     }
 
-    uart->irq  = res;
+    uart->irq = res;
 
     uart->regs = ioremap_nocache(addr, size);
     if ( !uart->regs )
@@ -261,15 +261,13 @@ static int __init mvebu_uart_init(struct dt_device_node *dev, const void *data)
     return 0;
 }
 
-static const struct dt_device_match mvebu_dt_match[] __initconst =
-{
+static const struct dt_device_match mvebu_dt_match[] __initconst = {
     DT_MATCH_COMPATIBLE("marvell,armada-3700-uart"),
     { /* sentinel */ },
 };
 
 DT_DEVICE_START(mvebu, "Marvell Armada-3700 UART", DEVICE_SERIAL)
-    .dt_match = mvebu_dt_match,
-    .init = mvebu_uart_init,
+    .dt_match = mvebu_dt_match, .init = mvebu_uart_init,
 DT_DEVICE_END
 
 /*

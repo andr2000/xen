@@ -17,8 +17,7 @@
 
 #include "decode.h"
 
-static void update_dabt(struct hsr_dabt *dabt, int reg,
-                        uint8_t size, bool sign)
+static void update_dabt(struct hsr_dabt *dabt, int reg, uint8_t size, bool sign)
 {
     dabt->reg = reg;
     dabt->size = size;
@@ -30,7 +29,7 @@ static int decode_thumb2(register_t pc, struct hsr_dabt *dabt, uint16_t hw1)
     uint16_t hw2;
     uint16_t rt;
 
-    if ( raw_copy_from_guest(&hw2, (void *__user)(pc + 2), sizeof (hw2)) )
+    if ( raw_copy_from_guest(&hw2, (void *__user)(pc + 2), sizeof(hw2)) )
         return -EFAULT;
 
     rt = (hw2 >> 12) & 0xf;
@@ -77,11 +76,11 @@ bad_thumb2:
 
 static int decode_arm64(register_t pc, mmio_info_t *info)
 {
-    union instr opcode = {0};
+    union instr opcode = { 0 };
     struct hsr_dabt *dabt = &info->dabt;
     struct instr_details *dabt_instr = &info->dabt_instr;
 
-    if ( raw_copy_from_guest(&opcode.value, (void * __user)pc, sizeof (opcode)) )
+    if ( raw_copy_from_guest(&opcode.value, (void *__user)pc, sizeof(opcode)) )
     {
         gprintk(XENLOG_ERR, "Could not copy the instruction from PC\n");
         return 1;
@@ -107,7 +106,8 @@ static int decode_arm64(register_t pc, mmio_info_t *info)
     if ( (opcode.value & POST_INDEX_FIXED_MASK) != POST_INDEX_FIXED_VALUE )
     {
         gprintk(XENLOG_ERR,
-                "Decoding instruction 0x%x is not supported\n", opcode.value);
+                "Decoding instruction 0x%x is not supported\n",
+                opcode.value);
         goto bad_loadstore;
     }
 
@@ -126,14 +126,18 @@ static int decode_arm64(register_t pc, mmio_info_t *info)
         dabt->write = 0;
     else
     {
-        gprintk(XENLOG_ERR,
-                "Decoding ldr/str post indexing is not supported for this variant\n");
+        gprintk(
+            XENLOG_ERR,
+            "Decoding ldr/str post indexing is not supported for this variant\n");
         goto bad_loadstore;
     }
 
-    gprintk(XENLOG_INFO,
-            "opcode->ldr_str.rt = 0x%x, opcode->ldr_str.size = 0x%x, opcode->ldr_str.imm9 = %d\n",
-            opcode.ldr_str.rt, opcode.ldr_str.size, opcode.ldr_str.imm9);
+    gprintk(
+        XENLOG_INFO,
+        "opcode->ldr_str.rt = 0x%x, opcode->ldr_str.size = 0x%x, opcode->ldr_str.imm9 = %d\n",
+        opcode.ldr_str.rt,
+        opcode.ldr_str.size,
+        opcode.ldr_str.imm9);
 
     update_dabt(dabt, opcode.ldr_str.rt, opcode.ldr_str.size, false);
 
@@ -144,7 +148,7 @@ static int decode_arm64(register_t pc, mmio_info_t *info)
 
     return 0;
 
- bad_loadstore:
+bad_loadstore:
     gprintk(XENLOG_ERR, "unhandled Arm instruction 0x%x\n", opcode.value);
     return 1;
 }
@@ -153,7 +157,7 @@ static int decode_thumb(register_t pc, struct hsr_dabt *dabt)
 {
     uint16_t instr;
 
-    if ( raw_copy_from_guest(&instr, (void * __user)pc, sizeof (instr)) )
+    if ( raw_copy_from_guest(&instr, (void *__user)pc, sizeof(instr)) )
         return -EFAULT;
 
     switch ( instr >> 12 )

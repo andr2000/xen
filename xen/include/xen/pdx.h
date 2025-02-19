@@ -234,9 +234,7 @@ static inline uint64_t pdx_region_mask(uint64_t base, uint64_t len)
     return 0;
 }
 
-static inline void pfn_pdx_hole_setup(unsigned long mask)
-{
-}
+static inline void pfn_pdx_hole_setup(unsigned long mask) {}
 
 #endif /* CONFIG_PDX_COMPRESSION */
 #endif /* __XEN_PDX_H__ */

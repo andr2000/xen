@@ -18,9 +18,7 @@ static inline bool arch_mfns_in_directmap(unsigned long mfn, unsigned long nr)
 
 bool init_domheap_mappings(unsigned int cpu);
 
-static inline void arch_setup_page_tables(void)
-{
-}
+static inline void arch_setup_page_tables(void) {}
 
 #endif /* __ARM_ARM32_MM_H__ */
 

@@ -56,16 +56,16 @@ enum fixed_addresses {
     /* Everything else should go further down. */
     FIX_APIC_BASE,
     FIX_IO_APIC_BASE_0,
-    FIX_IO_APIC_BASE_END = FIX_IO_APIC_BASE_0 + MAX_IO_APICS-1,
+    FIX_IO_APIC_BASE_END = FIX_IO_APIC_BASE_0 + MAX_IO_APICS - 1,
     FIX_ACPI_BEGIN,
     FIX_ACPI_END = FIX_ACPI_BEGIN + NUM_FIXMAP_ACPI_PAGES - 1,
     FIX_HPET_BASE,
     FIX_TBOOT_SHARED_BASE,
     FIX_MSIX_IO_RESERV_BASE,
-    FIX_MSIX_IO_RESERV_END = FIX_MSIX_IO_RESERV_BASE + FIX_MSIX_MAX_PAGES -1,
+    FIX_MSIX_IO_RESERV_END = FIX_MSIX_IO_RESERV_BASE + FIX_MSIX_MAX_PAGES - 1,
     FIX_TBOOT_MAP_ADDRESS,
     FIX_APEI_RANGE_BASE,
-    FIX_APEI_RANGE_END = FIX_APEI_RANGE_BASE + FIX_APEI_RANGE_MAX -1,
+    FIX_APEI_RANGE_END = FIX_APEI_RANGE_BASE + FIX_APEI_RANGE_MAX - 1,
     FIX_EFI_MPF,
     __end_of_fixed_addresses
 };
@@ -73,8 +73,8 @@ enum fixed_addresses {
 #define FIXADDR_SIZE  (__end_of_fixed_addresses << PAGE_SHIFT)
 #define FIXADDR_START (FIXADDR_TOP - FIXADDR_SIZE)
 
-extern void __set_fixmap(
-    enum fixed_addresses idx, unsigned long mfn, unsigned long flags);
+extern void __set_fixmap(enum fixed_addresses idx, unsigned long mfn,
+                         unsigned long flags);
 
 #define set_fixmap(idx, phys) \
     __set_fixmap(idx, (phys)>>PAGE_SHIFT, PAGE_HYPERVISOR)
@@ -107,8 +107,8 @@ enum fixed_addresses_x {
 #define FIXADDR_X_SIZE  (__end_of_fixed_addresses_x << PAGE_SHIFT)
 #define FIXADDR_X_START (FIXADDR_X_TOP - FIXADDR_X_SIZE)
 
-extern void __set_fixmap_x(
-    enum fixed_addresses_x idx, unsigned long mfn, unsigned long flags);
+extern void __set_fixmap_x(enum fixed_addresses_x idx, unsigned long mfn,
+                           unsigned long flags);
 
 #define set_fixmap_x(idx, phys) \
     __set_fixmap_x(idx, (phys)>>PAGE_SHIFT, PAGE_HYPERVISOR_RX | MAP_SMALL_PAGES)

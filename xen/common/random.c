@@ -36,4 +36,5 @@ static int __init cf_check init_boot_random(void)
     boot_random = get_random();
     return 0;
 }
+
 __initcall(init_boot_random);

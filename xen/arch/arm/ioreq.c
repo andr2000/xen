@@ -41,8 +41,8 @@ enum io_state handle_ioserv(struct cpu_user_regs *regs, struct vcpu *v)
     return IO_HANDLED;
 }
 
-enum io_state try_fwd_ioserv(struct cpu_user_regs *regs,
-                             struct vcpu *v, mmio_info_t *info)
+enum io_state try_fwd_ioserv(struct cpu_user_regs *regs, struct vcpu *v,
+                             mmio_info_t *info)
 {
     struct vcpu_io *vio = &v->io;
     const struct instr_details instr = info->dabt_instr;
@@ -148,24 +148,15 @@ int arch_ioreq_server_map_pages(struct ioreq_server *s)
     return -EOPNOTSUPP;
 }
 
-void arch_ioreq_server_unmap_pages(struct ioreq_server *s)
-{
-}
+void arch_ioreq_server_unmap_pages(struct ioreq_server *s) {}
 
-void arch_ioreq_server_enable(struct ioreq_server *s)
-{
-}
+void arch_ioreq_server_enable(struct ioreq_server *s) {}
 
-void arch_ioreq_server_disable(struct ioreq_server *s)
-{
-}
+void arch_ioreq_server_disable(struct ioreq_server *s) {}
 
-void arch_ioreq_server_destroy(struct ioreq_server *s)
-{
-}
+void arch_ioreq_server_destroy(struct ioreq_server *s) {}
 
-int arch_ioreq_server_map_mem_type(struct domain *d,
-                                   struct ioreq_server *s,
+int arch_ioreq_server_map_mem_type(struct domain *d, struct ioreq_server *s,
                                    uint32_t flags)
 {
     return -EOPNOTSUPP;
@@ -174,32 +165,27 @@ int arch_ioreq_server_map_mem_type(struct domain *d,
 void arch_ioreq_server_map_mem_type_completed(struct domain *d,
                                               struct ioreq_server *s,
                                               uint32_t flags)
-{
-}
+{}
 
 bool arch_ioreq_server_destroy_all(struct domain *d)
 {
     return true;
 }
 
-bool arch_ioreq_server_get_type_addr(const struct domain *d,
-                                     const ioreq_t *p,
-                                     uint8_t *type,
-                                     uint64_t *addr)
+bool arch_ioreq_server_get_type_addr(const struct domain *d, const ioreq_t *p,
+                                     uint8_t *type, uint64_t *addr)
 {
     if ( p->type != IOREQ_TYPE_COPY && p->type != IOREQ_TYPE_PIO )
         return false;
 
-    *type = (p->type == IOREQ_TYPE_PIO) ?
-             XEN_DMOP_IO_RANGE_PORT : XEN_DMOP_IO_RANGE_MEMORY;
+    *type = (p->type == IOREQ_TYPE_PIO) ? XEN_DMOP_IO_RANGE_PORT
+                                        : XEN_DMOP_IO_RANGE_MEMORY;
     *addr = p->addr;
 
     return true;
 }
 
-void arch_ioreq_domain_init(struct domain *d)
-{
-}
+void arch_ioreq_domain_init(struct domain *d) {}
 
 /*
  * Local variables:

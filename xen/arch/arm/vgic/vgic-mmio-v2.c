@@ -20,24 +20,23 @@
 #include "vgic.h"
 #include "vgic-mmio.h"
 
-static unsigned long vgic_mmio_read_v2_misc(struct vcpu *vcpu,
-                                            paddr_t addr, unsigned int len)
+static unsigned long vgic_mmio_read_v2_misc(struct vcpu *vcpu, paddr_t addr,
+                                            unsigned int len)
 {
     uint32_t value;
 
-    switch ( addr & 0x0c )      /* filter for the 4 registers handled here */
+    switch ( addr & 0x0c ) /* filter for the 4 registers handled here */
     {
     case GICD_CTLR:
         value = vcpu->domain->arch.vgic.enabled ? GICD_CTL_ENABLE : 0;
         break;
     case GICD_TYPER:
         value = vcpu->domain->arch.vgic.nr_spis + VGIC_NR_PRIVATE_IRQS;
-        value = (value >> 5) - 1;       /* stored as multiples of 32 */
+        value = (value >> 5) - 1; /* stored as multiples of 32 */
         value |= (vcpu->domain->max_vcpus - 1) << GICD_TYPE_CPUS_SHIFT;
         break;
     case GICD_IIDR:
-        value = (PRODUCT_ID_KVM << 24) |
-                (VARIANT_ID_XEN << 16) |
+        value = (PRODUCT_ID_KVM << 24) | (VARIANT_ID_XEN << 16) |
                 (IMPLEMENTER_ARM << 0);
         break;
     default:
@@ -47,14 +46,13 @@ static unsigned long vgic_mmio_read_v2_misc(struct vcpu *vcpu,
     return value;
 }
 
-static void vgic_mmio_write_v2_misc(struct vcpu *vcpu,
-                                    paddr_t addr, unsigned int len,
-                                    unsigned long val)
+static void vgic_mmio_write_v2_misc(struct vcpu *vcpu, paddr_t addr,
+                                    unsigned int len, unsigned long val)
 {
     struct vgic_dist *dist = &vcpu->domain->arch.vgic;
     bool enabled;
 
-    switch ( addr & 0x0c )      /* filter for the 4 registers handled here */
+    switch ( addr & 0x0c ) /* filter for the 4 registers handled here */
     {
     case GICD_CTLR:
         domain_lock(vcpu->domain);
@@ -81,9 +79,8 @@ static void vgic_mmio_write_v2_misc(struct vcpu *vcpu,
     }
 }
 
-static void vgic_mmio_write_sgir(struct vcpu *source_vcpu,
-                                 paddr_t addr, unsigned int len,
-                                 unsigned long val)
+static void vgic_mmio_write_sgir(struct vcpu *source_vcpu, paddr_t addr,
+                                 unsigned int len, unsigned long val)
 {
     struct domain *d = source_vcpu->domain;
     unsigned int nr_vcpus = d->max_vcpus;
@@ -94,21 +91,21 @@ static void vgic_mmio_write_sgir(struct vcpu *source_vcpu,
 
     switch ( val & GICD_SGI_TARGET_LIST_MASK )
     {
-    case GICD_SGI_TARGET_LIST:                    /* as specified by targets */
-        targets &= GENMASK(nr_vcpus - 1, 0);      /* limit to existing VCPUs */
+    case GICD_SGI_TARGET_LIST: /* as specified by targets */
+        targets &= GENMASK(nr_vcpus - 1, 0); /* limit to existing VCPUs */
         break;
     case GICD_SGI_TARGET_OTHERS:
-        targets = GENMASK(nr_vcpus - 1, 0);       /* all, ...   */
+        targets = GENMASK(nr_vcpus - 1, 0); /* all, ...   */
         targets &= ~(1U << source_vcpu->vcpu_id); /*   but self */
         break;
-    case GICD_SGI_TARGET_SELF:                    /* this very vCPU only */
+    case GICD_SGI_TARGET_SELF: /* this very vCPU only */
         targets = (1U << source_vcpu->vcpu_id);
         break;
-    case 0x3:                                     /* reserved */
+    case 0x3: /* reserved */
         return;
     }
 
-    bitmap_for_each ( vcpu_id, &targets, 8 )
+    bitmap_for_each(vcpu_id, &targets, 8)
     {
         struct vcpu *vcpu = d->vcpu[vcpu_id];
         struct vgic_irq *irq = vgic_get_irq(d, vcpu, intid);
@@ -124,8 +121,8 @@ static void vgic_mmio_write_sgir(struct vcpu *source_vcpu,
     }
 }
 
-static unsigned long vgic_mmio_read_target(struct vcpu *vcpu,
-                                           paddr_t addr, unsigned int len)
+static unsigned long vgic_mmio_read_target(struct vcpu *vcpu, paddr_t addr,
+                                           unsigned int len)
 {
     uint32_t intid = VGIC_ADDR_TO_INTID(addr, 8);
     uint32_t val = 0;
@@ -143,9 +140,8 @@ static unsigned long vgic_mmio_read_target(struct vcpu *vcpu,
     return val;
 }
 
-static void vgic_mmio_write_target(struct vcpu *vcpu,
-                                   paddr_t addr, unsigned int len,
-                                   unsigned long val)
+static void vgic_mmio_write_target(struct vcpu *vcpu, paddr_t addr,
+                                   unsigned int len, unsigned long val)
 {
     uint32_t intid = VGIC_ADDR_TO_INTID(addr, 8);
     uint8_t cpu_mask = GENMASK(vcpu->domain->max_vcpus - 1, 0);
@@ -181,8 +177,8 @@ static void vgic_mmio_write_target(struct vcpu *vcpu,
     }
 }
 
-static unsigned long vgic_mmio_read_sgipend(struct vcpu *vcpu,
-                                            paddr_t addr, unsigned int len)
+static unsigned long vgic_mmio_read_sgipend(struct vcpu *vcpu, paddr_t addr,
+                                            unsigned int len)
 {
     uint32_t intid = VGIC_ADDR_TO_INTID(addr, 8);
     uint32_t val = 0;
@@ -202,9 +198,8 @@ static unsigned long vgic_mmio_read_sgipend(struct vcpu *vcpu,
     return val;
 }
 
-static void vgic_mmio_write_sgipendc(struct vcpu *vcpu,
-                                     paddr_t addr, unsigned int len,
-                                     unsigned long val)
+static void vgic_mmio_write_sgipendc(struct vcpu *vcpu, paddr_t addr,
+                                     unsigned int len, unsigned long val)
 {
     uint32_t intid = VGIC_ADDR_TO_INTID(addr, 8);
     unsigned int i;
@@ -227,9 +222,8 @@ static void vgic_mmio_write_sgipendc(struct vcpu *vcpu,
     }
 }
 
-static void vgic_mmio_write_sgipends(struct vcpu *vcpu,
-                                     paddr_t addr, unsigned int len,
-                                     unsigned long val)
+static void vgic_mmio_write_sgipends(struct vcpu *vcpu, paddr_t addr,
+                                     unsigned int len, unsigned long val)
 {
     uint32_t intid = VGIC_ADDR_TO_INTID(addr, 8);
     unsigned int i;
@@ -259,48 +253,45 @@ static void vgic_mmio_write_sgipends(struct vcpu *vcpu,
 }
 
 static const struct vgic_register_region vgic_v2_dist_registers[] = {
-    REGISTER_DESC_WITH_LENGTH(GICD_CTLR,
-        vgic_mmio_read_v2_misc, vgic_mmio_write_v2_misc, 12,
-        VGIC_ACCESS_32bit),
-    REGISTER_DESC_WITH_BITS_PER_IRQ(GICD_IGROUPR,
-        vgic_mmio_read_rao, vgic_mmio_write_wi, 1,
-        VGIC_ACCESS_32bit),
-    REGISTER_DESC_WITH_BITS_PER_IRQ(GICD_ISENABLER,
-        vgic_mmio_read_enable, vgic_mmio_write_senable, 1,
-        VGIC_ACCESS_32bit),
-    REGISTER_DESC_WITH_BITS_PER_IRQ(GICD_ICENABLER,
-        vgic_mmio_read_enable, vgic_mmio_write_cenable, 1,
-        VGIC_ACCESS_32bit),
-    REGISTER_DESC_WITH_BITS_PER_IRQ(GICD_ISPENDR,
-        vgic_mmio_read_pending, vgic_mmio_write_spending, 1,
-        VGIC_ACCESS_32bit),
-    REGISTER_DESC_WITH_BITS_PER_IRQ(GICD_ICPENDR,
-        vgic_mmio_read_pending, vgic_mmio_write_cpending, 1,
-        VGIC_ACCESS_32bit),
-    REGISTER_DESC_WITH_BITS_PER_IRQ(GICD_ISACTIVER,
-        vgic_mmio_read_active, vgic_mmio_write_sactive, 1,
-        VGIC_ACCESS_32bit),
-    REGISTER_DESC_WITH_BITS_PER_IRQ(GICD_ICACTIVER,
-        vgic_mmio_read_active, vgic_mmio_write_cactive, 1,
-        VGIC_ACCESS_32bit),
-    REGISTER_DESC_WITH_BITS_PER_IRQ(GICD_IPRIORITYR,
-        vgic_mmio_read_priority, vgic_mmio_write_priority, 8,
-        VGIC_ACCESS_32bit | VGIC_ACCESS_8bit),
-    REGISTER_DESC_WITH_BITS_PER_IRQ(GICD_ITARGETSR,
-        vgic_mmio_read_target, vgic_mmio_write_target, 8,
-        VGIC_ACCESS_32bit | VGIC_ACCESS_8bit),
-    REGISTER_DESC_WITH_BITS_PER_IRQ(GICD_ICFGR,
-        vgic_mmio_read_config, vgic_mmio_write_config, 2,
-        VGIC_ACCESS_32bit),
-    REGISTER_DESC_WITH_LENGTH(GICD_SGIR,
-        vgic_mmio_read_raz, vgic_mmio_write_sgir, 4,
-        VGIC_ACCESS_32bit),
-    REGISTER_DESC_WITH_LENGTH(GICD_CPENDSGIR,
-        vgic_mmio_read_sgipend, vgic_mmio_write_sgipendc, 16,
-        VGIC_ACCESS_32bit | VGIC_ACCESS_8bit),
-    REGISTER_DESC_WITH_LENGTH(GICD_SPENDSGIR,
-        vgic_mmio_read_sgipend, vgic_mmio_write_sgipends, 16,
-        VGIC_ACCESS_32bit | VGIC_ACCESS_8bit),
+    REGISTER_DESC_WITH_LENGTH(GICD_CTLR, vgic_mmio_read_v2_misc,
+                              vgic_mmio_write_v2_misc, 12, VGIC_ACCESS_32bit),
+    REGISTER_DESC_WITH_BITS_PER_IRQ(GICD_IGROUPR, vgic_mmio_read_rao,
+                                    vgic_mmio_write_wi, 1, VGIC_ACCESS_32bit),
+    REGISTER_DESC_WITH_BITS_PER_IRQ(GICD_ISENABLER, vgic_mmio_read_enable,
+                                    vgic_mmio_write_senable, 1,
+                                    VGIC_ACCESS_32bit),
+    REGISTER_DESC_WITH_BITS_PER_IRQ(GICD_ICENABLER, vgic_mmio_read_enable,
+                                    vgic_mmio_write_cenable, 1,
+                                    VGIC_ACCESS_32bit),
+    REGISTER_DESC_WITH_BITS_PER_IRQ(GICD_ISPENDR, vgic_mmio_read_pending,
+                                    vgic_mmio_write_spending, 1,
+                                    VGIC_ACCESS_32bit),
+    REGISTER_DESC_WITH_BITS_PER_IRQ(GICD_ICPENDR, vgic_mmio_read_pending,
+                                    vgic_mmio_write_cpending, 1,
+                                    VGIC_ACCESS_32bit),
+    REGISTER_DESC_WITH_BITS_PER_IRQ(GICD_ISACTIVER, vgic_mmio_read_active,
+                                    vgic_mmio_write_sactive, 1,
+                                    VGIC_ACCESS_32bit),
+    REGISTER_DESC_WITH_BITS_PER_IRQ(GICD_ICACTIVER, vgic_mmio_read_active,
+                                    vgic_mmio_write_cactive, 1,
+                                    VGIC_ACCESS_32bit),
+    REGISTER_DESC_WITH_BITS_PER_IRQ(GICD_IPRIORITYR, vgic_mmio_read_priority,
+                                    vgic_mmio_write_priority, 8,
+                                    VGIC_ACCESS_32bit | VGIC_ACCESS_8bit),
+    REGISTER_DESC_WITH_BITS_PER_IRQ(GICD_ITARGETSR, vgic_mmio_read_target,
+                                    vgic_mmio_write_target, 8,
+                                    VGIC_ACCESS_32bit | VGIC_ACCESS_8bit),
+    REGISTER_DESC_WITH_BITS_PER_IRQ(GICD_ICFGR, vgic_mmio_read_config,
+                                    vgic_mmio_write_config, 2,
+                                    VGIC_ACCESS_32bit),
+    REGISTER_DESC_WITH_LENGTH(GICD_SGIR, vgic_mmio_read_raz,
+                              vgic_mmio_write_sgir, 4, VGIC_ACCESS_32bit),
+    REGISTER_DESC_WITH_LENGTH(GICD_CPENDSGIR, vgic_mmio_read_sgipend,
+                              vgic_mmio_write_sgipendc, 16,
+                              VGIC_ACCESS_32bit | VGIC_ACCESS_8bit),
+    REGISTER_DESC_WITH_LENGTH(GICD_SPENDSGIR, vgic_mmio_read_sgipend,
+                              vgic_mmio_write_sgipends, 16,
+                              VGIC_ACCESS_32bit | VGIC_ACCESS_8bit),
 };
 
 unsigned int vgic_v2_init_dist_iodev(struct vgic_io_device *dev)

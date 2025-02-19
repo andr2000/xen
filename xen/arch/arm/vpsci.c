@@ -38,7 +38,7 @@ static int do_common_cpu_on(register_t target_cpu, register_t entry_point,
     vgic_clear_pending_irqs(v);
 
     memset(ctxt, 0, sizeof(*ctxt));
-    ctxt->user_regs.pc64 = (u64) entry_point;
+    ctxt->user_regs.pc64 = (u64)entry_point;
     ctxt->sctlr = SCTLR_GUEST_INIT;
     ctxt->ttbr0 = 0;
     ctxt->ttbr1 = 0;
@@ -136,19 +136,19 @@ static int32_t do_psci_0_2_cpu_off(void)
     return do_psci_cpu_off(0);
 }
 
-static int32_t do_psci_0_2_cpu_on(register_t target_cpu,
-                                  register_t entry_point,
+static int32_t do_psci_0_2_cpu_on(register_t target_cpu, register_t entry_point,
                                   register_t context_id)
 {
     return do_common_cpu_on(target_cpu, entry_point, context_id);
 }
 
 static const unsigned long target_affinity_mask[] = {
-    ( MPIDR_HWID_MASK & AFFINITY_MASK( 0 ) ),
-    ( MPIDR_HWID_MASK & AFFINITY_MASK( 1 ) ),
-    ( MPIDR_HWID_MASK & AFFINITY_MASK( 2 ) )
+    (MPIDR_HWID_MASK & AFFINITY_MASK(0)),
+    (MPIDR_HWID_MASK & AFFINITY_MASK(1)),
+    (MPIDR_HWID_MASK & AFFINITY_MASK(2))
 #ifdef CONFIG_ARM_64
-    ,( MPIDR_HWID_MASK & AFFINITY_MASK( 3 ) )
+        ,
+    (MPIDR_HWID_MASK & AFFINITY_MASK(3))
 #endif
 };
 
@@ -172,8 +172,8 @@ static int32_t do_psci_0_2_affinity_info(register_t target_affinity,
     {
         v = d->vcpu[vcpuid];
 
-        if ( ( ( v->arch.vmpidr & tmask ) == target_affinity )
-                && ( !test_bit(_VPF_down, &v->pause_flags) ) )
+        if ( ((v->arch.vmpidr & tmask) == target_affinity) &&
+             (!test_bit(_VPF_down, &v->pause_flags)) )
             return PSCI_0_2_AFFINITY_LEVEL_ON;
     }
 
@@ -185,16 +185,16 @@ static int32_t do_psci_0_2_migrate_info_type(void)
     return PSCI_0_2_TOS_MP_OR_NOT_PRESENT;
 }
 
-static void do_psci_0_2_system_off( void )
+static void do_psci_0_2_system_off(void)
 {
     struct domain *d = current->domain;
-    domain_shutdown(d,SHUTDOWN_poweroff);
+    domain_shutdown(d, SHUTDOWN_poweroff);
 }
 
 static void do_psci_0_2_system_reset(void)
 {
     struct domain *d = current->domain;
-    domain_shutdown(d,SHUTDOWN_reboot);
+    domain_shutdown(d, SHUTDOWN_reboot);
 }
 
 static int32_t do_psci_1_0_features(uint32_t psci_func_id)

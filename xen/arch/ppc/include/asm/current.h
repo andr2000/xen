@@ -29,13 +29,13 @@ static inline struct cpu_info *get_cpu_info(void)
 #ifdef __clang__
     unsigned long sp;
 
-    asm ( "mr %0, 1" : "=r" (sp) );
+    asm("mr %0, 1" : "=r"(sp));
 #else
-    register unsigned long sp asm ("r1");
+    register unsigned long sp asm("r1");
 #endif
 
-    return (struct cpu_info *)((sp & ~(STACK_SIZE - 1)) +
-                               STACK_SIZE - sizeof(struct cpu_info));
+    return (struct cpu_info *)((sp & ~(STACK_SIZE - 1)) + STACK_SIZE -
+                               sizeof(struct cpu_info));
 }
 
 #define guest_cpu_user_regs() (&get_cpu_info()->guest_cpu_user_regs)

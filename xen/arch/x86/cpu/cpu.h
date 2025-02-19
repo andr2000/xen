@@ -1,7 +1,7 @@
 /* attempt to consolidate cpu attributes */
 struct cpu_dev {
-	void		(*c_early_init)(struct cpuinfo_x86 *c);
-	void		(*c_init)(struct cpuinfo_x86 * c);
+    void (*c_early_init)(struct cpuinfo_x86 *c);
+    void (*c_init)(struct cpuinfo_x86 *c);
 };
 
 extern const struct cpu_dev intel_cpu_dev, amd_cpu_dev, centaur_cpu_dev,

@@ -8,7 +8,6 @@
  * Copyright (c) 2013 Linaro Limited.
  */
 
-
 #include <xen/acpi.h>
 #include <xen/types.h>
 #include <xen/init.h>
@@ -41,7 +40,9 @@ int call_psci_cpu_on(int cpu)
 {
     struct arm_smccc_res res;
 
-    arm_smccc_smc(psci_cpu_on_nr, cpu_logical_map(cpu), __pa(init_secondary),
+    arm_smccc_smc(psci_cpu_on_nr,
+                  cpu_logical_map(cpu),
+                  __pa(init_secondary),
                   &res);
 
     return PSCI_RET(res);
@@ -55,7 +56,8 @@ void call_psci_cpu_off(void)
 
         /* If successfull the PSCI cpu_off call doesn't return */
         arm_smccc_smc(PSCI_0_2_FN32_CPU_OFF, &res);
-        panic("PSCI cpu off failed for CPU%d err=%d\n", smp_processor_id(),
+        panic("PSCI cpu off failed for CPU%d err=%d\n",
+              smp_processor_id(),
               PSCI_RET(res));
     }
 }
@@ -127,7 +129,8 @@ static void __init psci_init_smccc(void)
         cpus_set_cap(ARM_SMCCC_1_1);
 
     printk(XENLOG_INFO "Using SMC Calling Convention v%u.%u\n",
-           SMCCC_VERSION_MAJOR(smccc_ver), SMCCC_VERSION_MINOR(smccc_ver));
+           SMCCC_VERSION_MAJOR(smccc_ver),
+           SMCCC_VERSION_MINOR(smccc_ver));
 }
 
 static int __init psci_init_0_1(void)
@@ -162,8 +165,7 @@ static int __init psci_init_0_1(void)
 
 static int __init psci_init_0_2(void)
 {
-    static const struct dt_device_match psci_ids[] __initconst =
-    {
+    static const struct dt_device_match psci_ids[] __initconst = {
         DT_MATCH_COMPATIBLE("arm,psci-0.2"),
         DT_MATCH_COMPATIBLE("arm,psci-1.0"),
         { /* sentinel */ },
@@ -185,7 +187,8 @@ static int __init psci_init_0_2(void)
     }
     else
     {
-        if ( acpi_psci_hvc_present() ) {
+        if ( acpi_psci_hvc_present() )
+        {
             printk("PSCI conduit must be SMC, but is HVC\n");
             return -EINVAL;
         }
@@ -198,7 +201,8 @@ static int __init psci_init_0_2(void)
     if ( psci_ver != PSCI_VERSION(0, 2) && PSCI_VERSION_MAJOR(psci_ver) != 1 )
     {
         printk("Error: Unrecognized PSCI version %u.%u\n",
-               PSCI_VERSION_MAJOR(psci_ver), PSCI_VERSION_MINOR(psci_ver));
+               PSCI_VERSION_MAJOR(psci_ver),
+               PSCI_VERSION_MINOR(psci_ver));
         return -EOPNOTSUPP;
     }
 
@@ -224,7 +228,8 @@ int __init psci_init(void)
     psci_init_smccc();
 
     printk(XENLOG_INFO "Using PSCI v%u.%u\n",
-           PSCI_VERSION_MAJOR(psci_ver), PSCI_VERSION_MINOR(psci_ver));
+           PSCI_VERSION_MAJOR(psci_ver),
+           PSCI_VERSION_MINOR(psci_ver));
 
     return 0;
 }

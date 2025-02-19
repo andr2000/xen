@@ -25,10 +25,10 @@
 
 static struct {
     bool enabled;
-    paddr_t dbase;          /* Distributor interface address */
-    paddr_t cbase;          /* CPU interface address & size */
+    paddr_t dbase; /* Distributor interface address */
+    paddr_t cbase; /* CPU interface address & size */
     paddr_t csize;
-    paddr_t vbase;          /* Virtual CPU interface address */
+    paddr_t vbase; /* Virtual CPU interface address */
 
     /* Offset to add to get an 8kB contiguous region if GIC is aliased */
     uint32_t aliased_offset;
@@ -61,7 +61,7 @@ void vgic_v2_fold_lr_state(struct vcpu *vcpu)
     unsigned long flags;
     unsigned int lr;
 
-    if ( !used_lrs )    /* No LRs used, so nothing to sync back here. */
+    if ( !used_lrs ) /* No LRs used, so nothing to sync back here. */
         return;
 
     gic_hw_ops->update_hcr_status(GICH_HCR_UIE, false);
@@ -191,7 +191,7 @@ void vgic_v2_fold_lr_state(struct vcpu *vcpu)
  */
 void vgic_v2_populate_lr(struct vcpu *vcpu, struct vgic_irq *irq, int lr)
 {
-    struct gic_lr lr_val = {0};
+    struct gic_lr lr_val = { 0 };
 
     lr_val.virq = irq->intid;
 
@@ -312,7 +312,6 @@ int vgic_v2_map_resources(struct domain *d)
         dist->csize = GUEST_GICC_SIZE;
         dist->vbase = gic_v2_hw_data.vbase + gic_v2_hw_data.aliased_offset;
     }
-
 
     ret = vgic_register_dist_iodev(d, gaddr_to_gfn(dist->dbase), VGIC_V2);
     if ( ret )

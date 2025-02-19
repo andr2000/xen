@@ -14,11 +14,10 @@
 
 #ifdef CONFIG_HVM
 
-int create_grant_p2m_mapping(uint64_t addr, mfn_t frame,
-                             unsigned int flags,
+int create_grant_p2m_mapping(uint64_t addr, mfn_t frame, unsigned int flags,
                              unsigned int cache_flags);
-int replace_grant_p2m_mapping(uint64_t addr, mfn_t frame,
-                              uint64_t new_addr, unsigned int flags);
+int replace_grant_p2m_mapping(uint64_t addr, mfn_t frame, uint64_t new_addr,
+                              unsigned int flags);
 
 #else
 
@@ -32,7 +31,8 @@ static inline int create_grant_p2m_mapping(uint64_t addr, mfn_t frame,
 }
 
 static inline int replace_grant_p2m_mapping(uint64_t addr, mfn_t frame,
-                                            uint64_t new_addr, unsigned int flags)
+                                            uint64_t new_addr,
+                                            unsigned int flags)
 {
     return GNTST_general_error;
 }

@@ -17,7 +17,9 @@ extern void (*video_puts)(const char *s, size_t nr);
 void video_endboot(void);
 #else
 #define video_init()    ((void)0)
+
 static inline void video_puts(const char *str, size_t nr) {}
+
 #define video_endboot() ((void)0)
 #endif
 

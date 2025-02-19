@@ -16,8 +16,7 @@
 
 #include "private.h"
 
-int cpumask_to_vpset(struct hv_vpset *vpset,
-                     const cpumask_t *mask)
+int cpumask_to_vpset(struct hv_vpset *vpset, const cpumask_t *mask)
 {
     int nr = 1;
     unsigned int cpu, vcpu_bank, vcpu_offset;
@@ -33,7 +32,7 @@ int cpumask_to_vpset(struct hv_vpset *vpset,
 
     vpset->format = HV_GENERIC_SET_SPARSE_4K;
 
-    for_each_cpu ( cpu, mask )
+    for_each_cpu(cpu, mask)
     {
         unsigned int vcpu = hv_vp_index(cpu);
 

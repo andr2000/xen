@@ -63,6 +63,7 @@ paddr_t acpi_get_table_offset(struct membank tbl_add[], EFI_MEM_RES index);
 
 #ifdef CONFIG_ACPI
 extern bool acpi_disabled;
+
 /* Basic configuration for ACPI */
 static inline void disable_acpi(void)
 {

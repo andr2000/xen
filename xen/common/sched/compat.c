@@ -6,7 +6,6 @@
 #ifndef __COMMON_SCHED_COMPAT_C__
 #define __COMMON_SCHED_COMPAT_C__
 
-
 #include <compat/sched.h>
 
 #define COMPAT

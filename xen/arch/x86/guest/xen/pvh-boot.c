@@ -17,7 +17,7 @@
 #include <public/arch-x86/hvm/start_info.h>
 
 #ifdef CONFIG_VIDEO
-# include "../../boot/video.h"
+#include "../../boot/video.h"
 #endif
 
 /* Initialised in head.S, before .bss is zeroed. */
@@ -28,8 +28,7 @@ static multiboot_info_t __initdata pvh_mbi;
 static module_t __initdata pvh_mbi_mods[8];
 static const char *__initdata pvh_loader = "PVH Directboot";
 
-static void __init convert_pvh_info(multiboot_info_t **mbi,
-                                    module_t **mod)
+static void __init convert_pvh_info(multiboot_info_t **mbi, module_t **mod)
 {
     const struct hvm_start_info *pvh_info = __va(pvh_start_info_pa);
     const struct hvm_modlist_entry *entry;
@@ -45,7 +44,8 @@ static void __init convert_pvh_info(multiboot_info_t **mbi,
      */
     if ( ARRAY_SIZE(pvh_mbi_mods) <= pvh_info->nr_modules )
         panic("The module array is too small, size %zu, requested %u\n",
-              ARRAY_SIZE(pvh_mbi_mods), pvh_info->nr_modules);
+              ARRAY_SIZE(pvh_mbi_mods),
+              pvh_info->nr_modules);
 
     /*
      * Turn hvm_start_info into mbi. Luckily all modules are placed under 4GB
@@ -68,8 +68,8 @@ static void __init convert_pvh_info(multiboot_info_t **mbi,
         BUG_ON(entry[i].cmdline_paddr >> 32);
 
         pvh_mbi_mods[i].mod_start = entry[i].paddr;
-        pvh_mbi_mods[i].mod_end   = entry[i].paddr + entry[i].size;
-        pvh_mbi_mods[i].string    = entry[i].cmdline_paddr;
+        pvh_mbi_mods[i].mod_end = entry[i].paddr + entry[i].size;
+        pvh_mbi_mods[i].string = entry[i].cmdline_paddr;
     }
 
     rsdp_hint = pvh_info->rsdp_paddr;
@@ -117,23 +117,25 @@ void __init pvh_print_info(void)
 
     printk("PVH start info: (pa %08x)\n", pvh_start_info_pa);
     printk("  version:    %u\n", pvh_info->version);
-    printk("  flags:      %#"PRIx32"\n", pvh_info->flags);
+    printk("  flags:      %#" PRIx32 "\n", pvh_info->flags);
     printk("  nr_modules: %u\n", pvh_info->nr_modules);
-    printk("  modlist_pa: %016"PRIx64"\n", pvh_info->modlist_paddr);
-    printk("  cmdline_pa: %016"PRIx64"\n", pvh_info->cmdline_paddr);
+    printk("  modlist_pa: %016" PRIx64 "\n", pvh_info->modlist_paddr);
+    printk("  cmdline_pa: %016" PRIx64 "\n", pvh_info->cmdline_paddr);
     if ( pvh_info->cmdline_paddr )
         printk("  cmdline:    '%s'\n", (char *)__va(pvh_info->cmdline_paddr));
-    printk("  rsdp_pa:    %016"PRIx64"\n", pvh_info->rsdp_paddr);
+    printk("  rsdp_pa:    %016" PRIx64 "\n", pvh_info->rsdp_paddr);
 
     entry = __va(pvh_info->modlist_paddr);
     for ( i = 0; i < pvh_info->nr_modules; i++ )
     {
-        printk("    mod[%u].pa:         %016"PRIx64"\n", i, entry[i].paddr);
-        printk("    mod[%u].size:       %016"PRIu64"\n", i, entry[i].size);
-        printk("    mod[%u].cmdline_pa: %016"PRIx64"\n",
-               i, entry[i].cmdline_paddr);
+        printk("    mod[%u].pa:         %016" PRIx64 "\n", i, entry[i].paddr);
+        printk("    mod[%u].size:       %016" PRIu64 "\n", i, entry[i].size);
+        printk("    mod[%u].cmdline_pa: %016" PRIx64 "\n",
+               i,
+               entry[i].cmdline_paddr);
         if ( entry[i].cmdline_paddr )
-            printk("    mod[%1u].cmdline:    '%s'\n", i,
+            printk("    mod[%1u].cmdline:    '%s'\n",
+                   i,
                    (char *)__va(entry[i].cmdline_paddr));
     }
 }

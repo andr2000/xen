@@ -19,8 +19,8 @@ struct gunzip_state {
 
     unsigned long bytes_out;
 
-    unsigned long bb;      /* bit buffer */
-    unsigned int  bk;      /* bits in bit buffer */
+    unsigned long bb; /* bit buffer */
+    unsigned int bk; /* bits in bit buffer */
 
     uint32_t crc_32_tab[256];
     uint32_t crc;
@@ -30,25 +30,25 @@ struct gunzip_state {
 #define free(a)         xfree(a)
 #define memzero(s, n)   memset((s), 0, (n))
 
-typedef unsigned char   uch;
-typedef unsigned short  ush;
-typedef unsigned long   ulg;
+typedef unsigned char uch;
+typedef unsigned short ush;
+typedef unsigned long ulg;
 
 /* Diagnostic functions */
 #ifdef DEBUG
-#  define Assert(cond, msg) do { if (!(cond)) error(msg); } while (0)
-#  define Trace(x)      do { fprintf x; } while (0)
-#  define Tracev(x)     do { if (verbose) fprintf x ; } while (0)
-#  define Tracevv(x)    do { if (verbose > 1) fprintf x ; } while (0)
-#  define Tracec(c, x)  do { if (verbose && (c)) fprintf x ; } while (0)
-#  define Tracecv(c, x) do { if (verbose > 1 && (c)) fprintf x ; } while (0)
+#define Assert(cond, msg) do { if (!(cond)) error(msg); } while (0)
+#define Trace(x)      do { fprintf x; } while (0)
+#define Tracev(x)     do { if (verbose) fprintf x ; } while (0)
+#define Tracevv(x)    do { if (verbose > 1) fprintf x ; } while (0)
+#define Tracec(c, x)  do { if (verbose && (c)) fprintf x ; } while (0)
+#define Tracecv(c, x) do { if (verbose > 1 && (c)) fprintf x ; } while (0)
 #else
-#  define Assert(cond, msg)
-#  define Trace(x)
-#  define Tracev(x)
-#  define Tracevv(x)
-#  define Tracec(c, x)
-#  define Tracecv(c, x)
+#define Assert(cond, msg)
+#define Trace(x)
+#define Tracev(x)
+#define Tracevv(x)
+#define Tracec(c, x)
+#define Tracecv(c, x)
 #endif
 
 static void flush_window(struct gunzip_state *s);

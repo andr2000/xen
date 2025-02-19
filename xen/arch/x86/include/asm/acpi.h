@@ -70,7 +70,6 @@ int __acpi_release_global_lock(unsigned int *lock);
 	    :"r"(d32),				     \
 	     "0"(n_lo), "1"(n_hi))
 
-
 #define ACPI_SHIFT_RIGHT_64(n_hi, n_lo) \
 	asm("shrl   $1,%2	;"	\
 	    "rcrl   $1,%3;"		\
@@ -84,12 +83,15 @@ extern u8 acpi_enable_value, acpi_disable_value;
 
 static inline void disable_acpi(void)
 {
-	acpi_disabled = 1;
-	acpi_ht = 0;
-	acpi_noirq = 1;
+    acpi_disabled = 1;
+    acpi_ht = 0;
+    acpi_noirq = 1;
 }
 
-static inline void acpi_noirq_set(void) { acpi_noirq = 1; }
+static inline void acpi_noirq_set(void)
+{
+    acpi_noirq = 1;
+}
 
 /* routines for saving/restoring kernel state */
 extern int acpi_save_state_mem(void);
@@ -114,14 +116,17 @@ struct acpi_sleep_info {
     struct acpi_generic_address pm1b_evt_blk;
     struct acpi_generic_address sleep_control;
     struct acpi_generic_address sleep_status;
+
     union {
         uint16_t pm1a_cnt_val;
         uint8_t sleep_type_a;
     };
+
     union {
         uint16_t pm1b_cnt_val;
         uint8_t sleep_type_b;
     };
+
     uint32_t sleep_state;
     uint64_t wakeup_vector;
     uint32_t vector_width;
@@ -142,7 +147,10 @@ void acpi_iommu_init(void);
 #ifdef CONFIG_AMD_IOMMU
 int acpi_ivrs_init(void);
 #else
-static inline int acpi_ivrs_init(void) { return -ENODEV; }
+static inline int acpi_ivrs_init(void)
+{
+    return -ENODEV;
+}
 #endif
 
 void acpi_mmcfg_init(void);

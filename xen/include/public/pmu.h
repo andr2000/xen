@@ -9,9 +9,9 @@
 #include "xen.h"
 #if defined(__i386__) || defined(__x86_64__)
 #include "arch-x86/pmu.h"
-#elif defined (__arm__) || defined (__aarch64__)
+#elif defined(__arm__) || defined(__aarch64__)
 #include "arch-arm.h"
-#elif defined (__powerpc64__)
+#elif defined(__powerpc64__)
 #include "arch-ppc.h"
 #elif defined(__riscv)
 #include "arch-riscv.h"
@@ -38,6 +38,7 @@
 #define XENPMU_finish          5
 #define XENPMU_lvtpc_set       6
 #define XENPMU_flush           7 /* Write cached MSR values to HW     */
+
 /* ` } */
 
 /* Parameters structure for HYPERVISOR_xenpmu_op call */
@@ -47,6 +48,7 @@ struct xen_pmu_params {
         uint32_t maj;
         uint32_t min;
     } version;
+
     uint64_t val;
 
     /* IN parameters */
@@ -109,7 +111,7 @@ struct xen_pmu_data {
      * On privileged guests can be DOMID_SELF, DOMID_XEN, or, when in
      * XENPMU_MODE_ALL mode, domain ID of another domain.
      */
-    domid_t  domain_id;
+    domid_t domain_id;
 
     uint8_t pad[6];
 

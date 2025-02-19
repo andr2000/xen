@@ -29,8 +29,8 @@ void cf_check acpi_dead_idle(void);
 void play_dead(void);
 void trace_exit_reason(u32 *irq_traced);
 void update_idle_stats(struct acpi_processor_power *power,
-                       struct acpi_processor_cx *cx,
-                       uint64_t before, uint64_t after);
+                       struct acpi_processor_cx *cx, uint64_t before,
+                       uint64_t after);
 void update_last_cx_stat(struct acpi_processor_power *power,
                          struct acpi_processor_cx *cx, uint64_t ticks);
 

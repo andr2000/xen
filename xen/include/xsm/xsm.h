@@ -32,12 +32,12 @@ typedef uint32_t xsm_magic_t;
  * default actions of XSM hooks. They should be compiled out otherwise.
  */
 enum xsm_default {
-    XSM_HOOK,     /* Guests can normally access the hypercall */
-    XSM_DM_PRIV,  /* Device model can perform on its target domain */
-    XSM_TARGET,   /* Can perform on self or your target domain */
-    XSM_PRIV,     /* Privileged - normally restricted to dom0 */
-    XSM_XS_PRIV,  /* Xenstore domain - can do some privileged operations */
-    XSM_OTHER     /* Something more complex */
+    XSM_HOOK, /* Guests can normally access the hypercall */
+    XSM_DM_PRIV, /* Device model can perform on its target domain */
+    XSM_TARGET, /* Can perform on self or your target domain */
+    XSM_PRIV, /* Privileged - normally restricted to dom0 */
+    XSM_XS_PRIV, /* Xenstore domain - can do some privileged operations */
+    XSM_OTHER /* Something more complex */
 };
 typedef enum xsm_default xsm_default_t;
 
@@ -178,8 +178,8 @@ struct xsm_ops {
 #define XSM_MMU_UPDATE_WRITE     2
 #define XSM_MMU_NORMAL_UPDATE    4
 #define XSM_MMU_MACHPHYS_UPDATE  8
-    int (*mmu_update)(struct domain *d, struct domain *t,
-                      struct domain *f, uint32_t flags);
+    int (*mmu_update)(struct domain *d, struct domain *t, struct domain *f,
+                      uint32_t flags);
     int (*mmuext_op)(struct domain *d, struct domain *f);
     int (*update_va_mapping)(struct domain *d, struct domain *f,
                              l1_pgentry_t pte);
@@ -213,14 +213,14 @@ static inline int xsm_set_system_active(void)
     return alternative_call(xsm_ops.set_system_active);
 }
 
-static inline void xsm_security_domaininfo(
-    struct domain *d, struct xen_domctl_getdomaininfo *info)
+static inline void
+xsm_security_domaininfo(struct domain *d, struct xen_domctl_getdomaininfo *info)
 {
     alternative_vcall(xsm_ops.security_domaininfo, d, info);
 }
 
-static inline int xsm_domain_create(
-    xsm_default_t def, struct domain *d, uint32_t ssidref)
+static inline int xsm_domain_create(xsm_default_t def, struct domain *d,
+                                    uint32_t ssidref)
 {
     return alternative_call(xsm_ops.domain_create, d, ssidref);
 }
@@ -230,8 +230,8 @@ static inline int xsm_getdomaininfo(xsm_default_t def, struct domain *d)
     return alternative_call(xsm_ops.getdomaininfo, d);
 }
 
-static inline int xsm_domctl_scheduler_op(
-    xsm_default_t def, struct domain *d, int cmd)
+static inline int xsm_domctl_scheduler_op(xsm_default_t def, struct domain *d,
+                                          int cmd)
 {
     return alternative_call(xsm_ops.domctl_scheduler_op, d, cmd);
 }
@@ -241,8 +241,8 @@ static inline int xsm_sysctl_scheduler_op(xsm_default_t def, int cmd)
     return alternative_call(xsm_ops.sysctl_scheduler_op, cmd);
 }
 
-static inline int xsm_set_target(
-    xsm_default_t def, struct domain *d, struct domain *e)
+static inline int xsm_set_target(xsm_default_t def, struct domain *d,
+                                 struct domain *e)
 {
     return alternative_call(xsm_ops.set_target, d, e);
 }
@@ -263,15 +263,16 @@ static inline int xsm_readconsole(xsm_default_t def, uint32_t clear)
     return alternative_call(xsm_ops.readconsole, clear);
 }
 
-static inline int xsm_evtchn_unbound(
-    xsm_default_t def, struct domain *d1, struct evtchn *chn, domid_t id2)
+static inline int xsm_evtchn_unbound(xsm_default_t def, struct domain *d1,
+                                     struct evtchn *chn, domid_t id2)
 {
     return alternative_call(xsm_ops.evtchn_unbound, d1, chn, id2);
 }
 
-static inline int xsm_evtchn_interdomain(
-    xsm_default_t def, struct domain *d1, struct evtchn *chan1,
-    struct domain *d2, struct evtchn *chan2)
+static inline int xsm_evtchn_interdomain(xsm_default_t def, struct domain *d1,
+                                         struct evtchn *chan1,
+                                         struct domain *d2,
+                                         struct evtchn *chan2)
 {
     return alternative_call(xsm_ops.evtchn_interdomain, d1, chan1, d2, chan2);
 }
@@ -281,56 +282,56 @@ static inline void xsm_evtchn_close_post(struct evtchn *chn)
     alternative_vcall(xsm_ops.evtchn_close_post, chn);
 }
 
-static inline int xsm_evtchn_send(
-    xsm_default_t def, struct domain *d, struct evtchn *chn)
+static inline int xsm_evtchn_send(xsm_default_t def, struct domain *d,
+                                  struct evtchn *chn)
 {
     return alternative_call(xsm_ops.evtchn_send, d, chn);
 }
 
-static inline int xsm_evtchn_status(
-    xsm_default_t def, struct domain *d, struct evtchn *chn)
+static inline int xsm_evtchn_status(xsm_default_t def, struct domain *d,
+                                    struct evtchn *chn)
 {
     return alternative_call(xsm_ops.evtchn_status, d, chn);
 }
 
-static inline int xsm_evtchn_reset(
-    xsm_default_t def, struct domain *d1, struct domain *d2)
+static inline int xsm_evtchn_reset(xsm_default_t def, struct domain *d1,
+                                   struct domain *d2)
 {
     return alternative_call(xsm_ops.evtchn_reset, d1, d2);
 }
 
-static inline int xsm_grant_mapref(
-    xsm_default_t def, struct domain *d1, struct domain *d2, uint32_t flags)
+static inline int xsm_grant_mapref(xsm_default_t def, struct domain *d1,
+                                   struct domain *d2, uint32_t flags)
 {
     return alternative_call(xsm_ops.grant_mapref, d1, d2, flags);
 }
 
-static inline int xsm_grant_unmapref(
-    xsm_default_t def, struct domain *d1, struct domain *d2)
+static inline int xsm_grant_unmapref(xsm_default_t def, struct domain *d1,
+                                     struct domain *d2)
 {
     return alternative_call(xsm_ops.grant_unmapref, d1, d2);
 }
 
-static inline int xsm_grant_setup(
-    xsm_default_t def, struct domain *d1, struct domain *d2)
+static inline int xsm_grant_setup(xsm_default_t def, struct domain *d1,
+                                  struct domain *d2)
 {
     return alternative_call(xsm_ops.grant_setup, d1, d2);
 }
 
-static inline int xsm_grant_transfer(
-    xsm_default_t def, struct domain *d1, struct domain *d2)
+static inline int xsm_grant_transfer(xsm_default_t def, struct domain *d1,
+                                     struct domain *d2)
 {
     return alternative_call(xsm_ops.grant_transfer, d1, d2);
 }
 
-static inline int xsm_grant_copy(
-    xsm_default_t def, struct domain *d1, struct domain *d2)
+static inline int xsm_grant_copy(xsm_default_t def, struct domain *d1,
+                                 struct domain *d2)
 {
     return alternative_call(xsm_ops.grant_copy, d1, d2);
 }
 
-static inline int xsm_grant_query_size(
-    xsm_default_t def, struct domain *d1, struct domain *d2)
+static inline int xsm_grant_query_size(xsm_default_t def, struct domain *d1,
+                                       struct domain *d2)
 {
     return alternative_call(xsm_ops.grant_query_size, d1, d2);
 }
@@ -345,20 +346,20 @@ static inline void xsm_free_security_domain(struct domain *d)
     alternative_vcall(xsm_ops.free_security_domain, d);
 }
 
-static inline int xsm_alloc_security_evtchns(
-    struct evtchn *chn, unsigned int nr)
+static inline int xsm_alloc_security_evtchns(struct evtchn *chn,
+                                             unsigned int nr)
 {
     return alternative_call(xsm_ops.alloc_security_evtchns, chn, nr);
 }
 
-static inline void xsm_free_security_evtchns(
-    struct evtchn *chn, unsigned int nr)
+static inline void xsm_free_security_evtchns(struct evtchn *chn,
+                                             unsigned int nr)
 {
     alternative_vcall(xsm_ops.free_security_evtchns, chn, nr);
 }
 
-static inline char *xsm_show_security_evtchn(
-    struct domain *d, const struct evtchn *chn)
+static inline char *xsm_show_security_evtchn(struct domain *d,
+                                             const struct evtchn *chn)
 {
     return alternative_call(xsm_ops.show_security_evtchn, d, chn);
 }
@@ -383,39 +384,40 @@ static inline int xsm_memory_exchange(xsm_default_t def, struct domain *d)
     return alternative_call(xsm_ops.memory_exchange, d);
 }
 
-static inline int xsm_memory_adjust_reservation(
-    xsm_default_t def, struct domain *d1, struct domain *d2)
+static inline int xsm_memory_adjust_reservation(xsm_default_t def,
+                                                struct domain *d1,
+                                                struct domain *d2)
 {
     return alternative_call(xsm_ops.memory_adjust_reservation, d1, d2);
 }
 
-static inline int xsm_memory_stat_reservation(
-    xsm_default_t def, struct domain *d1, struct domain *d2)
+static inline int xsm_memory_stat_reservation(xsm_default_t def,
+                                              struct domain *d1,
+                                              struct domain *d2)
 {
     return alternative_call(xsm_ops.memory_stat_reservation, d1, d2);
 }
 
-static inline int xsm_memory_pin_page(
-    xsm_default_t def, struct domain *d1, struct domain *d2,
-    struct page_info *page)
+static inline int xsm_memory_pin_page(xsm_default_t def, struct domain *d1,
+                                      struct domain *d2, struct page_info *page)
 {
     return alternative_call(xsm_ops.memory_pin_page, d1, d2, page);
 }
 
-static inline int xsm_add_to_physmap(
-    xsm_default_t def, struct domain *d1, struct domain *d2)
+static inline int xsm_add_to_physmap(xsm_default_t def, struct domain *d1,
+                                     struct domain *d2)
 {
     return alternative_call(xsm_ops.add_to_physmap, d1, d2);
 }
 
-static inline int xsm_remove_from_physmap(
-    xsm_default_t def, struct domain *d1, struct domain *d2)
+static inline int xsm_remove_from_physmap(xsm_default_t def, struct domain *d1,
+                                          struct domain *d2)
 {
     return alternative_call(xsm_ops.remove_from_physmap, d1, d2);
 }
 
-static inline int xsm_map_gmfn_foreign(
-    xsm_default_t def, struct domain *d, struct domain *t)
+static inline int xsm_map_gmfn_foreign(xsm_default_t def, struct domain *d,
+                                       struct domain *t)
 {
     return alternative_call(xsm_ops.map_gmfn_foreign, d, t);
 }
@@ -440,8 +442,8 @@ static inline int xsm_kexec(xsm_default_t def)
     return alternative_call(xsm_ops.kexec);
 }
 
-static inline int xsm_schedop_shutdown(
-    xsm_default_t def, struct domain *d1, struct domain *d2)
+static inline int xsm_schedop_shutdown(xsm_default_t def, struct domain *d1,
+                                       struct domain *d2)
 {
     return alternative_call(xsm_ops.schedop_shutdown, d1, d2);
 }
@@ -456,8 +458,8 @@ static inline int xsm_map_domain_pirq(xsm_default_t def, struct domain *d)
     return alternative_call(xsm_ops.map_domain_pirq, d);
 }
 
-static inline int xsm_map_domain_irq(
-    xsm_default_t def, struct domain *d, int irq, void *data)
+static inline int xsm_map_domain_irq(xsm_default_t def, struct domain *d,
+                                     int irq, void *data)
 {
     return alternative_call(xsm_ops.map_domain_irq, d, irq, data);
 }
@@ -467,47 +469,53 @@ static inline int xsm_unmap_domain_pirq(xsm_default_t def, struct domain *d)
     return alternative_call(xsm_ops.unmap_domain_pirq, d);
 }
 
-static inline int xsm_unmap_domain_irq(
-    xsm_default_t def, struct domain *d, int irq, void *data)
+static inline int xsm_unmap_domain_irq(xsm_default_t def, struct domain *d,
+                                       int irq, void *data)
 {
     return alternative_call(xsm_ops.unmap_domain_irq, d, irq, data);
 }
 
-static inline int xsm_bind_pt_irq(
-    xsm_default_t def, struct domain *d, struct xen_domctl_bind_pt_irq *bind)
+static inline int xsm_bind_pt_irq(xsm_default_t def, struct domain *d,
+                                  struct xen_domctl_bind_pt_irq *bind)
 {
     return alternative_call(xsm_ops.bind_pt_irq, d, bind);
 }
 
-static inline int xsm_unbind_pt_irq(
-    xsm_default_t def, struct domain *d, struct xen_domctl_bind_pt_irq *bind)
+static inline int xsm_unbind_pt_irq(xsm_default_t def, struct domain *d,
+                                    struct xen_domctl_bind_pt_irq *bind)
 {
     return alternative_call(xsm_ops.unbind_pt_irq, d, bind);
 }
 
-static inline int xsm_irq_permission(
-    xsm_default_t def, struct domain *d, int pirq, uint8_t allow)
+static inline int xsm_irq_permission(xsm_default_t def, struct domain *d,
+                                     int pirq, uint8_t allow)
 {
     return alternative_call(xsm_ops.irq_permission, d, pirq, allow);
 }
 
-static inline int xsm_iomem_permission(
-    xsm_default_t def, struct domain *d, uint64_t s, uint64_t e, uint8_t allow)
+static inline int xsm_iomem_permission(xsm_default_t def, struct domain *d,
+                                       uint64_t s, uint64_t e, uint8_t allow)
 {
     return alternative_call(xsm_ops.iomem_permission, d, s, e, allow);
 }
 
-static inline int xsm_iomem_mapping(
-    xsm_default_t def, struct domain *d, uint64_t s, uint64_t e, uint8_t allow)
+static inline int xsm_iomem_mapping(xsm_default_t def, struct domain *d,
+                                    uint64_t s, uint64_t e, uint8_t allow)
 {
     return alternative_call(xsm_ops.iomem_mapping, d, s, e, allow);
 }
 
-static inline int xsm_pci_config_permission(
-    xsm_default_t def, struct domain *d, uint32_t machine_bdf, uint16_t start,
-    uint16_t end, uint8_t access)
+static inline int xsm_pci_config_permission(xsm_default_t def, struct domain *d,
+                                            uint32_t machine_bdf,
+                                            uint16_t start, uint16_t end,
+                                            uint8_t access)
 {
-    return alternative_call(xsm_ops.pci_config_permission, d, machine_bdf, start, end, access);
+    return alternative_call(xsm_ops.pci_config_permission,
+                            d,
+                            machine_bdf,
+                            start,
+                            end,
+                            access);
 }
 
 #if defined(CONFIG_HAS_PASSTHROUGH) && defined(CONFIG_HAS_PCI)
@@ -516,28 +524,28 @@ static inline int xsm_get_device_group(xsm_default_t def, uint32_t machine_bdf)
     return alternative_call(xsm_ops.get_device_group, machine_bdf);
 }
 
-static inline int xsm_assign_device(
-    xsm_default_t def, struct domain *d, uint32_t machine_bdf)
+static inline int xsm_assign_device(xsm_default_t def, struct domain *d,
+                                    uint32_t machine_bdf)
 {
     return alternative_call(xsm_ops.assign_device, d, machine_bdf);
 }
 
-static inline int xsm_deassign_device(
-    xsm_default_t def, struct domain *d, uint32_t machine_bdf)
+static inline int xsm_deassign_device(xsm_default_t def, struct domain *d,
+                                      uint32_t machine_bdf)
 {
     return alternative_call(xsm_ops.deassign_device, d, machine_bdf);
 }
 #endif /* HAS_PASSTHROUGH && HAS_PCI) */
 
 #if defined(CONFIG_HAS_PASSTHROUGH) && defined(CONFIG_HAS_DEVICE_TREE)
-static inline int xsm_assign_dtdevice(
-    xsm_default_t def, struct domain *d, const char *dtpath)
+static inline int xsm_assign_dtdevice(xsm_default_t def, struct domain *d,
+                                      const char *dtpath)
 {
     return alternative_call(xsm_ops.assign_dtdevice, d, dtpath);
 }
 
-static inline int xsm_deassign_dtdevice(
-    xsm_default_t def, struct domain *d, const char *dtpath)
+static inline int xsm_deassign_dtdevice(xsm_default_t def, struct domain *d,
+                                        const char *dtpath)
 {
     return alternative_call(xsm_ops.deassign_dtdevice, d, dtpath);
 }
@@ -549,8 +557,8 @@ static inline int xsm_resource_plug_pci(xsm_default_t def, uint32_t machine_bdf)
     return alternative_call(xsm_ops.resource_plug_pci, machine_bdf);
 }
 
-static inline int xsm_resource_unplug_pci(
-    xsm_default_t def, uint32_t machine_bdf)
+static inline int xsm_resource_unplug_pci(xsm_default_t def,
+                                          uint32_t machine_bdf)
 {
     return alternative_call(xsm_ops.resource_unplug_pci, machine_bdf);
 }
@@ -565,8 +573,8 @@ static inline int xsm_resource_unplug_core(xsm_default_t def)
     return alternative_call(xsm_ops.resource_unplug_core);
 }
 
-static inline int xsm_resource_setup_pci(
-    xsm_default_t def, uint32_t machine_bdf)
+static inline int xsm_resource_setup_pci(xsm_default_t def,
+                                         uint32_t machine_bdf)
 {
     return alternative_call(xsm_ops.resource_setup_pci, machine_bdf);
 }
@@ -603,8 +611,8 @@ static inline int xsm_do_compat_op(XEN_GUEST_HANDLE_PARAM(void) op)
 }
 #endif
 
-static inline int xsm_hvm_param(
-    xsm_default_t def, struct domain *d, unsigned long op)
+static inline int xsm_hvm_param(xsm_default_t def, struct domain *d,
+                                unsigned long op)
 {
     return alternative_call(xsm_ops.hvm_param, d, op);
 }
@@ -614,8 +622,8 @@ static inline int xsm_hvm_param_altp2mhvm(xsm_default_t def, struct domain *d)
     return alternative_call(xsm_ops.hvm_param_altp2mhvm, d);
 }
 
-static inline int xsm_hvm_altp2mhvm_op(
-    xsm_default_t def, struct domain *d, uint64_t mode, uint32_t op)
+static inline int xsm_hvm_altp2mhvm_op(xsm_default_t def, struct domain *d,
+                                       uint64_t mode, uint32_t op)
 {
     return alternative_call(xsm_ops.hvm_altp2mhvm_op, d, mode, op);
 }
@@ -625,8 +633,8 @@ static inline int xsm_get_vnumainfo(xsm_default_t def, struct domain *d)
     return alternative_call(xsm_ops.get_vnumainfo, d);
 }
 
-static inline int xsm_vm_event_control(
-    xsm_default_t def, struct domain *d, int mode, int op)
+static inline int xsm_vm_event_control(xsm_default_t def, struct domain *d,
+                                       int mode, int op)
 {
     return alternative_call(xsm_ops.vm_event_control, d, mode, op);
 }
@@ -663,14 +671,14 @@ static inline int xsm_do_mca(xsm_default_t def)
     return alternative_call(xsm_ops.do_mca);
 }
 
-static inline int xsm_shadow_control(
-    xsm_default_t def, struct domain *d, uint32_t op)
+static inline int xsm_shadow_control(xsm_default_t def, struct domain *d,
+                                     uint32_t op)
 {
     return alternative_call(xsm_ops.shadow_control, d, op);
 }
 
-static inline int xsm_mem_sharing_op(
-    xsm_default_t def, struct domain *d, struct domain *cd, int op)
+static inline int xsm_mem_sharing_op(xsm_default_t def, struct domain *d,
+                                     struct domain *cd, int op)
 {
     return alternative_call(xsm_ops.mem_sharing_op, d, cd, op);
 }
@@ -690,45 +698,45 @@ static inline int xsm_domain_memory_map(xsm_default_t def, struct domain *d)
     return alternative_call(xsm_ops.domain_memory_map, d);
 }
 
-static inline int xsm_mmu_update(
-    xsm_default_t def, struct domain *d, struct domain *t, struct domain *f,
-    uint32_t flags)
+static inline int xsm_mmu_update(xsm_default_t def, struct domain *d,
+                                 struct domain *t, struct domain *f,
+                                 uint32_t flags)
 {
     return alternative_call(xsm_ops.mmu_update, d, t, f, flags);
 }
 
-static inline int xsm_mmuext_op(
-    xsm_default_t def, struct domain *d, struct domain *f)
+static inline int xsm_mmuext_op(xsm_default_t def, struct domain *d,
+                                struct domain *f)
 {
     return alternative_call(xsm_ops.mmuext_op, d, f);
 }
 
-static inline int xsm_update_va_mapping(
-    xsm_default_t def, struct domain *d, struct domain *f, l1_pgentry_t pte)
+static inline int xsm_update_va_mapping(xsm_default_t def, struct domain *d,
+                                        struct domain *f, l1_pgentry_t pte)
 {
     return alternative_call(xsm_ops.update_va_mapping, d, f, pte);
 }
 
-static inline int xsm_priv_mapping(
-    xsm_default_t def, struct domain *d, struct domain *t)
+static inline int xsm_priv_mapping(xsm_default_t def, struct domain *d,
+                                   struct domain *t)
 {
     return alternative_call(xsm_ops.priv_mapping, d, t);
 }
 
-static inline int xsm_ioport_permission(
-    xsm_default_t def, struct domain *d, uint32_t s, uint32_t e, uint8_t allow)
+static inline int xsm_ioport_permission(xsm_default_t def, struct domain *d,
+                                        uint32_t s, uint32_t e, uint8_t allow)
 {
     return alternative_call(xsm_ops.ioport_permission, d, s, e, allow);
 }
 
-static inline int xsm_ioport_mapping(
-    xsm_default_t def, struct domain *d, uint32_t s, uint32_t e, uint8_t allow)
+static inline int xsm_ioport_mapping(xsm_default_t def, struct domain *d,
+                                     uint32_t s, uint32_t e, uint8_t allow)
 {
     return alternative_call(xsm_ops.ioport_mapping, d, s, e, allow);
 }
 
-static inline int xsm_pmu_op(
-    xsm_default_t def, struct domain *d, unsigned int op)
+static inline int xsm_pmu_op(xsm_default_t def, struct domain *d,
+                             unsigned int op)
 {
     return alternative_call(xsm_ops.pmu_op, d, op);
 }
@@ -756,8 +764,8 @@ static inline int xsm_argo_enable(const struct domain *d)
     return alternative_call(xsm_ops.argo_enable, d);
 }
 
-static inline int xsm_argo_register_single_source(
-    const struct domain *d, const struct domain *t)
+static inline int xsm_argo_register_single_source(const struct domain *d,
+                                                  const struct domain *t)
 {
     return alternative_call(xsm_ops.argo_register_single_source, d, t);
 }
@@ -779,8 +787,8 @@ static inline int xsm_argo_send(const struct domain *d, const struct domain *t)
 #ifdef CONFIG_MULTIBOOT
 struct boot_info;
 int xsm_multiboot_init(struct boot_info *bi);
-int xsm_multiboot_policy_init(
-    struct boot_info *bi, void **policy_buffer, size_t *policy_size);
+int xsm_multiboot_policy_init(struct boot_info *bi, void **policy_buffer,
+                              size_t *policy_size);
 #endif
 
 #ifdef CONFIG_HAS_DEVICE_TREE
@@ -827,6 +835,7 @@ static const inline struct xsm_ops *silo_init(void)
 
 #ifdef CONFIG_MULTIBOOT
 struct boot_info;
+
 static inline int xsm_multiboot_init(struct boot_info *bi)
 {
     return 0;

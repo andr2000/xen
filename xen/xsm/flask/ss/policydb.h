@@ -41,52 +41,52 @@
 
 /* Permission attributes */
 struct perm_datum {
-    u32 value;        /* permission bit + 1 */
+    u32 value; /* permission bit + 1 */
 };
 
 /* Attributes of a common prefix for access vectors */
 struct common_datum {
-    u32 value;            /* internal common value */
-    struct symtab permissions;    /* common permissions */
+    u32 value; /* internal common value */
+    struct symtab permissions; /* common permissions */
 };
 
 /* Class attributes */
 struct class_datum {
-    u32 value;            /* class value */
-    char *comkey;            /* common name */
-    struct common_datum *comdatum;    /* common datum */
-    struct symtab permissions;    /* class-specific permission symbol table */
-    struct constraint_node *constraints;    /* constraints on class permissions */
-    struct constraint_node *validatetrans;    /* special transition rules */
+    u32 value; /* class value */
+    char *comkey; /* common name */
+    struct common_datum *comdatum; /* common datum */
+    struct symtab permissions; /* class-specific permission symbol table */
+    struct constraint_node *constraints; /* constraints on class permissions */
+    struct constraint_node *validatetrans; /* special transition rules */
 };
 
 /* Role attributes */
 struct role_datum {
-    u32 value;            /* internal role value */
-    u32 bounds;			/* boundary of role */
-    struct ebitmap dominates;    /* set of roles dominated by this role */
-    struct ebitmap types;        /* set of authorized types for role */
+    u32 value; /* internal role value */
+    u32 bounds; /* boundary of role */
+    struct ebitmap dominates; /* set of roles dominated by this role */
+    struct ebitmap types; /* set of authorized types for role */
 };
 
 struct role_trans {
-    u32 role;        /* current role */
-    u32 type;        /* program executable type */
-    u32 new_role;        /* new role */
+    u32 role; /* current role */
+    u32 type; /* program executable type */
+    u32 new_role; /* new role */
     struct role_trans *next;
 };
 
 struct role_allow {
-    u32 role;        /* current role */
-    u32 new_role;        /* new role */
+    u32 role; /* current role */
+    u32 new_role; /* new role */
     struct role_allow *next;
 };
 
 /* Type attributes */
 struct type_datum {
-    u32 value;        /* internal type value */
-    u32 bounds;		/* boundary of type */
-    unsigned char primary;    /* primary name? */
-    unsigned char attribute;/* attribute ?*/
+    u32 value; /* internal type value */
+    u32 bounds; /* boundary of type */
+    unsigned char primary; /* primary name? */
+    unsigned char attribute; /* attribute ?*/
 };
 
 /*
@@ -101,24 +101,23 @@ struct type_datum {
 
 /* User attributes */
 struct user_datum {
-    u32 value;            /* internal user value */
-    u32 bounds;			/* bounds of user */
-    struct ebitmap roles;        /* set of authorized roles for user */
-    struct mls_range range;        /* MLS range (min - max) for user */
-    struct mls_level dfltlevel;    /* default login MLS level for user */
+    u32 value; /* internal user value */
+    u32 bounds; /* bounds of user */
+    struct ebitmap roles; /* set of authorized roles for user */
+    struct mls_range range; /* MLS range (min - max) for user */
+    struct mls_level dfltlevel; /* default login MLS level for user */
 };
-
 
 /* Sensitivity attributes */
 struct level_datum {
-    struct mls_level *level;    /* sensitivity and associated categories */
-    unsigned char isalias;    /* is this sensitivity an alias for another? */
+    struct mls_level *level; /* sensitivity and associated categories */
+    unsigned char isalias; /* is this sensitivity an alias for another? */
 };
 
 /* Category attributes */
 struct cat_datum {
-    u32 value;        /* internal category bit + 1 */
-    unsigned char isalias;  /* is this category an alias for another? */
+    u32 value; /* internal category bit + 1 */
+    unsigned char isalias; /* is this category an alias for another? */
 };
 
 struct range_trans {
@@ -131,7 +130,7 @@ struct range_trans {
 
 /* Boolean data type */
 struct cond_bool_datum {
-    uint32_t value;        /* internal type value */
+    uint32_t value; /* internal type value */
     int state;
 };
 
@@ -146,16 +145,18 @@ struct cond_node;
  */
 struct ocontext {
     union {
-        char *name;    /* name of initial SID, fs, netif, fstype, path */
+        char *name; /* name of initial SID, fs, netif, fstype, path */
         u16 pirq;
         u32 device;
+
         struct {
-                u32 low_ioport;
-                u32 high_ioport;
+            u32 low_ioport;
+            u32 high_ioport;
         } ioport;
+
         struct {
-                u64 low_iomem;
-                u64 high_iomem;
+            u64 low_iomem;
+            u64 high_iomem;
         } iomem;
     } u;
     struct context context;
@@ -225,7 +226,7 @@ struct policydb {
     /* type enforcement conditional access vectors and transitions */
     struct avtab te_cond_avtab;
     /* linked list indexing te_cond_avtab by conditional */
-    struct cond_node* cond_list;
+    struct cond_node *cond_list;
 
     /* role allows */
     struct role_allow *role_allow;
@@ -246,7 +247,7 @@ struct policydb {
 
     unsigned int policyvers;
 
-    unsigned int allow_unknown : 1;
+    unsigned int allow_unknown:1;
 
     u16 target_type;
 };
@@ -292,5 +293,4 @@ static inline int next_entry(void *buf, struct policy_file *fp, size_t bytes)
     return 0;
 }
 
-#endif    /* _SS_POLICYDB_H_ */
-
+#endif /* _SS_POLICYDB_H_ */

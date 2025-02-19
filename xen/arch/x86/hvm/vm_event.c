@@ -88,8 +88,7 @@ void hvm_vm_event_do_resume(struct vcpu *v)
                   VM_EVENT_FLAG_SET_EMUL_INSN_DATA )
             kind = EMUL_KIND_SET_CONTEXT_INSN;
 
-        hvm_emulate_one_vm_event(kind, X86_EXC_UD,
-                                 X86_EVENT_NO_EC);
+        hvm_emulate_one_vm_event(kind, X86_EXC_UD, X86_EVENT_NO_EC);
 
         v->arch.vm_event->emulate_flags = 0;
     }

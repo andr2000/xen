@@ -29,7 +29,7 @@
 #define __HSR_SYSREG_7   7
 
 /* These are used to decode traps with HSR.EC==HSR_EC_SYSREG */
-#define HSR_SYSREG(op0,op1,crn,crm,op2) \
+#define HSR_SYSREG(op0, op1, crn, crm, op2) \
     (((__HSR_SYSREG_##op0) << HSR_SYSREG_OP0_SHIFT) | \
      ((__HSR_SYSREG_##op1) << HSR_SYSREG_OP1_SHIFT) | \
      ((__HSR_SYSREG_##crn) << HSR_SYSREG_CRN_SHIFT) | \

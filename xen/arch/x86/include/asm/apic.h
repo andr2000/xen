@@ -14,14 +14,14 @@
 #define APIC_VERBOSE 1
 #define APIC_DEBUG   2
 
-#define	SET_APIC_LOGICAL_ID(x)	(((x)<<24))
+#define SET_APIC_LOGICAL_ID(x)	(((x)<<24))
 
 /* Possible APIC states */
 enum apic_mode {
-    APIC_MODE_INVALID,  /* Not set yet */
+    APIC_MODE_INVALID, /* Not set yet */
     APIC_MODE_DISABLED, /* If uniprocessor, or MP in uniprocessor mode */
-    APIC_MODE_XAPIC,    /* xAPIC mode - default upon chipset reset */
-    APIC_MODE_X2APIC    /* x2APIC mode - common for large MP machines */
+    APIC_MODE_XAPIC, /* xAPIC mode - default upon chipset reset */
+    APIC_MODE_X2APIC /* x2APIC mode - common for large MP machines */
 };
 
 extern bool iommu_x2apic_enabled;
@@ -43,7 +43,6 @@ const struct genapic *apic_x2apic_probe(void);
 		if ((v) <= apic_verbosity) \
 			printk(s, ##a);    \
 	} while (0)
-
 
 /*
  * Basic functions accessing APICs.
@@ -69,8 +68,8 @@ static inline uint32_t apic_mem_read(unsigned int reg)
 
 static inline void apic_wrmsr(unsigned int reg, uint64_t msr_content)
 {
-    if (reg == APIC_DFR || reg == APIC_ID || reg == APIC_LDR ||
-        reg == APIC_LVR)
+    if ( reg == APIC_DFR || reg == APIC_ID || reg == APIC_LDR ||
+         reg == APIC_LVR )
         return;
 
     wrmsrl(MSR_X2APIC_FIRST + (reg >> 4), msr_content);
@@ -80,7 +79,7 @@ static inline uint64_t apic_rdmsr(unsigned int reg)
 {
     uint64_t msr_content;
 
-    if (reg == APIC_DFR)
+    if ( reg == APIC_DFR )
         return -1u;
 
     rdmsrl(MSR_X2APIC_FIRST + (reg >> 4), msr_content);
@@ -89,7 +88,6 @@ static inline uint64_t apic_rdmsr(unsigned int reg)
 
 static inline void apic_write(unsigned int reg, uint32_t v)
 {
-
     if ( x2apic_enabled )
         apic_wrmsr(reg, v);
     else
@@ -115,7 +113,7 @@ static inline u64 apic_icr_read(void)
         lo = apic_mem_read(APIC_ICR);
         hi = apic_mem_read(APIC_ICR2);
     }
-    
+
     return ((u64)lo) | (((u64)hi) << 32);
 }
 
@@ -157,25 +155,25 @@ int get_physical_broadcast(void);
 
 static inline void ack_APIC_irq(void)
 {
-	/* Docs say use 0 for future compatibility */
-	apic_write(APIC_EOI, 0);
+    /* Docs say use 0 for future compatibility */
+    apic_write(APIC_EOI, 0);
 }
 
 extern int get_maxlvt(void);
 extern void clear_local_APIC(void);
-extern void connect_bsp_APIC (void);
-extern void disconnect_bsp_APIC (int virt_wire_setup);
-extern void disable_local_APIC (void);
-extern int verify_local_APIC (void);
-extern void cache_APIC_registers (void);
-extern void sync_Arb_IDs (void);
-extern void init_bsp_APIC (void);
+extern void connect_bsp_APIC(void);
+extern void disconnect_bsp_APIC(int virt_wire_setup);
+extern void disable_local_APIC(void);
+extern int verify_local_APIC(void);
+extern void cache_APIC_registers(void);
+extern void sync_Arb_IDs(void);
+extern void init_bsp_APIC(void);
 extern void setup_local_APIC(bool bsp);
-extern void init_apic_mappings (void);
-extern void smp_local_timer_interrupt (struct cpu_user_regs *regs);
-extern void setup_boot_APIC_clock (void);
-extern void setup_secondary_APIC_clock (void);
-extern void setup_apic_nmi_watchdog (void);
+extern void init_apic_mappings(void);
+extern void smp_local_timer_interrupt(struct cpu_user_regs *regs);
+extern void setup_boot_APIC_clock(void);
+extern void setup_secondary_APIC_clock(void);
+extern void setup_apic_nmi_watchdog(void);
 extern void disable_lapic_nmi_watchdog(void);
 extern int reserve_lapic_nmi(void);
 extern void release_lapic_nmi(void);
@@ -183,7 +181,7 @@ extern void self_nmi(void);
 extern void disable_timer_nmi_watchdog(void);
 extern void enable_timer_nmi_watchdog(void);
 extern bool nmi_watchdog_tick(const struct cpu_user_regs *regs);
-extern int APIC_init_uniprocessor (void);
+extern int APIC_init_uniprocessor(void);
 extern void disable_APIC_timer(void);
 extern void enable_APIC_timer(void);
 extern int lapic_suspend(void);

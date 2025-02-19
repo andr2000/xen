@@ -28,49 +28,25 @@ Revision History
 
 INTERFACE_DECL(_SIMPLE_TEXT_OUTPUT_INTERFACE);
 
-typedef
-EFI_STATUS
-(EFIAPI *EFI_TEXT_RESET) (
-    IN struct _SIMPLE_TEXT_OUTPUT_INTERFACE     *This,
-    IN BOOLEAN                      ExtendedVerification
-    );
+typedef EFI_STATUS(EFIAPI *EFI_TEXT_RESET)(
+    IN struct _SIMPLE_TEXT_OUTPUT_INTERFACE *This,
+    IN BOOLEAN ExtendedVerification);
 
-typedef
-EFI_STATUS
-(EFIAPI *EFI_TEXT_OUTPUT_STRING) (
-    IN struct _SIMPLE_TEXT_OUTPUT_INTERFACE     *This,
-    IN CHAR16                       *String
-    );
+typedef EFI_STATUS(EFIAPI *EFI_TEXT_OUTPUT_STRING)(
+    IN struct _SIMPLE_TEXT_OUTPUT_INTERFACE *This, IN CHAR16 *String);
 
-typedef
-EFI_STATUS
-(EFIAPI *EFI_TEXT_TEST_STRING) (
-    IN struct _SIMPLE_TEXT_OUTPUT_INTERFACE     *This,
-    IN CHAR16                       *String
-    );
+typedef EFI_STATUS(EFIAPI *EFI_TEXT_TEST_STRING)(
+    IN struct _SIMPLE_TEXT_OUTPUT_INTERFACE *This, IN CHAR16 *String);
 
-typedef
-EFI_STATUS
-(EFIAPI *EFI_TEXT_QUERY_MODE) (
-    IN struct _SIMPLE_TEXT_OUTPUT_INTERFACE     *This,
-    IN UINTN                        ModeNumber,
-    OUT UINTN                       *Columns,
-    OUT UINTN                       *Rows
-    );
+typedef EFI_STATUS(EFIAPI *EFI_TEXT_QUERY_MODE)(
+    IN struct _SIMPLE_TEXT_OUTPUT_INTERFACE *This, IN UINTN ModeNumber,
+    OUT UINTN *Columns, OUT UINTN *Rows);
 
-typedef
-EFI_STATUS
-(EFIAPI *EFI_TEXT_SET_MODE) (
-    IN struct _SIMPLE_TEXT_OUTPUT_INTERFACE     *This,
-    IN UINTN                        ModeNumber
-    );
+typedef EFI_STATUS(EFIAPI *EFI_TEXT_SET_MODE)(
+    IN struct _SIMPLE_TEXT_OUTPUT_INTERFACE *This, IN UINTN ModeNumber);
 
-typedef
-EFI_STATUS
-(EFIAPI *EFI_TEXT_SET_ATTRIBUTE) (
-    IN struct _SIMPLE_TEXT_OUTPUT_INTERFACE     *This,
-    IN UINTN                        Attribute
-    );
+typedef EFI_STATUS(EFIAPI *EFI_TEXT_SET_ATTRIBUTE)(
+    IN struct _SIMPLE_TEXT_OUTPUT_INTERFACE *This, IN UINTN Attribute);
 
 #define EFI_BLACK   0x00
 #define EFI_BLUE    0x01
@@ -90,7 +66,7 @@ EFI_STATUS
 #define EFI_YELLOW          (EFI_BROWN | EFI_BRIGHT)
 #define EFI_WHITE           (EFI_BLUE | EFI_GREEN | EFI_RED | EFI_BRIGHT)
 
-#define EFI_TEXT_ATTR(f,b)  ((f) | ((b) << 4))
+#define EFI_TEXT_ATTR(f, b)  ((f) | ((b) << 4))
 
 #define EFI_BACKGROUND_BLACK        0x00
 #define EFI_BACKGROUND_BLUE         0x10
@@ -101,54 +77,42 @@ EFI_STATUS
 #define EFI_BACKGROUND_BROWN        (EFI_BACKGROUND_GREEN | EFI_BACKGROUND_RED)
 #define EFI_BACKGROUND_LIGHTGRAY    (EFI_BACKGROUND_BLUE | EFI_BACKGROUND_GREEN | EFI_BACKGROUND_RED)
 
+typedef EFI_STATUS(EFIAPI *EFI_TEXT_CLEAR_SCREEN)(
+    IN struct _SIMPLE_TEXT_OUTPUT_INTERFACE *This);
 
-typedef
-EFI_STATUS
-(EFIAPI *EFI_TEXT_CLEAR_SCREEN) (
-    IN struct _SIMPLE_TEXT_OUTPUT_INTERFACE     *This
-    );
+typedef EFI_STATUS(EFIAPI *EFI_TEXT_SET_CURSOR_POSITION)(
+    IN struct _SIMPLE_TEXT_OUTPUT_INTERFACE *This, IN UINTN Column,
+    IN UINTN Row);
 
-typedef
-EFI_STATUS
-(EFIAPI *EFI_TEXT_SET_CURSOR_POSITION) (
-    IN struct _SIMPLE_TEXT_OUTPUT_INTERFACE     *This,
-    IN UINTN                        Column,
-    IN UINTN                        Row
-    );
-
-typedef
-EFI_STATUS
-(EFIAPI *EFI_TEXT_ENABLE_CURSOR) (
-    IN struct _SIMPLE_TEXT_OUTPUT_INTERFACE     *This,
-    IN BOOLEAN                      Enable
-    );
+typedef EFI_STATUS(EFIAPI *EFI_TEXT_ENABLE_CURSOR)(
+    IN struct _SIMPLE_TEXT_OUTPUT_INTERFACE *This, IN BOOLEAN Enable);
 
 typedef struct {
-    INT32                           MaxMode;
+    INT32 MaxMode;
     // current settings
-    INT32                           Mode;
-    INT32                           Attribute;
-    INT32                           CursorColumn;
-    INT32                           CursorRow;
-    BOOLEAN                         CursorVisible;
+    INT32 Mode;
+    INT32 Attribute;
+    INT32 CursorColumn;
+    INT32 CursorRow;
+    BOOLEAN CursorVisible;
 } SIMPLE_TEXT_OUTPUT_MODE;
 
 typedef struct _SIMPLE_TEXT_OUTPUT_INTERFACE {
-    EFI_TEXT_RESET                  Reset;
+    EFI_TEXT_RESET Reset;
 
-    EFI_TEXT_OUTPUT_STRING          OutputString;
-    EFI_TEXT_TEST_STRING            TestString;
+    EFI_TEXT_OUTPUT_STRING OutputString;
+    EFI_TEXT_TEST_STRING TestString;
 
-    EFI_TEXT_QUERY_MODE             QueryMode;
-    EFI_TEXT_SET_MODE               SetMode;
-    EFI_TEXT_SET_ATTRIBUTE          SetAttribute;
+    EFI_TEXT_QUERY_MODE QueryMode;
+    EFI_TEXT_SET_MODE SetMode;
+    EFI_TEXT_SET_ATTRIBUTE SetAttribute;
 
-    EFI_TEXT_CLEAR_SCREEN           ClearScreen;
-    EFI_TEXT_SET_CURSOR_POSITION    SetCursorPosition;
-    EFI_TEXT_ENABLE_CURSOR          EnableCursor;
+    EFI_TEXT_CLEAR_SCREEN ClearScreen;
+    EFI_TEXT_SET_CURSOR_POSITION SetCursorPosition;
+    EFI_TEXT_ENABLE_CURSOR EnableCursor;
 
     // Current mode
-    SIMPLE_TEXT_OUTPUT_MODE         *Mode;
+    SIMPLE_TEXT_OUTPUT_MODE *Mode;
 } SIMPLE_TEXT_OUTPUT_INTERFACE;
 
 //
@@ -237,8 +201,8 @@ typedef struct _SIMPLE_TEXT_OUTPUT_INTERFACE {
 INTERFACE_DECL(_SIMPLE_INPUT_INTERFACE);
 
 typedef struct {
-    UINT16                              ScanCode;
-    CHAR16                              UnicodeChar;
+    UINT16 ScanCode;
+    CHAR16 UnicodeChar;
 } EFI_INPUT_KEY;
 
 //
@@ -278,25 +242,16 @@ typedef struct {
 #define SCAN_F10                        0x0014
 #define SCAN_ESC                        0x0017
 
-typedef
-EFI_STATUS
-(EFIAPI *EFI_INPUT_RESET) (
-    IN struct _SIMPLE_INPUT_INTERFACE   *This,
-    IN BOOLEAN                          ExtendedVerification
-    );
+typedef EFI_STATUS(EFIAPI *EFI_INPUT_RESET)(
+    IN struct _SIMPLE_INPUT_INTERFACE *This, IN BOOLEAN ExtendedVerification);
 
-typedef
-EFI_STATUS
-(EFIAPI *EFI_INPUT_READ_KEY) (
-    IN struct _SIMPLE_INPUT_INTERFACE   *This,
-    OUT EFI_INPUT_KEY                   *Key
-    );
+typedef EFI_STATUS(EFIAPI *EFI_INPUT_READ_KEY)(
+    IN struct _SIMPLE_INPUT_INTERFACE *This, OUT EFI_INPUT_KEY *Key);
 
 typedef struct _SIMPLE_INPUT_INTERFACE {
-    EFI_INPUT_RESET                     Reset;
-    EFI_INPUT_READ_KEY                  ReadKeyStroke;
-    EFI_EVENT                           WaitForKey;
+    EFI_INPUT_RESET Reset;
+    EFI_INPUT_READ_KEY ReadKeyStroke;
+    EFI_EVENT WaitForKey;
 } SIMPLE_INPUT_INTERFACE;
 
 #endif
-

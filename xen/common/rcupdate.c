@@ -51,13 +51,13 @@ DEFINE_PER_CPU(unsigned int, rcu_lock_cnt);
 
 /* Global control variables for rcupdate callback mechanism. */
 static struct rcu_ctrlblk {
-    long cur;           /* Current batch number.                      */
-    long completed;     /* Number of the last completed batch         */
-    int  next_pending;  /* Is the next batch already waiting?         */
+    long cur; /* Current batch number.                      */
+    long completed; /* Number of the last completed batch         */
+    int next_pending; /* Is the next batch already waiting?         */
 
-    spinlock_t  lock __cacheline_aligned;
-    cpumask_t   cpumask; /* CPUs that need to switch in order ... */
-    cpumask_t   idle_cpumask; /* ... unless they are already idle */
+    spinlock_t lock __cacheline_aligned;
+    cpumask_t cpumask; /* CPUs that need to switch in order ... */
+    cpumask_t idle_cpumask; /* ... unless they are already idle */
     /* for current batch to proceed.        */
 } __cacheline_aligned rcu_ctrlblk = {
     .cur = -300,
@@ -72,28 +72,28 @@ static struct rcu_ctrlblk {
  */
 struct rcu_data {
     /* 1) quiescent state handling : */
-    long quiescbatch;    /* Batch # for grace period */
-    int  qs_pending;     /* core waits for quiesc state */
+    long quiescbatch; /* Batch # for grace period */
+    int qs_pending; /* core waits for quiesc state */
 
     /* 2) batch handling */
-    long            batch;            /* Batch # for current RCU batch */
+    long batch; /* Batch # for current RCU batch */
     struct rcu_head *nxtlist;
     struct rcu_head **nxttail;
-    long            qlen;             /* # of queued callbacks */
+    long qlen; /* # of queued callbacks */
     struct rcu_head *curlist;
     struct rcu_head **curtail;
     struct rcu_head *donelist;
     struct rcu_head **donetail;
-    long            blimit;           /* Upper limit on a processed batch */
+    long blimit; /* Upper limit on a processed batch */
     int cpu;
-    long            last_rs_qlen;     /* qlen during the last resched */
+    long last_rs_qlen; /* qlen during the last resched */
 
     /* 3) idle CPUs handling */
     struct timer idle_timer;
     bool idle_timer_active;
 
-    bool            process_callbacks;
-    bool            barrier_active;
+    bool process_callbacks;
+    bool barrier_active;
 };
 
 /*
@@ -210,7 +210,7 @@ void rcu_barrier(void)
 
     ASSERT(!in_irq() && local_irq_is_enabled());
 
-    for ( ; ; )
+    for ( ;; )
     {
         if ( !atomic_read(&pending_count) && get_cpu_maps() )
         {
@@ -246,12 +246,12 @@ static inline int rcu_batch_before(long a, long b)
     return (a - b) < 0;
 }
 
-static void force_quiescent_state(struct rcu_data *rdp,
-                                  struct rcu_ctrlblk *rcp)
+static void force_quiescent_state(struct rcu_data *rdp, struct rcu_ctrlblk *rcp)
 {
     cpumask_t cpumask;
     raise_softirq(RCU_SOFTIRQ);
-    if (unlikely(rdp->qlen - rdp->last_rs_qlen > rsinterval)) {
+    if ( unlikely(rdp->qlen - rdp->last_rs_qlen > rsinterval) )
+    {
         rdp->last_rs_qlen = rdp->qlen;
         /*
          * Don't send IPI to itself. With irqs disabled,
@@ -273,8 +273,7 @@ static void force_quiescent_state(struct rcu_data *rdp,
  * sections are delimited by rcu_read_lock() and rcu_read_unlock(),
  * and may be nested.
  */
-void call_rcu(struct rcu_head *head,
-              void (*func)(struct rcu_head *rcu))
+void call_rcu(struct rcu_head *head, void (*func)(struct rcu_head *rcu))
 {
     unsigned long flags;
     struct rcu_data *rdp;
@@ -285,7 +284,8 @@ void call_rcu(struct rcu_head *head,
     rdp = &this_cpu(rcu_data);
     *rdp->nxttail = head;
     rdp->nxttail = &head->next;
-    if (unlikely(++rdp->qlen > qhimark)) {
+    if ( unlikely(++rdp->qlen > qhimark) )
+    {
         rdp->blimit = INT_MAX;
         force_quiescent_state(rdp, &rcu_ctrlblk);
     }
@@ -302,17 +302,18 @@ static void rcu_do_batch(struct rcu_data *rdp)
     int count = 0;
 
     list = rdp->donelist;
-    while (list) {
+    while ( list )
+    {
         next = rdp->donelist = list->next;
         list->func(list);
         list = next;
         rdp->qlen--;
-        if (++count >= rdp->blimit)
+        if ( ++count >= rdp->blimit )
             break;
     }
-    if (rdp->blimit == INT_MAX && rdp->qlen <= qlowmark)
+    if ( rdp->blimit == INT_MAX && rdp->qlen <= qlowmark )
         rdp->blimit = blimit;
-    if (!rdp->donelist)
+    if ( !rdp->donelist )
         rdp->donetail = &rdp->donelist;
     else
     {
@@ -346,8 +347,8 @@ static void rcu_do_batch(struct rcu_data *rdp)
  */
 static void rcu_start_batch(struct rcu_ctrlblk *rcp)
 {
-    if (rcp->next_pending &&
-        rcp->completed == rcp->cur) {
+    if ( rcp->next_pending && rcp->completed == rcp->cur )
+    {
         rcp->next_pending = 0;
         /*
          * next_pending == 0 must be visible in
@@ -356,7 +357,7 @@ static void rcu_start_batch(struct rcu_ctrlblk *rcp)
         smp_wmb();
         rcp->cur++;
 
-       /*
+        /*
         * Make sure the increment of rcp->cur is visible so, even if a
         * CPU that is about to go idle, is captured inside rcp->cpumask,
         * rcu_pending() will return false, which then means cpu_quiet()
@@ -377,7 +378,8 @@ static void rcu_start_batch(struct rcu_ctrlblk *rcp)
 static void cpu_quiet(int cpu, struct rcu_ctrlblk *rcp)
 {
     cpumask_clear_cpu(cpu, &rcp->cpumask);
-    if (cpumask_empty(&rcp->cpumask)) {
+    if ( cpumask_empty(&rcp->cpumask) )
+    {
         /* batch completed ! */
         rcp->completed = rcp->cur;
         rcu_start_batch(rcp);
@@ -392,7 +394,8 @@ static void cpu_quiet(int cpu, struct rcu_ctrlblk *rcp)
 static void rcu_check_quiescent_state(struct rcu_ctrlblk *rcp,
                                       struct rcu_data *rdp)
 {
-    if (rdp->quiescbatch != rcp->cur) {
+    if ( rdp->quiescbatch != rcp->cur )
+    {
         /* start new grace period: */
         rdp->qs_pending = 1;
         rdp->quiescbatch = rcp->cur;
@@ -403,7 +406,7 @@ static void rcu_check_quiescent_state(struct rcu_ctrlblk *rcp,
      * qs_pending is checked instead of the actual bitmap to avoid
      * cacheline trashing.
      */
-    if (!rdp->qs_pending)
+    if ( !rdp->qs_pending )
         return;
 
     rdp->qs_pending = 0;
@@ -413,12 +416,11 @@ static void rcu_check_quiescent_state(struct rcu_ctrlblk *rcp,
      * rdp->quiescbatch/rcp->cur and the cpu bitmap can come out of sync
      * during cpu startup. Ignore the quiescent state.
      */
-    if (likely(rdp->quiescbatch == rcp->cur))
+    if ( likely(rdp->quiescbatch == rcp->cur) )
         cpu_quiet(rdp->cpu, rcp);
 
     spin_unlock(&rcp->lock);
 }
-
 
 /*
  * This does the RCU processing work from softirq context. 
@@ -426,7 +428,8 @@ static void rcu_check_quiescent_state(struct rcu_ctrlblk *rcp,
 static void __rcu_process_callbacks(struct rcu_ctrlblk *rcp,
                                     struct rcu_data *rdp)
 {
-    if (rdp->curlist && !rcu_batch_before(rcp->completed, rdp->batch)) {
+    if ( rdp->curlist && !rcu_batch_before(rcp->completed, rdp->batch) )
+    {
         *rdp->donetail = rdp->curlist;
         rdp->donetail = rdp->curtail;
         rdp->curlist = NULL;
@@ -434,7 +437,8 @@ static void __rcu_process_callbacks(struct rcu_ctrlblk *rcp,
     }
 
     local_irq_disable();
-    if (rdp->nxtlist && !rdp->curlist) {
+    if ( rdp->nxtlist && !rdp->curlist )
+    {
         rdp->curlist = rdp->nxtlist;
         rdp->curtail = rdp->nxttail;
         rdp->nxtlist = NULL;
@@ -452,18 +456,21 @@ static void __rcu_process_callbacks(struct rcu_ctrlblk *rcp,
          */
         smp_rmb();
 
-        if (!rcp->next_pending) {
+        if ( !rcp->next_pending )
+        {
             /* and start it/schedule start if it's a new batch */
             spin_lock(&rcp->lock);
             rcp->next_pending = 1;
             rcu_start_batch(rcp);
             spin_unlock(&rcp->lock);
         }
-    } else {
+    }
+    else
+    {
         local_irq_enable();
     }
     rcu_check_quiescent_state(rcp, rdp);
-    if (rdp->donelist)
+    if ( rdp->donelist )
         rcu_do_batch(rdp);
 }
 
@@ -490,19 +497,19 @@ static int __rcu_pending(struct rcu_ctrlblk *rcp, struct rcu_data *rdp)
     /* This cpu has pending rcu entries and the grace period
      * for them has completed.
      */
-    if (rdp->curlist && !rcu_batch_before(rcp->completed, rdp->batch))
+    if ( rdp->curlist && !rcu_batch_before(rcp->completed, rdp->batch) )
         return 1;
 
     /* This cpu has no pending entries, but there are new entries */
-    if (!rdp->curlist && rdp->nxtlist)
+    if ( !rdp->curlist && rdp->nxtlist )
         return 1;
 
     /* This cpu has finished callbacks to invoke */
-    if (rdp->donelist)
+    if ( rdp->donelist )
         return 1;
 
     /* The rcu core waits for a quiescent state from the cpu */
-    if (rdp->quiescbatch != rcp->cur || rdp->qs_pending)
+    if ( rdp->quiescbatch != rcp->cur || rdp->qs_pending )
         return 1;
 
     /* nothing to do */
@@ -541,7 +548,7 @@ static void rcu_idle_timer_start(void)
      * the timer armed on CPUs that are in the process of quiescing while
      * going idle, unless they really are the ones with a queued callback.
      */
-    if (likely(!rdp->curlist))
+    if ( likely(!rdp->curlist) )
         return;
 
     set_timer(&rdp->idle_timer, NOW() + idle_timer_period);
@@ -552,7 +559,7 @@ static void rcu_idle_timer_stop(void)
 {
     struct rcu_data *rdp = &this_cpu(rcu_data);
 
-    if (likely(!rdp->idle_timer_active))
+    if ( likely(!rdp->idle_timer_active) )
         return;
 
     rdp->idle_timer_active = false;
@@ -576,7 +583,7 @@ static void rcu_idle_timer_stop(void)
         stop_timer(&rdp->idle_timer);
 }
 
-static void cf_check rcu_idle_timer_handler(void* data)
+static void cf_check rcu_idle_timer_handler(void *data)
 {
     perfc_incr(rcu_idle_timer);
 
@@ -601,13 +608,13 @@ static void rcu_move_batch(struct rcu_data *this_rdp, struct rcu_head *list,
 {
     local_irq_disable();
     *this_rdp->nxttail = list;
-    if (list)
+    if ( list )
         this_rdp->nxttail = tail;
     local_irq_enable();
 }
 
-static void rcu_offline_cpu(struct rcu_data *this_rdp,
-                            struct rcu_ctrlblk *rcp, struct rcu_data *rdp)
+static void rcu_offline_cpu(struct rcu_data *this_rdp, struct rcu_ctrlblk *rcp,
+                            struct rcu_data *rdp)
 {
     kill_timer(&rdp->idle_timer);
 
@@ -615,7 +622,7 @@ static void rcu_offline_cpu(struct rcu_data *this_rdp,
      * indefinitely waiting for it, so flush it here.
      */
     spin_lock(&rcp->lock);
-    if (rcp->cur != rcp->completed)
+    if ( rcp->cur != rcp->completed )
         cpu_quiet(rdp->cpu, rcp);
     spin_unlock(&rcp->lock);
 
@@ -642,8 +649,8 @@ static void rcu_init_percpu_data(int cpu, struct rcu_ctrlblk *rcp,
     init_timer(&rdp->idle_timer, rcu_idle_timer_handler, rdp, cpu);
 }
 
-static int cf_check cpu_callback(
-    struct notifier_block *nfb, unsigned long action, void *hcpu)
+static int cf_check cpu_callback(struct notifier_block *nfb,
+                                 unsigned long action, void *hcpu)
 {
     unsigned int cpu = (unsigned long)hcpu;
     struct rcu_data *rdp = &per_cpu(rcu_data, cpu);
@@ -664,15 +671,13 @@ static int cf_check cpu_callback(
     return NOTIFY_DONE;
 }
 
-static struct notifier_block cpu_nfb = {
-    .notifier_call = cpu_callback
-};
+static struct notifier_block cpu_nfb = { .notifier_call = cpu_callback };
 
 void __init rcu_init(void)
 {
     void *cpu = (void *)(long)smp_processor_id();
     static unsigned int __initdata idle_timer_period_ms =
-                                    IDLE_TIMER_PERIOD_DEFAULT / MILLISECS(1);
+        IDLE_TIMER_PERIOD_DEFAULT / MILLISECS(1);
     integer_param("rcu-idle-timer-period-ms", idle_timer_period_ms);
 
     /* We don't allow 0, or anything higher than IDLE_TIMER_PERIOD_MAX */
@@ -680,9 +685,10 @@ void __init rcu_init(void)
          idle_timer_period_ms > IDLE_TIMER_PERIOD_MAX / MILLISECS(1) )
     {
         idle_timer_period_ms = IDLE_TIMER_PERIOD_DEFAULT / MILLISECS(1);
-        printk("WARNING: rcu-idle-timer-period-ms outside of "
-               "(0,%"PRI_stime"]. Resetting it to %u.\n",
-               IDLE_TIMER_PERIOD_MAX / MILLISECS(1), idle_timer_period_ms);
+        printk("WARNING: rcu-idle-timer-period-ms outside of " "(0,%" PRI_stime
+               "]. Resetting it to %u.\n",
+               IDLE_TIMER_PERIOD_MAX / MILLISECS(1),
+               idle_timer_period_ms);
     }
     idle_timer_period = MILLISECS(idle_timer_period_ms);
 

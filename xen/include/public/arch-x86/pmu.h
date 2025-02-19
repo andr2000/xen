@@ -32,7 +32,7 @@ typedef struct xen_pmu_cntr_pair xen_pmu_cntr_pair_t;
 DEFINE_XEN_GUEST_HANDLE(xen_pmu_cntr_pair_t);
 
 struct xen_pmu_intel_ctxt {
-   /*
+    /*
     * Offsets to fixed and architectural counter MSRs (relative to
     * xen_pmu_arch.c.intel).
     * For PV(H) guests these fields are RO.
@@ -139,4 +139,3 @@ DEFINE_XEN_GUEST_HANDLE(xen_pmu_arch_t);
  * indent-tabs-mode: nil
  * End:
  */
-

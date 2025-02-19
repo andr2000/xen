@@ -8,34 +8,34 @@
 
 #ifdef __XEN__
 
-# include <xen/bug.h>
-# include <xen/kernel.h>
-# include <asm/endbr.h>
-# include <asm/msr-index.h>
-# include <asm/x86-vendors.h>
-# include <asm/x86_emulate.h>
+#include <xen/bug.h>
+#include <xen/kernel.h>
+#include <asm/endbr.h>
+#include <asm/msr-index.h>
+#include <asm/x86-vendors.h>
+#include <asm/x86_emulate.h>
 
-# undef BUG /* Make sure it's not used anywhere here. */
+#undef BUG /* Make sure it's not used anywhere here. */
 void BUG(void);
 
-# ifndef CONFIG_HVM
-#  define X86EMUL_NO_FPU
-#  define X86EMUL_NO_MMX
-#  define X86EMUL_NO_SIMD
-# endif
+#ifndef CONFIG_HVM
+#define X86EMUL_NO_FPU
+#define X86EMUL_NO_MMX
+#define X86EMUL_NO_SIMD
+#endif
 
 #else /* !__XEN__ */
-# include "x86-emulate.h"
+#include "x86-emulate.h"
 #endif
 
 #ifdef __i386__
-# define mode_64bit() false
-# define r(name) e ## name
-# define PTR_POISON NULL /* 32-bit builds are for user-space, so NULL is OK. */
+#define mode_64bit() false
+#define r(name) e ## name
+#define PTR_POISON NULL /* 32-bit builds are for user-space, so NULL is OK. */
 #else
-# define mode_64bit() (ctxt->addr_size == 64)
-# define r(name) r ## name
-# define PTR_POISON ((void *)0x8086000000008086UL) /* non-canonical */
+#define mode_64bit() (ctxt->addr_size == 64)
+#define r(name) r ## name
+#define PTR_POISON ((void *)0x8086000000008086UL) /* non-canonical */
 #endif
 
 /* Operand sizes: 8-bit operands or specified/overridden size. */
@@ -87,11 +87,18 @@ enum disp8scale {
     d8s_vl_by_4,
     d8s_vl_by_8,
 };
+
 typedef uint8_t disp8scale_t;
 
 /* Type, address-of, and value of an instruction's operand. */
 struct operand {
-    enum { OP_REG, OP_MEM, OP_IMM, OP_NONE } type;
+    enum {
+        OP_REG,
+        OP_MEM,
+        OP_IMM,
+        OP_NONE
+    } type;
+
     unsigned int bytes;
 
     /* Operand value. */
@@ -106,7 +113,7 @@ struct operand {
     /* OP_MEM: Segment and offset. */
     struct {
         enum x86_segment seg;
-        unsigned long    off;
+        unsigned long off;
     } mem;
 };
 
@@ -179,6 +186,7 @@ enum simd_opsize {
     /* Operand size encoded in non-standard way. */
     simd_other
 };
+
 typedef uint8_t simd_opsize_t;
 
 #define vex_none 0
@@ -202,36 +210,38 @@ enum vex_pfx {
 
 union vex {
     uint8_t raw[2];
-    struct {             /* SDM names */
-        uint8_t opcx:5;  /* mmmmm */
-        uint8_t b:1;     /* B */
-        uint8_t x:1;     /* X */
-        uint8_t r:1;     /* R */
-        uint8_t pfx:2;   /* pp */
-        uint8_t l:1;     /* L */
-        uint8_t reg:4;   /* vvvv */
-        uint8_t w:1;     /* W */
+
+    struct { /* SDM names */
+        uint8_t opcx:5; /* mmmmm */
+        uint8_t b:1; /* B */
+        uint8_t x:1; /* X */
+        uint8_t r:1; /* R */
+        uint8_t pfx:2; /* pp */
+        uint8_t l:1; /* L */
+        uint8_t reg:4; /* vvvv */
+        uint8_t w:1; /* W */
     };
 };
 
 union evex {
     uint8_t raw[3];
-    struct {             /* SDM names */
-        uint8_t opcx:3;  /* mmm */
+
+    struct { /* SDM names */
+        uint8_t opcx:3; /* mmm */
         uint8_t mbz:1;
-        uint8_t R:1;     /* R' */
-        uint8_t b:1;     /* B */
-        uint8_t x:1;     /* X */
-        uint8_t r:1;     /* R */
-        uint8_t pfx:2;   /* pp */
+        uint8_t R:1; /* R' */
+        uint8_t b:1; /* B */
+        uint8_t x:1; /* X */
+        uint8_t r:1; /* R */
+        uint8_t pfx:2; /* pp */
         uint8_t mbs:1;
-        uint8_t reg:4;   /* vvvv */
-        uint8_t w:1;     /* W */
+        uint8_t reg:4; /* vvvv */
+        uint8_t w:1; /* W */
         uint8_t opmsk:3; /* aaa */
-        uint8_t RX:1;    /* V' */
-        uint8_t brs:1;   /* b */
-        uint8_t lr:2;    /* L'L */
-        uint8_t z:1;     /* z */
+        uint8_t RX:1; /* V' */
+        uint8_t brs:1; /* b */
+        uint8_t lr:2; /* L'L */
+        uint8_t z:1; /* z */
     };
 };
 
@@ -240,7 +250,7 @@ struct x86_emulate_state {
 
     enum {
         ext_none = vex_none,
-        ext_0f   = vex_0f,
+        ext_0f = vex_0f,
         ext_0f38 = vex_0f38,
         ext_0f3a = vex_0f3a,
         ext_map5 = evex_map5,
@@ -253,6 +263,7 @@ struct x86_emulate_state {
         ext_8f09,
         ext_8f0a,
     } ext;
+
     enum {
         rmw_NONE,
         rmw_adc,
@@ -282,6 +293,7 @@ struct x86_emulate_state {
         rmw_xchg,
         rmw_xor,
     } rmw;
+
     enum {
         blk_NONE,
         blk_enqcmd,
@@ -289,20 +301,21 @@ struct x86_emulate_state {
         blk_fld, /* FLDENV, FRSTOR */
         blk_fst, /* FNSTENV, FNSAVE */
 #endif
-#if !defined(X86EMUL_NO_FPU) || !defined(X86EMUL_NO_MMX) || \
+#if !defined(X86EMUL_NO_FPU) || !defined(X86EMUL_NO_MMX) ||                    \
     !defined(X86EMUL_NO_SIMD)
         blk_fxrstor,
         blk_fxsave,
 #endif
         blk_movdir,
     } blk;
+
     uint8_t modrm, modrm_mod, modrm_reg, modrm_rm;
     uint8_t sib_index, sib_scale;
     uint8_t rex_prefix;
     bool lock_prefix;
     bool not_64bit; /* Instruction not available in 64bit. */
-    bool fpu_ctrl;  /* Instruction is an FPU control one. */
-    bool fp16;      /* Instruction has half-precision FP source operand. */
+    bool fpu_ctrl; /* Instruction is an FPU control one. */
+    bool fp16; /* Instruction has half-precision FP source operand. */
     opcode_desc_t desc;
     union vex vex;
     union evex evex;
@@ -340,9 +353,9 @@ static inline void check_state(const struct x86_emulate_state *s)
 
 typedef union {
     uint64_t mmx;
-    uint64_t __attribute__ ((aligned(16))) xmm[2];
-    uint64_t __attribute__ ((aligned(32))) ymm[4];
-    uint64_t __attribute__ ((aligned(64))) zmm[8];
+    uint64_t __attribute__((aligned(16))) xmm[2];
+    uint64_t __attribute__((aligned(32))) ymm[4];
+    uint64_t __attribute__((aligned(64))) zmm[8];
     uint32_t data32[16];
 } mmval_t;
 
@@ -351,20 +364,25 @@ struct x86_fxsr {
     uint16_t fsw;
     uint8_t ftw, :8;
     uint16_t fop;
+
     union {
         struct {
             uint32_t offs;
             uint16_t sel, :16;
         };
+
         uint64_t addr;
     } fip, fdp;
+
     uint32_t mxcsr;
     uint32_t mxcsr_mask;
+
     struct {
         uint8_t data[10];
-        uint16_t :16, :16, :16;
+        uint16_t:16, :16, :16;
     } fpreg[8];
-    uint64_t __attribute__ ((aligned(16))) xmm[16][2];
+
+    uint64_t __attribute__((aligned(16))) xmm[16][2];
     uint64_t rsvd[6];
     uint64_t avl[6];
 };
@@ -374,13 +392,15 @@ struct x87_env16 {
     uint16_t fcw;
     uint16_t fsw;
     uint16_t ftw;
+
     union {
         struct {
             uint16_t fip_lo;
             uint16_t fop:11, :1, fip_hi:4;
             uint16_t fdp_lo;
-            uint16_t :12, fdp_hi:4;
+            uint16_t:12, fdp_hi:4;
         } real;
+
         struct {
             uint16_t fip;
             uint16_t fcs;
@@ -394,6 +414,7 @@ struct x87_env32 {
     uint32_t fcw:16, :16;
     uint32_t fsw:16, :16;
     uint32_t ftw:16, :16;
+
     union {
         struct {
             /* some CPUs/FPUs also store the full FIP here */
@@ -401,8 +422,9 @@ struct x87_env32 {
             uint32_t fop:11, :1, fip_hi:16, :4;
             /* some CPUs/FPUs also store the full FDP here */
             uint32_t fdp_lo:16, :16;
-            uint32_t :12, fdp_hi:16, :4;
+            uint32_t:12, fdp_hi:16, :4;
         } real;
+
         struct {
             uint32_t fip;
             uint32_t fcs:16, fop:11, :5;
@@ -474,10 +496,8 @@ static inline int mkec(uint8_t e, int32_t ec, ...)
 
 #define generate_exception(e, ec...) generate_exception_if(true, e, ##ec)
 
-static inline bool
-in_realmode(
-    struct x86_emulate_ctxt *ctxt,
-    const struct x86_emulate_ops *ops)
+static inline bool in_realmode(struct x86_emulate_ctxt *ctxt,
+                               const struct x86_emulate_ops *ops)
 {
     unsigned long cr0;
     int rc;
@@ -489,10 +509,8 @@ in_realmode(
     return (!rc && !(cr0 & X86_CR0_PE));
 }
 
-static inline bool
-in_protmode(
-    struct x86_emulate_ctxt *ctxt,
-    const struct x86_emulate_ops *ops)
+static inline bool in_protmode(struct x86_emulate_ctxt *ctxt,
+                               const struct x86_emulate_ops *ops)
 {
     return !(in_realmode(ctxt, ops) || (ctxt->regs->eflags & X86_EFLAGS_VM));
 }
@@ -503,14 +521,12 @@ in_protmode(
     (_cpl == 0);                                \
 })
 
-static inline bool
-_amd_like(const struct cpu_policy *cp)
+static inline bool _amd_like(const struct cpu_policy *cp)
 {
     return cp->x86_vendor & (X86_VENDOR_AMD | X86_VENDOR_HYGON);
 }
 
-static inline bool
-amd_like(const struct x86_emulate_ctxt *ctxt)
+static inline bool amd_like(const struct x86_emulate_ctxt *ctxt)
 {
     return _amd_like(ctxt->cpu_policy);
 }
@@ -610,7 +626,7 @@ amd_like(const struct x86_emulate_ctxt *ctxt)
  * emulation code is using the same instruction class for carrying out
  * the actual operation.
  */
-# define host_and_vcpu_must_have(feat) ({ \
+#define host_and_vcpu_must_have(feat) ({ \
     generate_exception_if(!cpu_has_##feat, X86_EXC_UD); \
     vcpu_must_have(feat); \
 })
@@ -620,7 +636,7 @@ amd_like(const struct x86_emulate_ctxt *ctxt)
  * features known to always be available (e.g. SSE/SSE2) to (64-bit) Xen
  * may be checked for by just vcpu_must_have().
  */
-# define host_and_vcpu_must_have(feat) vcpu_must_have(feat)
+#define host_and_vcpu_must_have(feat) vcpu_must_have(feat)
 #endif
 
 /*
@@ -641,7 +657,7 @@ amd_like(const struct x86_emulate_ctxt *ctxt)
 #endif
 
 /* Before executing instruction: restore necessary bits in EFLAGS. */
-#define _PRE_EFLAGS(_sav, _msk, _tmp)                           \
+#define _PRE_EFLAGS(_sav, _msk, _tmp)
 /* EFLAGS = (_sav & _msk) | (EFLAGS & ~_msk); _sav &= ~_msk; */ \
 "movl %"_LO32 _sav",%"_LO32 _tmp"; "                            \
 "push %"_tmp"; "                                                \
@@ -659,7 +675,7 @@ amd_like(const struct x86_emulate_ctxt *ctxt)
 "movl %"_LO32 _tmp",%"_LO32 _sav"; "
 
 /* After executing instruction: write-back necessary bits in EFLAGS. */
-#define _POST_EFLAGS(_sav, _msk, _tmp)          \
+#define _POST_EFLAGS(_sav, _msk, _tmp)
 /* _sav |= EFLAGS & _msk; */                    \
 "pushf; "                                       \
 "pop  %"_tmp"; "                                \
@@ -668,10 +684,10 @@ amd_like(const struct x86_emulate_ctxt *ctxt)
 
 #ifdef __XEN__
 
-# include <xen/domain_page.h>
-# include <asm/uaccess.h>
+#include <xen/domain_page.h>
+#include <asm/uaccess.h>
 
-# define get_stub(stb) ({                                    \
+#define get_stub(stb) ({                                    \
     void *_ptr;                                              \
     BUILD_BUG_ON(STUB_BUF_SIZE / 2 < MAX_INST_LEN + 1);      \
     ASSERT(!(stb).ptr);                                      \
@@ -687,7 +703,7 @@ amd_like(const struct x86_emulate_ctxt *ctxt)
     _ptr;                                                    \
 })
 
-# define put_stub(stb) ({             \
+#define put_stub(stb) ({             \
     if ( (stb).ptr )                  \
     {                                 \
         unmap_domain_page((stb).ptr); \
@@ -695,13 +711,12 @@ amd_like(const struct x86_emulate_ctxt *ctxt)
     }                                 \
 })
 
-
 struct stub_exn {
     union stub_exception_token info;
     unsigned int line;
 };
 
-# define invoke_stub(pre, post, constraints...) do {                    \
+#define invoke_stub(pre, post, constraints...) do {                    \
     stub_exn.info = (union stub_exception_token) { .raw = ~0 };         \
     stub_exn.line = __LINE__; /* Utility outweighs livepatching cost */ \
     block_speculation(); /* SCSB */                                     \
@@ -723,16 +738,16 @@ struct stub_exn {
 
 #else /* !__XEN__ */
 
-# define get_stub(stb) ({                        \
+#define get_stub(stb) ({                        \
     assert(!(stb).addr);                         \
     (void *)((stb).addr = (uintptr_t)(stb).buf); \
 })
 
-# define put_stub(stb) ((stb).addr = 0)
+#define put_stub(stb) ((stb).addr = 0)
 
 struct stub_exn {};
 
-# define invoke_stub(pre, post, constraints...)                         \
+#define invoke_stub(pre, post, constraints...)                         \
     asm volatile ( pre "\n\tcall *%[stub]\n\t" post                     \
                    : constraints, [stub] "rm" (stub.func),              \
                      "m" (*(typeof(stub.buf) *)stub.addr) )
@@ -752,37 +767,25 @@ do {                                                            \
     if ( rc ) goto done;                                        \
 } while (0)
 
-int x86emul_decode(struct x86_emulate_state *s,
-                   struct x86_emulate_ctxt *ctxt,
+int x86emul_decode(struct x86_emulate_state *s, struct x86_emulate_ctxt *ctxt,
                    const struct x86_emulate_ops *ops);
 
-int x86emul_fpu(struct x86_emulate_state *s,
-                struct cpu_user_regs *regs,
-                struct operand *dst,
-                struct operand *src,
+int x86emul_fpu(struct x86_emulate_state *s, struct cpu_user_regs *regs,
+                struct operand *dst, struct operand *src,
                 struct x86_emulate_ctxt *ctxt,
-                const struct x86_emulate_ops *ops,
-                unsigned int *insn_bytes,
-                enum x86_emulate_fpu_type *fpu_type,
-                mmval_t *mmvalp);
-int x86emul_0f01(struct x86_emulate_state *s,
-                 struct cpu_user_regs *regs,
-                 struct operand *dst,
-                 struct x86_emulate_ctxt *ctxt,
+                const struct x86_emulate_ops *ops, unsigned int *insn_bytes,
+                enum x86_emulate_fpu_type *fpu_type, mmval_t *mmvalp);
+int x86emul_0f01(struct x86_emulate_state *s, struct cpu_user_regs *regs,
+                 struct operand *dst, struct x86_emulate_ctxt *ctxt,
                  const struct x86_emulate_ops *ops);
-int x86emul_0fae(struct x86_emulate_state *s,
-                 struct cpu_user_regs *regs,
-                 struct operand *dst,
-                 const struct operand *src,
+int x86emul_0fae(struct x86_emulate_state *s, struct cpu_user_regs *regs,
+                 struct operand *dst, const struct operand *src,
                  struct x86_emulate_ctxt *ctxt,
                  const struct x86_emulate_ops *ops,
                  enum x86_emulate_fpu_type *fpu_type);
-int x86emul_0fc7(struct x86_emulate_state *s,
-                 struct cpu_user_regs *regs,
-                 struct operand *dst,
-                 struct x86_emulate_ctxt *ctxt,
-                 const struct x86_emulate_ops *ops,
-                 mmval_t *mmvalp);
+int x86emul_0fc7(struct x86_emulate_state *s, struct cpu_user_regs *regs,
+                 struct operand *dst, struct x86_emulate_ctxt *ctxt,
+                 const struct x86_emulate_ops *ops, mmval_t *mmvalp);
 
 /* Initialise output state in x86_emulate_ctxt */
 static inline void init_context(struct x86_emulate_ctxt *ctxt)
@@ -821,16 +824,13 @@ static inline bool umip_active(struct x86_emulate_ctxt *ctxt,
     unsigned long cr4;
 
     /* Intentionally not using mode_ring0() here to avoid its fail_if(). */
-    return x86emul_get_cpl(ctxt, ops) > 0 &&
-           ops->read_cr && ops->read_cr(4, &cr4, ctxt) == X86EMUL_OKAY &&
-           (cr4 & X86_CR4_UMIP);
+    return x86emul_get_cpl(ctxt, ops) > 0 && ops->read_cr &&
+           ops->read_cr(4, &cr4, ctxt) == X86EMUL_OKAY && (cr4 & X86_CR4_UMIP);
 }
 
 /* Compatibility function: read guest memory, zero-extend result to a ulong. */
-static inline int read_ulong(enum x86_segment seg,
-                             unsigned long offset,
-                             unsigned long *val,
-                             unsigned int bytes,
+static inline int read_ulong(enum x86_segment seg, unsigned long offset,
+                             unsigned long *val, unsigned int bytes,
                              struct x86_emulate_ctxt *ctxt,
                              const struct x86_emulate_ops *ops)
 {

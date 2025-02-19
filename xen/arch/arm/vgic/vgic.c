@@ -64,7 +64,7 @@ static struct vgic_irq *vgic_get_lpi(struct domain *d, uint32_t intid)
 
     spin_lock(&dist->lpi_list_lock);
 
-    list_for_each_entry( irq, &dist->lpi_list_head, lpi_list )
+    list_for_each_entry(irq, &dist->lpi_list_head, lpi_list)
     {
         if ( irq->intid != intid )
             continue;
@@ -170,7 +170,7 @@ static struct vcpu *vgic_target_oracle(struct vgic_irq *irq)
 
     /* If the interrupt is active, it must stay on the current vcpu */
     if ( irq->active )
-        return irq->vcpu ? : irq->target_vcpu;
+        return irq->vcpu ?: irq->target_vcpu;
 
     /*
      * If the IRQ is not active but enabled and pending, we should direct
@@ -429,7 +429,7 @@ static void vgic_prune_ap_list(struct vcpu *vcpu)
 retry:
     spin_lock_irqsave(&vgic_cpu->ap_list_lock, flags);
 
-    list_for_each_entry_safe( irq, tmp, &vgic_cpu->ap_list_head, ap_list )
+    list_for_each_entry_safe(irq, tmp, &vgic_cpu->ap_list_head, ap_list)
     {
         struct vcpu *target_vcpu, *vcpuA, *vcpuB;
 
@@ -524,8 +524,7 @@ static void vgic_fold_lr_state(struct vcpu *vcpu)
 }
 
 /* Requires the irq_lock to be held. */
-static void vgic_populate_lr(struct vcpu *vcpu,
-                             struct vgic_irq *irq, int lr)
+static void vgic_populate_lr(struct vcpu *vcpu, struct vgic_irq *irq, int lr)
 {
     ASSERT(spin_is_locked(&irq->irq_lock));
 
@@ -566,7 +565,7 @@ static void vgic_flush_lr_state(struct vcpu *vcpu)
     if ( compute_ap_list_depth(vcpu) > gic_get_nr_lrs() )
         vgic_sort_ap_list(vcpu);
 
-    list_for_each_entry( irq, &vgic_cpu->ap_list_head, ap_list )
+    list_for_each_entry(irq, &vgic_cpu->ap_list_head, ap_list)
     {
         spin_lock(&irq->irq_lock);
 
@@ -685,7 +684,7 @@ void vgic_kick_vcpus(struct domain *d)
      * We've injected an interrupt, time to find out who deserves
      * a good kick...
      */
-    for_each_vcpu( d, vcpu )
+    for_each_vcpu(d, vcpu)
     {
         if ( vgic_vcpu_pending_irq(vcpu) )
             vcpu_kick(vcpu);
@@ -765,14 +764,16 @@ void gic_dump_vgic_info(struct vcpu *v)
     if ( !list_empty(&vgic_cpu->ap_list_head) )
         printk("   active or pending interrupts queued:\n");
 
-    list_for_each_entry ( irq, &vgic_cpu->ap_list_head, ap_list )
+    list_for_each_entry(irq, &vgic_cpu->ap_list_head, ap_list)
     {
         spin_lock(&irq->irq_lock);
         printk("     %s %s irq %u: %spending, %sactive, %senabled\n",
                irq->hw ? "hardware" : "virtual",
                irq->config == VGIC_CONFIG_LEVEL ? "level" : "edge",
-               irq->intid, irq_is_pending(irq) ? "" : "not ",
-               irq->active ? "" : "not ", irq->enabled ? "" : "not ");
+               irq->intid,
+               irq_is_pending(irq) ? "" : "not ",
+               irq->active ? "" : "not ",
+               irq->enabled ? "" : "not ");
         spin_unlock(&irq->irq_lock);
     }
 
@@ -814,7 +815,7 @@ void arch_move_irqs(struct vcpu *v)
         spin_lock_irqsave(&irq->irq_lock, flags);
 
         /* Only hardware mapped vIRQs that are targeting this vCPU. */
-        if ( irq->hw && irq->target_vcpu == v)
+        if ( irq->hw && irq->target_vcpu == v )
         {
             irq_desc_t *desc = irq_to_desc(irq->hwintid);
 
@@ -874,7 +875,7 @@ int vgic_connect_hw_irq(struct domain *d, struct vcpu *vcpu,
 
     spin_lock_irqsave(&irq->irq_lock, flags);
 
-    if ( connect )                      /* assign a mapped IRQ */
+    if ( connect ) /* assign a mapped IRQ */
     {
         /*
          * The VIRQ should not be already enabled by the guest nor
@@ -888,7 +889,7 @@ int vgic_connect_hw_irq(struct domain *d, struct vcpu *vcpu,
         else
             ret = -EBUSY;
     }
-    else                                /* remove a mapped IRQ */
+    else /* remove a mapped IRQ */
     {
         if ( desc && irq->hwintid != desc->irq )
         {
@@ -912,8 +913,8 @@ static unsigned int translate_irq_type(bool is_level)
     return is_level ? IRQ_TYPE_LEVEL_HIGH : IRQ_TYPE_EDGE_RISING;
 }
 
-void vgic_sync_hardware_irq(struct domain *d,
-                            irq_desc_t *desc, struct vgic_irq *irq)
+void vgic_sync_hardware_irq(struct domain *d, irq_desc_t *desc,
+                            struct vgic_irq *irq)
 {
     unsigned long flags;
 
@@ -961,8 +962,7 @@ unsigned int vgic_max_vcpus(unsigned int domctl_vgic_version)
 
 #ifdef CONFIG_GICV3
 /* Dummy implementation to allow building without actual vGICv3 support. */
-void vgic_v3_setup_hw(paddr_t dbase,
-                      unsigned int nr_rdist_regions,
+void vgic_v3_setup_hw(paddr_t dbase, unsigned int nr_rdist_regions,
                       const struct rdist_region *regions,
                       unsigned int intid_bits)
 {

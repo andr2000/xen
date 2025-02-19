@@ -12,7 +12,7 @@
 #define __XEN_PUBLIC_ARCH_PPC_H__
 
 #if defined(__XEN__) || defined(__XEN_TOOLS__)
-#define  int64_aligned_t  int64_t __attribute__((__aligned__(8)))
+#define int64_aligned_t  int64_t __attribute__((__aligned__(8)))
 #define uint64_aligned_t uint64_t __attribute__((__aligned__(8)))
 #endif
 
@@ -59,8 +59,7 @@ typedef uint64_t xen_ulong_t;
  * User-accessible registers: most of these need to be saved/restored
  * for every nested Xen invocation.
  */
-struct vcpu_guest_core_regs
-{
+struct vcpu_guest_core_regs {
     uint64_t gprs[32];
     uint64_t lr;
     uint64_t ctr;
@@ -68,13 +67,13 @@ struct vcpu_guest_core_regs
     uint64_t srr1;
     uint64_t pc;
     uint64_t msr;
-    uint64_t fpscr;             /* XXX Is this necessary */
+    uint64_t fpscr; /* XXX Is this necessary */
     uint64_t xer;
-    uint64_t hid4;              /* debug only */
-    uint64_t dar;               /* debug only */
-    uint32_t dsisr;             /* debug only */
+    uint64_t hid4; /* debug only */
+    uint64_t dar; /* debug only */
+    uint32_t dsisr; /* debug only */
     uint32_t cr;
-    uint32_t __pad;             /* good spot for another 32bit reg */
+    uint32_t __pad; /* good spot for another 32bit reg */
     uint32_t entry_vector;
 };
 typedef struct vcpu_guest_core_regs vcpu_guest_core_regs_t;
@@ -83,8 +82,8 @@ typedef uint64_t tsc_timestamp_t; /* RDTSC timestamp */ /* XXX timebase */
 
 /* ONLY used to communicate with dom0! See also struct exec_domain. */
 struct vcpu_guest_context {
-    vcpu_guest_core_regs_t user_regs;         /* User-level CPU registers     */
-    uint64_t sdr1;                     /* Pagetable base               */
+    vcpu_guest_core_regs_t user_regs; /* User-level CPU registers     */
+    uint64_t sdr1; /* Pagetable base               */
     /* XXX etc */
 };
 typedef struct vcpu_guest_context vcpu_guest_context_t;
@@ -94,13 +93,13 @@ struct arch_shared_info {
     uint64_t boot_timebase;
 };
 
-struct arch_vcpu_info {
-};
+struct arch_vcpu_info {};
 
-struct xen_arch_domainconfig {
-};
+struct xen_arch_domainconfig {};
 
-typedef struct xen_pmu_arch { uint8_t dummy; } xen_pmu_arch_t;
+typedef struct xen_pmu_arch {
+    uint8_t dummy;
+} xen_pmu_arch_t;
 
 #endif /* !__ASSEMBLY__ */
 

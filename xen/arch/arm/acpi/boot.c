@@ -64,14 +64,17 @@ acpi_map_gic_cpu_interface(struct acpi_madt_generic_interrupt *processor)
     total_cpus++;
     if ( !enabled )
     {
-        printk("Skipping disabled CPU entry with 0x%"PRIx64" MPIDR\n", mpidr);
+        printk("Skipping disabled CPU entry with 0x%" PRIx64 " MPIDR\n", mpidr);
         return;
     }
 
-    if ( enabled_cpus >=  NR_CPUS )
+    if ( enabled_cpus >= NR_CPUS )
     {
-        printk("NR_CPUS limit of %d reached, Processor %d/0x%"PRIx64" ignored.\n",
-               NR_CPUS, total_cpus, mpidr);
+        printk("NR_CPUS limit of %d reached, Processor %d/0x%" PRIx64
+               " ignored.\n",
+               NR_CPUS,
+               total_cpus,
+               mpidr);
         return;
     }
 
@@ -80,7 +83,8 @@ acpi_map_gic_cpu_interface(struct acpi_madt_generic_interrupt *processor)
     {
         if ( bootcpu_valid )
         {
-            printk("Firmware bug, duplicate boot CPU MPIDR: 0x%"PRIx64" in MADT\n",
+            printk("Firmware bug, duplicate boot CPU MPIDR: 0x%" PRIx64
+                   " in MADT\n",
                    mpidr);
             return;
         }
@@ -97,7 +101,7 @@ acpi_map_gic_cpu_interface(struct acpi_madt_generic_interrupt *processor)
     {
         if ( cpu_logical_map(i) == mpidr )
         {
-            printk("Firmware bug, duplicate CPU MPIDR: 0x%"PRIx64" in MADT\n",
+            printk("Firmware bug, duplicate CPU MPIDR: 0x%" PRIx64 " in MADT\n",
                    mpidr);
             return;
         }
@@ -105,15 +109,16 @@ acpi_map_gic_cpu_interface(struct acpi_madt_generic_interrupt *processor)
 
     if ( !acpi_psci_present() )
     {
-        printk("PSCI not present, skipping CPU MPIDR 0x%"PRIx64"\n",
-               mpidr);
+        printk("PSCI not present, skipping CPU MPIDR 0x%" PRIx64 "\n", mpidr);
         return;
     }
 
     if ( (rc = arch_cpu_init(enabled_cpus, NULL)) < 0 )
     {
-        printk("cpu%d: init failed (0x%"PRIx64" MPIDR): %d\n",
-               enabled_cpus, mpidr, rc);
+        printk("cpu%d: init failed (0x%" PRIx64 " MPIDR): %d\n",
+               enabled_cpus,
+               mpidr,
+               rc);
         return;
     }
 
@@ -128,7 +133,7 @@ acpi_parse_gic_cpu_interface(struct acpi_subtable_header *header,
                              const unsigned long end)
 {
     struct acpi_madt_generic_interrupt *processor =
-               container_of(header, struct acpi_madt_generic_interrupt, header);
+        container_of(header, struct acpi_madt_generic_interrupt, header);
 
     if ( BAD_MADT_GICC_ENTRY(processor, end) )
         return -EINVAL;
@@ -149,7 +154,8 @@ void __init acpi_smp_init_cpus(void)
      * we need for SMP init
      */
     count = acpi_table_parse_madt(ACPI_MADT_TYPE_GENERIC_INTERRUPT,
-                    acpi_parse_gic_cpu_interface, 0);
+                                  acpi_parse_gic_cpu_interface,
+                                  0);
 
     if ( count <= 0 )
     {
@@ -180,12 +186,14 @@ static int __init acpi_parse_fadt(struct acpi_table_header *table)
      * we only deal with ACPI 6.0 or newer revision to get GIC and SMP
      * boot protocol configuration data, or we will disable ACPI.
      */
-    if ( table->revision > 5
-         || (table->revision == 5 && fadt->minor_revision >= 1) )
+    if ( table->revision > 5 ||
+         (table->revision == 5 && fadt->minor_revision >= 1) )
         return 0;
 
-    printk("Unsupported FADT revision %d.%d, should be 6.0+, will disable ACPI\n",
-            table->revision, fadt->minor_revision);
+    printk(
+        "Unsupported FADT revision %d.%d, should be 6.0+, will disable ACPI\n",
+        table->revision,
+        fadt->minor_revision);
 
     return -EINVAL;
 }
@@ -208,6 +216,7 @@ static int __init parse_acpi_param(const char *arg)
 
     return 0;
 }
+
 custom_param("acpi", parse_acpi_param);
 
 static int __init dt_scan_depth1_nodes(const void *fdt, int node,
@@ -219,7 +228,7 @@ static int __init dt_scan_depth1_nodes(const void *fdt, int node,
      * Return 1 as soon as we encounter a node at depth 1 that is
      * not the /chosen node.
      */
-    if (depth == 1 && (strcmp(uname, "chosen") != 0))
+    if ( depth == 1 && (strcmp(uname, "chosen") != 0) )
         return 1;
     return 0;
 }
@@ -246,11 +255,12 @@ int __init acpi_boot_table_init(void)
      * - the device tree is not empty (it has more than just a /chosen node)
      *   and ACPI has not been force enabled (acpi=force)
      */
-    if ( param_acpi_off)
+    if ( param_acpi_off )
         goto disable;
-    if ( !param_acpi_force &&
-         device_tree_for_each_node(device_tree_flattened, 0,
-                                   dt_scan_depth1_nodes, NULL) )
+    if ( !param_acpi_force && device_tree_for_each_node(device_tree_flattened,
+                                                        0,
+                                                        dt_scan_depth1_nodes,
+                                                        NULL) )
         goto disable;
 
     /*
@@ -264,7 +274,8 @@ int __init acpi_boot_table_init(void)
     if ( error )
     {
         printk("%s: Unable to initialize table parser (%d)\n",
-               __FUNCTION__, error);
+               __FUNCTION__,
+               error);
         goto disable;
     }
 

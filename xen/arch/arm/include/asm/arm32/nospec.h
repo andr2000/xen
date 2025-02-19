@@ -9,15 +9,14 @@ static inline unsigned long array_index_mask_nospec(unsigned long idx,
 {
     unsigned long mask;
 
-    asm volatile( "cmp    %1, %2\n"
-                  "sbc    %0, %1, %1\n"
-                  CSDB
-                  : "=r" (mask)
-                  : "r" (idx), "Ir" (sz)
-                  : "cc" );
+    asm volatile("cmp    %1, %2\n" "sbc    %0, %1, %1\n" CSDB
+                 : "=r"(mask)
+                 : "r"(idx), "Ir"(sz)
+                 : "cc");
 
     return mask;
 }
+
 #define array_index_mask_nospec array_index_mask_nospec
 
 #endif /* __ASM_ARM32_NOSPEC_H */

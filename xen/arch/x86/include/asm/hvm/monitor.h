@@ -10,8 +10,7 @@
 
 #include <public/vm_event.h>
 
-enum hvm_monitor_debug_type
-{
+enum hvm_monitor_debug_type {
     HVM_MONITOR_SOFTWARE_BREAKPOINT,
     HVM_MONITOR_SINGLESTEP_BREAKPOINT,
     HVM_MONITOR_DEBUG_EXCEPTION,
@@ -21,8 +20,7 @@ enum hvm_monitor_debug_type
  * Called for current VCPU on crX/MSR changes by guest. Bool return signals
  * whether emulation should be postponed.
  */
-bool hvm_monitor_cr(unsigned int index, unsigned long value,
-                    unsigned long old);
+bool hvm_monitor_cr(unsigned int index, unsigned long value, unsigned long old);
 #define hvm_monitor_crX(cr, new, old) \
                         hvm_monitor_cr(VM_EVENT_X86_##cr, new, old)
 bool hvm_monitor_msr(unsigned int msr, uint64_t new_value, uint64_t old_value);
@@ -43,8 +41,7 @@ bool hvm_monitor_check_p2m(unsigned long gla, gfn_t gfn, uint32_t pfec,
 int hvm_monitor_vmexit(unsigned long exit_reason,
                        unsigned long exit_qualification);
 
-int hvm_monitor_io(unsigned int port, unsigned int bytes,
-                   bool in, bool str);
+int hvm_monitor_io(unsigned int port, unsigned int bytes, bool in, bool str);
 
 #endif /* __ASM_X86_HVM_MONITOR_H__ */
 

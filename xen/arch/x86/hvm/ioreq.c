@@ -88,8 +88,7 @@ static gfn_t hvm_alloc_ioreq_gfn(struct ioreq_server *s)
     return hvm_alloc_legacy_ioreq_gfn(s);
 }
 
-static bool hvm_free_legacy_ioreq_gfn(struct ioreq_server *s,
-                                      gfn_t gfn)
+static bool hvm_free_legacy_ioreq_gfn(struct ioreq_server *s, gfn_t gfn)
 {
     struct domain *d = s->target;
     unsigned int i;
@@ -97,7 +96,7 @@ static bool hvm_free_legacy_ioreq_gfn(struct ioreq_server *s,
     for ( i = HVM_PARAM_IOREQ_PFN; i <= HVM_PARAM_BUFIOREQ_PFN; i++ )
     {
         if ( gfn_eq(gfn, _gfn(d->arch.hvm.params[i])) )
-             break;
+            break;
     }
     if ( i > HVM_PARAM_BUFIOREQ_PFN )
         return false;
@@ -161,8 +160,7 @@ static int hvm_map_ioreq_gfn(struct ioreq_server *s, bool buf)
     if ( gfn_eq(iorp->gfn, INVALID_GFN) )
         return -ENOMEM;
 
-    rc = prepare_ring_for_helper(d, gfn_x(iorp->gfn), &iorp->page,
-                                 &iorp->va);
+    rc = prepare_ring_for_helper(d, gfn_x(iorp->gfn), &iorp->page, &iorp->va);
 
     if ( rc )
         hvm_unmap_ioreq_gfn(s, buf);
@@ -241,8 +239,7 @@ void arch_ioreq_server_destroy(struct ioreq_server *s)
 }
 
 /* Called with ioreq_server lock held */
-int arch_ioreq_server_map_mem_type(struct domain *d,
-                                   struct ioreq_server *s,
+int arch_ioreq_server_map_mem_type(struct domain *d, struct ioreq_server *s,
                                    uint32_t flags)
 {
     return p2m_set_ioreq_server(d, flags, s);
@@ -261,18 +258,15 @@ bool arch_ioreq_server_destroy_all(struct domain *d)
     return relocate_portio_handler(d, 0xcf8, 0xcf8, 4);
 }
 
-bool arch_ioreq_server_get_type_addr(const struct domain *d,
-                                     const ioreq_t *p,
-                                     uint8_t *type,
-                                     uint64_t *addr)
+bool arch_ioreq_server_get_type_addr(const struct domain *d, const ioreq_t *p,
+                                     uint8_t *type, uint64_t *addr)
 {
     unsigned int cf8 = d->arch.hvm.pci_cf8;
 
     if ( p->type != IOREQ_TYPE_COPY && p->type != IOREQ_TYPE_PIO )
         return false;
 
-    if ( p->type == IOREQ_TYPE_PIO &&
-         (p->addr & ~3) == 0xcfc &&
+    if ( p->type == IOREQ_TYPE_PIO && (p->addr & ~3) == 0xcfc &&
          CF8_ENABLED(cf8) )
     {
         unsigned int x86_fam, reg;
@@ -284,10 +278,10 @@ bool arch_ioreq_server_get_type_addr(const struct domain *d,
         *type = XEN_DMOP_IO_RANGE_PCI;
         *addr = ((uint64_t)sbdf.sbdf << 32) | reg;
         /* AMD extended configuration space access? */
-        if ( CF8_ADDR_HI(cf8) &&
-             d->arch.cpuid->x86_vendor == X86_VENDOR_AMD &&
-             (x86_fam = get_cpu_family(
-                 d->arch.cpuid->basic.raw_fms, NULL, NULL)) >= 0x10 &&
+        if ( CF8_ADDR_HI(cf8) && d->arch.cpuid->x86_vendor == X86_VENDOR_AMD &&
+             (x86_fam =
+                  get_cpu_family(d->arch.cpuid->basic.raw_fms, NULL, NULL)) >=
+                 0x10 &&
              x86_fam < 0x17 )
         {
             uint64_t msr_val;
@@ -299,16 +293,16 @@ bool arch_ioreq_server_get_type_addr(const struct domain *d,
     }
     else
     {
-        *type = (p->type == IOREQ_TYPE_PIO) ?
-                 XEN_DMOP_IO_RANGE_PORT : XEN_DMOP_IO_RANGE_MEMORY;
+        *type = (p->type == IOREQ_TYPE_PIO) ? XEN_DMOP_IO_RANGE_PORT
+                                            : XEN_DMOP_IO_RANGE_MEMORY;
         *addr = p->addr;
     }
 
     return true;
 }
 
-static int cf_check hvm_access_cf8(
-    int dir, unsigned int port, unsigned int bytes, uint32_t *val)
+static int cf_check hvm_access_cf8(int dir, unsigned int port,
+                                   unsigned int bytes, uint32_t *val)
 {
     struct domain *d = current->domain;
 

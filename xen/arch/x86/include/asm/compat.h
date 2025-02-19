@@ -16,5 +16,9 @@ struct domain;
 int switch_compat(struct domain *);
 #else
 #include <xen/errno.h>
-static inline int switch_compat(struct domain *d) { return -EOPNOTSUPP; }
+
+static inline int switch_compat(struct domain *d)
+{
+    return -EOPNOTSUPP;
+}
 #endif

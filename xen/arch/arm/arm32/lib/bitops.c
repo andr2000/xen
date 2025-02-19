@@ -135,12 +135,10 @@ static always_inline bool int_clear_mask16(uint16_t mask, volatile uint16_t *p,
 
     do
     {
-        asm volatile ("// int_clear_mask16\n"
-        "   ldrexh  %2, %1\n"
-        "   bic     %2, %2, %3\n"
-        "   strexh  %0, %2, %1\n"
-        : "=&r" (res), "+Qo" (*p), "=&r" (tmp)
-        : "r" (mask));
+        asm volatile(
+            "// int_clear_mask16\n" "   ldrexh  %2, %1\n" "   bic     %2, %2, %3\n" "   strexh  %0, %2, %1\n"
+            : "=&r"(res), "+Qo"(*p), "=&r"(tmp)
+            : "r"(mask));
 
         if ( !res )
             break;
@@ -155,8 +153,7 @@ void clear_mask16(uint16_t mask, volatile void *p)
         ASSERT_UNREACHABLE();
 }
 
-bool clear_mask16_timeout(uint16_t mask, volatile void *p,
-                          unsigned int max_try)
+bool clear_mask16_timeout(uint16_t mask, volatile void *p, unsigned int max_try)
 {
     return int_clear_mask16(mask, p, true, max_try);
 }

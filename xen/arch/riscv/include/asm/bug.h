@@ -28,7 +28,7 @@
 #define COMPRESSED_INSN_MASK    _UL(0xffff)
 
 #define GET_INSN_LENGTH(insn)                               \
-    (((insn) & INSN_LENGTH_MASK) == INSN_LENGTH_32 ? 4 : 2) \
+    (((insn) & INSN_LENGTH_MASK) == INSN_LENGTH_32 ? 4 : 2)
 
 #endif /* !__ASSEMBLY__ */
 

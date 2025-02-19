@@ -21,7 +21,7 @@
     (is_hvm_vcpu(current) ?                     \
      copy_from_user_hvm((dst), (src), (len)) :  \
      copy_from_guest_pv(dst, src, len))
-#define raw_clear_guest(dst,  len)              \
+#define raw_clear_guest(dst, len)              \
     (is_hvm_vcpu(current) ?                     \
      clear_user_hvm((dst), (len)) :             \
      clear_guest_pv(dst, len))

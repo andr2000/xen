@@ -28,17 +28,28 @@ static inline bool pv_trap_callback_registered(const struct vcpu *v,
     return v->arch.pv.trap_ctxt[vector].address;
 }
 
-#else  /* !CONFIG_PV */
+#else /* !CONFIG_PV */
 
 #include <xen/errno.h>
 
 static inline void pv_trap_init(void) {}
 
-static inline int pv_raise_nmi(struct vcpu *v) { return -EOPNOTSUPP; }
+static inline int pv_raise_nmi(struct vcpu *v)
+{
+    return -EOPNOTSUPP;
+}
 
-static inline int pv_emulate_privileged_op(struct cpu_user_regs *regs) { return 0; }
+static inline int pv_emulate_privileged_op(struct cpu_user_regs *regs)
+{
+    return 0;
+}
+
 static inline void pv_emulate_gate_op(struct cpu_user_regs *regs) {}
-static inline bool pv_emulate_invalid_op(struct cpu_user_regs *regs) { return true; }
+
+static inline bool pv_emulate_invalid_op(struct cpu_user_regs *regs)
+{
+    return true;
+}
 
 static inline bool pv_trap_callback_registered(const struct vcpu *v,
                                                uint8_t vector)

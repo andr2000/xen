@@ -28,26 +28,24 @@ static inline void vm_event_toggle_singlestep(struct domain *d, struct vcpu *v,
     /* Nothing to do. */
 }
 
-static inline
-void vm_event_register_write_resume(struct vcpu *v, vm_event_response_t *rsp)
+static inline void vm_event_register_write_resume(struct vcpu *v,
+                                                  vm_event_response_t *rsp)
 {
     /* Nothing to do. */
 }
 
-static inline
-void vm_event_emulate_check(struct vcpu *v, vm_event_response_t *rsp)
+static inline void vm_event_emulate_check(struct vcpu *v,
+                                          vm_event_response_t *rsp)
 {
     /* Nothing to do. */
 }
 
-static inline
-void vm_event_sync_event(struct vcpu *v, bool value)
+static inline void vm_event_sync_event(struct vcpu *v, bool value)
 {
     /* Nothing to do. */
 }
 
-static inline
-void vm_event_reset_vmtrace(struct vcpu *v)
+static inline void vm_event_reset_vmtrace(struct vcpu *v)
 {
     /* Nothing to do. */
 }

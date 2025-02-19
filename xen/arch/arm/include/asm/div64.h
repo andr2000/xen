@@ -21,7 +21,6 @@
  * calling convention for arguments and results (beware).
  */
 
-
 #if BITS_PER_LONG == 64
 
 #include <asm-generic/div64.h>

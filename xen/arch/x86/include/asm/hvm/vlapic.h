@@ -63,34 +63,36 @@
     clear_bit(VEC_POS(vec), (uint32_t *)((bitmap) + REG_POS(vec)))
 
 struct vlapic {
-    struct hvm_hw_lapic      hw;
+    struct hvm_hw_lapic hw;
     struct hvm_hw_lapic_regs *regs;
+
     struct {
-        bool                 hw, regs;
-        uint32_t             id, ldr;
-    }                        loaded;
-    spinlock_t               esr_lock;
-    struct periodic_time     pt;
-    s_time_t                 timer_last_update;
-    struct page_info         *regs_page;
+        bool hw, regs;
+        uint32_t id, ldr;
+    } loaded;
+
+    spinlock_t esr_lock;
+    struct periodic_time pt;
+    s_time_t timer_last_update;
+    struct page_info *regs_page;
+
     /* INIT-SIPI-SIPI work gets deferred to a tasklet. */
     struct {
-        uint32_t             icr, dest;
-        struct tasklet       tasklet;
+        uint32_t icr, dest;
+        struct tasklet tasklet;
     } init_sipi;
 };
 
 /* vlapic's frequence is 100 MHz */
 #define APIC_BUS_CYCLE_NS               10
 
-static inline uint32_t vlapic_get_reg(const struct vlapic *vlapic,
-                                      uint32_t reg)
+static inline uint32_t vlapic_get_reg(const struct vlapic *vlapic, uint32_t reg)
 {
     return *((uint32_t *)(&vlapic->regs->data[reg]));
 }
 
-static inline void vlapic_set_reg(
-    struct vlapic *vlapic, uint32_t reg, uint32_t val)
+static inline void vlapic_set_reg(struct vlapic *vlapic, uint32_t reg,
+                                  uint32_t val)
 {
     *((uint32_t *)(&vlapic->regs->data[reg])) = val;
 }
@@ -105,7 +107,7 @@ void vlapic_set_irq(struct vlapic *vlapic, uint8_t vec, uint8_t trig);
 int vlapic_has_pending_irq(struct vcpu *v);
 int vlapic_ack_pending_irq(struct vcpu *v, int vector, bool force_ack);
 
-int  vlapic_init(struct vcpu *v);
+int vlapic_init(struct vcpu *v);
 void vlapic_destroy(struct vcpu *v);
 
 void vlapic_reset(struct vlapic *vlapic);
@@ -129,12 +131,11 @@ void vlapic_ipi(struct vlapic *vlapic, uint32_t icr_low, uint32_t icr_high);
 
 int vlapic_apicv_write(struct vcpu *v, unsigned int offset);
 
-struct vlapic *vlapic_lowest_prio(
-    struct domain *d, const struct vlapic *source,
-    int short_hand, uint32_t dest, bool dest_mode);
+struct vlapic *vlapic_lowest_prio(struct domain *d, const struct vlapic *source,
+                                  int short_hand, uint32_t dest,
+                                  bool dest_mode);
 
-bool vlapic_match_dest(
-    const struct vlapic *target, const struct vlapic *source,
-    int short_hand, uint32_t dest, bool dest_mode);
+bool vlapic_match_dest(const struct vlapic *target, const struct vlapic *source,
+                       int short_hand, uint32_t dest, bool dest_mode);
 
 #endif /* __ASM_X86_HVM_VLAPIC_H__ */

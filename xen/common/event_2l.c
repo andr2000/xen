@@ -16,8 +16,8 @@
 
 #include <asm/guest_atomics.h>
 
-static void cf_check evtchn_2l_set_pending(
-    struct vcpu *v, struct evtchn *evtchn)
+static void cf_check evtchn_2l_set_pending(struct vcpu *v,
+                                           struct evtchn *evtchn)
 {
     struct domain *d = v->domain;
     unsigned int port = evtchn->port;
@@ -33,7 +33,8 @@ static void cf_check evtchn_2l_set_pending(
         return;
 
     if ( !guest_test_bit(d, port, &shared_info(d, evtchn_mask)) &&
-         !guest_test_and_set_bit(d, port / BITS_PER_EVTCHN_WORD(d),
+         !guest_test_and_set_bit(d,
+                                 port / BITS_PER_EVTCHN_WORD(d),
                                  &vcpu_info(v, evtchn_pending_sel)) )
     {
         vcpu_mark_events_pending(v);
@@ -42,14 +43,13 @@ static void cf_check evtchn_2l_set_pending(
     evtchn_check_pollers(d, port);
 }
 
-static void cf_check evtchn_2l_clear_pending(
-    struct domain *d, struct evtchn *evtchn)
+static void cf_check evtchn_2l_clear_pending(struct domain *d,
+                                             struct evtchn *evtchn)
 {
     guest_clear_bit(d, evtchn->port, &shared_info(d, evtchn_pending));
 }
 
-static void cf_check evtchn_2l_unmask(
-    struct domain *d, struct evtchn *evtchn)
+static void cf_check evtchn_2l_unmask(struct domain *d, struct evtchn *evtchn)
 {
     struct vcpu *v = d->vcpu[evtchn->notify_vcpu_id];
     unsigned int port = evtchn->port;
@@ -60,15 +60,16 @@ static void cf_check evtchn_2l_unmask(
      */
     if ( guest_test_and_clear_bit(d, port, &shared_info(d, evtchn_mask)) &&
          guest_test_bit(d, port, &shared_info(d, evtchn_pending)) &&
-         !guest_test_and_set_bit(d, port / BITS_PER_EVTCHN_WORD(d),
+         !guest_test_and_set_bit(d,
+                                 port / BITS_PER_EVTCHN_WORD(d),
                                  &vcpu_info(v, evtchn_pending_sel)) )
     {
         vcpu_mark_events_pending(v);
     }
 }
 
-static bool cf_check evtchn_2l_is_pending(
-    const struct domain *d, const struct evtchn *evtchn)
+static bool cf_check evtchn_2l_is_pending(const struct domain *d,
+                                          const struct evtchn *evtchn)
 {
     evtchn_port_t port = evtchn->port;
     unsigned int max_ports = BITS_PER_EVTCHN_WORD(d) * BITS_PER_EVTCHN_WORD(d);
@@ -78,8 +79,8 @@ static bool cf_check evtchn_2l_is_pending(
             guest_test_bit(d, port, &shared_info(d, evtchn_pending)));
 }
 
-static bool cf_check evtchn_2l_is_masked(
-    const struct domain *d, const struct evtchn *evtchn)
+static bool cf_check evtchn_2l_is_masked(const struct domain *d,
+                                         const struct evtchn *evtchn)
 {
     evtchn_port_t port = evtchn->port;
     unsigned int max_ports = BITS_PER_EVTCHN_WORD(d) * BITS_PER_EVTCHN_WORD(d);
@@ -89,23 +90,23 @@ static bool cf_check evtchn_2l_is_masked(
             guest_test_bit(d, port, &shared_info(d, evtchn_mask)));
 }
 
-static void cf_check evtchn_2l_print_state(
-    struct domain *d, const struct evtchn *evtchn)
+static void cf_check evtchn_2l_print_state(struct domain *d,
+                                           const struct evtchn *evtchn)
 {
     struct vcpu *v = d->vcpu[evtchn->notify_vcpu_id];
 
-    printk("%d", !!test_bit(evtchn->port / BITS_PER_EVTCHN_WORD(d),
-                            &vcpu_info(v, evtchn_pending_sel)));
+    printk("%d",
+           !!test_bit(evtchn->port / BITS_PER_EVTCHN_WORD(d),
+                      &vcpu_info(v, evtchn_pending_sel)));
 }
 
-static const struct evtchn_port_ops evtchn_port_ops_2l =
-{
-    .set_pending   = evtchn_2l_set_pending,
+static const struct evtchn_port_ops evtchn_port_ops_2l = {
+    .set_pending = evtchn_2l_set_pending,
     .clear_pending = evtchn_2l_clear_pending,
-    .unmask        = evtchn_2l_unmask,
-    .is_pending    = evtchn_2l_is_pending,
-    .is_masked     = evtchn_2l_is_masked,
-    .print_state   = evtchn_2l_print_state,
+    .unmask = evtchn_2l_unmask,
+    .is_pending = evtchn_2l_is_pending,
+    .is_masked = evtchn_2l_is_masked,
+    .print_state = evtchn_2l_print_state,
 };
 
 void evtchn_2l_init(struct domain *d)

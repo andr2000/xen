@@ -92,8 +92,7 @@ static int __init scmi_check_smccc_ver(void)
 
 static int __init scmi_dt_init_smccc(void)
 {
-    static const struct dt_device_match scmi_ids[] __initconst =
-    {
+    static const struct dt_device_match scmi_ids[] __initconst = {
         /* We only support "arm,scmi-smc" binding for now */
         DT_MATCH_COMPATIBLE("arm,scmi-smc"),
         { /* sentinel */ },
@@ -110,7 +109,8 @@ static int __init scmi_dt_init_smccc(void)
     if ( !ret )
     {
         printk(XENLOG_ERR "SCMI: No valid \"%s\" property in \"%s\" DT node\n",
-               SCMI_SMC_ID_PROP, scmi_node->full_name);
+               SCMI_SMC_ID_PROP,
+               scmi_node->full_name);
         return -ENOENT;
     }
 
@@ -144,7 +144,7 @@ static int __init scmi_init(void)
 
     return 0;
 
- err:
+err:
     printk(XENLOG_ERR "SCMI: Initialization failed (ret = %d)\n", ret);
     return ret;
 }

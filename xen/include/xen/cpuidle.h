@@ -37,10 +37,9 @@
 #define ACPI_CSTATE_EM_FFH      2
 #define ACPI_CSTATE_EM_HALT     3
 
-struct acpi_processor_cx
-{
+struct acpi_processor_cx {
     u8 idx;
-    u8 type;         /* ACPI_STATE_Cn */
+    u8 type; /* ACPI_STATE_Cn */
     u8 entry_method; /* ACPI_CSTATE_EM_xxx */
     bool irq_enable_early:1;
     bool ibrs_disable:1;
@@ -51,8 +50,7 @@ struct acpi_processor_cx
     u64 time;
 };
 
-struct acpi_processor_flags
-{
+struct acpi_processor_flags {
     u8 bm_control:1;
     u8 bm_check:1;
     u8 has_cst:1;
@@ -60,8 +58,7 @@ struct acpi_processor_flags
     u8 bm_rld_set:1;
 };
 
-struct acpi_processor_power
-{
+struct acpi_processor_power {
     unsigned int cpu;
     struct acpi_processor_flags flags;
     struct acpi_processor_cx *last_state;
@@ -74,16 +71,15 @@ struct acpi_processor_power
     struct acpi_processor_cx states[ACPI_PROCESSOR_MAX_POWER];
 };
 
-struct cpuidle_governor
-{
-    char                    name[CPUIDLE_NAME_LEN];
-    unsigned int            rating;
+struct cpuidle_governor {
+    char name[CPUIDLE_NAME_LEN];
+    unsigned int rating;
 
-    int  (*enable)          (struct acpi_processor_power *dev);
-    void (*disable)         (struct acpi_processor_power *dev);
+    int (*enable)(struct acpi_processor_power *dev);
+    void (*disable)(struct acpi_processor_power *dev);
 
-    int  (*select)          (struct acpi_processor_power *dev);
-    void (*reflect)         (struct acpi_processor_power *dev);
+    int (*select)(struct acpi_processor_power *dev);
+    void (*reflect)(struct acpi_processor_power *dev);
 };
 
 extern int8_t xen_cpuidle;

@@ -20,14 +20,20 @@ int dm_op(const struct dmop_args *op_args)
     size_t offset;
 
     static const uint8_t op_size[] = {
-        [XEN_DMOP_create_ioreq_server]              = sizeof(struct xen_dm_op_create_ioreq_server),
-        [XEN_DMOP_get_ioreq_server_info]            = sizeof(struct xen_dm_op_get_ioreq_server_info),
-        [XEN_DMOP_map_io_range_to_ioreq_server]     = sizeof(struct xen_dm_op_ioreq_server_range),
-        [XEN_DMOP_unmap_io_range_from_ioreq_server] = sizeof(struct xen_dm_op_ioreq_server_range),
-        [XEN_DMOP_set_ioreq_server_state]           = sizeof(struct xen_dm_op_set_ioreq_server_state),
-        [XEN_DMOP_destroy_ioreq_server]             = sizeof(struct xen_dm_op_destroy_ioreq_server),
-        [XEN_DMOP_set_irq_level]                    = sizeof(struct xen_dm_op_set_irq_level),
-        [XEN_DMOP_nr_vcpus]                         = sizeof(struct xen_dm_op_nr_vcpus),
+        [XEN_DMOP_create_ioreq_server] =
+            sizeof(struct xen_dm_op_create_ioreq_server),
+        [XEN_DMOP_get_ioreq_server_info] =
+            sizeof(struct xen_dm_op_get_ioreq_server_info),
+        [XEN_DMOP_map_io_range_to_ioreq_server] =
+            sizeof(struct xen_dm_op_ioreq_server_range),
+        [XEN_DMOP_unmap_io_range_from_ioreq_server] =
+            sizeof(struct xen_dm_op_ioreq_server_range),
+        [XEN_DMOP_set_ioreq_server_state] =
+            sizeof(struct xen_dm_op_set_ioreq_server_state),
+        [XEN_DMOP_destroy_ioreq_server] =
+            sizeof(struct xen_dm_op_destroy_ioreq_server),
+        [XEN_DMOP_set_irq_level] = sizeof(struct xen_dm_op_set_irq_level),
+        [XEN_DMOP_nr_vcpus] = sizeof(struct xen_dm_op_nr_vcpus),
     };
 
     rc = rcu_lock_remote_domain_by_id(op_args->domid, &d);
@@ -58,7 +64,9 @@ int dm_op(const struct dmop_args *op_args)
     if ( op_args->buf[0].size < offset + op_size[op.op] )
         goto out;
 
-    if ( copy_from_guest_offset((void *)&op.u, op_args->buf[0].h, offset,
+    if ( copy_from_guest_offset((void *)&op.u,
+                                op_args->buf[0].h,
+                                offset,
                                 op_size[op.op]) )
         goto out;
 
@@ -70,8 +78,7 @@ int dm_op(const struct dmop_args *op_args)
     {
     case XEN_DMOP_set_irq_level:
     {
-        const struct xen_dm_op_set_irq_level *data =
-            &op.u.set_irq_level;
+        const struct xen_dm_op_set_irq_level *data = &op.u.set_irq_level;
         unsigned int i;
 
         /* Only SPIs are supported */
@@ -127,12 +134,14 @@ int dm_op(const struct dmop_args *op_args)
         break;
     }
 
-    if ( (!rc || rc == -ERESTART) &&
-         !const_op && copy_to_guest_offset(op_args->buf[0].h, offset,
-                                           (void *)&op.u, op_size[op.op]) )
+    if ( (!rc || rc == -ERESTART) && !const_op &&
+         copy_to_guest_offset(op_args->buf[0].h,
+                              offset,
+                              (void *)&op.u,
+                              op_size[op.op]) )
         rc = -EFAULT;
 
- out:
+out:
     rcu_unlock_domain(d);
 
     return rc;

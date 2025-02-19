@@ -23,6 +23,7 @@ long do_get_debugreg(int reg)
         unsigned long val;
         long ret;
     } u;
+
     int res = x86emul_read_dr(reg, &u.val, NULL);
 
     return res == X86EMUL_OKAY ? u.ret : -ENODEV;
@@ -69,10 +70,18 @@ long set_debugreg(struct vcpu *v, unsigned int reg, unsigned long value)
         {
             switch ( reg )
             {
-            case 0: write_debugreg(0, value); break;
-            case 1: write_debugreg(1, value); break;
-            case 2: write_debugreg(2, value); break;
-            case 3: write_debugreg(3, value); break;
+            case 0:
+                write_debugreg(0, value);
+                break;
+            case 1:
+                write_debugreg(1, value);
+                break;
+            case 2:
+                write_debugreg(2, value);
+                break;
+            case 3:
+                write_debugreg(3, value);
+                break;
             }
         }
         break;
@@ -206,15 +215,14 @@ long do_set_segment_base(unsigned int which, unsigned long base)
          * We wish to update the user %gs from the GDT/LDT.  Currently, the
          * guest kernel's GS_BASE is in context.
          */
-        asm volatile ( "swapgs" );
+        asm volatile("swapgs");
 
         if ( sel > 3 )
             /* Fix up RPL for non-NUL selectors. */
             sel |= 3;
         else if ( cpu_bug_null_seg )
             /* Work around NUL segment behaviour on AMD hardware. */
-            asm volatile ( "mov %[sel], %%gs"
-                           :: [sel] "r" (FLAT_USER_DS32) );
+            asm volatile("mov %[sel], %%gs" ::[sel] "r"(FLAT_USER_DS32));
 
         /*
          * Load the chosen selector, with fault handling.
@@ -230,20 +238,17 @@ long do_set_segment_base(unsigned int which, unsigned long base)
          * Anyone wanting to check for errors from this hypercall should
          * re-read %gs and compare against the input.
          */
-        asm volatile ( "1: mov %[sel], %%gs\n\t"
-                       ".section .fixup, \"ax\", @progbits\n\t"
-                       "2: mov %k[flat], %%gs\n\t"
-                       "   xor %[sel], %[sel]\n\t"
-                       "   jmp 1b\n\t"
-                       ".previous\n\t"
-                       _ASM_EXTABLE(1b, 2b)
-                       : [sel] "+r" (sel)
-                       : [flat] "r" (FLAT_USER_DS32) );
+        asm volatile(
+            "1: mov %[sel], %%gs\n\t" ".section .fixup, \"ax\", @progbits\n\t" "2: mov %k[flat], %%gs\n\t" "   xor %[sel], %[sel]\n\t" "   jmp 1b\n\t" ".previous\n\t" _ASM_EXTABLE(
+                1b,
+                2b)
+            : [sel] "+r"(sel)
+            : [flat] "r"(FLAT_USER_DS32));
 
         /* Update the cache of the inactive base, as read from the GDT/LDT. */
         v->arch.pv.gs_base_user = read_gs_base();
 
-        asm volatile ( safe_swapgs );
+        asm volatile(safe_swapgs);
         break;
     }
 

@@ -11,7 +11,6 @@
 #include <xen/sched.h>
 #include <xen/hypercall.h>
 
-
 int do_arm_physdev_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
 {
 #ifdef CONFIG_HAS_PCI

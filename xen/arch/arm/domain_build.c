@@ -60,6 +60,7 @@ static int __init parse_dom0_mem(const char *s)
 
     return *s ? -EINVAL : 0;
 }
+
 custom_param("dom0_mem", parse_dom0_mem);
 
 int __init parse_arch_dom0_param(const char *s, const char *e)
@@ -89,9 +90,9 @@ int __init parse_arch_dom0_param(const char *s, const char *e)
 
 //#define DEBUG_11_ALLOCATION
 #ifdef DEBUG_11_ALLOCATION
-# define D11PRINT(fmt, args...) printk(XENLOG_DEBUG fmt, ##args)
+#define D11PRINT(fmt, args...) printk(XENLOG_DEBUG fmt, ##args)
 #else
-# define D11PRINT(fmt, args...) do {} while ( 0 )
+#define D11PRINT(fmt, args...) do {} while ( 0 )
 #endif
 
 /*
@@ -137,10 +138,8 @@ unsigned int __init get_allocation_size(paddr_t size)
  * Returns false if the memory would be below bank 0 or we have run
  * out of banks. In this case it will free the pages.
  */
-static bool __init insert_11_bank(struct domain *d,
-                                  struct kernel_info *kinfo,
-                                  struct page_info *pg,
-                                  unsigned int order)
+static bool __init insert_11_bank(struct domain *d, struct kernel_info *kinfo,
+                                  struct page_info *pg, unsigned int order)
 {
     struct membanks *mem = kernel_info_get_mem(kinfo);
     unsigned int i;
@@ -152,15 +151,16 @@ static bool __init insert_11_bank(struct domain *d,
     start = mfn_to_maddr(smfn);
     size = pfn_to_paddr(1UL << order);
 
-    D11PRINT("Allocated %#"PRIpaddr"-%#"PRIpaddr" (%ldMB/%ldMB, order %d)\n",
-             start, start + size,
+    D11PRINT("Allocated %#" PRIpaddr "-%#" PRIpaddr
+             " (%ldMB/%ldMB, order %d)\n",
+             start,
+             start + size,
              1UL << (order + PAGE_SHIFT - 20),
              /* Don't want format this as PRIpaddr (16 digit hex) */
              (unsigned long)(kinfo->unassigned_mem >> 20),
              order);
 
-    if ( mem->nr_banks > 0 &&
-         size < MB(128) &&
+    if ( mem->nr_banks > 0 && size < MB(128) &&
          start + size < mem->bank[0].start )
     {
         D11PRINT("Allocation below bank 0 is too small, not using\n");
@@ -181,12 +181,12 @@ static bool __init insert_11_bank(struct domain *d,
         return true;
     }
 
-    for( i = 0; i < mem->nr_banks; i++ )
+    for ( i = 0; i < mem->nr_banks; i++ )
     {
         struct membank *bank = &mem->bank[i];
 
         /* If possible merge new memory into the start of the bank */
-        if ( bank->start == start+size )
+        if ( bank->start == start + size )
         {
             bank->start = start;
             bank->size += size;
@@ -208,8 +208,7 @@ static bool __init insert_11_bank(struct domain *d,
          */
         if ( start + size < bank->start && mem->nr_banks < mem->max_banks )
         {
-            memmove(bank + 1, bank,
-                    sizeof(*bank) * (mem->nr_banks - i));
+            memmove(bank + 1, bank, sizeof(*bank) * (mem->nr_banks - i));
             mem->nr_banks++;
             bank->start = start;
             bank->size = size;
@@ -322,7 +321,7 @@ static void __init allocate_memory_11(struct domain *d,
      */
     while ( order >= min_low_order )
     {
-        for ( bits = order ; bits <= lowmem_bitsize; bits++ )
+        for ( bits = order; bits <= lowmem_bitsize; bits++ )
         {
             pg = alloc_domheap_pages(d, order, MEMF_bits(bits));
             if ( pg != NULL )
@@ -345,7 +344,7 @@ static void __init allocate_memory_11(struct domain *d,
            lowmem_bitsize);
     lowmem = false;
 
- got_bank0:
+got_bank0:
 
     /*
      * If we failed to allocate bank0 in the lowmem region,
@@ -354,13 +353,14 @@ static void __init allocate_memory_11(struct domain *d,
     order = get_allocation_size(kinfo->unassigned_mem);
     while ( kinfo->unassigned_mem && mem->nr_banks < mem->max_banks )
     {
-        pg = alloc_domheap_pages(d, order,
+        pg = alloc_domheap_pages(d,
+                                 order,
                                  lowmem ? MEMF_bits(lowmem_bitsize) : 0);
         if ( !pg )
         {
-            order --;
+            order--;
 
-            if ( lowmem && order < min_low_order)
+            if ( lowmem && order < min_low_order )
             {
                 D11PRINT("Failed at min_low_order, allow high allocations\n");
                 order = get_allocation_size(kinfo->unassigned_mem);
@@ -406,9 +406,9 @@ static void __init allocate_memory_11(struct domain *d,
         panic("Failed to allocate requested dom0 memory. %ldMB unallocated\n",
               (unsigned long)kinfo->unassigned_mem >> 20);
 
-    for( i = 0; i < mem->nr_banks; i++ )
+    for ( i = 0; i < mem->nr_banks; i++ )
     {
-        printk("BANK[%d] %#"PRIpaddr"-%#"PRIpaddr" (%ldMB)\n",
+        printk("BANK[%d] %#" PRIpaddr "-%#" PRIpaddr " (%ldMB)\n",
                i,
                mem->bank[i].start,
                mem->bank[i].start + mem->bank[i].size,
@@ -552,7 +552,8 @@ static int __init handle_linux_pci_domain(struct kernel_info *kinfo,
 
         segment = res;
         printk(XENLOG_DEBUG "Assigned segment %d to %s\n",
-               segment, node->full_name);
+               segment,
+               node->full_name);
     }
 
     return fdt_property_cell(kinfo->fdt, "linux,pci-domain", segment);
@@ -586,7 +587,7 @@ static int __init write_properties(struct domain *d, struct kernel_info *kinfo,
     if ( iommu_node && device_get_class(iommu_node) != DEVICE_IOMMU )
         iommu_node = NULL;
 
-    dt_for_each_property_node (node, prop)
+    dt_for_each_property_node(node, prop)
     {
         const void *prop_data = prop->value;
         u32 prop_len = prop->length;
@@ -615,7 +616,7 @@ static int __init write_properties(struct domain *d, struct kernel_info *kinfo,
                  dt_property_name_is_equal(prop, "linux,uefi-mmap-start") ||
                  dt_property_name_is_equal(prop, "linux,uefi-mmap-size") ||
                  dt_property_name_is_equal(prop, "linux,uefi-mmap-desc-size") ||
-                 dt_property_name_is_equal(prop, "linux,uefi-mmap-desc-ver"))
+                 dt_property_name_is_equal(prop, "linux,uefi-mmap-desc-ver") )
                 continue;
 
             if ( dt_property_name_is_equal(prop, "xen,dom0-bootargs") )
@@ -626,7 +627,7 @@ static int __init write_properties(struct domain *d, struct kernel_info *kinfo,
             }
             if ( dt_property_name_is_equal(prop, "bootargs") )
             {
-                if ( !bootargs  && !had_dom0_bootargs )
+                if ( !bootargs && !had_dom0_bootargs )
                     bootargs = prop->value;
                 continue;
             }
@@ -674,8 +675,7 @@ static int __init write_properties(struct domain *d, struct kernel_info *kinfo,
     if ( dt_device_for_passthrough(node) )
         res = fdt_property_string(kinfo->fdt, "status", "disabled");
     else if ( status )
-        res = fdt_property(kinfo->fdt, "status", status->value,
-                           status->length);
+        res = fdt_property(kinfo->fdt, "status", status->value, status->length);
 
     if ( res )
         return res;
@@ -686,7 +686,9 @@ static int __init write_properties(struct domain *d, struct kernel_info *kinfo,
 
         if ( bootargs )
         {
-            res = fdt_property(kinfo->fdt, "bootargs", bootargs,
+            res = fdt_property(kinfo->fdt,
+                               "bootargs",
+                               bootargs,
                                strlen(bootargs) + 1);
             if ( res )
                 return res;
@@ -712,16 +714,14 @@ static int __init write_properties(struct domain *d, struct kernel_info *kinfo,
     return 0;
 }
 
-void __init set_interrupt(gic_interrupt_t interrupt,
-                          unsigned int irq,
-                          unsigned int cpumask,
-                          unsigned int level)
+void __init set_interrupt(gic_interrupt_t interrupt, unsigned int irq,
+                          unsigned int cpumask, unsigned int level)
 {
     __be32 *cells = interrupt;
     bool is_ppi = !!(irq < 32);
 
     BUG_ON(irq < 16);
-    irq -= (is_ppi) ? 16: 32; /* PPIs start at 16, SPIs at 32 */
+    irq -= (is_ppi) ? 16 : 32; /* PPIs start at 16, SPIs at 32 */
 
     /* See linux Documentation/devicetree/bindings/interrupt-controller/arm,gic.txt */
     dt_set_cell(&cells, 1, is_ppi); /* is a PPI? */
@@ -741,13 +741,12 @@ static int __init fdt_property_interrupts(const struct kernel_info *kinfo,
 {
     int res;
 
-    res = fdt_property(kinfo->fdt, "interrupts",
-                       intr, sizeof(intr[0]) * num_irq);
+    res =
+        fdt_property(kinfo->fdt, "interrupts", intr, sizeof(intr[0]) * num_irq);
     if ( res )
         return res;
 
-    res = fdt_property_cell(kinfo->fdt, "interrupt-parent",
-                            kinfo->phandle_gic);
+    res = fdt_property_cell(kinfo->fdt, "interrupt-parent", kinfo->phandle_gic);
 
     return res;
 }
@@ -770,12 +769,11 @@ int __init domain_fdt_begin_node(void *fdt, const char *name, uint64_t unit)
     int ret;
 
     /* ePAPR 3.4 */
-    ret = snprintf(buf, sizeof(buf), "%s@%"PRIx64, name, unit);
+    ret = snprintf(buf, sizeof(buf), "%s@%" PRIx64, name, unit);
 
     if ( ret >= sizeof(buf) )
     {
-        printk(XENLOG_ERR
-               "Insufficient buffer. Minimum size required is %d\n",
+        printk(XENLOG_ERR "Insufficient buffer. Minimum size required is %d\n",
                (ret + 1));
 
         return -FDT_ERR_TRUNCATED;
@@ -798,8 +796,8 @@ int __init make_memory_node(const struct kernel_info *kinfo, int addrcells,
         return -ENOENT;
 
     /* find the first memory range that is reserved for device (or firmware) */
-    for ( i = 0; i < mem->nr_banks &&
-                 (mem->bank[i].type != MEMBANK_DEFAULT); i++ )
+    for ( i = 0; i < mem->nr_banks && (mem->bank[i].type != MEMBANK_DEFAULT);
+          i++ )
         ;
 
     if ( i == mem->nr_banks )
@@ -835,16 +833,17 @@ int __init make_memory_node(const struct kernel_info *kinfo, int addrcells,
      * this function is handling the normal memory, add the banks.
      */
     if ( mem == kernel_info_get_mem_const(kinfo) )
-        shm_mem_node_fill_reg_range(kinfo, reg, &nr_cells, addrcells,
-                                    sizecells);
+        shm_mem_node_fill_reg_range(kinfo, reg, &nr_cells, addrcells, sizecells);
 
     for ( cells = reg, i = 0; cells < reg + nr_cells; i++, cells += reg_size )
     {
         uint64_t start = dt_read_number(cells, addrcells);
         uint64_t size = dt_read_number(cells + addrcells, sizecells);
 
-        dt_dprintk("  Bank %u: %#"PRIx64"->%#"PRIx64"\n",
-                   i, start, start + size);
+        dt_dprintk("  Bank %u: %#" PRIx64 "->%#" PRIx64 "\n",
+                   i,
+                   start,
+                   start + size);
     }
 
     dt_dprintk("(reg size %d, nr cells %d)\n", reg_size, nr_cells);
@@ -858,8 +857,7 @@ int __init make_memory_node(const struct kernel_info *kinfo, int addrcells,
     return res;
 }
 
-int __init add_ext_regions(unsigned long s_gfn, unsigned long e_gfn,
-                           void *data)
+int __init add_ext_regions(unsigned long s_gfn, unsigned long e_gfn, void *data)
 {
     struct membanks *ext_regions = data;
     paddr_t start, size;
@@ -927,12 +925,12 @@ static int __init add_hwdom_free_regions(unsigned long s_gfn,
     size = (e - start) & ~(SZ_2M - 1);
 
     /* Find the insert position (descending order). */
-    for ( i = 0; i < free_regions->nr_banks ; i++ )
+    for ( i = 0; i < free_regions->nr_banks; i++ )
         if ( size > free_regions->bank[i].size )
             break;
 
     /* Move the other banks to make space. */
-    for ( j = free_regions->nr_banks; j > i ; j-- )
+    for ( j = free_regions->nr_banks; j > i; j-- )
     {
         free_regions->bank[j].start = free_regions->bank[j - 1].start;
         free_regions->bank[j].size = free_regions->bank[j - 1].size;
@@ -950,13 +948,10 @@ static int __init add_hwdom_free_regions(unsigned long s_gfn,
  * using the host memory layout. In order to calculate regions we exclude every
  * region passed in mem_banks from the Host RAM.
  */
-static int __init find_unallocated_memory(const struct kernel_info *kinfo,
-                                          const struct membanks *mem_banks[],
-                                          unsigned int nr_mem_banks,
-                                          struct membanks *free_regions,
-                                          int (*cb)(unsigned long s_gfn,
-                                                    unsigned long e_gfn,
-                                                    void *data))
+static int __init find_unallocated_memory(
+    const struct kernel_info *kinfo, const struct membanks *mem_banks[],
+    unsigned int nr_mem_banks, struct membanks *free_regions,
+    int (*cb)(unsigned long s_gfn, unsigned long e_gfn, void *data))
 {
     const struct membanks *mem = bootinfo_get_mem();
     struct rangeset *unalloc_mem;
@@ -975,12 +970,13 @@ static int __init find_unallocated_memory(const struct kernel_info *kinfo,
     {
         start = mem->bank[i].start;
         end = mem->bank[i].start + mem->bank[i].size;
-        res = rangeset_add_range(unalloc_mem, PFN_DOWN(start),
-                                 PFN_DOWN(end - 1));
+        res =
+            rangeset_add_range(unalloc_mem, PFN_DOWN(start), PFN_DOWN(end - 1));
         if ( res )
         {
-            printk(XENLOG_ERR "Failed to add: %#"PRIpaddr"->%#"PRIpaddr"\n",
-                   start, end);
+            printk(XENLOG_ERR "Failed to add: %#" PRIpaddr "->%#" PRIpaddr "\n",
+                   start,
+                   end);
             goto out;
         }
     }
@@ -996,21 +992,27 @@ static int __init find_unallocated_memory(const struct kernel_info *kinfo,
                 continue;
 
             end = mem_banks[i]->bank[j].start + mem_banks[i]->bank[j].size;
-            res = rangeset_remove_range(unalloc_mem, PFN_DOWN(start),
+            res = rangeset_remove_range(unalloc_mem,
+                                        PFN_DOWN(start),
                                         PFN_DOWN(end - 1));
             if ( res )
             {
-                printk(XENLOG_ERR
-                       "Failed to add: %#"PRIpaddr"->%#"PRIpaddr", error %d\n",
-                       start, end, res);
+                printk(XENLOG_ERR "Failed to add: %#" PRIpaddr "->%#" PRIpaddr
+                                  ", error %d\n",
+                       start,
+                       end,
+                       res);
                 goto out;
             }
         }
 
     start = 0;
     end = (1ULL << p2m_ipa_bits) - 1;
-    res = rangeset_report_ranges(unalloc_mem, PFN_DOWN(start), PFN_DOWN(end),
-                                 cb, free_regions);
+    res = rangeset_report_ranges(unalloc_mem,
+                                 PFN_DOWN(start),
+                                 PFN_DOWN(end),
+                                 cb,
+                                 free_regions);
     if ( res )
         free_regions->nr_banks = 0;
     else if ( !free_regions->nr_banks )
@@ -1030,7 +1032,8 @@ void __init allocate_memory(struct domain *d, struct kernel_info *kinfo)
 
     printk(XENLOG_INFO "Allocating mappings totalling %ldMB for %pd:\n",
            /* Don't want format this as PRIpaddr (16 digit hex) */
-           (unsigned long)(kinfo->unassigned_mem >> 20), d);
+           (unsigned long)(kinfo->unassigned_mem >> 20),
+           d);
 
     mem->nr_banks = 0;
     /*
@@ -1061,8 +1064,11 @@ void __init allocate_memory(struct domain *d, struct kernel_info *kinfo)
         if ( !hwdom_free_mem )
             goto fail;
 
-        if ( find_unallocated_memory(kinfo, mem_banks, ARRAY_SIZE(mem_banks),
-                                     hwdom_free_mem, add_hwdom_free_regions) )
+        if ( find_unallocated_memory(kinfo,
+                                     mem_banks,
+                                     ARRAY_SIZE(mem_banks),
+                                     hwdom_free_mem,
+                                     add_hwdom_free_regions) )
             goto fail;
 
         nr_banks = hwdom_free_mem->nr_banks;
@@ -1098,9 +1104,10 @@ void __init allocate_memory(struct domain *d, struct kernel_info *kinfo)
     if ( kinfo->unassigned_mem )
         goto fail;
 
-    for( i = 0; i < mem->nr_banks; i++ )
+    for ( i = 0; i < mem->nr_banks; i++ )
     {
-        printk(XENLOG_INFO "%pd BANK[%d] %#"PRIpaddr"-%#"PRIpaddr" (%ldMB)\n",
+        printk(XENLOG_INFO "%pd BANK[%d] %#" PRIpaddr "-%#" PRIpaddr
+                           " (%ldMB)\n",
                d,
                i,
                mem->bank[i].start,
@@ -1112,7 +1119,7 @@ void __init allocate_memory(struct domain *d, struct kernel_info *kinfo)
     xfree(hwdom_free_mem);
     return;
 
-  fail:
+fail:
     panic("Failed to allocate requested domain memory."
           /* Don't want format this as PRIpaddr (16 digit hex) */
           " %ldKB unallocated. Fix the VMs configurations.\n",
@@ -1128,8 +1135,12 @@ static int __init handle_pci_range(const struct dt_device_node *dev,
 
     if ( (addr != (paddr_t)addr) || (((paddr_t)~0 - addr) < len) )
     {
-        printk(XENLOG_ERR "%s: [0x%"PRIx64", 0x%"PRIx64"] exceeds the maximum allowed PA width (%u bits)",
-               dt_node_full_name(dev), addr, (addr + len), PADDR_BITS);
+        printk(XENLOG_ERR "%s: [0x%" PRIx64 ", 0x%" PRIx64
+                          "] exceeds the maximum allowed PA width (%u bits)",
+               dt_node_full_name(dev),
+               addr,
+               (addr + len),
+               PADDR_BITS);
         return -ERANGE;
     }
 
@@ -1138,8 +1149,9 @@ static int __init handle_pci_range(const struct dt_device_node *dev,
     res = rangeset_remove_range(mem_holes, PFN_DOWN(start), PFN_DOWN(end - 1));
     if ( res )
     {
-        printk(XENLOG_ERR "Failed to remove: %#"PRIpaddr"->%#"PRIpaddr"\n",
-               start, end);
+        printk(XENLOG_ERR "Failed to remove: %#" PRIpaddr "->%#" PRIpaddr "\n",
+               start,
+               end);
         return res;
     }
 
@@ -1178,8 +1190,9 @@ static int __init find_memory_holes(const struct kernel_info *kinfo,
     res = rangeset_add_range(mem_holes, PFN_DOWN(start), PFN_DOWN(end));
     if ( res )
     {
-        printk(XENLOG_ERR "Failed to add: %#"PRIpaddr"->%#"PRIpaddr"\n",
-               start, end);
+        printk(XENLOG_ERR "Failed to add: %#" PRIpaddr "->%#" PRIpaddr "\n",
+               start,
+               end);
         goto out;
     }
 
@@ -1192,7 +1205,7 @@ static int __init find_memory_holes(const struct kernel_info *kinfo,
      * Remove regions described by "reg" and "ranges" properties where
      * the memory is addressable (MMIO, RAM, PCI BAR, etc).
      */
-    dt_for_each_device_node( dt_host, np )
+    dt_for_each_device_node(dt_host, np)
     {
         unsigned int naddr;
         paddr_t addr, size;
@@ -1205,18 +1218,22 @@ static int __init find_memory_holes(const struct kernel_info *kinfo,
             if ( res )
             {
                 printk(XENLOG_ERR "Unable to retrieve address %u for %s\n",
-                       i, dt_node_full_name(np));
+                       i,
+                       dt_node_full_name(np));
                 goto out;
             }
 
             start = addr & PAGE_MASK;
             end = PAGE_ALIGN(addr + size);
-            res = rangeset_remove_range(mem_holes, PFN_DOWN(start),
+            res = rangeset_remove_range(mem_holes,
+                                        PFN_DOWN(start),
                                         PFN_DOWN(end - 1));
             if ( res )
             {
-                printk(XENLOG_ERR "Failed to remove: %#"PRIpaddr"->%#"PRIpaddr"\n",
-                       start, end);
+                printk(XENLOG_ERR "Failed to remove: %#" PRIpaddr
+                                  "->%#" PRIpaddr "\n",
+                       start,
+                       end);
                 goto out;
             }
         }
@@ -1239,8 +1256,11 @@ static int __init find_memory_holes(const struct kernel_info *kinfo,
 
     start = 0;
     end = (1ULL << p2m_ipa_bits) - 1;
-    res = rangeset_report_ranges(mem_holes, PFN_DOWN(start), PFN_DOWN(end),
-                                 add_ext_regions,  ext_regions);
+    res = rangeset_report_ranges(mem_holes,
+                                 PFN_DOWN(start),
+                                 PFN_DOWN(end),
+                                 add_ext_regions,
+                                 ext_regions);
     if ( res )
         ext_regions->nr_banks = 0;
     else if ( !ext_regions->nr_banks )
@@ -1317,20 +1337,21 @@ static int __init find_host_extended_regions(const struct kernel_info *kinfo,
     gnttab->bank[0].start = kinfo->gnttab_start;
     gnttab->bank[0].size = kinfo->gnttab_size;
 
-    res = find_unallocated_memory(kinfo, mem_banks, ARRAY_SIZE(mem_banks),
-                                  ext_regions, add_ext_regions);
+    res = find_unallocated_memory(kinfo,
+                                  mem_banks,
+                                  ARRAY_SIZE(mem_banks),
+                                  ext_regions,
+                                  add_ext_regions);
     xfree(gnttab);
 
     return res;
 }
 
 int __init make_hypervisor_node(struct domain *d,
-                                const struct kernel_info *kinfo,
-                                int addrcells, int sizecells)
+                                const struct kernel_info *kinfo, int addrcells,
+                                int sizecells)
 {
-    const char compat[] =
-        "xen,xen-" XEN_VERSION_STRING "\0"
-        "xen,xen";
+    const char compat[] = "xen,xen-" XEN_VERSION_STRING "\0" "xen,xen";
     __be32 *reg, *cells;
     gic_interrupt_t intr;
     int res;
@@ -1344,8 +1365,8 @@ int __init make_hypervisor_node(struct domain *d,
      * Sanity-check address sizes, since addresses and sizes which do
      * not take up exactly 4 or 8 bytes are not supported.
      */
-    if ((addrcells != 1 && addrcells != 2) ||
-        (sizecells != 1 && sizecells != 2))
+    if ( (addrcells != 1 && addrcells != 2) ||
+         (sizecells != 1 && sizecells != 2) )
         panic("Cannot cope with this size\n");
 
     /* See linux Documentation/devicetree/bindings/arm/xen.txt */
@@ -1366,7 +1387,8 @@ int __init make_hypervisor_node(struct domain *d,
     else if ( is_32bit_domain(d) )
     {
         printk(XENLOG_WARNING
-               "%pd: extended regions not supported for 32-bit guests\n", d);
+               "%pd: extended regions not supported for 32-bit guests\n",
+               d);
         nr_ext_regions = 0;
     }
     else
@@ -1402,23 +1424,31 @@ int __init make_hypervisor_node(struct domain *d,
 
     /* reg 0 is grant table space */
     cells = &reg[0];
-    dt_child_set_range(&cells, addrcells, sizecells,
-                       kinfo->gnttab_start, kinfo->gnttab_size);
+    dt_child_set_range(&cells,
+                       addrcells,
+                       sizecells,
+                       kinfo->gnttab_start,
+                       kinfo->gnttab_size);
     /* reg 1...N are extended regions */
     for ( i = 0; i < nr_ext_regions; i++ )
     {
         u64 start = ext_regions->bank[i].start;
         u64 size = ext_regions->bank[i].size;
 
-        printk("%pd: extended region %d: %#"PRIx64"->%#"PRIx64"\n",
-               d, i, start, start + size);
+        printk("%pd: extended region %d: %#" PRIx64 "->%#" PRIx64 "\n",
+               d,
+               i,
+               start,
+               start + size);
 
         dt_child_set_range(&cells, addrcells, sizecells, start, size);
     }
 
-    res = fdt_property(fdt, "reg", reg,
+    res = fdt_property(fdt,
+                       "reg",
+                       reg,
                        dt_cells_to_size(addrcells + sizecells) *
-                       (nr_ext_regions + 1));
+                           (nr_ext_regions + 1));
     xfree(ext_regions);
     xfree(reg);
 
@@ -1446,10 +1476,7 @@ int __init make_hypervisor_node(struct domain *d,
 int __init make_psci_node(void *fdt)
 {
     int res;
-    const char compat[] =
-        "arm,psci-1.0""\0"
-        "arm,psci-0.2""\0"
-        "arm,psci";
+    const char compat[] = "arm,psci-1.0" "\0" "arm,psci-0.2" "\0" "arm,psci";
 
     dt_dprintk("Create PSCI node\n");
 
@@ -1513,8 +1540,9 @@ int __init make_cpus_node(const struct domain *d, void *fdt)
         if ( dt_device_type_is_equal(npcpu, "cpu") )
         {
             compatible = dt_get_property(npcpu, "compatible", &len);
-            clock_valid = dt_property_read_u32(npcpu, "clock-frequency",
-                                            &clock_frequency);
+            clock_valid = dt_property_read_u32(npcpu,
+                                               "clock-frequency",
+                                               &clock_frequency);
             break;
         }
     }
@@ -1554,20 +1582,21 @@ int __init make_cpus_node(const struct domain *d, void *fdt)
         mpidr_aff = vcpuid_to_vaffinity(cpu);
         if ( (mpidr_aff & ~GENMASK_ULL(23, 0)) != 0 )
         {
-            printk(XENLOG_ERR "Unable to handle MPIDR AFFINITY 0x%"PRIx64"\n",
+            printk(XENLOG_ERR "Unable to handle MPIDR AFFINITY 0x%" PRIx64 "\n",
                    mpidr_aff);
             return -EINVAL;
         }
 
-        dt_dprintk("Create cpu@%"PRIx64" (logical CPUID: %d) node\n",
-                   mpidr_aff, cpu);
+        dt_dprintk("Create cpu@%" PRIx64 " (logical CPUID: %d) node\n",
+                   mpidr_aff,
+                   cpu);
 
         /*
          * We use PRIx64 because mpidr_aff is a 64bit integer. However,
          * only bits [23:0] are used, thus, we are sure it will fit in
          * buf.
          */
-        snprintf(buf, sizeof(buf), "cpu@%"PRIx64, mpidr_aff);
+        snprintf(buf, sizeof(buf), "cpu@%" PRIx64, mpidr_aff);
         res = fdt_begin_node(fdt, buf);
         if ( res )
             return res;
@@ -1680,8 +1709,7 @@ static int __init make_gic_node(const struct domain *d, void *fdt,
 int __init make_timer_node(const struct kernel_info *kinfo)
 {
     void *fdt = kinfo->fdt;
-    static const struct dt_device_match timer_ids[] __initconst =
-    {
+    static const struct dt_device_match timer_ids[] __initconst = {
         DT_MATCH_TIMER,
         { /* sentinel */ },
     };
@@ -1720,8 +1748,7 @@ int __init make_timer_node(const struct kernel_info *kinfo)
     if ( is_hardware_domain(kinfo->d) )
     {
         irq[TIMER_PHYS_SECURE_PPI] = timer_get_irq(TIMER_PHYS_SECURE_PPI);
-        irq[TIMER_PHYS_NONSECURE_PPI] =
-                                    timer_get_irq(TIMER_PHYS_NONSECURE_PPI);
+        irq[TIMER_PHYS_NONSECURE_PPI] = timer_get_irq(TIMER_PHYS_NONSECURE_PPI);
         irq[TIMER_VIRT_PPI] = timer_get_irq(TIMER_VIRT_PPI);
     }
     else
@@ -1731,11 +1758,15 @@ int __init make_timer_node(const struct kernel_info *kinfo)
         irq[TIMER_VIRT_PPI] = GUEST_TIMER_VIRT_PPI;
     }
     dt_dprintk("  Secure interrupt %u\n", irq[TIMER_PHYS_SECURE_PPI]);
-    set_interrupt(intrs[0], irq[TIMER_PHYS_SECURE_PPI],
-                  0xf, DT_IRQ_TYPE_LEVEL_LOW);
+    set_interrupt(intrs[0],
+                  irq[TIMER_PHYS_SECURE_PPI],
+                  0xf,
+                  DT_IRQ_TYPE_LEVEL_LOW);
     dt_dprintk("  Non secure interrupt %u\n", irq[TIMER_PHYS_NONSECURE_PPI]);
-    set_interrupt(intrs[1], irq[TIMER_PHYS_NONSECURE_PPI],
-                  0xf, DT_IRQ_TYPE_LEVEL_LOW);
+    set_interrupt(intrs[1],
+                  irq[TIMER_PHYS_NONSECURE_PPI],
+                  0xf,
+                  DT_IRQ_TYPE_LEVEL_LOW);
     dt_dprintk("  Virt interrupt %u\n", irq[TIMER_VIRT_PPI]);
     set_interrupt(intrs[2], irq[TIMER_VIRT_PPI], 0xf, DT_IRQ_TYPE_LEVEL_LOW);
 
@@ -1743,8 +1774,8 @@ int __init make_timer_node(const struct kernel_info *kinfo)
     if ( res )
         return res;
 
-    clock_valid = dt_property_read_u32(dev, "clock-frequency",
-                                       &clock_frequency);
+    clock_valid =
+        dt_property_read_u32(dev, "clock-frequency", &clock_frequency);
     if ( clock_valid )
     {
         res = fdt_property_cell(fdt, "clock-frequency", clock_frequency);
@@ -1779,7 +1810,7 @@ int __init make_chosen_node(const struct kernel_info *kinfo)
         bootargs = &kinfo->cmdline[0];
         res = fdt_property(fdt, "bootargs", bootargs, strlen(bootargs) + 1);
         if ( res )
-           return res;
+            return res;
     }
 
     /*
@@ -1804,11 +1835,9 @@ int __init make_chosen_node(const struct kernel_info *kinfo)
 }
 
 static int __init handle_node(struct domain *d, struct kernel_info *kinfo,
-                              struct dt_device_node *node,
-                              p2m_type_t p2mt)
+                              struct dt_device_node *node, p2m_type_t p2mt)
 {
-    static const struct dt_device_match skip_matches[] __initconst =
-    {
+    static const struct dt_device_match skip_matches[] __initconst = {
         DT_MATCH_COMPATIBLE("xen,domain"),
         DT_MATCH_COMPATIBLE("xen,domain-shared-memory-v1"),
         DT_MATCH_COMPATIBLE("xen,evtchn-v1"),
@@ -1828,13 +1857,11 @@ static int __init handle_node(struct domain *d, struct kernel_info *kinfo,
         DT_MATCH_COMPATIBLE("arm,armv7-timer-mem"),
         { /* sentinel */ },
     };
-    static const struct dt_device_match timer_matches[] __initconst =
-    {
+    static const struct dt_device_match timer_matches[] __initconst = {
         DT_MATCH_TIMER,
         { /* sentinel */ },
     };
-    static const struct dt_device_match reserved_matches[] __initconst =
-    {
+    static const struct dt_device_match reserved_matches[] __initconst = {
         DT_MATCH_PATH("/psci"),
         DT_MATCH_PATH("/memory"),
         DT_MATCH_PATH("/hypervisor"),
@@ -1894,7 +1921,7 @@ static int __init handle_node(struct domain *d, struct kernel_info *kinfo,
      */
     nirq = dt_number_of_irq(node);
 
-    for ( i = 0 ; i < nirq ; i++ )
+    for ( i = 0; i < nirq; i++ )
     {
         irq_id = platform_get_irq(node, i);
 
@@ -1911,12 +1938,13 @@ static int __init handle_node(struct domain *d, struct kernel_info *kinfo,
      * already exists with the same path.
      */
     if ( dt_match_node(reserved_matches, node) )
-        printk(XENLOG_WARNING
-               "WARNING: Path %s is reserved, skip the node as we may re-use the path.\n",
-               path);
+        printk(
+            XENLOG_WARNING
+            "WARNING: Path %s is reserved, skip the node as we may re-use the path.\n",
+            path);
 
     res = handle_device(d, node, p2mt, NULL, NULL);
-    if ( res)
+    if ( res )
         return res;
 
     /*
@@ -1942,7 +1970,8 @@ static int __init handle_node(struct domain *d, struct kernel_info *kinfo,
          * Avoid duplicate /reserved-memory nodes in Device Tree, so add the
          * static shared memory nodes there.
          */
-        res = make_shm_resv_memory_node(kinfo, dt_n_addr_cells(node),
+        res = make_shm_resv_memory_node(kinfo,
+                                        dt_n_addr_cells(node),
                                         dt_n_size_cells(node));
         if ( res )
             return res;
@@ -1983,7 +2012,9 @@ static int __init handle_node(struct domain *d, struct kernel_info *kinfo,
         if ( res )
             return res;
 
-        res = make_memory_node(kinfo, addrcells, sizecells,
+        res = make_memory_node(kinfo,
+                               addrcells,
+                               sizecells,
                                kernel_info_get_mem(kinfo));
         if ( res )
             return res;
@@ -2045,7 +2076,7 @@ static int __init prepare_dtb_hwdom(struct domain *d, struct kernel_info *kinfo)
 
     return 0;
 
-  err:
+err:
     printk("Device tree generation failed (%d).\n", ret);
     xfree(kinfo->fdt);
     return -EINVAL;
@@ -2055,17 +2086,20 @@ static void __init dtb_load(struct kernel_info *kinfo)
 {
     unsigned long left;
 
-    printk("Loading %pd DTB to 0x%"PRIpaddr"-0x%"PRIpaddr"\n",
-           kinfo->d, kinfo->dtb_paddr,
+    printk("Loading %pd DTB to 0x%" PRIpaddr "-0x%" PRIpaddr "\n",
+           kinfo->d,
+           kinfo->dtb_paddr,
            kinfo->dtb_paddr + fdt_totalsize(kinfo->fdt));
 
-    left = copy_to_guest_phys_flush_dcache(kinfo->d, kinfo->dtb_paddr,
+    left = copy_to_guest_phys_flush_dcache(kinfo->d,
+                                           kinfo->dtb_paddr,
                                            kinfo->fdt,
                                            fdt_totalsize(kinfo->fdt));
 
     if ( left != 0 )
         panic("Unable to copy the DTB to %pd memory (left = %lu bytes)\n",
-              kinfo->d, left);
+              kinfo->d,
+              left);
     xfree(kinfo->fdt);
 }
 
@@ -2086,8 +2120,12 @@ static void __init initrd_load(struct kernel_info *kinfo)
     paddr = mod->start;
     len = mod->size;
 
-    printk("Loading %pd initrd from %"PRIpaddr" to 0x%"PRIpaddr"-0x%"PRIpaddr"\n",
-           kinfo->d, paddr, load_addr, load_addr + len);
+    printk("Loading %pd initrd from %" PRIpaddr " to 0x%" PRIpaddr
+           "-0x%" PRIpaddr "\n",
+           kinfo->d,
+           paddr,
+           load_addr,
+           load_addr + len);
 
     /* Fix up linux,initrd-start and linux,initrd-end in /chosen */
     node = fdt_path_offset(kinfo->fdt, "/chosen");
@@ -2096,15 +2134,21 @@ static void __init initrd_load(struct kernel_info *kinfo)
 
     cellp = (__be32 *)val;
     dt_set_cell(&cellp, ARRAY_SIZE(val), load_addr);
-    res = fdt_setprop_inplace(kinfo->fdt, node, "linux,initrd-start",
-                              val, sizeof(val));
+    res = fdt_setprop_inplace(kinfo->fdt,
+                              node,
+                              "linux,initrd-start",
+                              val,
+                              sizeof(val));
     if ( res )
         panic("Cannot fix up \"linux,initrd-start\" property\n");
 
     cellp = (__be32 *)val;
     dt_set_cell(&cellp, ARRAY_SIZE(val), load_addr + len);
-    res = fdt_setprop_inplace(kinfo->fdt, node, "linux,initrd-end",
-                              val, sizeof(val));
+    res = fdt_setprop_inplace(kinfo->fdt,
+                              node,
+                              "linux,initrd-end",
+                              val,
+                              sizeof(val));
     if ( res )
         panic("Cannot fix up \"linux,initrd-end\" property\n");
 
@@ -2112,8 +2156,7 @@ static void __init initrd_load(struct kernel_info *kinfo)
     if ( !initrd )
         panic("Unable to map the hwdom initrd\n");
 
-    res = copy_to_guest_phys_flush_dcache(kinfo->d, load_addr,
-                                          initrd, len);
+    res = copy_to_guest_phys_flush_dcache(kinfo->d, load_addr, initrd, len);
     if ( res != 0 )
         panic("Unable to copy the initrd in the hwdom memory\n");
 
@@ -2174,8 +2217,9 @@ static void __init find_gnttab_region(struct domain *d,
     BUG_ON((kinfo->gnttab_start + kinfo->gnttab_size) > GB(4));
 #endif
 
-    printk("Grant table range: %#"PRIpaddr"-%#"PRIpaddr"\n",
-           kinfo->gnttab_start, kinfo->gnttab_start + kinfo->gnttab_size);
+    printk("Grant table range: %#" PRIpaddr "-%#" PRIpaddr "\n",
+           kinfo->gnttab_start,
+           kinfo->gnttab_start + kinfo->gnttab_size);
 }
 
 int __init construct_domain(struct domain *d, struct kernel_info *kinfo)
@@ -2360,7 +2404,7 @@ void __init create_dom0(void)
      * Xen vGIC supports a maximum of 992 interrupt lines.
      * 32 are substracted to cover local IRQs.
      */
-    dom0_cfg.arch.nr_spis = min(gic_number_lines(), (unsigned int) 992) - 32;
+    dom0_cfg.arch.nr_spis = min(gic_number_lines(), (unsigned int)992) - 32;
     if ( gic_number_lines() > 992 )
         printk(XENLOG_WARNING "Maximum number of vGIC IRQs exceeded.\n");
     dom0_cfg.arch.tee_type = tee_get_type();

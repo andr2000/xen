@@ -11,26 +11,24 @@
  * enough information for the alternatives patching code to patch an
  * instruction. See apply_alternatives().
  */
-.macro altinstruction_entry orig, repl, feature, orig_len, repl_len, pad_len
-    .if \feature >= NCAPINTS * 32
-        .error "alternative feature outside of featureset range"
-    .endif
-    .long \orig - .
-    .long \repl - .
-    .word \feature
-    .byte \orig_len
-    .byte \repl_len
-    .byte \pad_len
-    .byte 0 /* priv */
-.endm
+.macro altinstruction_entry orig, repl, feature, orig_len, repl_len,
+    pad_len.if \feature >=
+        NCAPINTS * 32 .error "alternative feature outside of featureset range"
+                       .endif.long \orig -
+                ..long \repl -
+                ..word \feature.byte \orig_len.byte \repl_len.byte \pad_len
+                .byte 0 /* priv */
+                .endm
 
-.macro mknops nr_bytes
+                .macro mknops nr_bytes
 #ifdef HAVE_AS_NOPS_DIRECTIVE
-    .nops \nr_bytes, ASM_NOP_MAX
+                .nops \nr_bytes,
+    ASM_NOP_MAX
 #else
-    .skip \nr_bytes, 0x90
+                .skip \nr_bytes,
+    0x90
 #endif
-.endm
+        .endm
 
 /*
  * GAS's idea of true is sometimes 1 and sometimes -1, while Clang's idea
@@ -54,56 +52,69 @@
 
 #define as_max(a, b)           ((a) ^ (((a) ^ (b)) & -as_true((a) < (b))))
 
-.macro ALTERNATIVE oldinstr, newinstr, feature
-    decl_orig(\oldinstr, repl_len(1) - orig_len)
+        .macro ALTERNATIVE oldinstr,
+    newinstr,
+    feature decl_orig(\oldinstr, repl_len(1) - orig_len)
 
-    .pushsection .altinstructions, "a", @progbits
-    altinstruction_entry .L\@_orig_s, .L\@_repl_s1, \feature, \
-        orig_len, repl_len(1), pad_len
+        .pushsection.altinstructions,
+    "a", @progbits altinstruction_entry.L\@_orig_s,
+    .L\@_repl_s1, \feature, orig_len, repl_len(1),
+    pad_len
 
-    .section .discard, "a", @progbits
-    /*
+        .section.discard,
+    "a",
+    @progbits
+            /*
      * Assembler-time checks:
      *   - total_len <= 255
      *   - \newinstr <= total_len
      */
-    .byte total_len
-    .byte 0xff + repl_len(1) - total_len
+            .byte total_len.byte 0xff +
+        repl_len(1) -
+        total_len
 
-    .section .altinstr_replacement, "ax", @progbits
+            .section.altinstr_replacement,
+    "ax",
+    @progbits
 
     decl_repl(\newinstr, 1)
 
-    .popsection
-.endm
+        .popsection
+        .endm
 
-.macro ALTERNATIVE_2 oldinstr, newinstr1, feature1, newinstr2, feature2
-    decl_orig(\oldinstr, as_max(repl_len(1), repl_len(2)) - orig_len)
+        .macro ALTERNATIVE_2 oldinstr,
+    newinstr1, feature1, newinstr2,
+    feature2 decl_orig(\oldinstr, as_max(repl_len(1), repl_len(2)) - orig_len)
 
-    .pushsection .altinstructions, "a", @progbits
+        .pushsection.altinstructions,
+    "a",
+    @progbits
 
-    altinstruction_entry .L\@_orig_s, .L\@_repl_s1, \feature1, \
-        orig_len, repl_len(1), pad_len
-    altinstruction_entry .L\@_orig_s, .L\@_repl_s2, \feature2, \
-        orig_len, repl_len(2), pad_len
+    altinstruction_entry.L\@_orig_s,
+    .L\@_repl_s1, \feature1, orig_len,
+    repl_len(1), pad_len altinstruction_entry.L\@_orig_s,
+    .L\@_repl_s2, \feature2, orig_len, repl_len(2),
+    pad_len
 
-    .section .discard, "a", @progbits
-    /*
+        .section.discard,
+    "a",
+    @progbits
+            /*
      * Assembler-time checks:
      *   - total_len <= 255
      *   - \newinstr* <= total_len
      */
-    .byte total_len
-    .byte 0xff + repl_len(1) - total_len
-    .byte 0xff + repl_len(2) - total_len
+            .byte total_len.byte 0xff +
+        repl_len(1) - total_len.byte 0xff + repl_len(2) -
+        total_len
 
-    .section .altinstr_replacement, "ax", @progbits
+            .section.altinstr_replacement,
+    "ax",
+    @progbits
 
-    decl_repl(\newinstr1, 1)
-    decl_repl(\newinstr2, 2)
+    decl_repl(\newinstr1, 1) decl_repl(\newinstr2, 2)
 
-    .popsection
-.endm
+        .popsection.endm
 
 #undef as_max
 #undef repl_len
@@ -117,7 +128,7 @@
 #endif /* __ASSEMBLY__ */
 #endif /* _ASM_X86_ALTERNATIVE_ASM_H_ */
 
-/*
+    /*
  * Local variables:
  * mode: C
  * c-file-style: "BSD"

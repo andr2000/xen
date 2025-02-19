@@ -38,25 +38,26 @@ static struct keyhandler {
         irq_keyhandler_fn_t *irq_fn;
     };
 
-    const char *desc;    /* Description for help message.                 */
-    bool irq_callback,   /* Call in irq context? if not, tasklet context. */
-        diagnostic;      /* Include in 'dump all' handler.                */
-} key_table[128] __ro_after_init =
-{
+    const char *desc; /* Description for help message.                 */
+    bool irq_callback, /* Call in irq context? if not, tasklet context. */
+        diagnostic; /* Include in 'dump all' handler.                */
+} key_table[128] __ro_after_init = {
+
 #define KEYHANDLER(k, f, desc, diag)            \
     [k] = { { .fn = (f) }, desc, 0, diag }
 
 #define IRQ_KEYHANDLER(k, f, desc, diag)        \
     [k] = { { .irq_fn = (f) }, desc, 1, diag }
 
-    IRQ_KEYHANDLER('A', do_toggle_alt_key, "toggle alternative key handling", 0),
+    IRQ_KEYHANDLER('A', do_toggle_alt_key, "toggle alternative key handling",
+                   0),
     IRQ_KEYHANDLER('d', dump_registers, "dump registers", 1),
-        KEYHANDLER('h', show_handlers, "show this message", 0),
-        KEYHANDLER('q', dump_domains, "dump domain (and guest debug) info", 1),
-        KEYHANDLER('r', dump_runq, "dump run queues", 1),
+    KEYHANDLER('h', show_handlers, "show this message", 0),
+    KEYHANDLER('q', dump_domains, "dump domain (and guest debug) info", 1),
+    KEYHANDLER('r', dump_runq, "dump run queues", 1),
     IRQ_KEYHANDLER('R', reboot_machine, "reboot machine", 0),
-        KEYHANDLER('t', read_clocks, "display multi-cpu clock info", 1),
-        KEYHANDLER('0', dump_hwdom_registers, "dump Dom0 registers", 1),
+    KEYHANDLER('t', read_clocks, "display multi-cpu clock info", 1),
+    KEYHANDLER('0', dump_hwdom_registers, "dump Dom0 registers", 1),
     IRQ_KEYHANDLER('*', run_all_keyhandlers, "print all diagnostics", 0),
 
 #ifdef CONFIG_PERF_COUNTERS
@@ -104,7 +105,7 @@ void __init register_keyhandler(unsigned char key, keyhandler_fn_t *fn,
                                 const char *desc, bool diagnostic)
 {
     BUG_ON(key >= ARRAY_SIZE(key_table)); /* Key in range? */
-    ASSERT(!key_table[key].fn);           /* Clobbering something else? */
+    ASSERT(!key_table[key].fn); /* Clobbering something else? */
 
     key_table[key].fn = fn;
     key_table[key].desc = desc;
@@ -116,7 +117,7 @@ void __init register_irq_keyhandler(unsigned char key, irq_keyhandler_fn_t *fn,
                                     const char *desc, bool diagnostic)
 {
     BUG_ON(key >= ARRAY_SIZE(key_table)); /* Key in range? */
-    ASSERT(!key_table[key].irq_fn);       /* Clobbering something else? */
+    ASSERT(!key_table[key].irq_fn); /* Clobbering something else? */
 
     key_table[key].irq_fn = fn;
     key_table[key].desc = desc;
@@ -132,7 +133,9 @@ static void cf_check show_handlers(unsigned char key)
     for ( i = 0; i < ARRAY_SIZE(key_table); i++ )
         if ( key_table[i].fn )
             printk(" key '%c' (ascii '%02x') => %s\n",
-                   isprint(i) ? i : ' ', i, key_table[i].desc);
+                   isprint(i) ? i : ' ',
+                   i,
+                   key_table[i].desc);
 }
 
 static cpumask_t dump_execstate_mask;
@@ -150,7 +153,8 @@ void cf_check dump_execstate(const struct cpu_user_regs *regs)
     if ( !is_idle_vcpu(current) )
     {
         printk("*** Dumping CPU%u guest state (%pv): ***\n",
-               smp_processor_id(), current);
+               smp_processor_id(),
+               current);
         show_execution_state(guest_cpu_user_regs());
         printk("\n");
     }
@@ -170,8 +174,7 @@ void cf_check dump_execstate(const struct cpu_user_regs *regs)
     watchdog_enable();
 }
 
-static void cf_check dump_registers(
-    unsigned char key, bool need_context)
+static void cf_check dump_registers(unsigned char key, bool need_context)
 {
     unsigned int cpu;
 
@@ -194,7 +197,7 @@ static void cf_check dump_registers(
         return;
 
     /* Normal handling: synchronously dump the remaining CPUs' states. */
-    for_each_cpu ( cpu, &dump_execstate_mask )
+    for_each_cpu(cpu, &dump_execstate_mask)
     {
         smp_send_state_dump(cpu);
         while ( cpumask_test_cpu(cpu, &dump_execstate_mask) )
@@ -211,7 +214,7 @@ static void cf_check dump_hwdom_action(void *data)
 {
     struct vcpu *v = data;
 
-    for ( ; ; )
+    for ( ;; )
     {
         vcpu_show_execution_state(v);
         if ( (v = v->next_in_list) == NULL )
@@ -234,7 +237,7 @@ static void cf_check dump_hwdom_registers(unsigned char key)
 
     printk("'%c' pressed -> dumping Dom0's registers\n", key);
 
-    for_each_vcpu ( hardware_domain, v )
+    for_each_vcpu(hardware_domain, v)
     {
         if ( alt_key_handling && softirq_pending(smp_processor_id()) )
         {
@@ -257,15 +260,16 @@ static void cf_check dump_domains(unsigned char key)
 {
     struct domain *d;
     const struct sched_unit *unit;
-    struct vcpu   *v;
-    s_time_t       now = NOW();
+    struct vcpu *v;
+    s_time_t now = NOW();
 
-    printk("'%c' pressed -> dumping domain info (now = %"PRI_stime")\n",
-           key, now);
+    printk("'%c' pressed -> dumping domain info (now = %" PRI_stime ")\n",
+           key,
+           now);
 
     rcu_read_lock(&domlist_read_lock);
 
-    for_each_domain ( d )
+    for_each_domain(d)
     {
         unsigned int i;
 
@@ -273,7 +277,8 @@ static void cf_check dump_domains(unsigned char key)
 
         printk("General information for domain %u:\n", d->domain_id);
         printk("    refcnt=%d dying=%d pause_count=%d\n",
-               atomic_read(&d->refcnt), d->is_dying,
+               atomic_read(&d->refcnt),
+               d->is_dying,
                atomic_read(&d->pause_count));
         printk("    nr_pages=%u xenheap_pages=%u"
 #ifdef CONFIG_MEM_SHARING
@@ -283,25 +288,40 @@ static void cf_check dump_domains(unsigned char key)
                " paged_pages=%u"
 #endif
                " dirty_cpus={%*pbl} max_pages=%u\n",
-               domain_tot_pages(d), d->xenheap_pages,
+               domain_tot_pages(d),
+               d->xenheap_pages,
 #ifdef CONFIG_MEM_SHARING
                atomic_read(&d->shr_pages),
 #endif
 #ifdef CONFIG_MEM_PAGING
                atomic_read(&d->paged_pages),
 #endif
-               CPUMASK_PR(d->dirty_cpumask), d->max_pages);
-        printk("    handle=%02x%02x%02x%02x-%02x%02x-%02x%02x-"
-               "%02x%02x-%02x%02x%02x%02x%02x%02x vm_assist=%08lx\n",
-               d->handle[ 0], d->handle[ 1], d->handle[ 2], d->handle[ 3],
-               d->handle[ 4], d->handle[ 5], d->handle[ 6], d->handle[ 7],
-               d->handle[ 8], d->handle[ 9], d->handle[10], d->handle[11],
-               d->handle[12], d->handle[13], d->handle[14], d->handle[15],
-               d->vm_assist);
-        for ( i = 0 ; i < NR_DOMAIN_WATCHDOG_TIMERS; i++ )
+               CPUMASK_PR(d->dirty_cpumask),
+               d->max_pages);
+        printk(
+            "    handle=%02x%02x%02x%02x-%02x%02x-%02x%02x-" "%02x%02x-%02x%02x%02x%02x%02x%02x vm_assist=%08lx\n",
+            d->handle[0],
+            d->handle[1],
+            d->handle[2],
+            d->handle[3],
+            d->handle[4],
+            d->handle[5],
+            d->handle[6],
+            d->handle[7],
+            d->handle[8],
+            d->handle[9],
+            d->handle[10],
+            d->handle[11],
+            d->handle[12],
+            d->handle[13],
+            d->handle[14],
+            d->handle[15],
+            d->vm_assist);
+        for ( i = 0; i < NR_DOMAIN_WATCHDOG_TIMERS; i++ )
             if ( test_bit(i, &d->watchdog_inuse_map) )
                 printk("    watchdog %d expires in %d seconds\n",
-                       i, (u32)((d->watchdog_timer[i].expires - NOW()) >> 30));
+                       i,
+                       (u32)((d->watchdog_timer[i].expires - NOW()) >> 30));
 
         arch_dump_domain_info(d);
 
@@ -312,55 +332,62 @@ static void cf_check dump_domains(unsigned char key)
         dump_pageframe_info(d);
 
         printk("NODE affinity for domain %d: [%*pbl]\n",
-               d->domain_id, NODEMASK_PR(&d->node_affinity));
+               d->domain_id,
+               NODEMASK_PR(&d->node_affinity));
 
-        printk("VCPU information and callbacks for domain %u:\n",
-               d->domain_id);
+        printk("VCPU information and callbacks for domain %u:\n", d->domain_id);
 
-        for_each_sched_unit ( d, unit )
+        for_each_sched_unit(d, unit)
         {
             printk("  UNIT%d affinities: hard={%*pbl} soft={%*pbl}\n",
-                   unit->unit_id, CPUMASK_PR(unit->cpu_hard_affinity),
+                   unit->unit_id,
+                   CPUMASK_PR(unit->cpu_hard_affinity),
                    CPUMASK_PR(unit->cpu_soft_affinity));
 
-            for_each_sched_unit_vcpu ( unit, v )
+            for_each_sched_unit_vcpu(unit, v)
             {
                 if ( !(v->vcpu_id & 0x3f) )
                     process_pending_softirqs();
 
-                printk("    VCPU%d: CPU%d [has=%c] poll=%d "
-                       "upcall_pend=%02x upcall_mask=%02x ",
-                       v->vcpu_id, v->processor,
-                       v->is_running ? 'T':'F', v->poll_evtchn,
-                       vcpu_info(v, evtchn_upcall_pending),
-                       !vcpu_event_delivery_is_enabled(v));
+                printk(
+                    "    VCPU%d: CPU%d [has=%c] poll=%d " "upcall_pend=%02x upcall_mask=%02x ",
+                    v->vcpu_id,
+                    v->processor,
+                    v->is_running ? 'T' : 'F',
+                    v->poll_evtchn,
+                    vcpu_info(v, evtchn_upcall_pending),
+                    !vcpu_event_delivery_is_enabled(v));
                 if ( vcpu_cpu_dirty(v) )
                     printk("dirty_cpu=%u", read_atomic(&v->dirty_cpu));
                 printk("\n");
                 printk("    pause_count=%d pause_flags=%lx\n",
-                       atomic_read(&v->pause_count), v->pause_flags);
+                       atomic_read(&v->pause_count),
+                       v->pause_flags);
                 arch_dump_vcpu_info(v);
 
                 if ( v->periodic_period == 0 )
                     printk("No periodic timer\n");
                 else
-                    printk("%"PRI_stime" Hz periodic timer (period %"PRI_stime" ms)\n",
+                    printk("%" PRI_stime
+                           " Hz periodic timer (period %" PRI_stime " ms)\n",
                            1000000000 / v->periodic_period,
                            v->periodic_period / 1000000);
             }
         }
     }
 
-    for_each_domain ( d )
+    for_each_domain(d)
     {
-        for_each_vcpu ( d, v )
+        for_each_vcpu(d, v)
         {
             if ( !(v->vcpu_id & 0x3f) )
                 process_pending_softirqs();
 
             printk("Notifying guest %d:%d (virq %d, port %d)\n",
-                   d->domain_id, v->vcpu_id,
-                   VIRQ_DEBUG, v->virq_to_evtchn[VIRQ_DEBUG]);
+                   d->domain_id,
+                   v->vcpu_id,
+                   VIRQ_DEBUG,
+                   v->virq_to_evtchn[VIRQ_DEBUG]);
             send_guest_vcpu_virq(v, VIRQ_DEBUG);
         }
     }
@@ -413,7 +440,7 @@ static void cf_check read_clocks(unsigned char key)
         cpu_relax();
 
     min_stime_cpu = max_stime_cpu = min_cycles_cpu = max_cycles_cpu = cpu;
-    for_each_online_cpu ( cpu )
+    for_each_online_cpu(cpu)
     {
         if ( per_cpu(read_clocks_time, cpu) <
              per_cpu(read_clocks_time, min_stime_cpu) )
@@ -445,12 +472,18 @@ static void cf_check read_clocks(unsigned char key)
         maxdif_cycles = dif_cycles;
     sumdif_cycles += dif_cycles;
     count++;
-    printk("Synced stime skew: max=%"PRIu64"ns avg=%"PRIu64"ns "
-           "samples=%"PRIu32" current=%"PRIu64"ns\n",
-           maxdif_stime, sumdif_stime/count, count, dif_stime);
-    printk("Synced cycles skew: max=%"PRIu64" avg=%"PRIu64" "
-           "samples=%"PRIu32" current=%"PRIu64"\n",
-           maxdif_cycles, sumdif_cycles/count, count, dif_cycles);
+    printk("Synced stime skew: max=%" PRIu64 "ns avg=%" PRIu64
+           "ns " "samples=%" PRIu32 " current=%" PRIu64 "ns\n",
+           maxdif_stime,
+           sumdif_stime / count,
+           count,
+           dif_stime);
+    printk("Synced cycles skew: max=%" PRIu64 " avg=%" PRIu64
+           " " "samples=%" PRIu32 " current=%" PRIu64 "\n",
+           maxdif_cycles,
+           sumdif_cycles / count,
+           count,
+           dif_cycles);
 }
 
 static void cf_check run_all_nonirq_keyhandlers(void *unused)
@@ -474,8 +507,8 @@ static void cf_check run_all_nonirq_keyhandlers(void *unused)
     console_end_log_everything();
 }
 
-static DECLARE_TASKLET(run_all_keyhandlers_tasklet,
-                       run_all_nonirq_keyhandlers, NULL);
+static DECLARE_TASKLET(run_all_keyhandlers_tasklet, run_all_nonirq_keyhandlers,
+                       NULL);
 
 static void cf_check run_all_keyhandlers(unsigned char key, bool need_context)
 {
@@ -505,7 +538,8 @@ static void cf_check run_all_keyhandlers(unsigned char key, bool need_context)
 static void cf_check do_toggle_alt_key(unsigned char key, bool unused)
 {
     alt_key_handling = !alt_key_handling;
-    printk("'%c' pressed -> using %s key handling\n", key,
+    printk("'%c' pressed -> using %s key handling\n",
+           key,
            alt_key_handling ? "alternative" : "normal");
 }
 
@@ -514,8 +548,9 @@ void __init initialize_keytable(void)
     if ( num_present_cpus() > 16 )
     {
         alt_key_handling = 1;
-        printk(XENLOG_INFO "Defaulting to alternative key handling; "
-               "send 'A' to switch to normal mode.\n");
+        printk(
+            XENLOG_INFO
+            "Defaulting to alternative key handling; " "send 'A' to switch to normal mode.\n");
     }
 }
 

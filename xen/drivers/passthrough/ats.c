@@ -37,7 +37,7 @@ int enable_ats_device(struct pci_dev *pdev, struct list_head *ats_list)
     {
         struct pci_dev *other;
 
-        list_for_each_entry ( other, ats_list, ats.list )
+        list_for_each_entry(other, ats_list, ats.list)
             if ( other == pdev )
             {
                 pos = 0;
@@ -55,14 +55,16 @@ int enable_ats_device(struct pci_dev *pdev, struct list_head *ats_list)
     {
         pdev->ats.cap_pos = pos;
         value = pci_conf_read16(pdev->sbdf, pos + ATS_REG_CAP);
-        pdev->ats.queue_depth = value & ATS_QUEUE_DEPTH_MASK ?:
-                                ATS_QUEUE_DEPTH_MASK + 1;
+        pdev->ats.queue_depth = value & ATS_QUEUE_DEPTH_MASK
+                                    ?: ATS_QUEUE_DEPTH_MASK + 1;
         list_add(&pdev->ats.list, ats_list);
     }
 
     if ( iommu_verbose )
-        dprintk(XENLOG_INFO, "%pp: ATS %s enabled\n",
-                &pdev->sbdf, pos ? "is" : "was");
+        dprintk(XENLOG_INFO,
+                "%pp: ATS %s enabled\n",
+                &pdev->sbdf,
+                pos ? "is" : "was");
 
     return pos;
 }

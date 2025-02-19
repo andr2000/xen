@@ -5,19 +5,16 @@
 #include <xen/xmalloc.h>
 #include <public/hvm/params.h>
 
-struct hvm_domain
-{
-    uint64_t              params[HVM_NR_PARAMS];
+struct hvm_domain {
+    uint64_t params[HVM_NR_PARAMS];
 };
 
 /* TODO: Implement */
 #define guest_mode(r) ({ (void)(r); BUG_ON("unimplemented"); 0; })
 
-struct arch_vcpu_io {
-};
+struct arch_vcpu_io {};
 
-struct arch_vcpu {
-};
+struct arch_vcpu {};
 
 struct arch_domain {
     struct hvm_domain hvm;
@@ -36,6 +33,7 @@ static inline void free_vcpu_guest_context(struct vcpu_guest_context *vgc)
 }
 
 struct guest_memory_policy {};
+
 static inline void update_guest_memory_policy(struct vcpu *v,
                                               struct guest_memory_policy *gmp)
 {}

@@ -9,6 +9,7 @@ void early_printk_init(void (*putchar)(char));
 void early_printk(const char *s);
 #else
 static inline void early_printk_init(void (*putchar)(char)) {}
+
 static inline void early_printk(const char *s) {}
 #endif
 

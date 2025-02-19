@@ -68,12 +68,12 @@ static int __init parse_color_config(const char *buf, unsigned int colors[],
 
         start = simple_strtoul(s, &s, 0);
 
-        if ( *s == '-' )    /* Range */
+        if ( *s == '-' ) /* Range */
         {
             s++;
             end = simple_strtoul(s, &s, 0);
         }
-        else                /* Single value */
+        else /* Single value */
             end = start;
 
         if ( start > end || (end - start) > (UINT_MAX - *num_colors) ||
@@ -95,16 +95,22 @@ static int __init parse_color_config(const char *buf, unsigned int colors[],
 
 static int __init parse_dom0_colors(const char *s)
 {
-    return parse_color_config(s, dom0_colors, ARRAY_SIZE(dom0_colors),
+    return parse_color_config(s,
+                              dom0_colors,
+                              ARRAY_SIZE(dom0_colors),
                               &dom0_num_colors);
 }
+
 custom_param("dom0-llc-colors", parse_dom0_colors);
 
 static int __init parse_xen_colors(const char *s)
 {
-    return parse_color_config(s, xen_colors, ARRAY_SIZE(xen_colors),
+    return parse_color_config(s,
+                              xen_colors,
+                              ARRAY_SIZE(xen_colors),
                               &xen_num_colors);
 }
+
 custom_param("xen-llc-colors", parse_xen_colors);
 
 static void print_colors(const unsigned int colors[], unsigned int num_colors)
@@ -138,7 +144,8 @@ static bool check_colors(const unsigned int colors[], unsigned int num_colors)
     {
         if ( colors[i] >= max_nr_colors )
         {
-            printk(XENLOG_ERR "LLC color %u >= %u (max allowed)\n", colors[i],
+            printk(XENLOG_ERR "LLC color %u >= %u (max allowed)\n",
+                   colors[i],
                    max_nr_colors);
             return false;
         }
@@ -163,7 +170,8 @@ void __init llc_coloring_init(void)
     {
         way_size = get_llc_way_size();
         if ( !way_size )
-            panic("LLC probing failed and 'llc-size' or 'llc-nr-ways' missing\n");
+            panic(
+                "LLC probing failed and 'llc-size' or 'llc-nr-ways' missing\n");
     }
 
     if ( way_size & ~PAGE_MASK )
@@ -182,7 +190,8 @@ void __init llc_coloring_init(void)
     {
         printk(XENLOG_WARNING
                "Number of LLC colors (%u) too big. Using configured max %u\n",
-               max_nr_colors, NR_LLC_COLORS);
+               max_nr_colors,
+               NR_LLC_COLORS);
         max_nr_colors = NR_LLC_COLORS;
     }
     else if ( max_nr_colors < 2 )
@@ -233,7 +242,8 @@ void domain_dump_llc_colors(const struct domain *d)
 static void domain_set_default_colors(struct domain *d)
 {
     printk(XENLOG_WARNING
-           "LLC color config not found for %pd, using all colors\n", d);
+           "LLC color config not found for %pd, using all colors\n",
+           d);
 
     d->llc_colors = default_colors;
     d->num_llc_colors = max_nr_colors;

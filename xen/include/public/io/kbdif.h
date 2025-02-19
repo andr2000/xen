@@ -250,8 +250,7 @@
  * rel_z - int32_t, relative Z motion (wheel)
  */
 
-struct xenkbd_motion
-{
+struct xenkbd_motion {
     uint8_t type;
     int32_t rel_x;
     int32_t rel_y;
@@ -277,8 +276,7 @@ struct xenkbd_motion
  * keycode - uint32_t, KEY_* from linux/input.h
  */
 
-struct xenkbd_key
-{
+struct xenkbd_key {
     uint8_t type;
     uint8_t pressed;
     uint32_t keycode;
@@ -308,8 +306,7 @@ struct xenkbd_key
  * rel_z - int32_t, relative Z motion (wheel)
  */
 
-struct xenkbd_position
-{
+struct xenkbd_position {
     uint8_t type;
     int32_t abs_x;
     int32_t abs_y;
@@ -463,27 +460,29 @@ struct xenkbd_position
  */
 
 struct xenkbd_mtouch {
-    uint8_t type;            /* XENKBD_TYPE_MTOUCH */
-    uint8_t event_type;      /* XENKBD_MT_EV_??? */
+    uint8_t type; /* XENKBD_TYPE_MTOUCH */
+    uint8_t event_type; /* XENKBD_MT_EV_??? */
     uint8_t contact_id;
-    uint8_t reserved[5];     /* reserved for the future use */
+    uint8_t reserved[5]; /* reserved for the future use */
+
     union {
         struct {
-            int32_t abs_x;   /* absolute X position, pixels */
-            int32_t abs_y;   /* absolute Y position, pixels */
+            int32_t abs_x; /* absolute X position, pixels */
+            int32_t abs_y; /* absolute Y position, pixels */
         } pos;
+
         struct {
-            uint32_t major;  /* length of the major axis, pixels */
-            uint32_t minor;  /* length of the minor axis, pixels */
+            uint32_t major; /* length of the major axis, pixels */
+            uint32_t minor; /* length of the minor axis, pixels */
         } shape;
+
         int16_t orientation; /* clockwise angle of the major axis */
     } u;
 };
 
 #define XENKBD_IN_EVENT_SIZE 40
 
-union xenkbd_in_event
-{
+union xenkbd_in_event {
     uint8_t type;
     struct xenkbd_motion motion;
     struct xenkbd_key key;
@@ -512,8 +511,7 @@ union xenkbd_in_event
 
 #define XENKBD_OUT_EVENT_SIZE 40
 
-union xenkbd_out_event
-{
+union xenkbd_out_event {
     uint8_t type;
     char pad[XENKBD_OUT_EVENT_SIZE];
 };
@@ -540,8 +538,7 @@ union xenkbd_out_event
 #define XENKBD_OUT_RING_REF(page, idx) \
     (XENKBD_OUT_RING((page))[(idx) % XENKBD_OUT_RING_LEN])
 
-struct xenkbd_page
-{
+struct xenkbd_page {
     uint32_t in_cons, in_prod;
     uint32_t out_cons, out_prod;
 };

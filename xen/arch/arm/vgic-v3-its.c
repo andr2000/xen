@@ -47,13 +47,13 @@ struct virt_its {
     paddr_t doorbell_address;
     unsigned int devid_bits;
     unsigned int evid_bits;
-    spinlock_t vcmd_lock;       /* Protects the virtual command buffer, which */
-    uint64_t cwriter;           /* consists of CWRITER and CREADR and those   */
-    uint64_t creadr;            /* shadow variables cwriter and creadr. */
+    spinlock_t vcmd_lock; /* Protects the virtual command buffer, which */
+    uint64_t cwriter; /* consists of CWRITER and CREADR and those   */
+    uint64_t creadr; /* shadow variables cwriter and creadr. */
     /* Protects the rest of this structure, including the ITS tables. */
     spinlock_t its_lock;
     uint64_t cbaser;
-    uint64_t baser_dev, baser_coll;     /* BASER0 and BASER1 for the guest */
+    uint64_t baser_dev, baser_coll; /* BASER0 and BASER1 for the guest */
     unsigned int max_collections;
     unsigned int max_devices;
     /* changing "enabled" requires to hold *both* the vcmd_lock and its_lock */
@@ -64,8 +64,7 @@ struct virt_its {
  * An Interrupt Translation Table Entry: this is indexed by a
  * DeviceID/EventID pair and is located in guest memory.
  */
-struct vits_itte
-{
+struct vits_itte {
     uint32_t vlpi;
     uint16_t collection;
     uint16_t pad;
@@ -101,8 +100,7 @@ typedef uint64_t dev_table_entry_t;
 static paddr_t get_baser_phys_addr(uint64_t reg)
 {
     if ( reg & BIT(9, UL) )
-        return (reg & GENMASK(47, 16)) |
-                ((reg & GENMASK(15, 12)) << 36);
+        return (reg & GENMASK(47, 16)) | ((reg & GENMASK(15, 12)) << 36);
     else
         return reg & GENMASK(47, 12);
 }
@@ -122,8 +120,11 @@ static int its_set_collection(struct virt_its *its, uint16_t collid,
         return -ENOENT;
 
     return access_guest_memory_by_gpa(its->d,
-                                      addr + collid * sizeof(coll_table_entry_t),
-                                      &vcpu_id, sizeof(vcpu_id), true);
+                                      addr +
+                                          collid * sizeof(coll_table_entry_t),
+                                      &vcpu_id,
+                                      sizeof(vcpu_id),
+                                      true);
 }
 
 /* Must be called with the ITS lock held. */
@@ -141,7 +142,9 @@ static struct vcpu *get_vcpu_from_collection(struct virt_its *its,
 
     ret = access_guest_memory_by_gpa(its->d,
                                      addr + collid * sizeof(coll_table_entry_t),
-                                     &vcpu_id, sizeof(coll_table_entry_t), false);
+                                     &vcpu_id,
+                                     sizeof(coll_table_entry_t),
+                                     false);
     if ( ret )
         return NULL;
 
@@ -163,7 +166,9 @@ static int its_set_itt_address(struct virt_its *its, uint32_t devid,
 
     return access_guest_memory_by_gpa(its->d,
                                       addr + devid * sizeof(dev_table_entry_t),
-                                      &itt_entry, sizeof(itt_entry), true);
+                                      &itt_entry,
+                                      sizeof(itt_entry),
+                                      true);
 }
 
 /*
@@ -181,7 +186,9 @@ static int its_get_itt(struct virt_its *its, uint32_t devid,
 
     return access_guest_memory_by_gpa(its->d,
                                       addr + devid * sizeof(dev_table_entry_t),
-                                      itt, sizeof(*itt), false);
+                                      itt,
+                                      sizeof(*itt),
+                                      false);
 }
 
 /*
@@ -189,8 +196,8 @@ static int its_get_itt(struct virt_its *its, uint32_t devid,
  * a device ID and return the address of the ITTE belonging to the event ID
  * (which is an index into that table).
  */
-static paddr_t its_get_itte_address(struct virt_its *its,
-                                    uint32_t devid, uint32_t evid)
+static paddr_t its_get_itte_address(struct virt_its *its, uint32_t devid,
+                                    uint32_t evid)
 {
     dev_table_entry_t itt;
     int ret;
@@ -245,8 +252,8 @@ static bool read_itte(struct virt_its *its, uint32_t devid, uint32_t evid,
  * If vcpu_ptr is provided, returns the VCPU belonging to that collection.
  * Must be called with the ITS lock held.
  */
-static bool write_itte(struct virt_its *its, uint32_t devid,
-                       uint32_t evid, uint32_t collid, uint32_t vlpi)
+static bool write_itte(struct virt_its *its, uint32_t devid, uint32_t evid,
+                       uint32_t collid, uint32_t vlpi)
 {
     paddr_t addr;
     struct vits_itte itte;
@@ -349,8 +356,10 @@ static int its_handle_clear(struct virt_its *its, uint64_t *cmdptr)
     if ( !read_itte(its, devid, eventid, &vcpu, &vlpi) )
         goto out_unlock;
 
-    p = gicv3_its_get_event_pending_irq(its->d, its->doorbell_address,
-                                        devid, eventid);
+    p = gicv3_its_get_event_pending_irq(its->d,
+                                        its->doorbell_address,
+                                        devid,
+                                        eventid);
     /* Protect against an invalid LPI number. */
     if ( unlikely(!p) )
         goto out_unlock;
@@ -405,8 +414,11 @@ static int update_lpi_property(struct domain *d, struct pending_irq *p)
 
     addr = d->arch.vgic.rdist_propbase & GENMASK(51, 12);
 
-    ret = access_guest_memory_by_gpa(d, addr + p->irq - LPI_OFFSET,
-                                     &property, sizeof(property), false);
+    ret = access_guest_memory_by_gpa(d,
+                                     addr + p->irq - LPI_OFFSET,
+                                     &property,
+                                     sizeof(property),
+                                     false);
     if ( ret )
         return ret;
 
@@ -471,8 +483,10 @@ static int its_handle_inv(struct virt_its *its, uint64_t *cmdptr)
     if ( vlpi == INVALID_LPI )
         goto out_unlock_its;
 
-    p = gicv3_its_get_event_pending_irq(d, its->doorbell_address,
-                                        devid, eventid);
+    p = gicv3_its_get_event_pending_irq(d,
+                                        its->doorbell_address,
+                                        devid,
+                                        eventid);
     if ( unlikely(!p) )
         goto out_unlock_its;
 
@@ -506,7 +520,7 @@ static int its_handle_invall(struct virt_its *its, uint64_t *cmdptr)
     uint32_t collid = its_cmd_get_collection(cmdptr);
     struct vcpu *vcpu;
     struct pending_irq *pirqs[16];
-    uint64_t vlpi = 0;          /* 64-bit to catch overflows */
+    uint64_t vlpi = 0; /* 64-bit to catch overflows */
     unsigned int nr_lpis, i;
     unsigned long flags;
     int ret = 0;
@@ -541,7 +555,8 @@ static int its_handle_invall(struct virt_its *its, uint64_t *cmdptr)
         int err;
 
         nr_lpis = radix_tree_gang_lookup(&its->d->arch.vgic.pend_lpi_tree,
-                                         (void **)pirqs, vlpi,
+                                         (void **)pirqs,
+                                         vlpi,
                                          ARRAY_SIZE(pirqs));
 
         for ( i = 0; i < nr_lpis; i++ )
@@ -558,7 +573,7 @@ static int its_handle_invall(struct virt_its *its, uint64_t *cmdptr)
             else
                 ret = err;
         }
-    /*
+        /*
      * Loop over the next gang of pending_irqs until we reached the end of
      * a (fully populated) tree or the lookup function returns less LPIs than
      * it has been asked for.
@@ -573,8 +588,8 @@ static int its_handle_invall(struct virt_its *its, uint64_t *cmdptr)
 }
 
 /* Must be called with the ITS lock held. */
-static int its_discard_event(struct virt_its *its,
-                             uint32_t vdevid, uint32_t vevid)
+static int its_discard_event(struct virt_its *its, uint32_t vdevid,
+                             uint32_t vevid)
 {
     struct pending_irq *p;
     unsigned long flags;
@@ -615,8 +630,10 @@ static int its_discard_event(struct virt_its *its,
     spin_unlock_irqrestore(&vcpu->arch.vgic.lock, flags);
 
     /* Remove the corresponding host LPI entry */
-    return gicv3_remove_guest_event(its->d, its->doorbell_address,
-                                    vdevid, vevid);
+    return gicv3_remove_guest_event(its->d,
+                                    its->doorbell_address,
+                                    vdevid,
+                                    vevid);
 }
 
 static void its_unmap_device(struct virt_its *its, uint32_t devid)
@@ -672,14 +689,17 @@ static int its_handle_mapd(struct virt_its *its, uint64_t *cmdptr)
      */
     if ( is_hardware_domain(its->d) )
     {
-
         /*
          * Dom0's ITSes are mapped 1:1, so both addresses are the same.
          * Also the device IDs are equal.
          */
-        ret = gicv3_its_map_guest_device(its->d, its->doorbell_address, devid,
-                                         its->doorbell_address, devid,
-                                         BIT(size, UL), valid);
+        ret = gicv3_its_map_guest_device(its->d,
+                                         its->doorbell_address,
+                                         devid,
+                                         its->doorbell_address,
+                                         devid,
+                                         BIT(size, UL),
+                                         valid);
         if ( ret && valid )
             return ret;
     }
@@ -744,8 +764,11 @@ static int its_handle_mapti(struct virt_its *its, uint64_t *cmdptr)
      * determined by the same device ID and event ID on the host side.
      * This returns us the corresponding, still unused pending_irq.
      */
-    pirq = gicv3_assign_guest_event(its->d, its->doorbell_address,
-                                    devid, eventid, intid);
+    pirq = gicv3_assign_guest_event(its->d,
+                                    its->doorbell_address,
+                                    devid,
+                                    eventid,
+                                    intid);
     if ( !pirq )
         goto out_remove_mapping;
 
@@ -819,8 +842,10 @@ static int its_handle_movi(struct virt_its *its, uint64_t *cmdptr)
     if ( !nvcpu )
         goto out_unlock;
 
-    p = gicv3_its_get_event_pending_irq(its->d, its->doorbell_address,
-                                        devid, eventid);
+    p = gicv3_its_get_event_pending_irq(its->d,
+                                        its->doorbell_address,
+                                        devid,
+                                        eventid);
     if ( unlikely(!p) )
         goto out_unlock;
 
@@ -886,9 +911,13 @@ out_unlock:
 
 static void dump_its_command(uint64_t *command)
 {
-    gdprintk(XENLOG_WARNING, "  cmd 0x%02lx: %016lx %016lx %016lx %016lx\n",
+    gdprintk(XENLOG_WARNING,
+             "  cmd 0x%02lx: %016lx %016lx %016lx %016lx\n",
              its_cmd_get_command(command),
-             command[0], command[1], command[2], command[3]);
+             command[0],
+             command[1],
+             command[2],
+             command[3]);
 }
 
 /*
@@ -910,8 +939,11 @@ static int vgic_its_handle_cmds(struct domain *d, struct virt_its *its)
     {
         int ret;
 
-        ret = access_guest_memory_by_gpa(d, addr + its->creadr,
-                                         command, sizeof(command), false);
+        ret = access_guest_memory_by_gpa(d,
+                                         addr + its->creadr,
+                                         command,
+                                         sizeof(command),
+                                         false);
         if ( ret )
             return ret;
 
@@ -957,8 +989,9 @@ static int vgic_its_handle_cmds(struct domain *d, struct virt_its *its)
             break;
         }
 
-        write_u64_atomic(&its->creadr, (its->creadr + ITS_CMD_SIZE) %
-                         ITS_CMD_BUFFER_SIZE(its->cbaser));
+        write_u64_atomic(&its->creadr,
+                         (its->creadr + ITS_CMD_SIZE) %
+                             ITS_CMD_BUFFER_SIZE(its->cbaser));
 
         if ( ret )
         {
@@ -995,7 +1028,8 @@ static int vgic_v3_its_mmio_read(struct vcpu *v, mmio_info_t *info,
          */
         bool have_cmd_lock;
 
-        if ( info->dabt.size != DABT_WORD ) goto bad_width;
+        if ( info->dabt.size != DABT_WORD )
+            goto bad_width;
 
         have_cmd_lock = spin_trylock(&its->vcmd_lock);
         reg = its->enabled ? GITS_CTLR_ENABLE : 0;
@@ -1011,12 +1045,14 @@ static int vgic_v3_its_mmio_read(struct vcpu *v, mmio_info_t *info,
     }
 
     case VREG32(GITS_IIDR):
-        if ( info->dabt.size != DABT_WORD ) goto bad_width;
+        if ( info->dabt.size != DABT_WORD )
+            goto bad_width;
         *r = vreg_reg32_extract(GITS_IIDR_VALUE, info);
         break;
 
     case VREG64(GITS_TYPER):
-        if ( !vgic_reg64_check_access(info->dabt) ) goto bad_width;
+        if ( !vgic_reg64_check_access(info->dabt) )
+            goto bad_width;
 
         reg = GITS_TYPER_PHYSICAL;
         reg |= (sizeof(struct vits_itte) - 1) << GITS_TYPER_ITT_SIZE_SHIFT;
@@ -1033,14 +1069,16 @@ static int vgic_v3_its_mmio_read(struct vcpu *v, mmio_info_t *info,
         goto read_reserved;
 
     case VREG64(GITS_CBASER):
-        if ( !vgic_reg64_check_access(info->dabt) ) goto bad_width;
+        if ( !vgic_reg64_check_access(info->dabt) )
+            goto bad_width;
         spin_lock(&its->its_lock);
         *r = vreg_reg64_extract(its->cbaser, info);
         spin_unlock(&its->its_lock);
         break;
 
     case VREG64(GITS_CWRITER):
-        if ( !vgic_reg64_check_access(info->dabt) ) goto bad_width;
+        if ( !vgic_reg64_check_access(info->dabt) )
+            goto bad_width;
 
         /* CWRITER is only written by the guest, so no extra locking here. */
         reg = its->cwriter;
@@ -1048,7 +1086,8 @@ static int vgic_v3_its_mmio_read(struct vcpu *v, mmio_info_t *info,
         break;
 
     case VREG64(GITS_CREADR):
-        if ( !vgic_reg64_check_access(info->dabt) ) goto bad_width;
+        if ( !vgic_reg64_check_access(info->dabt) )
+            goto bad_width;
 
         /*
          * Lockless access, to avoid waiting for the whole command queue to be
@@ -1063,15 +1102,17 @@ static int vgic_v3_its_mmio_read(struct vcpu *v, mmio_info_t *info,
     case VRANGE64(0x0098, 0x00F8):
         goto read_reserved;
 
-    case VREG64(GITS_BASER0):           /* device table */
-        if ( !vgic_reg64_check_access(info->dabt) ) goto bad_width;
+    case VREG64(GITS_BASER0): /* device table */
+        if ( !vgic_reg64_check_access(info->dabt) )
+            goto bad_width;
         spin_lock(&its->its_lock);
         *r = vreg_reg64_extract(its->baser_dev, info);
         spin_unlock(&its->its_lock);
         break;
 
-    case VREG64(GITS_BASER1):           /* collection table */
-        if ( !vgic_reg64_check_access(info->dabt) ) goto bad_width;
+    case VREG64(GITS_BASER1): /* collection table */
+        if ( !vgic_reg64_check_access(info->dabt) )
+            goto bad_width;
         spin_lock(&its->its_lock);
         *r = vreg_reg64_extract(its->baser_coll, info);
         spin_unlock(&its->its_lock);
@@ -1087,7 +1128,8 @@ static int vgic_v3_its_mmio_read(struct vcpu *v, mmio_info_t *info,
         goto read_impl_defined;
 
     case VREG32(GITS_PIDR2):
-        if ( info->dabt.size != DABT_WORD ) goto bad_width;
+        if ( info->dabt.size != DABT_WORD )
+            goto bad_width;
         *r = vreg_reg32_extract(GIC_PIDR2_ARCH_GICv3, info);
         break;
 
@@ -1095,16 +1137,18 @@ static int vgic_v3_its_mmio_read(struct vcpu *v, mmio_info_t *info,
         goto read_impl_defined;
 
     default:
-        printk(XENLOG_G_ERR
-               "%pv: vGITS: unhandled read r%d offset %#04lx\n",
-               v, info->dabt.reg, (unsigned long)info->gpa & 0xffff);
+        printk(XENLOG_G_ERR "%pv: vGITS: unhandled read r%d offset %#04lx\n",
+               v,
+               info->dabt.reg,
+               (unsigned long)info->gpa & 0xffff);
         return 0;
     }
 
     return 1;
 
 read_as_zero_64:
-    if ( !vgic_reg64_check_access(info->dabt) ) goto bad_width;
+    if ( !vgic_reg64_check_access(info->dabt) )
+        goto bad_width;
     *r = 0;
 
     return 1;
@@ -1112,20 +1156,24 @@ read_as_zero_64:
 read_impl_defined:
     printk(XENLOG_G_DEBUG
            "%pv: vGITS: RAZ on implementation defined register offset %#04lx\n",
-           v, info->gpa & 0xffff);
+           v,
+           info->gpa & 0xffff);
     *r = 0;
     return 1;
 
 read_reserved:
     printk(XENLOG_G_DEBUG
            "%pv: vGITS: RAZ on reserved register offset %#04lx\n",
-           v, info->gpa & 0xffff);
+           v,
+           info->gpa & 0xffff);
     *r = 0;
     return 1;
 
 bad_width:
     printk(XENLOG_G_ERR "vGITS: bad read width %d r%d offset %#04lx\n",
-           info->dabt.size, info->dabt.reg, (unsigned long)info->gpa & 0xffff);
+           info->dabt.size,
+           info->dabt.reg,
+           (unsigned long)info->gpa & 0xffff);
 
     return 0;
 }
@@ -1136,7 +1184,7 @@ bad_width:
 
 static unsigned int its_baser_table_size(uint64_t baser)
 {
-    unsigned int ret, page_size[4] = {SZ_4K, SZ_16K, SZ_64K, SZ_64K};
+    unsigned int ret, page_size[4] = { SZ_4K, SZ_16K, SZ_64K, SZ_64K };
 
     ret = page_size[(baser >> GITS_BASER_PAGE_SIZE_SHIFT) & 3];
 
@@ -1162,7 +1210,8 @@ static bool vgic_v3_verify_its_status(struct virt_its *its, bool status)
          !(its->baser_dev & GITS_VALID_BIT) ||
          !(its->baser_coll & GITS_VALID_BIT) )
     {
-        printk(XENLOG_G_WARNING "d%d tried to enable ITS without having the tables configured.\n",
+        printk(XENLOG_G_WARNING
+               "d%d tried to enable ITS without having the tables configured.\n",
                its->d->domain_id);
         return false;
     }
@@ -1238,7 +1287,8 @@ static int vgic_v3_its_mmio_write(struct vcpu *v, mmio_info_t *info,
     {
         uint32_t ctlr;
 
-        if ( info->dabt.size != DABT_WORD ) goto bad_width;
+        if ( info->dabt.size != DABT_WORD )
+            goto bad_width;
 
         /*
          * We need to take the vcmd_lock to prevent a guest from disabling
@@ -1272,7 +1322,8 @@ static int vgic_v3_its_mmio_write(struct vcpu *v, mmio_info_t *info,
         goto write_reserved;
 
     case VREG64(GITS_CBASER):
-        if ( !vgic_reg64_check_access(info->dabt) ) goto bad_width;
+        if ( !vgic_reg64_check_access(info->dabt) )
+            goto bad_width;
 
         spin_lock(&its->its_lock);
         /* Changing base registers with the ITS enabled is UNPREDICTABLE. */
@@ -1295,7 +1346,8 @@ static int vgic_v3_its_mmio_write(struct vcpu *v, mmio_info_t *info,
         return 1;
 
     case VREG64(GITS_CWRITER):
-        if ( !vgic_reg64_check_access(info->dabt) ) goto bad_width;
+        if ( !vgic_reg64_check_access(info->dabt) )
+            goto bad_width;
 
         spin_lock(&its->vcmd_lock);
         reg = ITS_CMD_OFFSET(its->cwriter);
@@ -1316,8 +1368,9 @@ static int vgic_v3_its_mmio_write(struct vcpu *v, mmio_info_t *info,
     case VRANGE32(0x0098, 0x00FC):
         goto write_reserved;
 
-    case VREG64(GITS_BASER0):           /* device table */
-        if ( !vgic_reg64_check_access(info->dabt) ) goto bad_width;
+    case VREG64(GITS_BASER0): /* device table */
+        if ( !vgic_reg64_check_access(info->dabt) )
+            goto bad_width;
 
         spin_lock(&its->its_lock);
 
@@ -1328,7 +1381,8 @@ static int vgic_v3_its_mmio_write(struct vcpu *v, mmio_info_t *info,
         if ( its->enabled )
         {
             spin_unlock(&its->its_lock);
-            gdprintk(XENLOG_WARNING, "vGITS: tried to change BASER with the ITS enabled.\n");
+            gdprintk(XENLOG_WARNING,
+                     "vGITS: tried to change BASER with the ITS enabled.\n");
 
             return 1;
         }
@@ -1355,8 +1409,9 @@ static int vgic_v3_its_mmio_write(struct vcpu *v, mmio_info_t *info,
         spin_unlock(&its->its_lock);
         return 1;
 
-    case VREG64(GITS_BASER1):           /* collection table */
-        if ( !vgic_reg64_check_access(info->dabt) ) goto bad_width;
+    case VREG64(GITS_BASER1): /* collection table */
+        if ( !vgic_reg64_check_access(info->dabt) )
+            goto bad_width;
 
         spin_lock(&its->its_lock);
         /*
@@ -1366,7 +1421,8 @@ static int vgic_v3_its_mmio_write(struct vcpu *v, mmio_info_t *info,
         if ( its->enabled )
         {
             spin_unlock(&its->its_lock);
-            gdprintk(XENLOG_INFO, "vGITS: tried to change BASER with the ITS enabled.\n");
+            gdprintk(XENLOG_INFO,
+                     "vGITS: tried to change BASER with the ITS enabled.\n");
             return 1;
         }
 
@@ -1393,19 +1449,20 @@ static int vgic_v3_its_mmio_write(struct vcpu *v, mmio_info_t *info,
         goto write_reserved;
     case VRANGE32(0xC000, 0xFFCC):
         goto write_impl_defined;
-    case VRANGE32(0xFFD0, 0xFFE4):      /* IMPDEF identification registers */
+    case VRANGE32(0xFFD0, 0xFFE4): /* IMPDEF identification registers */
         goto write_impl_defined;
 
     case VREG32(GITS_PIDR2):
         goto write_ignore_32;
 
-    case VRANGE32(0xFFEC, 0xFFFC):      /* IMPDEF identification registers */
+    case VRANGE32(0xFFEC, 0xFFFC): /* IMPDEF identification registers */
         goto write_impl_defined;
 
     default:
-        printk(XENLOG_G_ERR
-               "%pv: vGITS: unhandled write r%d offset %#04lx\n",
-               v, info->dabt.reg, (unsigned long)info->gpa & 0xffff);
+        printk(XENLOG_G_ERR "%pv: vGITS: unhandled write r%d offset %#04lx\n",
+               v,
+               info->dabt.reg,
+               (unsigned long)info->gpa & 0xffff);
         return 0;
     }
 
@@ -1413,34 +1470,40 @@ static int vgic_v3_its_mmio_write(struct vcpu *v, mmio_info_t *info,
     return 1;
 
 write_ignore_64:
-    if ( !vgic_reg64_check_access(info->dabt) ) goto bad_width;
+    if ( !vgic_reg64_check_access(info->dabt) )
+        goto bad_width;
     return 1;
 
 write_ignore_32:
-    if ( info->dabt.size != DABT_WORD ) goto bad_width;
+    if ( info->dabt.size != DABT_WORD )
+        goto bad_width;
     return 1;
 
 write_impl_defined:
     printk(XENLOG_G_DEBUG
            "%pv: vGITS: WI on implementation defined register offset %#04lx\n",
-           v, info->gpa & 0xffff);
+           v,
+           info->gpa & 0xffff);
     return 1;
 
 write_reserved:
     printk(XENLOG_G_DEBUG
            "%pv: vGITS: WI on implementation defined register offset %#04lx\n",
-           v, info->gpa & 0xffff);
+           v,
+           info->gpa & 0xffff);
     return 1;
 
 bad_width:
     printk(XENLOG_G_ERR "vGITS: bad write width %d r%d offset %#08lx\n",
-           info->dabt.size, info->dabt.reg, (unsigned long)info->gpa & 0xffff);
+           info->dabt.size,
+           info->dabt.reg,
+           (unsigned long)info->gpa & 0xffff);
 
     return 0;
 }
 
 static const struct mmio_handler_ops vgic_its_mmio_handler = {
-    .read  = vgic_v3_its_mmio_read,
+    .read = vgic_v3_its_mmio_read,
     .write = vgic_v3_its_mmio_write,
 };
 
@@ -1455,19 +1518,20 @@ static int vgic_v3_its_init_virtual(struct domain *d, paddr_t guest_addr,
     if ( !its )
         return -ENOMEM;
 
-    base_attr  = GIC_BASER_InnerShareable << GITS_BASER_SHAREABILITY_SHIFT;
-    base_attr |= GIC_BASER_CACHE_SameAsInner << GITS_BASER_OUTER_CACHEABILITY_SHIFT;
+    base_attr = GIC_BASER_InnerShareable << GITS_BASER_SHAREABILITY_SHIFT;
+    base_attr |= GIC_BASER_CACHE_SameAsInner
+                 << GITS_BASER_OUTER_CACHEABILITY_SHIFT;
     base_attr |= GIC_BASER_CACHE_RaWaWb << GITS_BASER_INNER_CACHEABILITY_SHIFT;
 
-    its->cbaser  = base_attr;
-    base_attr |= 0ULL << GITS_BASER_PAGE_SIZE_SHIFT;    /* 4K pages */
+    its->cbaser = base_attr;
+    base_attr |= 0ULL << GITS_BASER_PAGE_SIZE_SHIFT; /* 4K pages */
     its->baser_dev = GITS_BASER_TYPE_DEVICE << GITS_BASER_TYPE_SHIFT;
-    its->baser_dev |= (sizeof(dev_table_entry_t) - 1) <<
-                      GITS_BASER_ENTRY_SIZE_SHIFT;
+    its->baser_dev |= (sizeof(dev_table_entry_t) - 1)
+                      << GITS_BASER_ENTRY_SIZE_SHIFT;
     its->baser_dev |= base_attr;
-    its->baser_coll  = GITS_BASER_TYPE_COLLECTION << GITS_BASER_TYPE_SHIFT;
-    its->baser_coll |= (sizeof(coll_table_entry_t) - 1) <<
-                       GITS_BASER_ENTRY_SIZE_SHIFT;
+    its->baser_coll = GITS_BASER_TYPE_COLLECTION << GITS_BASER_TYPE_SHIFT;
+    its->baser_coll |= (sizeof(coll_table_entry_t) - 1)
+                       << GITS_BASER_ENTRY_SIZE_SHIFT;
     its->baser_coll |= base_attr;
     its->d = d;
     its->doorbell_address = guest_addr + ITS_DOORBELL_OFFSET;
@@ -1522,7 +1586,8 @@ int vgic_v3_its_init_domain(struct domain *d)
              * base and thus doorbell address.
              * Use the same number of device ID and event ID bits as the host.
              */
-            ret = vgic_v3_its_init_virtual(d, hw_its->addr,
+            ret = vgic_v3_its_init_virtual(d,
+                                           hw_its->addr,
                                            hw_its->devid_bits,
                                            hw_its->evid_bits);
             if ( ret )
@@ -1543,7 +1608,7 @@ void vgic_v3_its_free_domain(struct domain *d)
     if ( list_head_is_null(&d->arch.vgic.vits_list) )
         return;
 
-    list_for_each_entry_safe( pos, temp, &d->arch.vgic.vits_list, vits_list )
+    list_for_each_entry_safe(pos, temp, &d->arch.vgic.vits_list, vits_list)
     {
         list_del(&pos->vits_list);
         xfree(pos);

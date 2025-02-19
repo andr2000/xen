@@ -121,20 +121,20 @@ struct p2m_domain {
  * them in the p2m entry.
  */
 typedef enum {
-    p2m_invalid = 0,    /* Nothing mapped here */
-    p2m_ram_rw,         /* Normal read/write guest RAM */
-    p2m_ram_ro,         /* Read-only; writes are silently dropped */
-    p2m_mmio_direct_dev,/* Read/write mapping of genuine Device MMIO area */
+    p2m_invalid = 0, /* Nothing mapped here */
+    p2m_ram_rw, /* Normal read/write guest RAM */
+    p2m_ram_ro, /* Read-only; writes are silently dropped */
+    p2m_mmio_direct_dev, /* Read/write mapping of genuine Device MMIO area */
     p2m_mmio_direct_nc, /* Read/write mapping of genuine MMIO area non-cacheable */
-    p2m_mmio_direct_c,  /* Read/write mapping of genuine MMIO area cacheable */
+    p2m_mmio_direct_c, /* Read/write mapping of genuine MMIO area cacheable */
     p2m_map_foreign_rw, /* Read/write RAM pages from foreign domain */
     p2m_map_foreign_ro, /* Read-only RAM pages from foreign domain */
-    p2m_grant_map_rw,   /* Read/write grant mapping */
-    p2m_grant_map_ro,   /* Read-only grant mapping */
+    p2m_grant_map_rw, /* Read/write grant mapping */
+    p2m_grant_map_ro, /* Read-only grant mapping */
     /* The types below are only used to decide the page attribute in the P2M */
-    p2m_iommu_map_rw,   /* Read/write iommu mapping */
-    p2m_iommu_map_ro,   /* Read-only iommu mapping */
-    p2m_max_real_type,  /* Types after this won't be store in the p2m */
+    p2m_iommu_map_rw, /* Read/write iommu mapping */
+    p2m_iommu_map_ro, /* Read-only iommu mapping */
+    p2m_max_real_type, /* Types after this won't be store in the p2m */
 } p2m_type_t;
 
 /* We use bitmaps and mask to handle groups of types */
@@ -161,14 +161,14 @@ typedef enum {
 
 /* All common type definitions should live ahead of this inclusion. */
 #ifdef _XEN_P2M_COMMON_H
-# error "xen/p2m-common.h should not be included directly"
+#error "xen/p2m-common.h should not be included directly"
 #endif
 #include <xen/p2m-common.h>
 
 #if defined(CONFIG_MMU)
-# include <asm/mmu/p2m.h>
+#include <asm/mmu/p2m.h>
 #else
-# error "Unknown memory management layout"
+#error "Unknown memory management layout"
 #endif
 
 static inline bool arch_acquire_resource_check(struct domain *d)
@@ -180,8 +180,7 @@ static inline bool arch_acquire_resource_check(struct domain *d)
     return true;
 }
 
-static inline
-void p2m_altp2m_check(struct vcpu *v, uint16_t idx)
+static inline void p2m_altp2m_check(struct vcpu *v, uint16_t idx)
 {
     /* Not supported on ARM. */
 }
@@ -268,10 +267,8 @@ mfn_t p2m_lookup(struct domain *d, gfn_t gfn, p2m_type_t *t);
  * Get details of a given gfn.
  * The P2M lock should be taken by the caller.
  */
-mfn_t p2m_get_entry(struct p2m_domain *p2m, gfn_t gfn,
-                    p2m_type_t *t, p2m_access_t *a,
-                    unsigned int *page_order,
-                    bool *valid);
+mfn_t p2m_get_entry(struct p2m_domain *p2m, gfn_t gfn, p2m_type_t *t,
+                    p2m_access_t *a, unsigned int *page_order, bool *valid);
 
 /*
  * Direct set a p2m entry: only for use by the P2M code.
@@ -279,12 +276,8 @@ mfn_t p2m_get_entry(struct p2m_domain *p2m, gfn_t gfn,
  * TODO: Add a check in __p2m_set_entry() to avoid creating a mapping in
  * arch_domain_create() that requires p2m_put_l3_page() to be called.
  */
-int p2m_set_entry(struct p2m_domain *p2m,
-                  gfn_t sgfn,
-                  unsigned long nr,
-                  mfn_t smfn,
-                  p2m_type_t t,
-                  p2m_access_t a);
+int p2m_set_entry(struct p2m_domain *p2m, gfn_t sgfn, unsigned long nr,
+                  mfn_t smfn, p2m_type_t t, p2m_access_t a);
 
 bool p2m_resolve_translation_fault(struct domain *d, gfn_t gfn);
 
@@ -309,15 +302,10 @@ void p2m_flush_vm(struct vcpu *v);
  * Map a region in the guest p2m with a specific p2m type.
  * The memory attributes will be derived from the p2m type.
  */
-int map_regions_p2mt(struct domain *d,
-                     gfn_t gfn,
-                     unsigned long nr,
-                     mfn_t mfn,
+int map_regions_p2mt(struct domain *d, gfn_t gfn, unsigned long nr, mfn_t mfn,
                      p2m_type_t p2mt);
 
-int unmap_regions_p2mt(struct domain *d,
-                       gfn_t gfn,
-                       unsigned long nr,
+int unmap_regions_p2mt(struct domain *d, gfn_t gfn, unsigned long nr,
                        mfn_t mfn);
 
 int map_dev_mmio_page(struct domain *d, gfn_t gfn, mfn_t mfn);
@@ -325,24 +313,19 @@ int map_dev_mmio_page(struct domain *d, gfn_t gfn, mfn_t mfn);
 int p2m_insert_mapping(struct domain *d, gfn_t start_gfn, unsigned long nr,
                        mfn_t mfn, p2m_type_t t);
 
-int guest_physmap_add_entry(struct domain *d,
-                            gfn_t gfn,
-                            mfn_t mfn,
-                            unsigned long page_order,
-                            p2m_type_t t);
+int guest_physmap_add_entry(struct domain *d, gfn_t gfn, mfn_t mfn,
+                            unsigned long page_order, p2m_type_t t);
 
 /* Untyped version for RAM only, for compatibility */
-static inline int __must_check
-guest_physmap_add_page(struct domain *d, gfn_t gfn, mfn_t mfn,
-                       unsigned int page_order)
+static inline int __must_check guest_physmap_add_page(struct domain *d,
+                                                      gfn_t gfn, mfn_t mfn,
+                                                      unsigned int page_order)
 {
     return guest_physmap_add_entry(d, gfn, mfn, page_order, p2m_ram_rw);
 }
 
-static inline int guest_physmap_add_pages(struct domain *d,
-                                          gfn_t gfn,
-                                          mfn_t mfn,
-                                          unsigned int nr_pages)
+static inline int guest_physmap_add_pages(struct domain *d, gfn_t gfn,
+                                          mfn_t mfn, unsigned int nr_pages)
 {
     return p2m_insert_mapping(d, gfn, nr_pages, mfn, p2m_ram_rw);
 }
@@ -357,8 +340,9 @@ typedef unsigned int p2m_query_t;
 struct page_info *p2m_get_page_from_gfn(struct domain *d, gfn_t gfn,
                                         p2m_type_t *t);
 
-static inline struct page_info *get_page_from_gfn(
-    struct domain *d, unsigned long gfn, p2m_type_t *t, p2m_query_t q)
+static inline struct page_info *get_page_from_gfn(struct domain *d,
+                                                  unsigned long gfn,
+                                                  p2m_type_t *t, p2m_query_t q)
 {
     mfn_t mfn;
     p2m_type_t _t;
@@ -396,9 +380,9 @@ static inline struct page_info *get_page_from_gfn(
 
 int get_page_type(struct page_info *page, unsigned long type);
 bool is_iomem_page(mfn_t mfn);
+
 static inline int get_page_and_type(struct page_info *page,
-                                    struct domain *domain,
-                                    unsigned long type)
+                                    struct domain *domain, unsigned long type)
 {
     int rc = get_page(page, domain);
 

@@ -40,21 +40,27 @@ int __must_check vpci_assign_device(struct pci_dev *pdev);
 void vpci_deassign_device(struct pci_dev *pdev);
 
 /* Add/remove a register handler. */
-int __must_check vpci_add_register_mask(struct vpci *vpci,
-                                        vpci_read_t *read_handler,
-                                        vpci_write_t *write_handler,
-                                        unsigned int offset, unsigned int size,
-                                        void *data, uint32_t ro_mask,
-                                        uint32_t rw1c_mask, uint32_t rsvdp_mask,
-                                        uint32_t rsvdz_mask);
+int __must_check vpci_add_register_mask(
+    struct vpci *vpci, vpci_read_t *read_handler, vpci_write_t *write_handler,
+    unsigned int offset, unsigned int size, void *data, uint32_t ro_mask,
+    uint32_t rw1c_mask, uint32_t rsvdp_mask, uint32_t rsvdz_mask);
+
 static inline int __must_check vpci_add_register(struct vpci *vpci,
                                                  vpci_read_t *read_handler,
                                                  vpci_write_t *write_handler,
                                                  unsigned int offset,
                                                  unsigned int size, void *data)
 {
-    return vpci_add_register_mask(vpci, read_handler, write_handler, offset,
-                                  size, data, 0, 0, 0, 0);
+    return vpci_add_register_mask(vpci,
+                                  read_handler,
+                                  write_handler,
+                                  offset,
+                                  size,
+                                  data,
+                                  0,
+                                  0,
+                                  0,
+                                  0);
 }
 
 int __must_check vpci_remove_register(struct vpci *vpci, unsigned int offset,
@@ -66,18 +72,18 @@ void vpci_write(pci_sbdf_t sbdf, unsigned int reg, unsigned int size,
                 uint32_t data);
 
 /* Helper to return the value passed in data. */
-uint32_t cf_check vpci_read_val(
-    const struct pci_dev *pdev, unsigned int reg, void *data);
+uint32_t cf_check vpci_read_val(const struct pci_dev *pdev, unsigned int reg,
+                                void *data);
 
 /* Passthrough handlers. */
-uint32_t cf_check vpci_hw_read8(
-    const struct pci_dev *pdev, unsigned int reg, void *data);
-uint32_t cf_check vpci_hw_read16(
-    const struct pci_dev *pdev, unsigned int reg, void *data);
-uint32_t cf_check vpci_hw_read32(
-    const struct pci_dev *pdev, unsigned int reg, void *data);
-void cf_check vpci_hw_write16(
-    const struct pci_dev *pdev, unsigned int reg, uint32_t val, void *data);
+uint32_t cf_check vpci_hw_read8(const struct pci_dev *pdev, unsigned int reg,
+                                void *data);
+uint32_t cf_check vpci_hw_read16(const struct pci_dev *pdev, unsigned int reg,
+                                 void *data);
+uint32_t cf_check vpci_hw_read32(const struct pci_dev *pdev, unsigned int reg,
+                                 void *data);
+void cf_check vpci_hw_write16(const struct pci_dev *pdev, unsigned int reg,
+                              uint32_t val, void *data);
 
 /*
  * Check for pending vPCI operations on this vcpu. Returns true if the vcpu
@@ -101,6 +107,7 @@ struct vpci {
             uint64_t guest_addr;
             uint64_t size;
             struct rangeset *mem;
+
             enum {
                 VPCI_BAR_EMPTY,
                 VPCI_BAR_IO,
@@ -109,10 +116,12 @@ struct vpci {
                 VPCI_BAR_MEM64_HI,
                 VPCI_BAR_ROM,
             } type;
-            bool prefetchable : 1;
+
+            bool prefetchable:1;
             /* Store whether the BAR is mapped into guest p2m. */
-            bool enabled      : 1;
+            bool enabled:1;
         } bars[PCI_HEADER_NORMAL_NR_BARS + 1];
+
         /* At most 6 BARS + 1 expansion ROM BAR. */
 
         /* Guest (domU only) view of the PCI_COMMAND register. */
@@ -122,32 +131,32 @@ struct vpci {
          * Store whether the ROM enable bit is set (doesn't imply ROM BAR
          * is mapped into guest p2m) if there's a ROM BAR on the device.
          */
-        bool rom_enabled      : 1;
+        bool rom_enabled:1;
         /*
          * Cache whether memory decoding is enabled from our PoV.
          * Some devices have a sticky memory decoding so that can't be relied
          * upon to know whether BARs are mapped into the guest p2m.
          */
-        bool bars_mapped      : 1;
+        bool bars_mapped:1;
         /* FIXME: currently there's no support for SR-IOV. */
     } header;
 
     /* MSI data. */
     struct vpci_msi {
-      /* Address. */
+        /* Address. */
         uint64_t address;
         /* Mask bitfield. */
         uint32_t mask;
         /* Data. */
         uint16_t data;
         /* Number of vectors configured. */
-        uint8_t vectors     : 6;
+        uint8_t vectors:6;
         /* Supports per-vector masking? */
-        bool masking        : 1;
+        bool masking:1;
         /* 64-bit address capable? */
-        bool address64      : 1;
+        bool address64:1;
         /* Enabled? */
-        bool enabled        : 1;
+        bool enabled:1;
         /* Arch-specific data. */
         struct vpci_arch_msi arch;
     } *msi;
@@ -163,23 +172,24 @@ struct vpci {
 #define VPCI_MSIX_MEM_NUM   2
         uint32_t tables[VPCI_MSIX_MEM_NUM];
         /* Maximum number of vectors supported by the device. */
-        uint16_t max_entries : 12;
+        uint16_t max_entries:12;
         /* MSI-X enabled? */
-        bool enabled         : 1;
+        bool enabled:1;
         /* Masked? */
-        bool masked          : 1;
+        bool masked:1;
         /* Partial table map. */
 #define VPCI_MSIX_TBL_HEAD 0
 #define VPCI_MSIX_TBL_TAIL 1
 #define VPCI_MSIX_PBA_HEAD 2
 #define VPCI_MSIX_PBA_TAIL 3
         void __iomem *table[4];
+
         /* Entries. */
         struct vpci_msix_entry {
             uint64_t addr;
             uint32_t data;
-            bool masked  : 1;
-            bool updated : 1;
+            bool masked:1;
+            bool updated:1;
             struct vpci_arch_msix_entry arch;
         } entries[];
     } *msix;
@@ -195,7 +205,7 @@ struct vpci_vcpu {
     /* Per-vcpu structure to store state while {un}mapping of PCI BARs. */
     struct pci_dev *pdev;
     uint16_t cmd;
-    bool rom_only : 1;
+    bool rom_only:1;
 };
 
 #ifdef __XEN__
@@ -232,8 +242,8 @@ int vpci_msix_arch_print(const struct vpci_msix *msix);
  */
 static inline paddr_t vmsix_table_base(const struct vpci *vpci, unsigned int nr)
 {
-    return vpci->header.bars[vpci->msix->tables[nr] &
-                             PCI_MSIX_BIRMASK].guest_addr;
+    return vpci->header.bars[vpci->msix->tables[nr] & PCI_MSIX_BIRMASK]
+        .guest_addr;
 }
 
 static inline paddr_t vmsix_table_addr(const struct vpci *vpci, unsigned int nr)
@@ -249,10 +259,9 @@ static inline paddr_t vmsix_table_addr(const struct vpci *vpci, unsigned int nr)
  */
 static inline size_t vmsix_table_size(const struct vpci *vpci, unsigned int nr)
 {
-    return
-        (nr == VPCI_MSIX_TABLE) ? vpci->msix->max_entries * PCI_MSIX_ENTRY_SIZE
-                                : ROUNDUP(DIV_ROUND_UP(vpci->msix->max_entries,
-                                                       8), 8);
+    return (nr == VPCI_MSIX_TABLE)
+               ? vpci->msix->max_entries * PCI_MSIX_ENTRY_SIZE
+               : ROUNDUP(DIV_ROUND_UP(vpci->msix->max_entries, 8), 8);
 }
 
 static inline unsigned int vmsix_entry_nr(const struct vpci_msix *msix,
@@ -280,9 +289,9 @@ static inline int vpci_assign_device(struct pci_dev *pdev)
     return 0;
 }
 
-static inline void vpci_deassign_device(struct pci_dev *pdev) { }
+static inline void vpci_deassign_device(struct pci_dev *pdev) {}
 
-static inline void vpci_dump_msi(void) { }
+static inline void vpci_dump_msi(void) {}
 
 static inline uint32_t vpci_read(pci_sbdf_t sbdf, unsigned int reg,
                                  unsigned int size)

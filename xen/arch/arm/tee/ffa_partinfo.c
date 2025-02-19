@@ -100,8 +100,7 @@ void ffa_handle_partition_info_get(struct cpu_user_regs *regs)
          ctx->guest_vers == FFA_VERSION_1_1 )
     {
         if ( ffa_fw_supports_fid(FFA_PARTITION_INFO_GET) )
-            ret = ffa_partition_info_get(uuid, flags, &ffa_sp_count,
-                                        &src_size);
+            ret = ffa_partition_info_get(uuid, flags, &ffa_sp_count, &src_size);
         else
             ret = FFA_RET_OK;
 
@@ -217,7 +216,8 @@ static int32_t ffa_direct_req_send_vm(uint16_t sp_id, uint16_t vm_id,
     else
         return FFA_RET_INVALID_PARAMETERS;
 
-    do {
+    do
+    {
         const struct arm_smccc_1_2_regs arg = {
             .a0 = FFA_MSG_SEND_DIRECT_REQ_32,
             .a1 = sp_id,
@@ -257,10 +257,10 @@ static int32_t ffa_direct_req_send_vm(uint16_t sp_id, uint16_t vm_id,
 
 static void uninit_subscribers(void)
 {
-        subscr_vm_created_count = 0;
-        subscr_vm_destroyed_count = 0;
-        XFREE(subscr_vm_created);
-        XFREE(subscr_vm_destroyed);
+    subscr_vm_created_count = 0;
+    subscr_vm_destroyed_count = 0;
+    XFREE(subscr_vm_created);
+    XFREE(subscr_vm_destroyed);
 }
 
 static bool init_subscribers(uint16_t count, uint32_t fpi_size)
@@ -290,9 +290,10 @@ static bool init_subscribers(uint16_t count, uint32_t fpi_size)
          */
         if ( !FFA_ID_IS_SECURE(fpi->id) )
         {
-            printk(XENLOG_ERR "ffa: Firmware is not using bit 15 convention for IDs !!\n"
-                              "ffa: Secure partition with id 0x%04x cannot be used\n",
-                              fpi->id);
+            printk(
+                XENLOG_ERR
+                "ffa: Firmware is not using bit 15 convention for IDs !!\n" "ffa: Secure partition with id 0x%04x cannot be used\n",
+                fpi->id);
         }
         else
         {
@@ -332,8 +333,6 @@ static bool init_subscribers(uint16_t count, uint32_t fpi_size)
     return true;
 }
 
-
-
 bool ffa_partinfo_init(void)
 {
     bool ret = false;
@@ -342,8 +341,8 @@ bool ffa_partinfo_init(void)
     int e;
 
     if ( !ffa_fw_supports_fid(FFA_PARTITION_INFO_GET) ||
-         !ffa_fw_supports_fid(FFA_MSG_SEND_DIRECT_REQ_32) ||
-         !ffa_rx || !ffa_tx )
+         !ffa_fw_supports_fid(FFA_MSG_SEND_DIRECT_REQ_32) || !ffa_rx ||
+         !ffa_tx )
         return false;
 
     e = ffa_partition_info_get(NULL, 0, &count, &fpi_size);
@@ -392,7 +391,8 @@ static void vm_destroy_bitmap_init(struct ffa_ctx *ctx,
          * notified of the VM creation due to an error during
          * ffa_domain_init().
          */
-        if ( is_in_subscr_list(subscr_vm_created, create_signal_count,
+        if ( is_in_subscr_list(subscr_vm_created,
+                               create_signal_count,
                                subscr_vm_created_count,
                                subscr_vm_destroyed[n]) )
             continue;
@@ -417,12 +417,16 @@ int ffa_partinfo_domain_init(struct domain *d)
 
     for ( n = 0; n < subscr_vm_created_count; n++ )
     {
-        res = ffa_direct_req_send_vm(subscr_vm_created[n], ffa_get_vm_id(d),
+        res = ffa_direct_req_send_vm(subscr_vm_created[n],
+                                     ffa_get_vm_id(d),
                                      FFA_MSG_SEND_VM_CREATED);
         if ( res )
         {
-            printk(XENLOG_ERR "ffa: Failed to report creation of vm_id %u to  %u: res %d\n",
-                   ffa_get_vm_id(d), subscr_vm_created[n], res);
+            printk(XENLOG_ERR
+                   "ffa: Failed to report creation of vm_id %u to  %u: res %d\n",
+                   ffa_get_vm_id(d),
+                   subscr_vm_created[n],
+                   res);
             break;
         }
     }
@@ -448,13 +452,19 @@ bool ffa_partinfo_domain_destroy(struct domain *d)
         if ( !test_bit(n, ctx->vm_destroy_bitmap) )
             continue;
 
-        res = ffa_direct_req_send_vm(subscr_vm_destroyed[n], ffa_get_vm_id(d),
+        res = ffa_direct_req_send_vm(subscr_vm_destroyed[n],
+                                     ffa_get_vm_id(d),
                                      FFA_MSG_SEND_VM_DESTROYED);
 
         if ( res )
         {
-            printk(XENLOG_ERR "%pd: ffa: Failed to report destruction of vm_id %u to %u: res %d\n",
-                   d, ffa_get_vm_id(d), subscr_vm_destroyed[n], res);
+            printk(
+                XENLOG_ERR
+                "%pd: ffa: Failed to report destruction of vm_id %u to %u: res %d\n",
+                d,
+                ffa_get_vm_id(d),
+                subscr_vm_destroyed[n],
+                res);
         }
 
         /*

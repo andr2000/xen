@@ -38,8 +38,8 @@ struct map_data {
     bool map;
 };
 
-static int cf_check map_range(
-    unsigned long s, unsigned long e, void *data, unsigned long *c)
+static int cf_check map_range(unsigned long s, unsigned long e, void *data,
+                              unsigned long *c)
 {
     const struct map_data *map = data;
     /* Start address of the BAR as seen by the guest. */
@@ -48,7 +48,7 @@ static int cf_check map_range(
     unsigned long start_mfn = PFN_DOWN(map->bar->addr);
     int rc;
 
-    for ( ; ; )
+    for ( ;; )
     {
         unsigned long size = e - s + 1;
         /*
@@ -63,7 +63,9 @@ static int cf_check map_range(
         {
             printk(XENLOG_G_WARNING
                    "%pd denied access to MMIO range [%#lx, %#lx]\n",
-                   map->d, map_mfn, m_end);
+                   map->d,
+                   map_mfn,
+                   m_end);
             return -EPERM;
         }
 
@@ -72,7 +74,10 @@ static int cf_check map_range(
         {
             printk(XENLOG_G_WARNING
                    "%pd XSM denied access to MMIO range [%#lx, %#lx]: %d\n",
-                   map->d, map_mfn, m_end, rc);
+                   map->d,
+                   map_mfn,
+                   m_end,
+                   rc);
             return rc;
         }
 
@@ -85,8 +90,9 @@ static int cf_check map_range(
          * - {un}map_mmio_regions doesn't support preemption.
          */
 
-        rc = map->map ? map_mmio_regions(map->d, _gfn(s), size, _mfn(map_mfn))
-                      : unmap_mmio_regions(map->d, _gfn(s), size, _mfn(map_mfn));
+        rc = map->map
+                 ? map_mmio_regions(map->d, _gfn(s), size, _mfn(map_mfn))
+                 : unmap_mmio_regions(map->d, _gfn(s), size, _mfn(map_mfn));
         if ( rc == 0 )
         {
             *c += size;
@@ -96,15 +102,20 @@ static int cf_check map_range(
         {
             printk(XENLOG_G_WARNING
                    "Failed to %smap [%lx %lx] -> [%lx %lx] for %pd: %d\n",
-                   map->map ? "" : "un", s, e, map_mfn,
-                   map_mfn + size, map->d, rc);
+                   map->map ? "" : "un",
+                   s,
+                   e,
+                   map_mfn,
+                   map_mfn + size,
+                   map->d,
+                   rc);
             break;
         }
         ASSERT(rc < size);
         *c += rc;
         s += rc;
         if ( general_preempt_check() )
-                return -ERESTART;
+            return -ERESTART;
     }
 
     return rc;
@@ -145,11 +156,12 @@ static void modify_decoding(const struct pci_dev *pdev, uint16_t cmd,
         if ( rom_only && bar->type == VPCI_BAR_ROM )
         {
             unsigned int rom_pos = (i == PCI_HEADER_NORMAL_NR_BARS)
-                                   ? PCI_ROM_ADDRESS : PCI_ROM_ADDRESS1;
-            uint32_t val = bar->addr |
-                           (map ? PCI_ROM_ADDRESS_ENABLE : 0);
+                                       ? PCI_ROM_ADDRESS
+                                       : PCI_ROM_ADDRESS1;
+            uint32_t val = bar->addr | (map ? PCI_ROM_ADDRESS_ENABLE : 0);
 
-            if ( pci_check_bar(pdev, _mfn(PFN_DOWN(bar->addr)),
+            if ( pci_check_bar(pdev,
+                               _mfn(PFN_DOWN(bar->addr)),
                                _mfn(PFN_DOWN(bar->addr + bar->size - 1))) )
                 bar->enabled = map;
             header->rom_enabled = map;
@@ -157,9 +169,9 @@ static void modify_decoding(const struct pci_dev *pdev, uint16_t cmd,
             return;
         }
 
-        if ( !rom_only &&
-             (bar->type != VPCI_BAR_ROM || header->rom_enabled) &&
-             pci_check_bar(pdev, _mfn(PFN_DOWN(bar->addr)),
+        if ( !rom_only && (bar->type != VPCI_BAR_ROM || header->rom_enabled) &&
+             pci_check_bar(pdev,
+                           _mfn(PFN_DOWN(bar->addr)),
                            _mfn(PFN_DOWN(bar->addr + bar->size - 1))) )
             bar->enabled = map;
     }
@@ -217,14 +229,13 @@ bool vpci_process_pending(struct vcpu *v)
         {
             spin_lock(&pdev->vpci->lock);
             /* Disable memory decoding unconditionally on failure. */
-            modify_decoding(pdev, v->vpci.cmd & ~PCI_COMMAND_MEMORY,
-                            false);
+            modify_decoding(pdev, v->vpci.cmd & ~PCI_COMMAND_MEMORY, false);
             spin_unlock(&pdev->vpci->lock);
 
             /* Clean all the rangesets */
             for ( i = 0; i < ARRAY_SIZE(header->bars); i++ )
                 if ( !rangeset_is_empty(header->bars[i].mem) )
-                     rangeset_purge(header->bars[i].mem);
+                    rangeset_purge(header->bars[i].mem);
 
             v->vpci.pdev = NULL;
 
@@ -264,8 +275,8 @@ static int __init apply_map(struct domain *d, const struct pci_dev *pdev,
         if ( rangeset_is_empty(bar->mem) )
             continue;
 
-        while ( (rc = rangeset_consume_ranges(bar->mem, map_range,
-                                              &data)) == -ERESTART )
+        while ( (rc = rangeset_consume_ranges(bar->mem, map_range, &data)) ==
+                -ERESTART )
         {
             /*
              * It's safe to drop and reacquire the lock in this context
@@ -283,8 +294,8 @@ static int __init apply_map(struct domain *d, const struct pci_dev *pdev,
     return rc;
 }
 
-static void defer_map(struct domain *d, struct pci_dev *pdev,
-                      uint16_t cmd, bool rom_only)
+static void defer_map(struct domain *d, struct pci_dev *pdev, uint16_t cmd,
+                      bool rom_only)
 {
     struct vcpu *curr = current;
 
@@ -350,7 +361,9 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
         {
             printk(XENLOG_G_WARNING
                    "%pp: not mapping BAR [%lx, %lx] invalid position\n",
-                   &pdev->sbdf, start, end);
+                   &pdev->sbdf,
+                   start,
+                   end);
             continue;
         }
 
@@ -365,7 +378,10 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
         {
             gprintk(XENLOG_G_WARNING,
                     "%pp: can't map BAR%u - offset mismatch: %#lx vs %#lx\n",
-                    &pdev->sbdf, i, bar->guest_addr, bar->addr);
+                    &pdev->sbdf,
+                    i,
+                    bar->guest_addr,
+                    bar->addr);
             return -EINVAL;
         }
 
@@ -373,7 +389,9 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
         if ( rc )
         {
             printk(XENLOG_G_WARNING "Failed to add [%lx, %lx]: %d\n",
-                   start_guest, end_guest, rc);
+                   start_guest,
+                   end_guest,
+                   rc);
             return rc;
         }
 
@@ -388,9 +406,13 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
             rc = rangeset_remove_range(prev_bar->mem, start_guest, end_guest);
             if ( rc )
             {
-                gprintk(XENLOG_WARNING,
-                       "%pp: failed to remove overlapping range [%lx, %lx]: %d\n",
-                        &pdev->sbdf, start_guest, end_guest, rc);
+                gprintk(
+                    XENLOG_WARNING,
+                    "%pp: failed to remove overlapping range [%lx, %lx]: %d\n",
+                    &pdev->sbdf,
+                    start_guest,
+                    end_guest,
+                    rc);
                 return rc;
             }
         }
@@ -414,8 +436,11 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
             if ( rc )
             {
                 gprintk(XENLOG_WARNING,
-                       "%pp: failed to remove MSIX table [%lx, %lx]: %d\n",
-                        &pdev->sbdf, start, end, rc);
+                        "%pp: failed to remove MSIX table [%lx, %lx]: %d\n",
+                        &pdev->sbdf,
+                        start,
+                        end,
+                        rc);
                 return rc;
             }
         }
@@ -426,9 +451,9 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
      * currently mapped (enabled) are checked for overlaps. Note also that
      * for hwdom we also need to include hidden, i.e. DomXEN's, devices.
      */
-    for ( d = pdev->domain != dom_xen ? pdev->domain : hardware_domain; ; )
+    for ( d = pdev->domain != dom_xen ? pdev->domain : hardware_domain;; )
     {
-        for_each_pdev ( d, tmp )
+        for_each_pdev(d, tmp)
         {
             if ( !tmp->vpci )
                 /*
@@ -459,13 +484,13 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
             {
                 const struct vpci_bar *remote_bar = &tmp->vpci->header.bars[i];
                 unsigned long start = PFN_DOWN(remote_bar->guest_addr);
-                unsigned long end = PFN_DOWN(remote_bar->guest_addr +
-                                             remote_bar->size - 1);
+                unsigned long end =
+                    PFN_DOWN(remote_bar->guest_addr + remote_bar->size - 1);
 
                 if ( !remote_bar->enabled )
                     continue;
 
-                for ( j = 0; j < ARRAY_SIZE(header->bars); j++)
+                for ( j = 0; j < ARRAY_SIZE(header->bars); j++ )
                 {
                     const struct vpci_bar *bar = &header->bars[j];
 
@@ -475,8 +500,7 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
                           * other BARs in the same device for overlaps, but not
                           * against the same ROM BAR.
                           */
-                         (rom_only &&
-                          tmp == pdev &&
+                         (rom_only && tmp == pdev &&
                           bar->type == VPCI_BAR_ROM) )
                         continue;
 
@@ -485,7 +509,10 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
                     {
                         gprintk(XENLOG_WARNING,
                                 "%pp: failed to remove [%lx, %lx]: %d\n",
-                                &pdev->sbdf, start, end, rc);
+                                &pdev->sbdf,
+                                start,
+                                end,
+                                rc);
                         return rc;
                     }
                 }
@@ -519,8 +546,8 @@ static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
     return 0;
 }
 
-static void cf_check cmd_write(
-    const struct pci_dev *pdev, unsigned int reg, uint32_t cmd, void *data)
+static void cf_check cmd_write(const struct pci_dev *pdev, unsigned int reg,
+                               uint32_t cmd, void *data)
 {
     struct vpci_header *header = data;
 
@@ -552,16 +579,16 @@ static void cf_check cmd_write(
         pci_conf_write16(pdev->sbdf, reg, cmd);
 }
 
-static uint32_t cf_check guest_cmd_read(
-    const struct pci_dev *pdev, unsigned int reg, void *data)
+static uint32_t cf_check guest_cmd_read(const struct pci_dev *pdev,
+                                        unsigned int reg, void *data)
 {
     const struct vpci_header *header = data;
 
     return header->guest_cmd;
 }
 
-static void cf_check bar_write(
-    const struct pci_dev *pdev, unsigned int reg, uint32_t val, void *data)
+static void cf_check bar_write(const struct pci_dev *pdev, unsigned int reg,
+                               uint32_t val, void *data)
 {
     struct vpci_bar *bar = data;
     bool hi = false;
@@ -587,10 +614,10 @@ static void cf_check bar_write(
         if ( val != (uint32_t)(bar->addr >> (hi ? 32 : 0)) )
             gprintk(XENLOG_WARNING,
                     "%pp: ignored BAR %zu write while mapped\n",
-                    &pdev->sbdf, bar - pdev->vpci->header.bars + hi);
+                    &pdev->sbdf,
+                    bar - pdev->vpci->header.bars + hi);
         return;
     }
-
 
     /*
      * Update the cached address, so that when memory decoding is enabled
@@ -648,7 +675,8 @@ static void cf_check guest_mem_bar_write(const struct pci_dev *pdev,
         if ( guest_addr != bar->guest_addr )
             gprintk(XENLOG_WARNING,
                     "%pp: ignored guest BAR %zu write while mapped\n",
-                    &pdev->sbdf, bar - pdev->vpci->header.bars + hi);
+                    &pdev->sbdf,
+                    bar - pdev->vpci->header.bars + hi);
         return;
     }
     bar->guest_addr = guest_addr;
@@ -668,15 +696,15 @@ static uint32_t cf_check guest_mem_bar_read(const struct pci_dev *pdev,
     }
 
     reg_val = bar->guest_addr;
-    reg_val |= bar->type == VPCI_BAR_MEM32 ? PCI_BASE_ADDRESS_MEM_TYPE_32 :
-                                             PCI_BASE_ADDRESS_MEM_TYPE_64;
+    reg_val |= bar->type == VPCI_BAR_MEM32 ? PCI_BASE_ADDRESS_MEM_TYPE_32
+                                           : PCI_BASE_ADDRESS_MEM_TYPE_64;
     reg_val |= bar->prefetchable ? PCI_BASE_ADDRESS_MEM_PREFETCH : 0;
 
     return reg_val;
 }
 
-static void cf_check rom_write(
-    const struct pci_dev *pdev, unsigned int reg, uint32_t val, void *data)
+static void cf_check rom_write(const struct pci_dev *pdev, unsigned int reg,
+                               uint32_t val, void *data)
 {
     struct vpci_header *header = &pdev->vpci->header;
     struct vpci_bar *rom = data;
@@ -782,14 +810,18 @@ static int cf_check init_header(struct pci_dev *pdev)
      */
     rc = vpci_add_register_mask(pdev->vpci,
                                 is_hwdom ? vpci_hw_read16 : guest_cmd_read,
-                                cmd_write, PCI_COMMAND, 2, header, 0, 0,
-                                is_hwdom ? 0
-                                         : PCI_COMMAND_RSVDP_MASK |
-                                           PCI_COMMAND_IO |
-                                           PCI_COMMAND_PARITY |
-                                           PCI_COMMAND_WAIT |
-                                           PCI_COMMAND_SERR |
-                                           PCI_COMMAND_FAST_BACK,
+                                cmd_write,
+                                PCI_COMMAND,
+                                2,
+                                header,
+                                0,
+                                0,
+                                is_hwdom
+                                    ? 0
+                                    : PCI_COMMAND_RSVDP_MASK | PCI_COMMAND_IO |
+                                          PCI_COMMAND_PARITY |
+                                          PCI_COMMAND_WAIT | PCI_COMMAND_SERR |
+                                          PCI_COMMAND_FAST_BACK,
                                 0);
     if ( rc )
         return rc;
@@ -805,12 +837,17 @@ static int cf_check init_header(struct pci_dev *pdev)
                 PCI_CAP_ID_MSIX,
             };
 
-            next = pci_find_next_cap_ttl(pdev->sbdf, PCI_CAPABILITY_LIST,
+            next = pci_find_next_cap_ttl(pdev->sbdf,
+                                         PCI_CAPABILITY_LIST,
                                          supported_caps,
-                                         ARRAY_SIZE(supported_caps), &ttl);
+                                         ARRAY_SIZE(supported_caps),
+                                         &ttl);
 
-            rc = vpci_add_register(pdev->vpci, vpci_read_val, NULL,
-                                   PCI_CAPABILITY_LIST, 1,
+            rc = vpci_add_register(pdev->vpci,
+                                   vpci_read_val,
+                                   NULL,
+                                   PCI_CAPABILITY_LIST,
+                                   1,
                                    (void *)(uintptr_t)next);
             if ( rc )
                 return rc;
@@ -832,15 +869,23 @@ static int cf_check init_header(struct pci_dev *pdev)
                 next = pci_find_next_cap_ttl(pdev->sbdf,
                                              pos + PCI_CAP_LIST_NEXT,
                                              supported_caps,
-                                             ARRAY_SIZE(supported_caps), &ttl);
+                                             ARRAY_SIZE(supported_caps),
+                                             &ttl);
 
-                rc = vpci_add_register(pdev->vpci, vpci_hw_read8, NULL,
-                                       pos + PCI_CAP_LIST_ID, 1, NULL);
+                rc = vpci_add_register(pdev->vpci,
+                                       vpci_hw_read8,
+                                       NULL,
+                                       pos + PCI_CAP_LIST_ID,
+                                       1,
+                                       NULL);
                 if ( rc )
                     return rc;
 
-                rc = vpci_add_register(pdev->vpci, vpci_read_val, NULL,
-                                       pos + PCI_CAP_LIST_NEXT, 1,
+                rc = vpci_add_register(pdev->vpci,
+                                       vpci_read_val,
+                                       NULL,
+                                       pos + PCI_CAP_LIST_NEXT,
+                                       1,
                                        (void *)(uintptr_t)next);
                 if ( rc )
                     return rc;
@@ -850,15 +895,23 @@ static int cf_check init_header(struct pci_dev *pdev)
         }
 
         /* Extended capabilities read as zero, write ignore */
-        rc = vpci_add_register(pdev->vpci, vpci_read_val, NULL, 0x100, 4,
+        rc = vpci_add_register(pdev->vpci,
+                               vpci_read_val,
+                               NULL,
+                               0x100,
+                               4,
                                (void *)0);
         if ( rc )
             return rc;
     }
 
     /* Utilize rsvdp_mask to hide PCI_STATUS_CAP_LIST from the guest. */
-    rc = vpci_add_register_mask(pdev->vpci, vpci_hw_read16, vpci_hw_write16,
-                                PCI_STATUS, 2, NULL,
+    rc = vpci_add_register_mask(pdev->vpci,
+                                vpci_hw_read16,
+                                vpci_hw_write16,
+                                PCI_STATUS,
+                                2,
+                                NULL,
                                 PCI_STATUS_RO_MASK &
                                     ~(mask_cap_list ? PCI_STATUS_CAP_LIST : 0),
                                 PCI_STATUS_RW1C_MASK,
@@ -901,7 +954,9 @@ static int cf_check init_header(struct pci_dev *pdev)
                                    is_hwdom ? vpci_hw_read32
                                             : guest_mem_bar_read,
                                    is_hwdom ? bar_write : guest_mem_bar_write,
-                                   reg, 4, &bars[i]);
+                                   reg,
+                                   4,
+                                   &bars[i]);
             if ( rc )
                 goto fail;
 
@@ -914,8 +969,12 @@ static int cf_check init_header(struct pci_dev *pdev)
             bars[i].type = VPCI_BAR_IO;
             if ( !IS_ENABLED(CONFIG_X86) && !is_hwdom )
             {
-                rc = vpci_add_register(pdev->vpci, vpci_read_val, NULL,
-                                       reg, 4, (void *)0);
+                rc = vpci_add_register(pdev->vpci,
+                                       vpci_read_val,
+                                       NULL,
+                                       reg,
+                                       4,
+                                       (void *)0);
                 if ( rc )
                     goto fail;
             }
@@ -932,7 +991,10 @@ static int cf_check init_header(struct pci_dev *pdev)
         if ( rc )
             goto fail;
 
-        rc = pci_size_mem_bar(pdev->sbdf, reg, &addr, &size,
+        rc = pci_size_mem_bar(pdev->sbdf,
+                              reg,
+                              &addr,
+                              &size,
                               (i == num_bars - 1) ? PCI_BAR_LAST : 0);
         if ( rc < 0 )
             goto fail;
@@ -943,8 +1005,12 @@ static int cf_check init_header(struct pci_dev *pdev)
 
             if ( !is_hwdom )
             {
-                rc = vpci_add_register(pdev->vpci, vpci_read_val, NULL,
-                                       reg, 4, (void *)0);
+                rc = vpci_add_register(pdev->vpci,
+                                       vpci_read_val,
+                                       NULL,
+                                       reg,
+                                       4,
+                                       (void *)0);
                 if ( rc )
                     goto fail;
             }
@@ -960,15 +1026,17 @@ static int cf_check init_header(struct pci_dev *pdev)
         rc = vpci_add_register(pdev->vpci,
                                is_hwdom ? vpci_hw_read32 : guest_mem_bar_read,
                                is_hwdom ? bar_write : guest_mem_bar_write,
-                               reg, 4, &bars[i]);
+                               reg,
+                               4,
+                               &bars[i]);
         if ( rc )
             goto fail;
     }
 
     /* Check expansion ROM. */
-    rc = is_hwdom ? pci_size_mem_bar(pdev->sbdf, rom_reg, &addr, &size,
-                                     PCI_BAR_ROM)
-                  : 0;
+    rc = is_hwdom
+             ? pci_size_mem_bar(pdev->sbdf, rom_reg, &addr, &size, PCI_BAR_ROM)
+             : 0;
     if ( rc > 0 && size )
     {
         struct vpci_bar *rom = &header->bars[num_bars];
@@ -980,8 +1048,12 @@ static int cf_check init_header(struct pci_dev *pdev)
         header->rom_enabled = pci_conf_read32(pdev->sbdf, rom_reg) &
                               PCI_ROM_ADDRESS_ENABLE;
 
-        rc = vpci_add_register(pdev->vpci, vpci_hw_read32, rom_write, rom_reg,
-                               4, rom);
+        rc = vpci_add_register(pdev->vpci,
+                               vpci_hw_read32,
+                               rom_write,
+                               rom_reg,
+                               4,
+                               rom);
         if ( rc )
             rom->type = VPCI_BAR_EMPTY;
         else
@@ -995,18 +1067,23 @@ static int cf_check init_header(struct pci_dev *pdev)
     {
         /* TODO: Check expansion ROM, we do not handle ROM for guests for now */
         header->bars[num_bars].type = VPCI_BAR_EMPTY;
-        rc = vpci_add_register(pdev->vpci, vpci_read_val, NULL,
-                               rom_reg, 4, (void *)0);
+        rc = vpci_add_register(pdev->vpci,
+                               vpci_read_val,
+                               NULL,
+                               rom_reg,
+                               4,
+                               (void *)0);
         if ( rc )
             goto fail;
     }
 
     return (cmd & PCI_COMMAND_MEMORY) ? modify_bars(pdev, cmd, false) : 0;
 
- fail:
+fail:
     pci_conf_write16(pdev->sbdf, PCI_COMMAND, cmd);
     return rc;
 }
+
 REGISTER_VPCI_INIT(init_header, VPCI_PRIORITY_MIDDLE);
 
 /*

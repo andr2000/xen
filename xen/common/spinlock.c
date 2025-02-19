@@ -33,8 +33,7 @@ static bool __read_mostly max_depth_reached;
 static atomic_t spin_debug __read_mostly = ATOMIC_INIT(0);
 
 static int cf_check cpu_lockdebug_callback(struct notifier_block *nfb,
-                                           unsigned long action,
-                                           void *hcpu)
+                                           unsigned long action, void *hcpu)
 {
     unsigned int cpu = (unsigned long)hcpu;
 
@@ -71,12 +70,14 @@ static int __init cf_check lockdebug_init(void)
     if ( lock_depth_size )
     {
         register_cpu_notifier(&cpu_lockdebug_nfb);
-        cpu_lockdebug_callback(&cpu_lockdebug_nfb, CPU_UP_PREPARE,
+        cpu_lockdebug_callback(&cpu_lockdebug_nfb,
+                               CPU_UP_PREPARE,
                                (void *)(unsigned long)smp_processor_id());
     }
 
     return 0;
 }
+
 presmp_initcall(lockdebug_init);
 
 void check_lock(union lock_debug *debug, bool try)
@@ -129,7 +130,8 @@ void check_lock(union lock_debug *debug, bool try)
         if ( !seen.unseen && seen.irq_safe == !irq_safe )
         {
             printk("CHECKLOCK FAILURE: prev irqsafe: %d, curr irqsafe %d\n",
-                   seen.irq_safe, irq_safe);
+                   seen.irq_safe,
+                   irq_safe);
             BUG();
         }
     }
@@ -205,8 +207,7 @@ void lock_exit(const union lock_debug *debug)
     {
         if ( taken[i - 1] == debug )
         {
-            memmove(taken + i - 1, taken + i,
-                    (*nr_taken - i) * sizeof(*taken));
+            memmove(taken + i - 1, taken + i, (*nr_taken - i) * sizeof(*taken));
             (*nr_taken)--;
             taken[*nr_taken] = NULL;
 
@@ -335,8 +336,7 @@ static void always_inline spin_lock_common(spinlock_tickets_t *t,
 
 void _spin_lock(spinlock_t *lock)
 {
-    spin_lock_common(&lock->tickets, &lock->debug, LOCK_PROFILE_PAR, NULL,
-                     NULL);
+    spin_lock_common(&lock->tickets, &lock->debug, LOCK_PROFILE_PAR, NULL, NULL);
 }
 
 void _spin_lock_cb(spinlock_t *lock, void (*cb)(void *data), void *data)
@@ -471,8 +471,8 @@ bool _rspin_is_locked(const rspinlock_t *lock)
      * ASSERT()s and alike.
      */
     return lock->recurse_cpu == SPINLOCK_NO_CPU
-           ? spin_is_locked_common(&lock->tickets)
-           : lock->recurse_cpu == smp_processor_id();
+               ? spin_is_locked_common(&lock->tickets)
+               : lock->recurse_cpu == smp_processor_id();
 }
 
 void _rspin_barrier(rspinlock_t *lock)
@@ -494,7 +494,8 @@ bool _rspin_trylock(rspinlock_t *lock)
 
     if ( likely(lock->recurse_cpu != cpu) )
     {
-        if ( !spin_trylock_common(&lock->tickets, &lock->debug,
+        if ( !spin_trylock_common(&lock->tickets,
+                                  &lock->debug,
                                   LOCK_PROFILE_PAR) )
             return false;
         lock->recurse_cpu = cpu;
@@ -513,7 +514,10 @@ void _rspin_lock(rspinlock_t *lock)
 
     if ( likely(lock->recurse_cpu != cpu) )
     {
-        spin_lock_common(&lock->tickets, &lock->debug, LOCK_PROFILE_PAR, NULL,
+        spin_lock_common(&lock->tickets,
+                         &lock->debug,
+                         LOCK_PROFILE_PAR,
+                         NULL,
                          NULL);
         lock->recurse_cpu = cpu;
     }
@@ -560,8 +564,7 @@ bool _nrspin_trylock(rspinlock_t *lock)
 
 void _nrspin_lock(rspinlock_t *lock)
 {
-    spin_lock_common(&lock->tickets, &lock->debug, LOCK_PROFILE_PAR, NULL,
-                     NULL);
+    spin_lock_common(&lock->tickets, &lock->debug, LOCK_PROFILE_PAR, NULL, NULL);
 }
 
 void _nrspin_unlock(rspinlock_t *lock)
@@ -601,12 +604,12 @@ void _nrspin_unlock_irqrestore(rspinlock_t *lock, unsigned long flags)
 #ifdef CONFIG_DEBUG_LOCK_PROFILE
 
 struct lock_profile_anc {
-    struct lock_profile_qhead *head_q;   /* first head of this type */
-    const char                *name;     /* descriptive string for print */
+    struct lock_profile_qhead *head_q; /* first head of this type */
+    const char *name; /* descriptive string for print */
 };
 
 typedef void lock_profile_subfunc(struct lock_profile *data, int32_t type,
-    int32_t idx, void *par);
+                                  int32_t idx, void *par);
 
 static s_time_t lock_profile_start;
 static struct lock_profile_anc lock_profile_ancs[] = {
@@ -631,7 +634,8 @@ static void spinlock_profile_iterate(lock_profile_subfunc *sub, void *par)
 }
 
 static void cf_check spinlock_profile_print_elem(struct lock_profile *data,
-    int32_t type, int32_t idx, void *par)
+                                                 int32_t type, int32_t idx,
+                                                 void *par)
 {
     unsigned int cpu;
     unsigned int lockval;
@@ -655,8 +659,11 @@ static void cf_check spinlock_profile_print_elem(struct lock_profile *data,
         printk("not locked\n");
     else
         printk("cpu=%u\n", cpu);
-    printk("  lock:%" PRIu64 "(%" PRI_stime "), block:%" PRIu64 "(%" PRI_stime ")\n",
-           data->lock_cnt, data->time_hold, (uint64_t)data->block_cnt,
+    printk("  lock:%" PRIu64 "(%" PRI_stime "), block:%" PRIu64 "(%" PRI_stime
+           ")\n",
+           data->lock_cnt,
+           data->time_hold,
+           (uint64_t)data->block_cnt,
            data->time_block);
 }
 
@@ -666,13 +673,16 @@ void cf_check spinlock_profile_printall(unsigned char key)
     s_time_t diff;
 
     diff = now - lock_profile_start;
-    printk("Xen lock profile info SHOW  (now = %"PRI_stime" total = "
-           "%"PRI_stime")\n", now, diff);
+    printk("Xen lock profile info SHOW  (now = %" PRI_stime
+           " total = " "%" PRI_stime ")\n",
+           now,
+           diff);
     spinlock_profile_iterate(spinlock_profile_print_elem, NULL);
 }
 
 static void cf_check spinlock_profile_reset_elem(struct lock_profile *data,
-    int32_t type, int32_t idx, void *par)
+                                                 int32_t type, int32_t idx,
+                                                 void *par)
 {
     data->lock_cnt = 0;
     data->block_cnt = 0;
@@ -685,18 +695,19 @@ void cf_check spinlock_profile_reset(unsigned char key)
     s_time_t now = NOW();
 
     if ( key != '\0' )
-        printk("Xen lock profile info RESET (now = %"PRI_stime")\n", now);
+        printk("Xen lock profile info RESET (now = %" PRI_stime ")\n", now);
     lock_profile_start = now;
     spinlock_profile_iterate(spinlock_profile_reset_elem, NULL);
 }
 
 typedef struct {
     struct xen_sysctl_lockprof_op *pc;
-    int                      rc;
+    int rc;
 } spinlock_profile_ucopy_t;
 
 static void cf_check spinlock_profile_ucopy_elem(struct lock_profile *data,
-    int32_t type, int32_t idx, void *par)
+                                                 int32_t type, int32_t idx,
+                                                 void *par)
 {
     spinlock_profile_ucopy_t *p = par;
     struct xen_sysctl_lockprof_data elem;
@@ -750,8 +761,9 @@ int spinlock_profile_control(struct xen_sysctl_lockprof_op *pc)
     return rc;
 }
 
-void _lock_profile_register_struct(
-    int32_t type, struct lock_profile_qhead *qhead, int32_t idx)
+void _lock_profile_register_struct(int32_t type,
+                                   struct lock_profile_qhead *qhead,
+                                   int32_t idx)
 {
     qhead->idx = idx;
     spin_lock(&lock_profile_lock);
@@ -760,8 +772,8 @@ void _lock_profile_register_struct(
     spin_unlock(&lock_profile_lock);
 }
 
-void _lock_profile_deregister_struct(
-    int32_t type, struct lock_profile_qhead *qhead)
+void _lock_profile_deregister_struct(int32_t type,
+                                     struct lock_profile_qhead *qhead)
 {
     struct lock_profile_qhead **q;
 
@@ -797,11 +809,11 @@ static int __init cf_check lock_prof_init(void)
             (*q)->ptr.lock->profile = *q;
     }
 
-    _lock_profile_register_struct(LOCKPROF_TYPE_GLOBAL,
-                                  &lock_profile_glb_q, 0);
+    _lock_profile_register_struct(LOCKPROF_TYPE_GLOBAL, &lock_profile_glb_q, 0);
 
     return 0;
 }
+
 __initcall(lock_prof_init);
 
 #endif /* CONFIG_DEBUG_LOCK_PROFILE */

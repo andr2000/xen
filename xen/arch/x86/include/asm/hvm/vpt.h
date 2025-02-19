@@ -28,18 +28,17 @@ struct periodic_time {
 #define PTSRC_isa    1 /* ISA time source */
 #define PTSRC_lapic  2 /* LAPIC time source */
 #define PTSRC_ioapic 3 /* IOAPIC time source */
-    u8 source;                  /* PTSRC_ */
+    u8 source; /* PTSRC_ */
     u8 irq;
-    struct vcpu *vcpu;          /* vcpu timer interrupt delivers to */
-    u32 pending_intr_nr;        /* pending timer interrupts */
-    u64 period;                 /* frequency in ns */
-    s_time_t scheduled;         /* scheduled timer interrupt */
-    u64 last_plt_gtime;         /* platform time when last IRQ is injected */
-    struct timer timer;         /* ac_timer */
+    struct vcpu *vcpu; /* vcpu timer interrupt delivers to */
+    u32 pending_intr_nr; /* pending timer interrupts */
+    u64 period; /* frequency in ns */
+    s_time_t scheduled; /* scheduled timer interrupt */
+    u64 last_plt_gtime; /* platform time when last IRQ is injected */
+    struct timer timer; /* ac_timer */
     time_cb *cb;
-    void *priv;                 /* point back to platform time source */
+    void *priv; /* point back to platform time source */
 };
-
 
 #define PIT_FREQ 1193182
 #define PIT_BASE 0x40
@@ -62,14 +61,15 @@ typedef struct PITState {
 
 struct hpet_registers {
     /* Memory-mapped, software visible registers */
-    uint64_t capability;        /* capabilities */
-    uint64_t config;            /* configuration */
-    uint64_t isr;               /* interrupt status reg */
-    uint64_t mc64;              /* main counter */
-    struct {                    /* timers */
-        uint64_t config;        /* configuration/cap */
-        uint64_t cmp;           /* comparator */
-        uint64_t fsb;           /* FSB route, not supported now */
+    uint64_t capability; /* capabilities */
+    uint64_t config; /* configuration */
+    uint64_t isr; /* interrupt status reg */
+    uint64_t mc64; /* main counter */
+
+    struct { /* timers */
+        uint64_t config; /* configuration/cap */
+        uint64_t cmp; /* comparator */
+        uint64_t fsb; /* FSB route, not supported now */
     } timers[HPET_TIMER_NUM];
 
     /* Hidden register state */
@@ -109,20 +109,21 @@ typedef struct RTCState {
 } RTCState;
 
 #define FREQUENCE_PMTIMER  3579545  /* Timer should run at 3.579545 MHz */
+
 typedef struct PMTState {
-    struct vcpu *vcpu;          /* Keeps sync with this vcpu's guest-time */
-    uint64_t last_gtime;        /* Last (guest) time we updated the timer */
-    uint32_t not_accounted;     /* time not accounted at last update */
-    uint64_t scale;             /* Multiplier to get from tsc to timer ticks */
-    struct timer timer;         /* To make sure we send SCIs */
+    struct vcpu *vcpu; /* Keeps sync with this vcpu's guest-time */
+    uint64_t last_gtime; /* Last (guest) time we updated the timer */
+    uint32_t not_accounted; /* time not accounted at last update */
+    uint64_t scale; /* Multiplier to get from tsc to timer ticks */
+    struct timer timer; /* To make sure we send SCIs */
     spinlock_t lock;
 } PMTState;
 
-struct pl_time {    /* platform time */
-    struct RTCState  vrtc;
+struct pl_time { /* platform time */
+    struct RTCState vrtc;
     struct HPETState vhpet;
-    struct PMTState  vpmt;
-     /*
+    struct PMTState vpmt;
+    /*
       * Functions which want to modify the vcpu field of the vpt need
       * to hold the global lock (pt_migrate) in write mode together
       * with the per-vcpu locks of the lists being modified. Functions
@@ -170,16 +171,16 @@ void pt_may_unmask_irq(struct domain *d, struct periodic_time *vlapic_pt);
  * Note that, for a given periodic timer, invocations of these functions MUST
  * be serialised.
  */
-void create_periodic_time(
-    struct vcpu *v, struct periodic_time *pt, uint64_t delta,
-    uint64_t period, uint8_t irq, time_cb *cb, void *data, bool level);
+void create_periodic_time(struct vcpu *v, struct periodic_time *pt,
+                          uint64_t delta, uint64_t period, uint8_t irq,
+                          time_cb *cb, void *data, bool level);
 void destroy_periodic_time(struct periodic_time *pt);
 
 int pv_pit_handler(int port, int data, int write);
 void pit_reset(struct domain *d);
 
 void pit_init(struct domain *d);
-void pit_stop_channel0_irq(PITState * pit);
+void pit_stop_channel0_irq(PITState *pit);
 void pit_deinit(struct domain *d);
 void rtc_init(struct domain *d);
 void rtc_migrate_timers(struct vcpu *v);

@@ -26,7 +26,7 @@ static void __init __maybe_unused build_assertions(void)
      * member and struct meminfo "bank" member
      */
     BUILD_BUG_ON((offsetof(struct membanks, bank) !=
-                 offsetof(struct meminfo, bank)));
+                  offsetof(struct meminfo, bank)));
     /* Ensure "struct membanks" and "struct membank" are equally aligned */
     BUILD_BUG_ON(alignof(struct membanks) != alignof(struct membank));
 }
@@ -60,8 +60,8 @@ static bool __init device_tree_node_matches(const void *fdt, int node,
 
     /* Match both "match" and "match@..." patterns but not
        "match-foo". */
-    return strncmp(name, match, match_len) == 0
-        && (name[match_len] == '@' || name[match_len] == '\0');
+    return strncmp(name, match, match_len) == 0 &&
+           (name[match_len] == '@' || name[match_len] == '\0');
 }
 
 static bool __init device_tree_node_compatible(const void *fdt, int node,
@@ -74,7 +74,8 @@ static bool __init device_tree_node_compatible(const void *fdt, int node,
     if ( prop == NULL )
         return false;
 
-    while ( len > 0 ) {
+    while ( len > 0 )
+    {
         if ( !dt_compat_cmp(prop, match) )
             return true;
         l = strlen(prop) + 1;
@@ -171,7 +172,7 @@ static int __init device_tree_get_meminfo(const void *fdt, int node,
         return -ENOENT;
 
     cell = (const __be32 *)prop->data;
-    banks = fdt32_to_cpu(prop->len) / (reg_cells * sizeof (u32));
+    banks = fdt32_to_cpu(prop->len) / (reg_cells * sizeof(u32));
 
     for ( i = 0; i < banks && mem->nr_banks < mem->max_banks; i++ )
     {
@@ -204,8 +205,8 @@ static int __init device_tree_get_meminfo(const void *fdt, int node,
     return 0;
 }
 
-u32 __init device_tree_get_u32(const void *fdt, int node,
-                               const char *prop_name, u32 dflt)
+u32 __init device_tree_get_u32(const void *fdt, int node, const char *prop_name,
+                               u32 dflt)
 {
     const struct fdt_property *prop;
 
@@ -213,7 +214,7 @@ u32 __init device_tree_get_u32(const void *fdt, int node,
     if ( !prop || prop->len < sizeof(u32) )
         return dflt;
 
-    return fdt32_to_cpu(*(uint32_t*)prop->data);
+    return fdt32_to_cpu(*(uint32_t *)prop->data);
 }
 
 /**
@@ -229,8 +230,7 @@ u32 __init device_tree_get_u32(const void *fdt, int node,
  * returns a value different from 0, that value is returned immediately.
  */
 int __init device_tree_for_each_node(const void *fdt, int node,
-                                     device_tree_node_func func,
-                                     void *data)
+                                     device_tree_node_func func, void *data)
 {
     /*
      * We only care about relative depth increments, assume depth of
@@ -242,24 +242,25 @@ int __init device_tree_for_each_node(const void *fdt, int node,
     u32 size_cells[DEVICE_TREE_MAX_DEPTH];
     int ret;
 
-    do {
+    do
+    {
         const char *name = fdt_get_name(fdt, node, NULL);
         u32 as, ss;
 
         if ( depth >= DEVICE_TREE_MAX_DEPTH )
         {
-            printk("Warning: device tree node `%s' is nested too deep\n",
-                   name);
+            printk("Warning: device tree node `%s' is nested too deep\n", name);
             continue;
         }
 
-        as = depth > 0 ? address_cells[depth-1] : DT_ROOT_NODE_ADDR_CELLS_DEFAULT;
-        ss = depth > 0 ? size_cells[depth-1] : DT_ROOT_NODE_SIZE_CELLS_DEFAULT;
+        as = depth > 0 ? address_cells[depth - 1]
+                       : DT_ROOT_NODE_ADDR_CELLS_DEFAULT;
+        ss = depth > 0 ? size_cells[depth - 1]
+                       : DT_ROOT_NODE_SIZE_CELLS_DEFAULT;
 
-        address_cells[depth] = device_tree_get_u32(fdt, node,
-                                                   "#address-cells", as);
-        size_cells[depth] = device_tree_get_u32(fdt, node,
-                                                "#size-cells", ss);
+        address_cells[depth] =
+            device_tree_get_u32(fdt, node, "#address-cells", as);
+        size_cells[depth] = device_tree_get_u32(fdt, node, "#size-cells", ss);
 
         /* skip the first node */
         if ( node != first_node )
@@ -280,18 +281,27 @@ static int __init process_memory_node(const void *fdt, int node,
                                       u32 address_cells, u32 size_cells,
                                       struct membanks *mem)
 {
-    return device_tree_get_meminfo(fdt, node, "reg", address_cells, size_cells,
-                                   mem, MEMBANK_DEFAULT);
+    return device_tree_get_meminfo(fdt,
+                                   node,
+                                   "reg",
+                                   address_cells,
+                                   size_cells,
+                                   mem,
+                                   MEMBANK_DEFAULT);
 }
 
 static int __init process_reserved_memory_node(const void *fdt, int node,
                                                const char *name, int depth,
                                                u32 address_cells,
-                                               u32 size_cells,
-                                               void *data)
+                                               u32 size_cells, void *data)
 {
-    int rc = process_memory_node(fdt, node, name, depth, address_cells,
-                                 size_cells, data);
+    int rc = process_memory_node(fdt,
+                                 node,
+                                 name,
+                                 depth,
+                                 address_cells,
+                                 size_cells,
+                                 data);
 
     if ( rc == -ENOSPC )
         panic("Max number of supported reserved-memory regions reached.\n");
@@ -304,14 +314,15 @@ static int __init process_reserved_memory(const void *fdt, int node,
                                           const char *name, int depth,
                                           u32 address_cells, u32 size_cells)
 {
-    return device_tree_for_each_node(fdt, node,
+    return device_tree_for_each_node(fdt,
+                                     node,
                                      process_reserved_memory_node,
                                      bootinfo_get_reserved_mem());
 }
 
 static void __init process_multiboot_node(const void *fdt, int node,
-                                          const char *name,
-                                          u32 address_cells, u32 size_cells)
+                                          const char *name, u32 address_cells,
+                                          u32 size_cells)
 {
     static int __initdata kind_guess = 0;
     const struct fdt_property *prop;
@@ -328,7 +339,7 @@ static void __init process_multiboot_node(const void *fdt, int node,
     ASSERT(parent_node >= 0);
 
     /* Check that the node is under "/chosen" (first 7 chars of path) */
-    ret = fdt_get_path(fdt, node, path, sizeof (path));
+    ret = fdt_get_path(fdt, node, path, sizeof(path));
     if ( ret != 0 || strncmp(path, "/chosen", 7) )
         return;
 
@@ -337,8 +348,7 @@ static void __init process_multiboot_node(const void *fdt, int node,
         panic("node %s missing `reg' property\n", name);
 
     if ( len < dt_cells_to_size(address_cells + size_cells) )
-        panic("fdt: node `%s': `reg` property length is too short\n",
-                    name);
+        panic("fdt: node `%s': `reg` property length is too short\n", name);
 
     cell = (const __be32 *)prop->data;
     device_tree_get_reg(&cell, address_cells, size_cells, &start, &size);
@@ -351,7 +361,8 @@ static void __init process_multiboot_node(const void *fdt, int node,
         kind = BOOTMOD_RAMDISK;
     else if ( fdt_node_check_compatible(fdt, node, "xen,xsm-policy") == 0 )
         kind = BOOTMOD_XSM;
-    else if ( fdt_node_check_compatible(fdt, node, "multiboot,device-tree") == 0 )
+    else if ( fdt_node_check_compatible(fdt, node, "multiboot,device-tree") ==
+              0 )
         kind = BOOTMOD_GUEST_DTB;
     else
         kind = BOOTMOD_UNKNOWN;
@@ -371,9 +382,14 @@ static void __init process_multiboot_node(const void *fdt, int node,
     {
         switch ( kind_guess++ )
         {
-        case 0: kind = BOOTMOD_KERNEL; break;
-        case 1: kind = BOOTMOD_RAMDISK; break;
-        default: break;
+        case 0:
+            kind = BOOTMOD_KERNEL;
+            break;
+        case 1:
+            kind = BOOTMOD_RAMDISK;
+            break;
+        default:
+            break;
         }
         if ( kind_guess > 1 && has_xsm_magic(start) )
             kind = BOOTMOD_XSM;
@@ -385,13 +401,16 @@ static void __init process_multiboot_node(const void *fdt, int node,
     prop = fdt_get_property(fdt, node, "bootargs", &len);
     if ( !prop )
         return;
-    add_boot_cmdline(fdt_get_name(fdt, parent_node, &len), prop->data,
-                     kind, start, domU);
+    add_boot_cmdline(fdt_get_name(fdt, parent_node, &len),
+                     prop->data,
+                     kind,
+                     start,
+                     domU);
 }
 
 static int __init process_chosen_node(const void *fdt, int node,
-                                      const char *name,
-                                      u32 address_cells, u32 size_cells)
+                                      const char *name, u32 address_cells,
+                                      u32 size_cells)
 {
     const struct fdt_property *prop;
     paddr_t start, end;
@@ -403,8 +422,11 @@ static int __init process_chosen_node(const void *fdt, int node,
 
         printk("Checking for static heap in /chosen\n");
 
-        rc = device_tree_get_meminfo(fdt, node, "xen,static-heap",
-                                     address_cells, size_cells,
+        rc = device_tree_get_meminfo(fdt,
+                                     node,
+                                     "xen,static-heap",
+                                     address_cells,
+                                     size_cells,
                                      bootinfo_get_reserved_mem(),
                                      MEMBANK_STATIC_HEAP);
         if ( rc )
@@ -441,21 +463,22 @@ static int __init process_chosen_node(const void *fdt, int node,
 
     if ( start >= end )
     {
-        printk("linux,initrd limits invalid: %"PRIpaddr" >= %"PRIpaddr"\n",
-                  start, end);
+        printk("linux,initrd limits invalid: %" PRIpaddr " >= %" PRIpaddr "\n",
+               start,
+               end);
         return -EINVAL;
     }
 
-    printk("Initrd %"PRIpaddr"-%"PRIpaddr"\n", start, end - 1);
+    printk("Initrd %" PRIpaddr "-%" PRIpaddr "\n", start, end - 1);
 
-    add_boot_module(BOOTMOD_RAMDISK, start, end-start, false);
+    add_boot_module(BOOTMOD_RAMDISK, start, end - start, false);
 
     return 0;
 }
 
 static int __init process_domain_node(const void *fdt, int node,
-                                      const char *name,
-                                      u32 address_cells, u32 size_cells)
+                                      const char *name, u32 address_cells,
+                                      u32 size_cells)
 {
     const struct fdt_property *prop;
 
@@ -466,8 +489,12 @@ static int __init process_domain_node(const void *fdt, int node,
         /* No "xen,static-mem" present. */
         return 0;
 
-    return device_tree_get_meminfo(fdt, node, "xen,static-mem", address_cells,
-                                   size_cells, bootinfo_get_reserved_mem(),
+    return device_tree_get_meminfo(fdt,
+                                   node,
+                                   "xen,static-mem",
+                                   address_cells,
+                                   size_cells,
+                                   bootinfo_get_reserved_mem(),
                                    MEMBANK_STATIC_DOMAIN);
 }
 
@@ -475,15 +502,14 @@ static int __init process_domain_node(const void *fdt, int node,
 static inline int process_shm_node(const void *fdt, int node,
                                    uint32_t address_cells, uint32_t size_cells)
 {
-    printk("CONFIG_STATIC_SHM must be enabled for parsing static shared"
-            " memory nodes\n");
+    printk(
+        "CONFIG_STATIC_SHM must be enabled for parsing static shared" " memory nodes\n");
     return -EINVAL;
 }
 #endif
 
-static int __init early_scan_node(const void *fdt,
-                                  int node, const char *name, int depth,
-                                  u32 address_cells, u32 size_cells,
+static int __init early_scan_node(const void *fdt, int node, const char *name,
+                                  int depth, u32 address_cells, u32 size_cells,
                                   void *data)
 {
     int rc = 0;
@@ -494,19 +520,33 @@ static int __init early_scan_node(const void *fdt,
      */
     if ( !efi_enabled(EFI_BOOT) &&
          device_tree_is_memory_node(fdt, node, depth) )
-        rc = process_memory_node(fdt, node, name, depth,
-                                 address_cells, size_cells, bootinfo_get_mem());
+        rc = process_memory_node(fdt,
+                                 node,
+                                 name,
+                                 depth,
+                                 address_cells,
+                                 size_cells,
+                                 bootinfo_get_mem());
     else if ( depth == 1 && !dt_node_cmp(name, "reserved-memory") )
-        rc = process_reserved_memory(fdt, node, name, depth,
-                                     address_cells, size_cells);
-    else if ( depth <= 3 && (device_tree_node_compatible(fdt, node, "xen,multiboot-module" ) ||
-              device_tree_node_compatible(fdt, node, "multiboot,module" )))
+        rc = process_reserved_memory(fdt,
+                                     node,
+                                     name,
+                                     depth,
+                                     address_cells,
+                                     size_cells);
+    else if ( depth <= 3 &&
+              (device_tree_node_compatible(fdt, node, "xen,multiboot-module") ||
+               device_tree_node_compatible(fdt, node, "multiboot,module")) )
         process_multiboot_node(fdt, node, name, address_cells, size_cells);
     else if ( depth == 1 && device_tree_node_matches(fdt, node, "chosen") )
         rc = process_chosen_node(fdt, node, name, address_cells, size_cells);
-    else if ( depth == 2 && device_tree_node_compatible(fdt, node, "xen,domain") )
+    else if ( depth == 2 &&
+              device_tree_node_compatible(fdt, node, "xen,domain") )
         rc = process_domain_node(fdt, node, name, address_cells, size_cells);
-    else if ( depth <= 3 && device_tree_node_compatible(fdt, node, "xen,domain-shared-memory-v1") )
+    else if ( depth <= 3 &&
+              device_tree_node_compatible(fdt,
+                                          node,
+                                          "xen,domain-shared-memory-v1") )
         rc = process_shm_node(fdt, node, address_cells, size_cells);
 
     if ( rc < 0 )
@@ -523,20 +563,21 @@ static void __init early_print_info(void)
     unsigned int i;
 
     for ( i = 0; i < mi->nr_banks; i++ )
-        printk("RAM: %"PRIpaddr" - %"PRIpaddr"\n",
-                mi->bank[i].start,
-                mi->bank[i].start + mi->bank[i].size - 1);
+        printk("RAM: %" PRIpaddr " - %" PRIpaddr "\n",
+               mi->bank[i].start,
+               mi->bank[i].start + mi->bank[i].size - 1);
     printk("\n");
-    for ( i = 0 ; i < mods->nr_mods; i++ )
-        printk("MODULE[%d]: %"PRIpaddr" - %"PRIpaddr" %-12s\n",
-                i,
-                mods->module[i].start,
-                mods->module[i].start + mods->module[i].size - 1,
-                boot_module_kind_as_string(mods->module[i].kind));
+    for ( i = 0; i < mods->nr_mods; i++ )
+        printk("MODULE[%d]: %" PRIpaddr " - %" PRIpaddr " %-12s\n",
+               i,
+               mods->module[i].start,
+               mods->module[i].start + mods->module[i].size - 1,
+               boot_module_kind_as_string(mods->module[i].kind));
 
     for ( i = 0; i < mem_resv->nr_banks; i++ )
     {
-        printk(" RESVD[%u]: %"PRIpaddr" - %"PRIpaddr"\n", i,
+        printk(" RESVD[%u]: %" PRIpaddr " - %" PRIpaddr "\n",
+               i,
                mem_resv->bank[i].start,
                mem_resv->bank[i].start + mem_resv->bank[i].size - 1);
     }
@@ -544,8 +585,9 @@ static void __init early_print_info(void)
     early_print_info_shmem();
 #endif
     printk("\n");
-    for ( i = 0 ; i < cmds->nr_mods; i++ )
-        printk("CMDLINE[%"PRIpaddr"]:%s %s\n", cmds->cmdline[i].start,
+    for ( i = 0; i < cmds->nr_mods; i++ )
+        printk("CMDLINE[%" PRIpaddr "]:%s %s\n",
+               cmds->cmdline[i].start,
                cmds->cmdline[i].dt_name,
                &cmds->cmdline[i].cmdline[0]);
     printk("\n");
@@ -626,8 +668,11 @@ size_t __init boot_fdt_info(const void *fdt, paddr_t paddr)
      * bank in memory first. There is no requirement that the DT will provide
      * the banks sorted in ascending order. So sort them through.
      */
-    sort(mem->bank, mem->nr_banks, sizeof(struct membank),
-         cmp_memory_node, swap_memory_node);
+    sort(mem->bank,
+         mem->nr_banks,
+         sizeof(struct membank),
+         cmp_memory_node,
+         swap_memory_node);
 
     early_print_info();
 
@@ -649,8 +694,8 @@ const __init char *boot_fdt_cmdline(const void *fdt)
         struct bootcmdline *dom0_cmdline =
             boot_cmdline_find_by_kind(BOOTMOD_KERNEL);
 
-        if (fdt_get_property(fdt, node, "xen,dom0-bootargs", NULL) ||
-            ( dom0_cmdline && dom0_cmdline->cmdline[0] ) )
+        if ( fdt_get_property(fdt, node, "xen,dom0-bootargs", NULL) ||
+             (dom0_cmdline && dom0_cmdline->cmdline[0]) )
             prop = fdt_get_property(fdt, node, "bootargs", NULL);
     }
     if ( prop == NULL )

@@ -76,7 +76,7 @@ int p2m_set_allocation(struct domain *d, unsigned long pages, bool *preempted)
 
     ASSERT(spin_is_locked(&d->arch.paging.lock));
 
-    for ( ; ; )
+    for ( ;; )
     {
         if ( d->arch.paging.p2m_total_pages < pages )
         {
@@ -95,7 +95,7 @@ int p2m_set_allocation(struct domain *d, unsigned long pages, bool *preempted)
         {
             /* Need to return memory to domheap */
             pg = page_list_remove_head(&d->arch.paging.p2m_freelist);
-            if( pg )
+            if ( pg )
             {
                 ACCESS_ONCE(d->arch.paging.p2m_total_pages) =
                     d->arch.paging.p2m_total_pages - 1;
@@ -128,7 +128,7 @@ int arch_set_paging_mempool_size(struct domain *d, uint64_t size)
     bool preempted = false;
     int rc;
 
-    if ( (size & ~PAGE_MASK) ||          /* Non page-sized request? */
+    if ( (size & ~PAGE_MASK) || /* Non page-sized request? */
          pages != (size >> PAGE_SHIFT) ) /* 32-bit overflow? */
         return -EINVAL;
 
@@ -167,13 +167,14 @@ void p2m_dump_info(struct domain *d)
     struct p2m_domain *p2m = p2m_get_hostp2m(d);
 
     p2m_read_lock(p2m);
-    printk("p2m mappings for domain %d (vmid %d):\n",
-           d->domain_id, p2m->vmid);
+    printk("p2m mappings for domain %d (vmid %d):\n", d->domain_id, p2m->vmid);
     BUG_ON(p2m->stats.mappings[0] || p2m->stats.shattered[0]);
     printk("  1G mappings: %ld (shattered %ld)\n",
-           p2m->stats.mappings[1], p2m->stats.shattered[1]);
+           p2m->stats.mappings[1],
+           p2m->stats.shattered[1]);
     printk("  2M mappings: %ld (shattered %ld)\n",
-           p2m->stats.mappings[2], p2m->stats.shattered[2]);
+           p2m->stats.mappings[2],
+           p2m->stats.shattered[2]);
     printk("  4K mappings: %ld\n", p2m->stats.mappings[3]);
     p2m_read_unlock(p2m);
 }
@@ -182,13 +183,13 @@ void dump_p2m_lookup(struct domain *d, paddr_t addr)
 {
     struct p2m_domain *p2m = p2m_get_hostp2m(d);
 
-    printk("dom%d IPA 0x%"PRIpaddr"\n", d->domain_id, addr);
+    printk("dom%d IPA 0x%" PRIpaddr "\n", d->domain_id, addr);
 
-    printk("P2M @ %p mfn:%#"PRI_mfn"\n",
-           p2m->root, mfn_x(page_to_mfn(p2m->root)));
+    printk("P2M @ %p mfn:%#" PRI_mfn "\n",
+           p2m->root,
+           mfn_x(page_to_mfn(p2m->root)));
 
-    dump_pt_walk(page_to_maddr(p2m->root), addr,
-                 P2M_ROOT_LEVEL, P2M_ROOT_PAGES);
+    dump_pt_walk(page_to_maddr(p2m->root), addr, P2M_ROOT_LEVEL, P2M_ROOT_PAGES);
 }
 
 /*
@@ -318,8 +319,7 @@ void p2m_tlb_flush_sync(struct p2m_domain *p2m)
  * The function will return NULL if the offset of the root table is
  * invalid.
  */
-static lpae_t *p2m_get_root_pointer(struct p2m_domain *p2m,
-                                    gfn_t gfn)
+static lpae_t *p2m_get_root_pointer(struct p2m_domain *p2m, gfn_t gfn)
 {
     unsigned long root_table;
 
@@ -328,8 +328,8 @@ static lpae_t *p2m_get_root_pointer(struct p2m_domain *p2m,
      * we can't use (P2M_ROOT_LEVEL - 1) because the root level might be
      * 0. Yet we still want to check if all the unused bits are zeroed.
      */
-    root_table = gfn_x(gfn) >> (XEN_PT_LEVEL_ORDER(P2M_ROOT_LEVEL) +
-                                XEN_PT_LPAE_SHIFT);
+    root_table = gfn_x(gfn) >>
+                 (XEN_PT_LEVEL_ORDER(P2M_ROOT_LEVEL) + XEN_PT_LPAE_SHIFT);
     if ( root_table >= P2M_ROOT_PAGES )
         return NULL;
 
@@ -445,10 +445,8 @@ static int p2m_next_level(struct p2m_domain *p2m, bool read_only,
  * valid will contain the value of bit[0] (e.g valid bit) of the
  * entry.
  */
-mfn_t p2m_get_entry(struct p2m_domain *p2m, gfn_t gfn,
-                    p2m_type_t *t, p2m_access_t *a,
-                    unsigned int *page_order,
-                    bool *valid)
+mfn_t p2m_get_entry(struct p2m_domain *p2m, gfn_t gfn, p2m_type_t *t,
+                    p2m_access_t *a, unsigned int *page_order, bool *valid)
 {
     paddr_t addr = gfn_to_gaddr(gfn);
     unsigned int level = 0;
@@ -615,7 +613,7 @@ static lpae_t mfn_to_p2m_entry(mfn_t mfn, p2m_type_t t, p2m_access_t a)
      * sh, xn and write bit will be defined in the following switches
      * based on mattr and t.
      */
-    lpae_t e = (lpae_t) {
+    lpae_t e = (lpae_t){
         .p2m.af = 1,
         .p2m.read = 1,
         .p2m.table = 1,
@@ -739,14 +737,14 @@ static int p2m_mem_access_radix_set(struct p2m_domain *p2m, gfn_t gfn,
         return 0;
     }
 
-    rc = radix_tree_insert(&p2m->mem_access_settings, gfn_x(gfn),
+    rc = radix_tree_insert(&p2m->mem_access_settings,
+                           gfn_x(gfn),
                            radix_tree_int_to_ptr(a));
     if ( rc == -EEXIST )
     {
         /* If a setting already exists, change it to the new one */
         radix_tree_replace_slot(
-            radix_tree_lookup_slot(
-                &p2m->mem_access_settings, gfn_x(gfn)),
+            radix_tree_lookup_slot(&p2m->mem_access_settings, gfn_x(gfn)),
             radix_tree_int_to_ptr(a));
         rc = 0;
     }
@@ -821,8 +819,8 @@ static void p2m_put_page(const lpae_t pte, unsigned int level)
 }
 
 /* Free lpae sub-tree behind an entry */
-static void p2m_free_entry(struct p2m_domain *p2m,
-                           lpae_t entry, unsigned int level)
+static void p2m_free_entry(struct p2m_domain *p2m, lpae_t entry,
+                           unsigned int level)
 {
     unsigned int i;
     lpae_t *table;
@@ -941,8 +939,11 @@ static bool p2m_split_superpage(struct p2m_domain *p2m, lpae_t *entry,
      * know whether the entry should be shattered for every entry.
      */
     if ( next_level != target )
-        rv = p2m_split_superpage(p2m, table + offsets[next_level],
-                                 level + 1, target, offsets);
+        rv = p2m_split_superpage(p2m,
+                                 table + offsets[next_level],
+                                 level + 1,
+                                 target,
+                                 offsets);
 
     if ( p2m->clean_pte )
         clean_dcache_va_range(table, PAGE_SIZE);
@@ -962,11 +963,8 @@ static bool p2m_split_superpage(struct p2m_domain *p2m, lpae_t *entry,
  * Insert an entry in the p2m. This should be called with a mapping
  * equal to a page/superpage (4K, 2M, 1G).
  */
-static int __p2m_set_entry(struct p2m_domain *p2m,
-                           gfn_t sgfn,
-                           unsigned int page_order,
-                           mfn_t smfn,
-                           p2m_type_t t,
+static int __p2m_set_entry(struct p2m_domain *p2m, gfn_t sgfn,
+                           unsigned int page_order, mfn_t smfn, p2m_type_t t,
                            p2m_access_t a)
 {
     unsigned int level = 0;
@@ -995,8 +993,8 @@ static int __p2m_set_entry(struct p2m_domain *p2m,
          * Don't try to allocate intermediate page table if the mapping
          * is about to be removed.
          */
-        rc = p2m_next_level(p2m, removing_mapping,
-                            level, &table, offsets[level]);
+        rc =
+            p2m_next_level(p2m, removing_mapping, level, &table, offsets[level]);
         if ( rc == GUEST_TABLE_MAP_FAILED )
         {
             /*
@@ -1006,7 +1004,7 @@ static int __p2m_set_entry(struct p2m_domain *p2m,
              * when removing a mapping as it may not exist in the
              * page table. In this case, just ignore it.
              */
-            rc = removing_mapping ?  0 : -ENOENT;
+            rc = removing_mapping ? 0 : -ENOENT;
             goto out;
         }
         else if ( rc != GUEST_TABLE_NORMAL_PAGE )
@@ -1146,8 +1144,10 @@ static int __p2m_set_entry(struct p2m_domain *p2m,
         if ( lpae_is_valid(*entry) )
             flush_flags |= IOMMU_FLUSHF_added;
 
-        rc = iommu_iotlb_flush(p2m->domain, _dfn(gfn_x(sgfn)),
-                               1UL << page_order, flush_flags);
+        rc = iommu_iotlb_flush(p2m->domain,
+                               _dfn(gfn_x(sgfn)),
+                               1UL << page_order,
+                               flush_flags);
     }
     else
         rc = 0;
@@ -1166,12 +1166,8 @@ out:
     return rc;
 }
 
-int p2m_set_entry(struct p2m_domain *p2m,
-                  gfn_t sgfn,
-                  unsigned long nr,
-                  mfn_t smfn,
-                  p2m_type_t t,
-                  p2m_access_t a)
+int p2m_set_entry(struct p2m_domain *p2m, gfn_t sgfn, unsigned long nr,
+                  mfn_t smfn, p2m_type_t t, p2m_access_t a)
 {
     int rc = 0;
 
@@ -1215,7 +1211,7 @@ int p2m_set_entry(struct p2m_domain *p2m,
 
         sgfn = gfn_add(sgfn, (1 << order));
         if ( !mfn_eq(smfn, INVALID_MFN) )
-           smfn = mfn_add(smfn, (1 << order));
+            smfn = mfn_add(smfn, (1 << order));
 
         nr -= (1 << order);
     }
@@ -1538,7 +1534,7 @@ int p2m_init(struct domain *d)
      * reached the memory
      */
     p2m->clean_pte = is_iommu_enabled(d) &&
-        !iommu_has_feature(d, IOMMU_FEAT_COHERENT_WALK);
+                     !iommu_has_feature(d, IOMMU_FEAT_COHERENT_WALK);
 
     /*
      * Make sure that the type chosen to is able to store the an vCPU ID
@@ -1546,10 +1542,10 @@ int p2m_init(struct domain *d)
      * the INVALID_VCPU_ID.
      */
     BUILD_BUG_ON((1 << (sizeof(p2m->last_vcpu_ran[0]) * 8)) < MAX_VIRT_CPUS);
-    BUILD_BUG_ON((1 << (sizeof(p2m->last_vcpu_ran[0])* 8)) < INVALID_VCPU_ID);
+    BUILD_BUG_ON((1 << (sizeof(p2m->last_vcpu_ran[0]) * 8)) < INVALID_VCPU_ID);
 
     for_each_possible_cpu(cpu)
-       p2m->last_vcpu_ran[cpu] = INVALID_VCPU_ID;
+        p2m->last_vcpu_ran[cpu] = INVALID_VCPU_ID;
 
     /*
      * "Trivial" initialisation is now complete.  Set the backpointer so
@@ -1590,8 +1586,7 @@ int relinquish_p2m_mapping(struct domain *d)
     start = p2m->lowest_mapped_gfn;
     end = gfn_add(p2m->max_mapped_gfn, 1);
 
-    for ( ; gfn_x(start) < gfn_x(end);
-          start = gfn_next_boundary(start, order) )
+    for ( ; gfn_x(start) < gfn_x(end); start = gfn_next_boundary(start, order) )
     {
         mfn_t mfn = p2m_get_entry(p2m, start, &t, NULL, &order, NULL);
 
@@ -1618,11 +1613,19 @@ int relinquish_p2m_mapping(struct domain *d)
              * For valid mapping, the start will always be aligned as
              * entry will be removed whilst relinquishing.
              */
-            rc = __p2m_set_entry(p2m, start, order, INVALID_MFN,
-                                 p2m_invalid, p2m_access_rwx);
+            rc = __p2m_set_entry(p2m,
+                                 start,
+                                 order,
+                                 INVALID_MFN,
+                                 p2m_invalid,
+                                 p2m_access_rwx);
             if ( unlikely(rc) )
             {
-                printk(XENLOG_G_ERR "Unable to remove mapping gfn=%#"PRI_gfn" order=%u from the p2m of domain %d\n", gfn_x(start), order, d->domain_id);
+                printk(XENLOG_G_ERR "Unable to remove mapping gfn=%#" PRI_gfn
+                                    " order=%u from the p2m of domain %d\n",
+                       gfn_x(start),
+                       order,
+                       d->domain_id);
                 break;
             }
         }
@@ -1704,28 +1707,30 @@ static void setup_virt_paging_one(void *data)
 void __init setup_virt_paging(void)
 {
     /* Setup Stage 2 address translation */
-    register_t val = VTCR_RES1|VTCR_SH0_IS|VTCR_ORGN0_WBWA|VTCR_IRGN0_WBWA;
+    register_t val = VTCR_RES1 | VTCR_SH0_IS | VTCR_ORGN0_WBWA |
+                     VTCR_IRGN0_WBWA;
 
     static const struct {
         unsigned int pabits; /* Physical Address Size */
-        unsigned int t0sz;   /* Desired T0SZ, minimum in comment */
+        unsigned int t0sz; /* Desired T0SZ, minimum in comment */
         unsigned int root_order; /* Page order of the root of the p2m */
-        unsigned int sl0;    /* Desired SL0, maximum in comment */
+        unsigned int sl0; /* Desired SL0, maximum in comment */
     } pa_range_info[] __initconst = {
-        /* T0SZ minimum and SL0 maximum from ARM DDI 0487H.a Table D5-6 */
-        /*      PA size, t0sz(min), root-order, sl0(max) */
+
+    /* T0SZ minimum and SL0 maximum from ARM DDI 0487H.a Table D5-6 */
+    /*      PA size, t0sz(min), root-order, sl0(max) */
 #ifdef CONFIG_ARM_64
-        [0] = { 32,      32/*32*/,  0,          1 },
-        [1] = { 36,      28/*28*/,  0,          1 },
-        [2] = { 40,      24/*24*/,  1,          1 },
-        [3] = { 42,      22/*22*/,  3,          1 },
-        [4] = { 44,      20/*20*/,  0,          2 },
-        [5] = { 48,      16/*16*/,  0,          2 },
-        [6] = { 52,      12/*12*/,  4,          2 },
-        [7] = { 0 }  /* Invalid */
+        [0] = { 32, 32 /*32*/, 0, 1 },
+          [1] = { 36, 28 /*28*/, 0, 1 },
+        [2] = { 40, 24 /*24*/, 1, 1 },
+          [3] = { 42, 22 /*22*/, 3, 1 },
+        [4] = { 44, 20 /*20*/, 0, 2 },
+          [5] = { 48, 16 /*16*/, 0, 2 },
+        [6] = { 52, 12 /*12*/, 4, 2 },
+          [7] = { 0 }  /* Invalid */
 #else
-        { 32,      0/*0*/,    0,          1 },
-        { 40,      24/*24*/,  1,          1 }
+        { 32, 0 /*0*/, 0, 1 },
+        { 40, 24 /*24*/, 1, 1 }
 #endif
     };
 
@@ -1740,8 +1745,7 @@ void __init setup_virt_paging(void)
      * Thus, pa_range_info[].t0sz is translated to its arm32 variant using
      * struct bitfields.
      */
-    struct
-    {
+    struct {
         signed int val:5;
     } t0sz_32;
 #else
@@ -1771,7 +1775,8 @@ void __init setup_virt_paging(void)
     }
 
     /* Check if we found the associated entry in the array */
-    if ( pa_range >= ARRAY_SIZE(pa_range_info) || !pa_range_info[pa_range].pabits )
+    if ( pa_range >= ARRAY_SIZE(pa_range_info) ||
+         !pa_range_info[pa_range].pabits )
         panic("%u-bit P2M is not supported\n", p2m_ipa_bits);
 
 #ifdef CONFIG_ARM_64
@@ -1799,15 +1804,17 @@ void __init setup_virt_paging(void)
     printk("P2M: %d-bit IPA with %d-bit PA and %d-bit VMID\n",
            p2m_ipa_bits,
            pa_range_info[pa_range].pabits,
-           ( MAX_VMID == MAX_VMID_16_BIT ) ? 16 : 8);
+           (MAX_VMID == MAX_VMID_16_BIT) ? 16 : 8);
 
-    printk("P2M: %d levels with order-%d root, VTCR 0x%"PRIregister"\n",
-           4 - P2M_ROOT_LEVEL, P2M_ROOT_ORDER, val);
+    printk("P2M: %d levels with order-%d root, VTCR 0x%" PRIregister "\n",
+           4 - P2M_ROOT_LEVEL,
+           P2M_ROOT_ORDER,
+           val);
 
     p2m_vmid_allocator_init();
 
     /* It is not allowed to concatenate a level zero root */
-    BUG_ON( P2M_ROOT_LEVEL == 0 && P2M_ROOT_ORDER > 0 );
+    BUG_ON(P2M_ROOT_LEVEL == 0 && P2M_ROOT_ORDER > 0);
     vtcr = val;
 
     /*
@@ -1820,7 +1827,8 @@ void __init setup_virt_paging(void)
 
         root = p2m_allocate_root();
         if ( !root )
-            panic("Unable to allocate root table for ARM64_WORKAROUND_AT_SPECULATE\n");
+            panic(
+                "Unable to allocate root table for ARM64_WORKAROUND_AT_SPECULATE\n");
 
         empty_root_mfn = page_to_mfn(root);
     }
@@ -1830,8 +1838,7 @@ void __init setup_virt_paging(void)
 }
 
 static int cpu_virt_paging_callback(struct notifier_block *nfb,
-                                    unsigned long action,
-                                    void *hcpu)
+                                    unsigned long action, void *hcpu)
 {
     switch ( action )
     {
@@ -1856,6 +1863,7 @@ static int __init cpu_virt_paging_init(void)
 
     return 0;
 }
+
 /*
  * Initialization of the notifier has to be done at init rather than presmp_init
  * phase because: the registered notifier is used to setup virtual paging for

@@ -23,63 +23,63 @@
 #include <xen/stdbool.h>
 
 enum aarch64_insn_hint_op {
-	AARCH64_INSN_HINT_NOP	= 0x0 << 5,
-	AARCH64_INSN_HINT_YIELD	= 0x1 << 5,
-	AARCH64_INSN_HINT_WFE	= 0x2 << 5,
-	AARCH64_INSN_HINT_WFI	= 0x3 << 5,
-	AARCH64_INSN_HINT_SEV	= 0x4 << 5,
-	AARCH64_INSN_HINT_SEVL	= 0x5 << 5,
+    AARCH64_INSN_HINT_NOP = 0x0 << 5,
+    AARCH64_INSN_HINT_YIELD = 0x1 << 5,
+    AARCH64_INSN_HINT_WFE = 0x2 << 5,
+    AARCH64_INSN_HINT_WFI = 0x3 << 5,
+    AARCH64_INSN_HINT_SEV = 0x4 << 5,
+    AARCH64_INSN_HINT_SEVL = 0x5 << 5,
 };
 
 enum aarch64_insn_imm_type {
-	AARCH64_INSN_IMM_ADR,
-	AARCH64_INSN_IMM_26,
-	AARCH64_INSN_IMM_19,
-	AARCH64_INSN_IMM_16,
-	AARCH64_INSN_IMM_14,
-	AARCH64_INSN_IMM_12,
-	AARCH64_INSN_IMM_9,
-	AARCH64_INSN_IMM_7,
-	AARCH64_INSN_IMM_6,
-	AARCH64_INSN_IMM_S,
-	AARCH64_INSN_IMM_R,
-	AARCH64_INSN_IMM_MAX
+    AARCH64_INSN_IMM_ADR,
+    AARCH64_INSN_IMM_26,
+    AARCH64_INSN_IMM_19,
+    AARCH64_INSN_IMM_16,
+    AARCH64_INSN_IMM_14,
+    AARCH64_INSN_IMM_12,
+    AARCH64_INSN_IMM_9,
+    AARCH64_INSN_IMM_7,
+    AARCH64_INSN_IMM_6,
+    AARCH64_INSN_IMM_S,
+    AARCH64_INSN_IMM_R,
+    AARCH64_INSN_IMM_MAX
 };
 
 enum aarch64_insn_branch_type {
-	AARCH64_INSN_BRANCH_NOLINK,
-	AARCH64_INSN_BRANCH_LINK,
-	AARCH64_INSN_BRANCH_RETURN,
-	AARCH64_INSN_BRANCH_COMP_ZERO,
-	AARCH64_INSN_BRANCH_COMP_NONZERO,
+    AARCH64_INSN_BRANCH_NOLINK,
+    AARCH64_INSN_BRANCH_LINK,
+    AARCH64_INSN_BRANCH_RETURN,
+    AARCH64_INSN_BRANCH_COMP_ZERO,
+    AARCH64_INSN_BRANCH_COMP_NONZERO,
 };
 
-#define	__AARCH64_INSN_FUNCS(abbr, mask, val)	\
+#define __AARCH64_INSN_FUNCS(abbr, mask, val)	\
 static always_inline bool aarch64_insn_is_##abbr(u32 code) \
 { return (code & (mask)) == (val); } \
 static always_inline u32 aarch64_insn_get_##abbr##_value(void) \
 { return (val); }
 
-__AARCH64_INSN_FUNCS(b,		0xFC000000U, 0x14000000U)
-__AARCH64_INSN_FUNCS(bl,	0xFC000000U, 0x94000000U)
-__AARCH64_INSN_FUNCS(cbz,	0x7F000000U, 0x34000000U)
-__AARCH64_INSN_FUNCS(cbnz,	0x7F000000U, 0x35000000U)
-__AARCH64_INSN_FUNCS(tbz,	0x7F000000U, 0x36000000U)
-__AARCH64_INSN_FUNCS(tbnz,	0x7F000000U, 0x37000000U)
-__AARCH64_INSN_FUNCS(bcond,	0xFF000010U, 0x54000000U)
-__AARCH64_INSN_FUNCS(hint,	0xFFFFF01FU, 0xD503201FU)
+__AARCH64_INSN_FUNCS(b, 0xFC000000U, 0x14000000U)
+__AARCH64_INSN_FUNCS(bl, 0xFC000000U, 0x94000000U)
+__AARCH64_INSN_FUNCS(cbz, 0x7F000000U, 0x34000000U)
+__AARCH64_INSN_FUNCS(cbnz, 0x7F000000U, 0x35000000U)
+__AARCH64_INSN_FUNCS(tbz, 0x7F000000U, 0x36000000U)
+__AARCH64_INSN_FUNCS(tbnz, 0x7F000000U, 0x37000000U)
+__AARCH64_INSN_FUNCS(bcond, 0xFF000010U, 0x54000000U)
+__AARCH64_INSN_FUNCS(hint, 0xFFFFF01FU, 0xD503201FU)
 
 bool aarch64_insn_is_branch_imm(u32 insn);
 
 u64 aarch64_insn_decode_immediate(enum aarch64_insn_imm_type type, u32 insn);
-u32 aarch64_insn_encode_immediate(enum aarch64_insn_imm_type type,
-				  u32 insn, u64 imm);
+u32 aarch64_insn_encode_immediate(enum aarch64_insn_imm_type type, u32 insn,
+                                  u64 imm);
 
 int32_t aarch64_get_branch_offset(uint32_t insn);
 uint32_t aarch64_set_branch_offset(uint32_t insn, int32_t offset);
 
 u32 aarch64_insn_gen_branch_imm(unsigned long pc, unsigned long addr,
-				enum aarch64_insn_branch_type type);
+                                enum aarch64_insn_branch_type type);
 u32 aarch64_insn_gen_hint(enum aarch64_insn_hint_op op);
 u32 aarch64_insn_gen_nop(void);
 

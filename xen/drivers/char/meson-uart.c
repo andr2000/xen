@@ -87,7 +87,7 @@ static void __init meson_uart_init_preirq(struct serial_port *port)
 
     /* Disable Rx/Tx interrupts */
     clrbits(uart->regs + AML_UART_CONTROL_REG,
-               (AML_UART_RX_INT_EN | AML_UART_TX_INT_EN));
+            (AML_UART_RX_INT_EN | AML_UART_TX_INT_EN));
 }
 
 static void __init meson_uart_init_postirq(struct serial_port *port)
@@ -95,8 +95,8 @@ static void __init meson_uart_init_postirq(struct serial_port *port)
     struct meson_uart *uart = port->uart;
 
     uart->irqaction.handler = meson_uart_interrupt;
-    uart->irqaction.name    = "meson_uart";
-    uart->irqaction.dev_id  = port;
+    uart->irqaction.name = "meson_uart";
+    uart->irqaction.dev_id = port;
 
     if ( setup_irq(uart->irq, 0, &uart->irqaction) != 0 )
     {
@@ -179,15 +179,15 @@ static int meson_uart_tx_ready(struct serial_port *port)
 }
 
 static struct uart_driver __read_mostly meson_uart_driver = {
-    .init_preirq  = meson_uart_init_preirq,
+    .init_preirq = meson_uart_init_preirq,
     .init_postirq = meson_uart_init_postirq,
-    .putc         = meson_uart_putc,
-    .getc         = meson_uart_getc,
-    .tx_ready     = meson_uart_tx_ready,
-    .stop_tx      = meson_uart_stop_tx,
-    .start_tx     = meson_uart_start_tx,
-    .irq          = meson_irq,
-    .vuart_info   = meson_vuart_info,
+    .putc = meson_uart_putc,
+    .getc = meson_uart_getc,
+    .tx_ready = meson_uart_tx_ready,
+    .stop_tx = meson_uart_stop_tx,
+    .start_tx = meson_uart_start_tx,
+    .irq = meson_irq,
+    .vuart_info = meson_vuart_info,
 };
 
 static int __init meson_uart_init(struct dt_device_node *dev, const void *data)
@@ -216,7 +216,7 @@ static int __init meson_uart_init(struct dt_device_node *dev, const void *data)
         return -EINVAL;
     }
 
-    uart->irq  = res;
+    uart->irq = res;
 
     uart->regs = ioremap_nocache(addr, size);
     if ( !uart->regs )
@@ -239,8 +239,7 @@ static int __init meson_uart_init(struct dt_device_node *dev, const void *data)
     return 0;
 }
 
-static const struct dt_device_match meson_dt_match[] __initconst =
-{
+static const struct dt_device_match meson_dt_match[] __initconst = {
     DT_MATCH_COMPATIBLE("amlogic,meson-uart"),
     DT_MATCH_COMPATIBLE("amlogic,meson6-uart"),
     DT_MATCH_COMPATIBLE("amlogic,meson8-uart"),
@@ -250,8 +249,7 @@ static const struct dt_device_match meson_dt_match[] __initconst =
 };
 
 DT_DEVICE_START(meson, "Amlogic UART", DEVICE_SERIAL)
-    .dt_match = meson_dt_match,
-    .init = meson_uart_init,
+    .dt_match = meson_dt_match, .init = meson_uart_init,
 DT_DEVICE_END
 
 /*

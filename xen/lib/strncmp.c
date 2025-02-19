@@ -10,19 +10,20 @@
  * @ct: Another string
  * @count: The maximum number of bytes to compare
  */
-int (strncmp)(const char *cs, const char *ct, size_t count)
+int(strncmp)(const char *cs, const char *ct, size_t count)
 {
-	unsigned char *csu = (unsigned char *)cs;
-	unsigned char *ctu = (unsigned char *)ct;
-	int res = 0;
+    unsigned char *csu = (unsigned char *)cs;
+    unsigned char *ctu = (unsigned char *)ct;
+    int res = 0;
 
-	while (count) {
-		if ((res = *csu - *ctu++) != 0 || !*csu++)
-			break;
-		count--;
-	}
+    while ( count )
+    {
+        if ( (res = *csu - *ctu++) != 0 || !*csu++ )
+            break;
+        count--;
+    }
 
-	return res;
+    return res;
 }
 
 /*

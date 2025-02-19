@@ -114,10 +114,9 @@ static int gcov_info_dump_payload(const struct gcov_info *info,
     *off += buf_size;
 
     ret = 0;
- out:
+out:
     xfree(buf);
     return ret;
-
 }
 
 static uint32_t cf_check gcov_get_size(void)
@@ -163,7 +162,9 @@ static int gcov_dump_one_record(const struct gcov_info *info,
 
     payload_size = gcov_info_payload_size(info);
     /* Payload size */
-    if ( copy_to_guest_offset(buffer, *off, (char*)&payload_size,
+    if ( copy_to_guest_offset(buffer,
+                              *off,
+                              (char *)&payload_size,
                               sizeof(uint32_t)) )
         return -EFAULT;
     *off += sizeof(uint32_t);
@@ -172,8 +173,8 @@ static int gcov_dump_one_record(const struct gcov_info *info,
     return gcov_info_dump_payload(info, buffer, off);
 }
 
-static int cf_check gcov_dump_all(
-    XEN_GUEST_HANDLE_PARAM(char) buffer, uint32_t *buffer_size)
+static int cf_check gcov_dump_all(XEN_GUEST_HANDLE_PARAM(char) buffer,
+                                  uint32_t *buffer_size)
 {
     uint32_t off;
     uint32_t magic = XEN_GCOV_FORMAT_MAGIC;
@@ -206,7 +207,7 @@ static int cf_check gcov_dump_all(
     *buffer_size = off;
 
     ret = 0;
- out:
+out:
     return ret;
 }
 

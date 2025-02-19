@@ -42,8 +42,7 @@ void flush_page_to_ram(unsigned long mfn, bool sync_icache)
         invalidate_icache();
 }
 
-int steal_page(
-    struct domain *d, struct page_info *page, unsigned int memflags)
+int steal_page(struct domain *d, struct page_info *page, unsigned int memflags)
 {
     return -EOPNOTSUPP;
 }
@@ -81,7 +80,7 @@ void share_xen_page_with_guest(struct page_info *page, struct domain *d,
     page->u.inuse.type_info &= ~(PGT_type_mask | PGT_count_mask);
     page->u.inuse.type_info |= (flags == SHARE_ro ? PGT_none
                                                   : PGT_writable_page) |
-                                MASK_INSR(1, PGT_count_mask);
+                               MASK_INSR(1, PGT_count_mask);
 
     page_set_owner(page, d);
     smp_wmb(); /* install valid domain ptr before updating refcnt. */
@@ -99,12 +98,9 @@ void share_xen_page_with_guest(struct page_info *page, struct domain *d,
     nrspin_unlock(&d->page_alloc_lock);
 }
 
-int xenmem_add_to_physmap_one(
-    struct domain *d,
-    unsigned int space,
-    union add_to_physmap_extra extra,
-    unsigned long idx,
-    gfn_t gfn)
+int xenmem_add_to_physmap_one(struct domain *d, unsigned int space,
+                              union add_to_physmap_extra extra,
+                              unsigned long idx, gfn_t gfn)
 {
     mfn_t mfn = INVALID_MFN;
     int rc;
@@ -260,7 +256,8 @@ static struct domain *page_get_owner_and_nr_reference(struct page_info *page,
         return NULL;
     }
 
-    do {
+    do
+    {
         x = y;
         /*
          * Count ==  0: Page is not allocated, so we cannot take a reference.
@@ -268,8 +265,7 @@ static struct domain *page_get_owner_and_nr_reference(struct page_info *page,
          */
         if ( unlikely(((x + nr) & PGC_count_mask) <= nr) )
             return NULL;
-    }
-    while ( (y = cmpxchg(&page->count_info, x, x + nr)) != x );
+    } while ( (y = cmpxchg(&page->count_info, x, x + nr)) != x );
 
     owner = page_get_owner(page);
     ASSERT(owner);
@@ -286,12 +282,12 @@ void put_page_nr(struct page_info *page, unsigned long nr)
 {
     unsigned long nx, x, y = page->count_info;
 
-    do {
+    do
+    {
         ASSERT((y & PGC_count_mask) >= nr);
-        x  = y;
+        x = y;
         nx = x - nr;
-    }
-    while ( unlikely((y = cmpxchg(&page->count_info, x, nx)) != x) );
+    } while ( unlikely((y = cmpxchg(&page->count_info, x, nx)) != x) );
 
     if ( unlikely((nx & PGC_count_mask) == 0) )
     {
@@ -339,20 +335,23 @@ void put_page_type(struct page_info *page)
     return;
 }
 
-int create_grant_host_mapping(uint64_t gpaddr, mfn_t frame,
-                              unsigned int flags, unsigned int cache_flags)
+int create_grant_host_mapping(uint64_t gpaddr, mfn_t frame, unsigned int flags,
+                              unsigned int cache_flags)
 {
     int rc;
     p2m_type_t t = p2m_grant_map_rw;
 
-    if ( cache_flags  || (flags & ~GNTMAP_readonly) != GNTMAP_host_map )
+    if ( cache_flags || (flags & ~GNTMAP_readonly) != GNTMAP_host_map )
         return GNTST_general_error;
 
     if ( flags & GNTMAP_readonly )
         t = p2m_grant_map_ro;
 
-    rc = guest_physmap_add_entry(current->domain, gaddr_to_gfn(gpaddr),
-                                 frame, 0, t);
+    rc = guest_physmap_add_entry(current->domain,
+                                 gaddr_to_gfn(gpaddr),
+                                 frame,
+                                 0,
+                                 t);
 
     if ( rc )
         return GNTST_general_error;

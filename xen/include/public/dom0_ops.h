@@ -48,6 +48,7 @@ typedef uint64_t cpumap_t;
 
 /* Unsupported legacy operation -- defined for API compatibility. */
 #define DOM0_MSR                 15
+
 struct dom0_msr {
     /* IN variables. */
     uint32_t write;
@@ -64,10 +65,11 @@ DEFINE_XEN_GUEST_HANDLE(dom0_msr_t);
 
 /* Unsupported legacy operation -- defined for API compatibility. */
 #define DOM0_PHYSICAL_MEMORY_MAP 40
+
 struct dom0_memory_map_entry {
     uint64_t start, end;
     uint32_t flags; /* reserved */
-    uint8_t  is_ram;
+    uint8_t is_ram;
 };
 typedef struct dom0_memory_map_entry dom0_memory_map_entry_t;
 DEFINE_XEN_GUEST_HANDLE(dom0_memory_map_entry_t);
@@ -75,16 +77,17 @@ DEFINE_XEN_GUEST_HANDLE(dom0_memory_map_entry_t);
 struct dom0_op {
     uint32_t cmd;
     uint32_t interface_version; /* DOM0_INTERFACE_VERSION */
+
     union {
-        struct dom0_msr               msr;
-        struct dom0_settime           settime;
-        struct dom0_add_memtype       add_memtype;
-        struct dom0_del_memtype       del_memtype;
-        struct dom0_read_memtype      read_memtype;
-        struct dom0_microcode         microcode;
-        struct dom0_platform_quirk    platform_quirk;
-        struct dom0_memory_map_entry  physical_memory_map;
-        uint8_t                       pad[128];
+        struct dom0_msr msr;
+        struct dom0_settime settime;
+        struct dom0_add_memtype add_memtype;
+        struct dom0_del_memtype del_memtype;
+        struct dom0_read_memtype read_memtype;
+        struct dom0_microcode microcode;
+        struct dom0_platform_quirk platform_quirk;
+        struct dom0_memory_map_entry physical_memory_map;
+        uint8_t pad[128];
     } u;
 };
 typedef struct dom0_op dom0_op_t;

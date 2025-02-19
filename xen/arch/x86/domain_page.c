@@ -137,7 +137,8 @@ void *map_domain_page(mfn_t mfn)
         {
             /* Replace a hash entry instead. */
             i = MAPHASH_HASHFN(mfn_x(mfn));
-            do {
+            do
+            {
                 hashent = &vcache->hash[i];
                 if ( hashent->idx != MAPHASHENT_NOTINUSE && !hashent->refcnt )
                 {
@@ -168,7 +169,7 @@ void *map_domain_page(mfn_t mfn)
 
     l1e_write(&MAPCACHE_L1ENT(idx), l1e_from_mfn(mfn, __PAGE_HYPERVISOR_RW));
 
- out:
+out:
     local_irq_restore(flags);
     return (void *)MAPCACHE_VIRT_START + pfn_to_paddr(idx);
 }
@@ -209,8 +210,7 @@ void unmap_domain_page(const void *ptr)
         if ( hashent->idx != MAPHASHENT_NOTINUSE )
         {
             /* /First/, zap the PTE. */
-            ASSERT(l1e_get_pfn(MAPCACHE_L1ENT(hashent->idx)) ==
-                   hashent->mfn);
+            ASSERT(l1e_get_pfn(MAPCACHE_L1ENT(hashent->idx)) == hashent->mfn);
             l1e_write(&MAPCACHE_L1ENT(hashent->idx), l1e_empty());
             /* /Second/, mark as garbage. */
             set_bit(hashent->idx, dcache->garbage);
@@ -243,8 +243,10 @@ int mapcache_domain_init(struct domain *d)
         return 0;
 #endif
 
-    BUILD_BUG_ON(MAPCACHE_VIRT_END + PAGE_SIZE * (3 +
-                 2 * PFN_UP(BITS_TO_LONGS(MAPCACHE_ENTRIES) * sizeof(long))) >
+    BUILD_BUG_ON(MAPCACHE_VIRT_END +
+                     PAGE_SIZE *
+                         (3 + 2 * PFN_UP(BITS_TO_LONGS(MAPCACHE_ENTRIES) *
+                                         sizeof(long))) >
                  MAPCACHE_VIRT_START + (PERDOMAIN_SLOT_MBYTES << 20));
     bitmap_pages = PFN_UP(BITS_TO_LONGS(MAPCACHE_ENTRIES) * sizeof(long));
     dcache->inuse = (void *)MAPCACHE_VIRT_END + PAGE_SIZE;
@@ -253,9 +255,11 @@ int mapcache_domain_init(struct domain *d)
 
     spin_lock_init(&dcache->lock);
 
-    return create_perdomain_mapping(d, (unsigned long)dcache->inuse,
+    return create_perdomain_mapping(d,
+                                    (unsigned long)dcache->inuse,
                                     2 * bitmap_pages + 1,
-                                    NIL(l1_pgentry_t *), NULL);
+                                    NIL(l1_pgentry_t *),
+                                    NULL);
 }
 
 int mapcache_vcpu_init(struct vcpu *v)
@@ -272,16 +276,25 @@ int mapcache_vcpu_init(struct vcpu *v)
     if ( ents > dcache->entries )
     {
         /* Populate page tables. */
-        int rc = create_perdomain_mapping(d, MAPCACHE_VIRT_START, ents,
-                                          NIL(l1_pgentry_t *), NULL);
+        int rc = create_perdomain_mapping(d,
+                                          MAPCACHE_VIRT_START,
+                                          ents,
+                                          NIL(l1_pgentry_t *),
+                                          NULL);
 
         /* Populate bit maps. */
         if ( !rc )
-            rc = create_perdomain_mapping(d, (unsigned long)dcache->inuse,
-                                          nr, NULL, NIL(struct page_info *));
+            rc = create_perdomain_mapping(d,
+                                          (unsigned long)dcache->inuse,
+                                          nr,
+                                          NULL,
+                                          NIL(struct page_info *));
         if ( !rc )
-            rc = create_perdomain_mapping(d, (unsigned long)dcache->garbage,
-                                          nr, NULL, NIL(struct page_info *));
+            rc = create_perdomain_mapping(d,
+                                          (unsigned long)dcache->garbage,
+                                          nr,
+                                          NULL,
+                                          NIL(struct page_info *));
 
         if ( rc )
             return rc;
@@ -304,10 +317,9 @@ int mapcache_vcpu_init(struct vcpu *v)
 
 void *map_domain_page_global(mfn_t mfn)
 {
-    ASSERT(!in_irq() &&
-           ((system_state >= SYS_STATE_boot &&
-             system_state < SYS_STATE_active) ||
-            local_irq_is_enabled()));
+    ASSERT(!in_irq() && ((system_state >= SYS_STATE_boot &&
+                          system_state < SYS_STATE_active) ||
+                         local_irq_is_enabled()));
 
 #ifdef NDEBUG
     if ( mfn_x(mfn) <= PFN_DOWN(__pa(HYPERVISOR_VIRT_END - 1)) )

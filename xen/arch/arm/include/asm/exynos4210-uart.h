@@ -21,7 +21,6 @@
 #ifndef __ASM_ARM_EXYNOS4210_H
 #define __ASM_ARM_EXYNOS4210_H
 
-
 /*
  * this value is only valid for UART 2 and UART 3
  * XXX: define per UART

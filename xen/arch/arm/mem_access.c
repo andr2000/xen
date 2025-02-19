@@ -22,17 +22,9 @@ static int __p2m_get_mem_access(struct domain *d, gfn_t gfn,
 
     static const xenmem_access_t memaccess[] = {
 #define ACCESS(ac) [p2m_access_##ac] = XENMEM_access_##ac
-            ACCESS(n),
-            ACCESS(r),
-            ACCESS(w),
-            ACCESS(rw),
-            ACCESS(x),
-            ACCESS(rx),
-            ACCESS(wx),
-            ACCESS(rwx),
-            ACCESS(rx2rw),
-            ACCESS(n2rwx),
-            ACCESS(r_pw),
+        ACCESS(n),     ACCESS(r),     ACCESS(w),    ACCESS(rw),
+        ACCESS(x),     ACCESS(rx),    ACCESS(wx),   ACCESS(rwx),
+        ACCESS(rx2rw), ACCESS(n2rwx), ACCESS(r_pw),
 #undef ACCESS
     };
 
@@ -88,9 +80,9 @@ static int __p2m_get_mem_access(struct domain *d, gfn_t gfn,
  * Only in these cases we do a software-based type check and fetch the page if
  * we indeed found a conflicting mem_access setting.
  */
-struct page_info*
-p2m_mem_access_check_and_get_page(vaddr_t gva, unsigned long flag,
-                                  const struct vcpu *v)
+struct page_info *p2m_mem_access_check_and_get_page(vaddr_t gva,
+                                                    unsigned long flag,
+                                                    const struct vcpu *v)
 {
     long rc;
     unsigned int perms;
@@ -271,14 +263,24 @@ bool p2m_mem_access_check(paddr_t gpa, vaddr_t gla, const struct npfec npfec)
     /* First, handle rx2rw and n2rwx conversion automatically. */
     if ( npfec.write_access && xma == XENMEM_access_rx2rw )
     {
-        rc = p2m_set_mem_access(v->domain, gaddr_to_gfn(gpa), 1,
-                                0, ~0, XENMEM_access_rw, 0);
+        rc = p2m_set_mem_access(v->domain,
+                                gaddr_to_gfn(gpa),
+                                1,
+                                0,
+                                ~0,
+                                XENMEM_access_rw,
+                                0);
         return false;
     }
     else if ( xma == XENMEM_access_n2rwx )
     {
-        rc = p2m_set_mem_access(v->domain, gaddr_to_gfn(gpa), 1,
-                                0, ~0, XENMEM_access_rwx, 0);
+        rc = p2m_set_mem_access(v->domain,
+                                gaddr_to_gfn(gpa),
+                                1,
+                                0,
+                                ~0,
+                                XENMEM_access_rwx,
+                                0);
     }
 
     /* Otherwise, check if there is a vm_event monitor subscriber */
@@ -287,9 +289,11 @@ bool p2m_mem_access_check(paddr_t gpa, vaddr_t gla, const struct npfec npfec)
         /* No listener */
         if ( p2m->access_required )
         {
-            gdprintk(XENLOG_INFO, "Memory access permissions failure, "
-                                  "no vm_event listener VCPU %d, dom %d\n",
-                                  v->vcpu_id, v->domain->domain_id);
+            gdprintk(
+                XENLOG_INFO,
+                "Memory access permissions failure, " "no vm_event listener VCPU %d, dom %d\n",
+                v->vcpu_id,
+                v->domain->domain_id);
             domain_crash(v->domain);
         }
         else
@@ -299,8 +303,13 @@ bool p2m_mem_access_check(paddr_t gpa, vaddr_t gla, const struct npfec npfec)
             {
                 /* A listener is not required, so clear the access
                  * restrictions. */
-                rc = p2m_set_mem_access(v->domain, gaddr_to_gfn(gpa), 1,
-                                        0, ~0, XENMEM_access_rwx, 0);
+                rc = p2m_set_mem_access(v->domain,
+                                        gaddr_to_gfn(gpa),
+                                        1,
+                                        0,
+                                        ~0,
+                                        XENMEM_access_rwx,
+                                        0);
             }
         }
 
@@ -315,7 +324,7 @@ bool p2m_mem_access_check(paddr_t gpa, vaddr_t gla, const struct npfec npfec)
 
         /* Send request to mem access subscriber */
         req->u.mem_access.gfn = gpa >> PAGE_SHIFT;
-        req->u.mem_access.offset =  gpa & ((1 << PAGE_SHIFT) - 1);
+        req->u.mem_access.offset = gpa & ((1 << PAGE_SHIFT) - 1);
         if ( npfec.gla_valid )
         {
             req->u.mem_access.flags |= MEM_ACCESS_GLA_VALID;
@@ -326,9 +335,9 @@ bool p2m_mem_access_check(paddr_t gpa, vaddr_t gla, const struct npfec npfec)
             else if ( npfec.kind == npfec_kind_in_gpt )
                 req->u.mem_access.flags |= MEM_ACCESS_FAULT_IN_GPT;
         }
-        req->u.mem_access.flags |= npfec.read_access    ? MEM_ACCESS_R : 0;
-        req->u.mem_access.flags |= npfec.write_access   ? MEM_ACCESS_W : 0;
-        req->u.mem_access.flags |= npfec.insn_fetch     ? MEM_ACCESS_X : 0;
+        req->u.mem_access.flags |= npfec.read_access ? MEM_ACCESS_R : 0;
+        req->u.mem_access.flags |= npfec.write_access ? MEM_ACCESS_W : 0;
+        req->u.mem_access.flags |= npfec.insn_fetch ? MEM_ACCESS_X : 0;
 
         if ( monitor_traps(v, (xma != XENMEM_access_n2rwx), req) < 0 )
             domain_crash(v->domain);
@@ -354,17 +363,9 @@ long p2m_set_mem_access(struct domain *d, gfn_t gfn, uint32_t nr,
 
     static const p2m_access_t memaccess[] = {
 #define ACCESS(ac) [XENMEM_access_##ac] = p2m_access_##ac
-        ACCESS(n),
-        ACCESS(r),
-        ACCESS(w),
-        ACCESS(rw),
-        ACCESS(x),
-        ACCESS(rx),
-        ACCESS(wx),
-        ACCESS(rwx),
-        ACCESS(rx2rw),
-        ACCESS(n2rwx),
-        ACCESS(r_pw),
+        ACCESS(n),     ACCESS(r),     ACCESS(w),    ACCESS(rw),
+        ACCESS(x),     ACCESS(rx),    ACCESS(wx),   ACCESS(rwx),
+        ACCESS(rx2rw), ACCESS(n2rwx), ACCESS(r_pw),
 #undef ACCESS
     };
 
@@ -401,7 +402,6 @@ long p2m_set_mem_access(struct domain *d, gfn_t gfn, uint32_t nr,
         p2m_type_t t;
         mfn_t mfn = p2m_get_entry(p2m, gfn, &t, NULL, &order, NULL);
 
-
         if ( !mfn_eq(mfn, INVALID_MFN) )
         {
             order = 0;
@@ -434,8 +434,8 @@ long p2m_set_mem_access_multi(struct domain *d,
     return -EOPNOTSUPP;
 }
 
-int p2m_get_mem_access(struct domain *d, gfn_t gfn,
-                       xenmem_access_t *access, unsigned int altp2m_idx)
+int p2m_get_mem_access(struct domain *d, gfn_t gfn, xenmem_access_t *access,
+                       unsigned int altp2m_idx)
 {
     int ret;
     struct p2m_domain *p2m = p2m_get_hostp2m(d);

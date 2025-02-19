@@ -23,10 +23,9 @@ static int register_guest_nmi_callback(unsigned long address)
     if ( !is_canonical_address(address) )
         return -EINVAL;
 
-    t->vector  = X86_EXC_NMI;
-    t->flags   = 0;
-    t->cs      = (is_pv_32bit_domain(d) ?
-                  FLAT_COMPAT_KERNEL_CS : FLAT_KERNEL_CS);
+    t->vector = X86_EXC_NMI;
+    t->flags = 0;
+    t->cs = (is_pv_32bit_domain(d) ? FLAT_COMPAT_KERNEL_CS : FLAT_KERNEL_CS);
     t->address = address;
     TI_SET_IF(t, 1);
 
@@ -80,14 +79,14 @@ static long register_guest_callback(const struct callback_register *reg)
 
     case CALLBACKTYPE_syscall32:
         curr->arch.pv.syscall32_callback_eip = reg->address;
-        curr->arch.pv.syscall32_disables_events =
-            !!(reg->flags & CALLBACKF_mask_events);
+        curr->arch.pv.syscall32_disables_events = !!(reg->flags &
+                                                     CALLBACKF_mask_events);
         break;
 
     case CALLBACKTYPE_sysenter:
         curr->arch.pv.sysenter_callback_eip = reg->address;
-        curr->arch.pv.sysenter_disables_events =
-            !!(reg->flags & CALLBACKF_mask_events);
+        curr->arch.pv.sysenter_disables_events = !!(reg->flags &
+                                                    CALLBACKF_mask_events);
         break;
 
     case CALLBACKTYPE_nmi:
@@ -167,9 +166,9 @@ long do_callback_op(int cmd, XEN_GUEST_HANDLE_PARAM(const_void) arg)
     return ret;
 }
 
-long do_set_callbacks(
-    unsigned long event_address, unsigned long failsafe_address,
-    unsigned long syscall_address)
+long do_set_callbacks(unsigned long event_address,
+                      unsigned long failsafe_address,
+                      unsigned long syscall_address)
 {
     struct callback_register event = {
         .type = CALLBACKTYPE_event,
@@ -222,15 +221,15 @@ static int compat_register_guest_callback(struct compat_callback_register *reg)
     case CALLBACKTYPE_syscall32:
         curr->arch.pv.syscall32_callback_cs = reg->address.cs;
         curr->arch.pv.syscall32_callback_eip = reg->address.eip;
-        curr->arch.pv.syscall32_disables_events =
-            (reg->flags & CALLBACKF_mask_events) != 0;
+        curr->arch.pv.syscall32_disables_events = (reg->flags &
+                                                   CALLBACKF_mask_events) != 0;
         break;
 
     case CALLBACKTYPE_sysenter:
         curr->arch.pv.sysenter_callback_cs = reg->address.cs;
         curr->arch.pv.sysenter_callback_eip = reg->address.eip;
-        curr->arch.pv.sysenter_disables_events =
-            (reg->flags & CALLBACKF_mask_events) != 0;
+        curr->arch.pv.sysenter_disables_events = (reg->flags &
+                                                  CALLBACKF_mask_events) != 0;
         break;
 
     case CALLBACKTYPE_nmi:
@@ -245,8 +244,8 @@ static int compat_register_guest_callback(struct compat_callback_register *reg)
     return ret;
 }
 
-static int compat_unregister_guest_callback(
-    struct compat_callback_unregister *unreg)
+static int
+compat_unregister_guest_callback(struct compat_callback_unregister *unreg)
 {
     int ret;
 
@@ -310,23 +309,18 @@ int compat_callback_op(int cmd, XEN_GUEST_HANDLE(const_void) arg)
     return ret;
 }
 
-int compat_set_callbacks(
-    unsigned long event_selector, unsigned long event_address,
-    unsigned long failsafe_selector, unsigned long failsafe_address)
+int compat_set_callbacks(unsigned long event_selector,
+                         unsigned long event_address,
+                         unsigned long failsafe_selector,
+                         unsigned long failsafe_address)
 {
     struct compat_callback_register event = {
         .type = CALLBACKTYPE_event,
-        .address = {
-            .cs = event_selector,
-            .eip = event_address
-        }
+        .address = { .cs = event_selector, .eip = event_address }
     };
     struct compat_callback_register failsafe = {
         .type = CALLBACKTYPE_failsafe,
-        .address = {
-            .cs = failsafe_selector,
-            .eip = failsafe_address
-        }
+        .address = { .cs = failsafe_selector, .eip = failsafe_address }
     };
 
     compat_register_guest_callback(&event);
@@ -351,7 +345,7 @@ long do_set_trap_table(XEN_GUEST_HANDLE_PARAM(const_trap_info_t) traps)
         return 0;
     }
 
-    for ( ; ; )
+    for ( ;; )
     {
         if ( copy_from_guest(&cur, traps, 1) )
         {
@@ -373,8 +367,9 @@ long do_set_trap_table(XEN_GUEST_HANDLE_PARAM(const_trap_info_t) traps)
 
         if ( hypercall_preempt_check() )
         {
-            rc = hypercall_create_continuation(
-                __HYPERVISOR_set_trap_table, "h", traps);
+            rc = hypercall_create_continuation(__HYPERVISOR_set_trap_table,
+                                               "h",
+                                               traps);
             break;
         }
     }
@@ -397,7 +392,7 @@ int compat_set_trap_table(XEN_GUEST_HANDLE(trap_info_compat_t) traps)
         return 0;
     }
 
-    for ( ; ; )
+    for ( ;; )
     {
         if ( copy_from_guest(&cur, traps, 1) )
         {
@@ -416,8 +411,9 @@ int compat_set_trap_table(XEN_GUEST_HANDLE(trap_info_compat_t) traps)
 
         if ( hypercall_preempt_check() )
         {
-            rc = hypercall_create_continuation(
-                __HYPERVISOR_set_trap_table, "h", traps);
+            rc = hypercall_create_continuation(__HYPERVISOR_set_trap_table,
+                                               "h",
+                                               traps);
             break;
         }
     }
