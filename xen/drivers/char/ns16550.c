@@ -340,7 +340,9 @@ static void ns16550_setup_preirq(struct ns16550 *uart)
         if ( divisor )
             uart->baud = uart->clock_hz / (divisor << 4);
         else
-            printk(XENLOG_ERR "Automatic baud rate determination was requested,"  " but a baud rate was not set up\n");
+            printk(
+                XENLOG_ERR
+                "Automatic baud rate determination was requested," " but a baud rate was not set up\n");
     }
     ns_write_reg(uart, UART_LCR, lcr);
 
@@ -348,8 +350,9 @@ static void ns16550_setup_preirq(struct ns16550 *uart)
     ns_write_reg(uart, UART_MCR, UART_MCR_DTR | UART_MCR_RTS);
 
     /* Enable and clear the FIFOs. Set a large trigger threshold. */
-    ns_write_reg(uart, UART_FCR, UART_FCR_ENABLE | UART_FCR_CLRX |
-                 UART_FCR_CLTX | UART_FCR_TRG14);
+    ns_write_reg(uart, UART_FCR,
+                 UART_FCR_ENABLE | UART_FCR_CLRX | UART_FCR_CLTX |
+                     UART_FCR_TRG14);
 }
 
 static void __init cf_check ns16550_init_preirq(struct serial_port *port)
