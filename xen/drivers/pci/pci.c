@@ -56,10 +56,8 @@ unsigned int pci_find_next_cap_ttl(pci_sbdf_t sbdf, unsigned int pos,
         if ( id == 0xff )
             break;
         for ( i = 0; i < n; i++ )
-        {
             if ( id == caps[i] )
                 return pos;
-        }
 
         pos = (pos & ~3) + PCI_CAP_LIST_NEXT;
     }
@@ -116,7 +114,8 @@ unsigned int pci_find_next_ext_capability(pci_sbdf_t sbdf, unsigned int start,
         return 0;
     ASSERT(start != pos || PCI_EXT_CAP_ID(header) == cap);
 
-    while ( ttl-- > 0 ) {
+    while ( ttl-- > 0 )
+    {
         if ( PCI_EXT_CAP_ID(header) == cap && pos != start )
             return pos;
         pos = PCI_EXT_CAP_NEXT(header);
@@ -174,8 +173,7 @@ const char *__init parse_pci_seg(const char *s, unsigned int *seg_p,
     }
     else
         func = 0;
-    if ( seg != (seg_p ? (u16)seg : 0) ||
-         bus != PCI_BUS(PCI_BDF(bus, 0)) ||
+    if ( seg != (seg_p ? (u16)seg : 0) || bus != PCI_BUS(PCI_BDF(bus, 0)) ||
          dev != PCI_SLOT(PCI_DEVFN(dev, 0)) ||
          func != PCI_FUNC(PCI_DEVFN(0, func)) )
         return NULL;
