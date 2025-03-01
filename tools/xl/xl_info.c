@@ -59,8 +59,7 @@ static int maybe_printf(const char *fmt, ...)
     return count;
 }
 
-static yajl_gen_status printf_info_one_json(yajl_gen hand, int domid,
-                                            libxl_domain_config *d_config)
+static yajl_gen_status printf_info_one_json(yajl_gen hand, int domid, libxl_domain_config *d_config)
 {
     yajl_gen_status s;
 
@@ -68,8 +67,7 @@ static yajl_gen_status printf_info_one_json(yajl_gen hand, int domid,
     if (s != yajl_gen_status_ok)
         goto out;
 
-    s = yajl_gen_string(hand, (const unsigned char *)"domid",
-                        sizeof("domid")-1);
+    s = yajl_gen_string(hand, (const unsigned char *)"domid", sizeof("domid")-1);
     if (s != yajl_gen_status_ok)
         goto out;
     if (domid != -1)
